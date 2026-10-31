@@ -1263,6 +1263,13 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
   .gfit .k-comp .gjo .opt,.gfit .k-team .gjo .opt{min-height:0;height:auto;max-height:110px}
   .gfit .k-comp .jct>b,.gfit .k-team .jct>b{flex:none}
 }
+
+/* 심판 자리 비우기 */
+.seatp{display:flex;flex-direction:column;gap:8px;background:var(--sunk);border-radius:12px;padding:10px 12px;margin-top:10px}
+.seatg{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.seatc{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);text-align:center}
+.seatc .btn{padding:4px 10px;font-size:12px}
+.jc .jcfree{padding:2px 8px;font-size:11px;margin-top:2px}
 </style>
 
 <header class="bar">
@@ -1851,6 +1858,13 @@ function linkStrip(){
     <span class="row" style="gap:8px;margin-left:auto">${fieldPill()}<span class="small muted">입장 ${seated}/${N}</span></span>
     ${ui.copyFallback?`<input type="text" id="copyFallback" value="${ui.copyFallback}" readonly data-fresh style="flex:1 1 100%;font-size:13px" aria-label="복사할 링크">`:''}</div>`;
 }
+/* 심판 자리(번호 잠금) 비우기: 심판이 기기를 바꾸거나 휴대폰이 꺼졌을 때 그 번호를 다른 기기가 쓸 수 있게 */
+function seatPanel(){
+  const N=SET().judges;
+  const cells=Array.from({length:N},(_,i)=>{const n=i+1,seat=S.seats[n],on=ROOM&&seat?deviceOnline(seat.device):null;
+    return `<div class="seatc"><b>${n}심</b><span class="small ${seat?'':'muted'}">${seat?(on===false?'번호 잠김 · 연결 끊김':'번호 잠김'):'비어 있음'}</span>${seat?`<button class="btn sm" data-act="armed" data-do="releaseSeat" data-n="${n}">자리 비우기</button>`:''}</div>`;}).join('');
+  return `<div class="seatp"><span class="small"><b>심판 자리</b> · 잠긴 번호는 다른 기기가 고를 수 없습니다. 심판이 기기를 바꾸거나 휴대폰이 꺼졌을 때는 「자리 비우기」를 두 번 눌러 번호를 풀어 주세요.</span><div class="seatg">${cells}</div></div>`;
+}
 function linkBar(){
   const N=SET().judges,seated=Object.keys(S.seats).filter(k=>Number(k)<=N).length;
   const btns=Array.from({length:N},(_,i)=>{const n=i+1,seat=S.seats[n],online=ROOM&&seat?deviceOnline(seat.device):false;
@@ -1863,6 +1877,7 @@ function linkBar(){
     <span class="small muted">숫자를 누르면 그 심판의 링크가 복사됩니다. 카카오톡에 붙여넣어 해당 심판에게 보내세요. 링크를 열면 그 번호 채점기로 바로 들어갑니다.</span>
     <div class="lnks">${btns}
       <button class="lnk disp" data-act="copyLink" data-u="${DISPLAY_URL}" data-label="전광판" aria-label="전광판 링크 복사"><span class="ln" style="font-size:20px">전광판</span><span class="lt">관중용 모니터</span><span class="ls">링크 복사</span></button></div>
+    ${seatPanel()}
     <div class="lnkopen"><span class="small"><b>이 컴퓨터에서 열기</b> · 한 컴퓨터로 여러 심판을 시험할 때 각각 새 창(탭)으로 엽니다.</span><div class="row" style="gap:6px">${opens}</div></div>
     ${ui.copyFallback?`<div class="field"><span class="small" style="color:var(--warn)">자동 복사가 막혀 있습니다. 아래 주소를 길게 눌러 복사해 주세요.</span><input type="text" id="copyFallback" value="${ui.copyFallback}" readonly data-fresh style="font-size:13px" aria-label="복사할 링크"></div>`:''}
     <span class="small muted">${window.KS_FIELD?'현장 모드: 심판 휴대폰을 공유기 와이파이에 연결한 뒤 「📱 QR 접속」을 찍으면 됩니다. 로그인은 필요 없습니다.':'심판은 claude.ai 계정으로 로그인해야 하고, 이 앱의 공유 메뉴에서 「편집자」로 초대되어 있어야 점수를 보낼 수 있습니다.'}</span>
@@ -2110,7 +2125,7 @@ function judgeChips(cur){
   const N=cur.judgeCount,cs=curScores().filter(s=>s.perfId===cur.perfId);
   return `<div class="jchips">${Array.from({length:N},(_,i)=>{const j=i+1,seat=S.seats[j],s=cs.find(x=>x.judge===j),on=ROOM&&seat?deviceOnline(seat.device):null;
     const cls=s?(s.flag==='review'?'rev':'ok'):!seat?'empty':on===false?'off':'';
-    const q=judgeQueued(j);return `<span class="jc ${cls}"><b>${j}심</b><span>${s?(s.flag==='review'?'판독 요청':s.flag==='ok'?'이상 없음':'도착 ✓'):!seat?'비어 있음':on===false?'연결 끊김':'채점 중'}</span>${q&&!s?`<span class="kq">보관 ${q}건</span>`:''}</span>`;}).join('')}</div>`;
+    const q=judgeQueued(j);return `<span class="jc ${cls}"><b>${j}심</b><span>${s?(s.flag==='review'?'판독 요청':s.flag==='ok'?'이상 없음':'도착 ✓'):!seat?'비어 있음':on===false?'연결 끊김':'채점 중'}</span>${q&&!s?`<span class="kq">보관 ${q}건</span>`:''}${seat?`<button class="btn sm jcfree" data-act="armed" data-do="releaseSeat" data-n="${j}" title="${j}심 번호 잠금 풀기">자리 비우기</button>`:''}</span>`;}).join('')}</div>`;
 }
 const cnt=(act,k,v,label,sub,step)=>`<div class="cnt"><span class="cl">${label}${sub?`<small>${sub}</small>`:''}</span><span class="cc"><button class="btn" data-act="${act}" data-k="${k}" data-d="-${step||1}" aria-label="${label} 빼기">−</button><b>${fmtN(v||0)}</b><button class="btn" data-act="${act}" data-k="${k}" data-d="${step||1}" aria-label="${label} 더하기">+</button></span></div>`;
 function runPanel(st,cur){
