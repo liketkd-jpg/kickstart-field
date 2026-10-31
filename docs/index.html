@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KICKSTART UP 대회 접수</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Barlow+Condensed:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+/* Layout: 검은 경기장 바닥 위 금색 선 — 위는 대회 일정(공지판), 아래는 지도자가 쓰는 접수 작업대. 브랜드가 한 가지 모습(어두운 바탕)이라 다크 한 가지로 고정 */
+:root{
+  --ink:#0A0B0E; --panel:#121419; --panel2:#181B22; --line:#2A2E37; --line2:#3A3F4B;
+  --text:#F2EEE6; --mute:#9EA4AF; --dim:#6E7480;
+  --gold:#D8B46E; --gold2:#F3DFAE; --gold3:#8E6A30; --goldInk:#1A1306;
+  --blue:#2F6BE6; --red:#D7263D; --ok:#3CC57E; --warn:#F2B84B; --bad:#FF6B76;
+  --f-disp:"Archivo","Noto Sans KR",system-ui,sans-serif;
+  --f-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-num:"Barlow Condensed","Archivo",ui-monospace,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--ink);color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.6;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--gold2)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.02em}
+h1{font-family:var(--f-disp);font-weight:900;font-size:clamp(28px,4.6vw,46px);line-height:1.12}
+h2{font-size:21px;font-weight:900}
+h3{font-size:17px;font-weight:800}
+.mute{color:var(--mute)} .small{font-size:13px} .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--f-disp);font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+
+/* 시험판 띠 */
+.demo{background:linear-gradient(90deg,#2A2110,#1A160D);border-bottom:1px solid #4A3B1C;font-size:13px}
+.demo .wrap{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding-block:8px}
+.demo b{color:var(--gold2)}
+.demo .sp{flex:1}
+
+/* 머리 */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:rgba(10,11,14,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:18px;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);flex:none}
+.brand svg{width:34px;height:34px}
+.brand .wm{font-family:var(--f-disp);font-weight:800;font-stretch:118%;font-size:17px;letter-spacing:.06em}
+.brand .wm b{background:linear-gradient(180deg,#F3DFAE,#B8904E);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .sub{display:block;font-family:var(--f-body);font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--mute);font-stretch:100%}
+.nav{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto}
+.nav a{white-space:nowrap;text-decoration:none;color:var(--mute);font-weight:700;padding:8px 12px;border-radius:9px}
+.nav a:hover{color:var(--text);background:var(--panel2)}
+.nav a.on{color:var(--gold2);background:#1E1A10}
+.who{display:flex;align-items:center;gap:8px;flex:none}
+.who .nm{font-weight:800;font-size:14px}
+@media (max-width:760px){.top .wrap{flex-wrap:wrap;gap:10px}.nav{order:3;flex-basis:100%}.brand .sub{display:none}}
+
+/* 단추·입력 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:10px;padding:9px 15px;font-weight:800;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--gold3)}
+.btn.gold{background:linear-gradient(180deg,#EBD5A3,#B8904E);border-color:#A07E43;color:var(--goldInk)}
+.btn.gold:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn.danger{color:var(--bad);border-color:#5A2A30}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+label.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+label.f>span{font-size:12.5px;font-weight:800;color:var(--mute)}
+label.f>span i{font-style:normal;color:var(--bad)}
+input[type=text],input[type=email],input[type=password],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;background:var(--ink);border:1px solid var(--line2);border-radius:10px;padding:10px 12px;min-width:0}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(216,180,110,.18)}
+.check{display:flex;gap:9px;align-items:flex-start;font-size:14px}
+.check input{margin-top:4px;accent-color:var(--gold)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--mute);white-space:nowrap}
+.chip.open{color:#9EF0C2;border-color:#24563C;background:#0F2219}
+.chip.soon{color:var(--warn);border-color:#5A4417;background:#211A0C}
+.chip.closed{color:var(--dim)}
+.chip.ps{color:#F0D79F;border-color:#5C4A24}
+.chip.ky{color:#9DBBFF;border-color:#25407A}
+.chip.gp{color:#FFB3A6;border-color:#6A2C25}
+.empty{border:1px dashed var(--line2);border-radius:14px;padding:26px;text-align:center;color:var(--mute)}
+.note{font-size:13px;color:var(--mute);border-left:2px solid var(--gold3);padding-left:10px}
+.err{color:var(--bad);font-size:13px;font-weight:700}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-size:12px;font-weight:800;color:var(--mute);background:var(--panel2);padding:9px 10px;white-space:nowrap;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:30;background:#F2EEE6;color:#0A0B0E;font-weight:800;border-radius:999px;padding:11px 18px;max-width:calc(100% - 32px);box-shadow:0 12px 30px rgba(0,0,0,.5)}
+main{padding-block:28px 64px}
+
+/* 대회 일정: 공지판 */
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:end;padding-block:12px 26px;border-bottom:1px solid var(--line);margin-bottom:26px}
+.hero p{max-width:60ch;margin:12px 0 0;color:var(--mute)}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.steps div{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--panel)}
+.steps b{display:block;font-family:var(--f-num);font-size:26px;color:var(--gold);line-height:1}
+.steps span{font-size:13px;font-weight:700}
+@media (max-width:820px){.hero{grid-template-columns:minmax(0,1fr)}}
+.comps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:16px}
+.comp{display:flex;flex-direction:column;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;position:relative;overflow:hidden}
+.comp::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--gold3),var(--gold2),var(--gold3))}
+.comp.closed::before{background:var(--line2)}
+.comp h3{font-size:19px;font-weight:900}
+.date{display:flex;gap:14px;align-items:flex-end}
+.date .d{font-family:var(--f-num);font-weight:700;font-size:44px;line-height:.9;color:var(--gold2)}
+.date .m{font-size:13px;color:var(--mute);font-weight:700;line-height:1.35}
+.meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:14px}
+.meta dt{color:var(--mute);font-weight:700}
+.meta dd{margin:0}
+.dday{font-family:var(--f-num);font-weight:700;font-size:15px;color:var(--warn)}
+
+/* 접수 작업대 */
+.desk{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+@media (max-width:900px){.desk{grid-template-columns:minmax(0,1fr)}}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line2);background:var(--panel);border-radius:999px;padding:8px 16px;font-weight:800;cursor:pointer;color:var(--mute)}
+.tabs button.on{background:linear-gradient(180deg,#EBD5A3,#B8904E);border-color:#A07E43;color:var(--goldInk)}
+.ath{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.ath .nm{font-weight:800}
+.ath.picked{border-color:var(--gold3);background:#1A170F}
+.form{border:1px solid var(--gold3);border-radius:14px;padding:16px;background:#14120C;display:flex;flex-direction:column;gap:12px}
+.cart{position:sticky;top:calc(env(safe-area-inset-top,0px) + 84px)}
+.cart .line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.cart .line:last-of-type{border-bottom:none}
+.sum{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line2);padding-top:12px}
+.sum b{font-family:var(--f-num);font-size:30px;color:var(--gold2)}
+.acct{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px}
+.st{font-weight:800;font-size:12px;border-radius:7px;padding:3px 8px;white-space:nowrap}
+.st.wait{background:#2A220F;color:var(--warn)}
+.st.paid{background:#0F2A1C;color:var(--ok)}
+.st.cancel{background:#2A1416;color:var(--bad)}
+
+/* 로그인 */
+.auth{max-width:460px;margin:0 auto}
+.auth .card{display:flex;flex-direction:column;gap:14px;padding:26px}
+
+/* 관리자 */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpis div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpis b{display:block;font-family:var(--f-num);font-size:30px;line-height:1.05;color:var(--gold2)}
+.kpis span{font-size:12.5px;color:var(--mute);font-weight:700}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.exp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.exp{grid-template-columns:minmax(0,1fr)}}
+.exp .card{display:flex;flex-direction:column;gap:10px}
+.exp .card .n{font-family:var(--f-num);font-size:34px;line-height:1;color:var(--text)}
+footer{border-top:1px solid var(--line);color:var(--dim);font-size:12.5px}
+footer .wrap{padding-block:18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#home" aria-label="KICKSTART UP 대회 접수 처음으로">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ksg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#ksg)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksg)" d="M19 16h7.5v32H19z"/><path fill="url(#ksg)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksg)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksg)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg>
+    <span class="wm">KICKSTART <b>UP</b><span class="sub">대회 접수</span></span>
+  </a>
+  <nav class="nav" id="nav"></nav>
+  <div class="who" id="who"></div>
+</div></header>
+
+<main><div class="wrap" id="view"></div></main>
+<footer><div class="wrap">KICKSTART UP · 태권도 대회 운영 시스템 · 접수 명단은 품새·겨루기·격파 대회 앱으로 바로 넘어갑니다</div></footer>
+<div class="toast" id="toast" hidden></div>
+<script>
+/* ================= 기본 자료 (대회 앱 불러오기 형식과 같은 값) ================= */
+const SPORTS={poomsae:{n:'품새',c:'ps'},kyorugi:{n:'겨루기',c:'ky'},gyeokpa:{n:'격파',c:'gp'}};
+const PS_DIV=['초등부','중등부','고등부','대학부','일반부','성인부','금강1부','금강2부','태백1부','태백2부','지태1부','지태2부','천권부','한수부','장년1부','장년2부'];
+const PS_GRADE=['','1학년','2학년','3학년','4학년','5학년','6학년','저학년','중학년','고학년'];
+const KY_DIV=['초등부','중등부','고등부','대학부','일반부'];
+const KY_NAMED=['핀급','플라이급','밴텀급','페더급','라이트급','웰터급','라이트미들급','미들급','라이트헤비급','헤비급'];
+const KY_KG={남:['-54kg','-58kg','-63kg','-68kg','-74kg','-80kg','-87kg','+87kg'],여:['-46kg','-49kg','-53kg','-57kg','-62kg','-67kg','-73kg','+73kg']};
+const GP_EV=[
+  {n:'높이 뛰어차기',k:'height'},{n:'제자리 연속 뒤 후려차기',k:'rec'},{n:'제자리 연속 돌개차기',k:'rec'},
+  {n:'체공 도약 격파',k:'tech'},{n:'수직축 회전 격파',k:'tech'},{n:'수평축 회전 격파',k:'tech'},{n:'종합 격파',k:'tech'},
+  {n:'기술격파 단체전',k:'team'},{n:'주먹 격파',k:'power'},{n:'손날 격파',k:'power'},{n:'손 종합 격파',k:'power'},{n:'발 격파',k:'power'}];
+const GP_LV=['초등 중학년부','초등 고학년부','중등 1학년부','중등 2학년부','중등 3학년부','고등 1학년부','고등 2학년부','고등 3학년부','대학 1부','대학 2부','일반 1부','일반 2부'];
+const YEAR=2026;
+
+/* ================= 저장: Supabase (대회 접수 데이터베이스) ================= */
+const SUPA_URL='https://nwdptjumclgzbwbsaoxr.supabase.co';
+const SUPA_KEY='sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG';
+const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+const M={comps:[],athletes:[],entries:[],users:[],profile:null,ready:false,loadErr:''};
+const D=()=>M;
+const me=()=>M.profile;
+const uid=p=>p+Math.random().toString(36).slice(2,9);
+const mapComp=c=>({id:c.id,name:c.name,date:c.date,place:c.place,deadline:c.deadline,sports:c.sports||[],fee:c.fee||{},account:c.account,host:c.host,note:c.note});
+const mapAth=a=>({id:a.id,coachId:a.coach_id,name:a.name,gender:a.gender,birth:a.birth||'',org:a.org,weight:a.weight??'',height:a.height??'',guardian:a.guardian});
+const mapEnt=e=>({id:e.id,compId:e.comp_id,coachId:e.coach_id,sport:e.sport,athleteIds:e.athlete_ids||[],f:e.f||{},fee:e.fee,status:e.status,at:String(e.created_at||'').slice(0,19)});
+const mapUser=p=>({id:p.id,role:p.role,name:p.name,org:p.org,phone:p.phone,email:p.email});
+async function q(p){const {data,error}=await p;if(error)throw error;return data;}
+async function reload(){
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    M.comps=(await q(sb.from('comps').select('*').order('date',{ascending:true}))).map(mapComp);
+    if(session){
+      const prof=await q(sb.from('profiles').select('*').eq('id',session.user.id));
+      M.profile=prof&&prof[0]?mapUser(prof[0]):{id:session.user.id,role:'coach',name:session.user.email,org:'',phone:'',email:session.user.email};
+      M.athletes=(await q(sb.from('athletes').select('*').order('created_at',{ascending:true}))).map(mapAth);
+      M.entries=(await q(sb.from('entries').select('*').order('created_at',{ascending:true}))).map(mapEnt);
+      M.users=M.profile.role==='admin'?(await q(sb.from('profiles').select('*'))).map(mapUser):[M.profile];
+    }else{M.profile=null;M.athletes=[];M.entries=[];M.users=[];}
+    M.loadErr='';
+  }catch(e){M.loadErr=msgOf(e);}
+  M.ready=true;render();
+}
+function msgOf(e){const m=String(e&&e.message||e||'');
+  if(/Invalid login credentials/i.test(m))return '이메일이나 비밀번호가 맞지 않습니다. 다시 확인해 주세요';
+  if(/Email not confirmed/i.test(m))return '가입 확인 메일의 링크를 먼저 눌러 주세요';
+  if(/already registered|already been registered/i.test(m))return '이미 가입한 이메일입니다. 로그인해 주세요';
+  if(/Password should be at least/i.test(m))return '비밀번호는 6자 이상으로 해 주세요';
+  if(/Failed to fetch|NetworkError/i.test(m))return '인터넷 연결을 확인해 주세요';
+  if(/rate limit/i.test(m))return '잠시 뒤 다시 시도해 주세요 (요청이 너무 많습니다)';
+  return m.replace(/^.*?:\s*/,'')||'처리하지 못했습니다';
+}
+sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_IN'||ev==='SIGNED_OUT'||ev==='USER_UPDATED')reload();});
+
+/* ================= 도움 함수 ================= */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won=n=>(Number(n)||0).toLocaleString('ko-KR')+'원';
+const wd=['일','월','화','수','목','금','토'];
+function fmtDate(s){const d=new Date(s+'T00:00:00');return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}. (${wd[d.getDay()]})`;}
+function today(){const d=new Date();return d.toISOString().slice(0,10);}
+function dday(s){const a=new Date(today()+'T00:00:00'),b=new Date(s+'T00:00:00');return Math.round((b-a)/864e5);}
+function compState(c){const n=dday(c.deadline);if(dday(c.date)<0)return ['closed','대회 끝남'];if(n<0)return ['closed','접수 마감'];if(n<=7)return ['soon',n===0?'오늘 마감':`마감 D-${n}`];return ['open','접수 중'];}
+function age(b){if(!b)return null;const d=new Date(b+'T00:00:00'),t=new Date();let a=t.getFullYear()-d.getFullYear();if(t.getMonth()<d.getMonth()||(t.getMonth()===d.getMonth()&&t.getDate()<d.getDate()))a--;return a;}
+/* 학년: 2026년 기준 출생 연도로 (초1 = 2019년생) */
+function schoolOf(b){if(!b)return null;const y=Number(b.slice(0,4)),g=YEAR-y-6;if(g>=1&&g<=6)return {lv:'초',g};if(g>=7&&g<=9)return {lv:'중',g:g-6};if(g>=10&&g<=12)return {lv:'고',g:g-9};if(g>=13&&g<=16)return {lv:'대',g:g-12};if(g>=13)return {lv:'일',g:0};return null;}
+function schoolTxt(b){const s=schoolOf(b);if(!s)return '';return s.lv==='일'?'일반':s.lv==='대'?`대학 ${s.g}학년(추정)`:`${{초:'초등',중:'중등',고:'고등'}[s.lv]} ${s.g}학년`;}
+function defaults(sport,a){
+  const s=schoolOf(a.birth)||{lv:'일',g:0};
+  if(sport==='poomsae')return {type:'공인',kind:'개인',div:{초:'초등부',중:'중등부',고:'고등부',대:'대학부',일:'일반부'}[s.lv],grade:s.lv==='초'?s.g+'학년':s.lv==='중'||s.lv==='고'?s.g+'학년':''};
+  if(sport==='kyorugi'){const div={초:'초등부',중:'중등부',고:'고등부',대:'대학부',일:'일반부'}[s.lv];return {div,grade:['초','중','고'].includes(s.lv)?s.g+'학년':'',weight:''};}
+  const lv=s.lv==='초'?(s.g>=5?'초등 고학년부':'초등 중학년부'):s.lv==='중'?`중등 ${s.g}학년부`:s.lv==='고'?`고등 ${s.g}학년부`:s.lv==='대'?(s.g>=3?'대학 2부':'대학 1부'):'일반 1부';
+  return {ev:'체공 도약 격파',div:lv,weight:a.weight||'',height:a.height||''};
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600);}
+function sel(id,list,v,attrs=''){return `<select id="${id}" ${attrs}>${list.map(x=>{const val=typeof x==='string'?x:x.v,lab=typeof x==='string'?(x||'선택 안 함'):x.l;return `<option value="${esc(val)}" ${String(v)===String(val)?'selected':''}>${esc(lab)}</option>`;}).join('')}</select>`;}
+const sportChips=c=>c.sports.map(s=>`<span class="chip ${SPORTS[s].c}">${SPORTS[s].n}</span>`).join('');
+
+/* ================= 화면 (주소 #이름 으로 이동) ================= */
+const UI={tab:'poomsae',pick:null,form:null,editAth:null,err:'',adminComp:null,adminSport:'poomsae'};
+function go(h){if(location.hash==='#'+h)render();else location.hash=h;}
+addEventListener('hashchange',()=>{UI.err='';render();window.scrollTo(0,0);});
+function route(){return (location.hash||'#home').slice(1)||'home';}
+
+function render(){
+  const r=route(),u=me();
+  const links=[['home','대회 일정']];
+  if(u&&u.role==='coach')links.push(['athletes','내 선수'],['entries','내 접수 내역']);
+  if(u&&u.role==='admin')links.push(['admin','대회 관리 · 명단 내보내기']);
+  const base=r.split('-')[0];
+  document.getElementById('nav').innerHTML=links.map(([h,l])=>`<a href="#${h}" class="${base===h||(h==='home'&&base==='comp')?'on':''}">${l}</a>`).join('');
+  document.getElementById('who').innerHTML=u?`<span class="nm">${esc(u.name)}</span><span class="small mute">${u.role==='admin'?'관리자':esc(u.org)}</span><button class="btn sm ghost" data-a="logout" type="button">로그아웃</button>`
+    :`<a class="btn sm ghost" href="#login">로그인</a><a class="btn sm gold" href="#signup">지도자 회원가입</a>`;
+  let h='';
+  if(!M.ready){document.getElementById('view').innerHTML='<div class="empty">불러오는 중…</div>';return;}
+  if(M.loadErr)h=`<div class="note" style="margin-bottom:14px">데이터를 불러오지 못했습니다: ${esc(M.loadErr)}</div>`;
+  try{
+    if(r==='home')h=vHome();
+    else if(r.startsWith('comp-'))h=vComp(r.slice(5));
+    else if(r.startsWith('enter-'))h=need('coach',()=>vEnter(r.slice(6)));
+    else if(r==='login')h=vLogin();
+    else if(r==='signup')h=vSignup();
+    else if(r==='athletes')h=need('coach',vAthletes);
+    else if(r==='entries')h=need('coach',vEntries);
+    else if(r==='admin')h=need('admin',vAdmin);
+    else h+=vHome();
+    h=(M.loadErr?`<div class="note" style="margin-bottom:14px">데이터를 불러오지 못했습니다: ${esc(M.loadErr)}</div>`:'')+h.replace(/^<div class="note" style="margin-bottom:14px">데이터를 불러오지 못했습니다:.*?<\/div>/,'');
+  }catch(e){h=`<div class="empty">화면을 그리지 못했습니다: ${esc(e.message)}</div>`;}
+  document.getElementById('view').innerHTML=h;
+}
+function need(role,fn){const u=me();if(!u)return `<div class="auth"><div class="card"><h2>로그인이 필요합니다</h2><p class="mute">선수 등록과 대회 접수는 지도자 계정으로 로그인한 뒤 할 수 있습니다.</p><div class="row"><a class="btn gold" href="#login">로그인</a><a class="btn" href="#signup">지도자 회원가입</a></div></div></div>`;
+  if(u.role!==role)return `<div class="empty">${role==='admin'?'대회 본부(관리자) 계정만 볼 수 있는 화면입니다.':'지도자 계정으로 로그인해 주세요.'}</div>`;return fn();}
+
+/* ---------- 대회 일정 ---------- */
+function compCard(c){const [k,l]=compState(c),d=new Date(c.date+'T00:00:00'),n=dday(c.deadline);
+  return `<article class="comp ${k==='closed'?'closed':''}">
+    <div class="row between"><span class="chip ${k}">${l}</span><span class="row" style="gap:6px">${sportChips(c)}</span></div>
+    <div class="date"><span class="d">${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}</span><span class="m">${d.getFullYear()}<br>${wd[d.getDay()]}요일</span></div>
+    <h3>${esc(c.name)}</h3>
+    <dl class="meta"><dt>장소</dt><dd>${esc(c.place)}</dd><dt>접수 마감</dt><dd>${fmtDate(c.deadline)} ${k!=='closed'?`<span class="dday">D-${n}</span>`:''}</dd>
+      <dt>참가비</dt><dd>${c.sports.map(s=>`${SPORTS[s].n} ${won(c.fee[s])}`).join(' · ')}</dd></dl>
+    <div class="row" style="margin-top:auto"><a class="btn ${k==='closed'?'':'gold'}" href="#comp-${c.id}">${k==='closed'?'대회 안내 보기':'대회 안내 · 접수하기'}</a></div>
+  </article>`;}
+function vHome(){
+  const L=D().comps.slice().sort((a,b)=>(compState(a)[0]==='closed')-(compState(b)[0]==='closed')||a.date.localeCompare(b.date));
+  return `<section class="hero"><div><span class="eyebrow">Taekwondo Competition Entry</span><h1>도장에서 접수하고,<br>대회장에서 바로 채점합니다</h1>
+    <p>지도자 회원으로 가입해 선수를 한 번 등록해 두면, 대회마다 종목과 부별만 골라 접수할 수 있습니다. 마감된 명단은 품새·겨루기·격파 대회 앱으로 그대로 넘어가 부문과 대진이 만들어집니다.</p></div>
+    <div class="steps"><div><b>1</b><span>지도자 회원가입</span></div><div><b>2</b><span>내 선수 등록</span></div><div><b>3</b><span>대회 고르고 접수</span></div></div></section>
+    <div class="row between" style="margin-bottom:14px"><h2>대회 일정</h2><span class="small mute">${L.filter(c=>compState(c)[0]!=='closed').length}개 대회 접수 중</span></div>
+    <div class="comps">${L.map(compCard).join('')}</div>`;
+}
+function vComp(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class="empty">대회를 찾지 못했습니다.</div>';
+  const [k,l]=compState(c),u=me();
+  const mine=u?D().entries.filter(e=>e.compId===c.id&&e.coachId===u.id&&e.status!=='cancel').length:0;
+  return `<div class="stack"><a class="small" href="#home">← 대회 일정</a>
+    <div class="card stack"><div class="row between"><span class="chip ${k}">${l}</span><span class="row" style="gap:6px">${sportChips(c)}</span></div>
+      <h1>${esc(c.name)}</h1>
+      <dl class="meta"><dt>대회일</dt><dd>${fmtDate(c.date)}</dd><dt>장소</dt><dd>${esc(c.place)}</dd><dt>주최</dt><dd>${esc(c.host)}</dd><dt>접수 마감</dt><dd>${fmtDate(c.deadline)}</dd>
+        <dt>참가비</dt><dd>${c.sports.map(s=>`${SPORTS[s].n} ${won(c.fee[s])} (1명·1팀당)`).join('<br>')}</dd><dt>입금 계좌</dt><dd>${esc(c.account)}</dd></dl>
+      ${c.note?`<p class="note">${esc(c.note)}</p>`:''}
+      <div class="row">${k==='closed'?'<span class="mute">접수가 끝난 대회입니다.</span>'
+        :u&&u.role==='coach'?`<a class="btn gold" href="#enter-${c.id}">이 대회에 선수 접수하기</a>${mine?`<span class="small mute">이미 ${mine}건 접수했습니다</span>`:''}`
+        :u?'<span class="small mute">관리자 계정입니다. 접수 현황은 「대회 관리」에서 봅니다.</span>':`<a class="btn gold" href="#login">로그인하고 접수하기</a><a class="btn" href="#signup">지도자 회원가입</a>`}</div></div></div>`;
+}
+
+/* ---------- 로그인 · 가입 ---------- */
+function vLogin(){return `<div class="auth"><form class="card" id="fLogin"><span class="eyebrow">Coach Login</span><h2>로그인</h2>
+  <label class="f"><span>이메일</span><input type="email" id="lEmail" autocomplete="username" required placeholder="coach@example.kr"></label>
+  <label class="f"><span>비밀번호</span><input type="password" id="lPw" autocomplete="current-password" required></label>
+  ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}
+  <button class="btn gold" type="submit">로그인</button>
+  <span class="small mute">처음이신가요? <a href="#signup">지도자 회원가입</a></span></form></div>`;}
+function vSignup(){return `<div class="auth" style="max-width:620px"><form class="card" id="fSignup"><span class="eyebrow">Coach Sign Up</span><h2>지도자 회원가입</h2>
+  <p class="small mute" style="margin:0">선수를 대회에 접수하는 지도자(관장·사범·감독) 계정입니다. 선수 본인은 가입하지 않습니다.</p>
+  <div class="grid2"><label class="f"><span>이름 <i>*</i></span><input type="text" id="sName" required></label>
+    <label class="f"><span>소속 (도장·학교·팀) <i>*</i></span><input type="text" id="sOrg" required placeholder="경민태권도장"></label>
+    <label class="f"><span>휴대폰 <i>*</i></span><input type="tel" id="sPhone" required placeholder="010-0000-0000"></label>
+    <label class="f"><span>이메일 (로그인 아이디) <i>*</i></span><input type="email" id="sEmail" required></label>
+    <label class="f"><span>비밀번호 <i>*</i></span><input type="password" id="sPw" required autocomplete="new-password" placeholder="6자 이상"></label>
+    <label class="f"><span>지도자 자격 번호 (선택)</span><input type="text" id="sLic" placeholder="국기원 지도자 자격 번호"></label></div>
+  <label class="check"><input type="checkbox" id="sAgree" required><span><b>개인정보 수집·이용 동의 (필수)</b> · 대회 접수와 운영을 위해 지도자와 선수의 이름·소속·성별·생년월일·연락처를 모으고, 대회가 끝난 뒤 1년 동안 보관합니다.</span></label>
+  ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}
+  <button class="btn gold" type="submit">가입하고 시작하기</button></form></div>`;}
+
+/* ---------- 내 선수 ---------- */
+function myAth(){const u=me();return D().athletes.filter(a=>a.coachId===u.id);}
+function athForm(a){a=a||{};const ag=age(a.birth);
+  return `<form class="form" id="fAth"><div class="row between"><h3>${a.id?'선수 정보 고치기':'선수 등록'}</h3>${a.id?'<button class="btn sm ghost" type="button" data-a="athCancel">닫기</button>':''}</div>
+    <div class="grid3"><label class="f"><span>이름 <i>*</i></span><input type="text" id="aName" required value="${esc(a.name||'')}"></label>
+      <label class="f"><span>성별 <i>*</i></span>${sel('aGender',['남','여'],a.gender||'남')}</label>
+      <label class="f"><span>생년월일 <i>*</i></span><input type="date" id="aBirth" required value="${esc(a.birth||'')}" data-on="birth"></label>
+      <label class="f"><span>소속</span><input type="text" id="aOrg" value="${esc(a.org||me().org)}"></label>
+      <label class="f"><span>체중 kg (겨루기·위력격파)</span><input type="number" id="aWeight" step="0.1" min="15" max="200" value="${esc(a.weight||'')}"></label>
+      <label class="f"><span>신장 cm (높이 뛰어차기)</span><input type="number" id="aHeight" step="0.1" min="80" max="230" value="${esc(a.height||'')}"></label></div>
+    <span class="small mute" id="aSchool">${a.birth?'학년 추정: '+schoolTxt(a.birth):'생년월일을 넣으면 학년과 부별을 자동으로 맞춥니다.'}</span>
+    <label class="check" id="aGuard" ${ag!==null&&ag<14?'':'hidden'}><input type="checkbox" id="aGuardOk" ${a.guardian?'checked':''}><span><b>만 14세 미만 선수: 보호자 동의를 받았습니다 (필수)</b> · 법에 따라 만 14세 미만의 개인정보는 보호자(법정대리인) 동의가 있어야 모을 수 있습니다.</span></label>
+    ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}
+    <div class="row"><button class="btn gold" type="submit">${a.id?'저장':'선수 등록'}</button></div></form>`;}
+function vAthletes(){const L=myAth();const ed=UI.editAth?L.find(a=>a.id===UI.editAth):null;
+  return `<div class="stack"><div class="row between"><div><span class="eyebrow">My Athletes</span><h1>내 선수</h1></div><span class="mute">${L.length}명 등록</span></div>
+    <p class="mute" style="margin:0">한 번 등록한 선수는 대회마다 다시 적지 않고 골라서 접수합니다.</p>
+    ${athForm(ed)}
+    ${L.length?`<div class="tablewrap"><table><tr><th>이름</th><th>성별</th><th>생년월일</th><th>학년</th><th>소속</th><th>체중·신장</th><th></th></tr>
+      ${L.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td>${a.gender}</td><td class="num">${esc(a.birth)}</td><td>${schoolTxt(a.birth)}</td><td>${esc(a.org)}</td>
+        <td class="num">${a.weight?a.weight+'kg':''}${a.weight&&a.height?' · ':''}${a.height?a.height+'cm':''}</td>
+        <td style="white-space:nowrap"><button class="btn sm" type="button" data-a="athEdit" data-id="${a.id}">고치기</button> <button class="btn sm danger" type="button" data-a="athDel" data-id="${a.id}">${UI.delArm===a.id?'한 번 더 누르면 삭제':'삭제'}</button></td></tr>`).join('')}</table></div>`
+      :'<div class="empty">아직 등록한 선수가 없습니다. 위 칸에 첫 선수를 등록해 주세요.</div>'}</div>`;}
+
+/* ---------- 대회 접수 ---------- */
+function entryLabel(e){const f=e.f||{};const names=e.athleteIds.map(id=>(D().athletes.find(a=>a.id===id)||{}).name||'(삭제됨)');
+  if(e.sport==='poomsae')return {who:names.join(' · '),what:`${f.type} ${f.kind} · ${f.div}${f.grade?' '+f.grade:''}`};
+  if(e.sport==='kyorugi')return {who:names[0],what:`${f.div}${f.grade?' '+f.grade:''} · ${f.weight}`};
+  return {who:names.join(' · '),what:`${f.ev} · ${f.div}${f.weight?' · '+f.weight+'kg':''}${f.height?' · '+f.height+'cm':''}`};}
+function entryForm(c,sport,a){const f=UI.form||defaults(sport,a);UI.form=f;const L=myAth();
+  let h='';
+  if(sport==='poomsae'){
+    const need=f.kind==='복식'?2:f.kind==='단체'?3:1;
+    h=`<div class="grid2"><label class="f"><span>구분</span>${sel('eType',['공인','자유'],f.type,'data-on="ef" data-k="type"')}</label>
+      <label class="f"><span>종목</span>${sel('eKind',['개인','복식','단체'],f.kind,'data-on="ef" data-k="kind"')}</label>
+      <label class="f"><span>부별</span>${sel('eDiv',PS_DIV,f.div,'data-on="ef" data-k="div"')}</label>
+      <label class="f"><span>학년 (초·중·고)</span>${sel('eGrade',PS_GRADE,f.grade,'data-on="ef" data-k="grade"')}</label></div>
+      ${need>1?`<div class="stack" style="gap:6px"><span class="small"><b>함께 나갈 팀원 ${need-1}명</b> (복식 2명 · 단체 3명)</span>${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)} <span class="small mute">${x.gender} · ${schoolTxt(x.birth)}</span></span></label>`).join('')||'<span class="small mute">팀원으로 고를 선수가 더 필요합니다.</span>'}</div>`:''}`;
+  }else if(sport==='kyorugi'){
+    const named=['초등부','중등부','고등부'].includes(f.div),list=['',...(named?KY_NAMED:KY_KG[a.gender])];
+    h=`<div class="grid3"><label class="f"><span>부별</span>${sel('eDiv',KY_DIV,f.div,'data-on="ef" data-k="div"')}</label>
+      <label class="f"><span>학년</span>${sel('eGrade',['','1학년','2학년','3학년','4학년','5학년','6학년'],f.grade,'data-on="ef" data-k="grade"')}</label>
+      <label class="f"><span>체급 <i>*</i></span>${sel('eWeight',list.map(x=>x?x:{v:'',l:'체급 고르기'}),f.weight,'data-on="ef" data-k="weight"')}</label></div>
+      <span class="small mute">${named?'초·중·고등부는 체급 이름(핀급~헤비급)으로, 대학·일반부는 kg으로 나눕니다.':'대학·일반부 '+a.gender+'자 체급입니다.'} ${a.weight?`등록 체중 ${a.weight}kg`:''}</span>`;
+  }else{
+    const ev=GP_EV.find(x=>x.n===f.ev)||GP_EV[3];const lv=ev.k==='power'||ev.k==='team'?['대학부',...GP_LV]:GP_LV;
+    h=`<div class="grid2"><label class="f"><span>종목</span>${sel('eEv',GP_EV.map(x=>x.n),f.ev,'data-on="ef" data-k="ev"')}</label>
+      <label class="f"><span>부별</span>${sel('eDiv',lv,f.div,'data-on="ef" data-k="div"')}</label>
+      ${ev.k==='power'?`<label class="f"><span>체중 kg <i>*</i> (계체 전 신청 체중)</span><input type="number" id="eW" step="0.1" value="${esc(f.weight||'')}" data-on="ef" data-k="weight"></label>`:''}
+      ${ev.k==='height'?`<label class="f"><span>신장 cm <i>*</i></span><input type="number" id="eH" step="0.1" value="${esc(f.height||'')}" data-on="ef" data-k="height"></label>`:''}</div>
+      ${ev.k==='team'?`<div class="stack" style="gap:6px"><span class="small"><b>단체전 팀원</b> (선수 포함 5~10명)</span>${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)}</span></label>`).join('')}</div>`:''}`;
+  }
+  return `<div class="form"><div class="row between"><h3>${esc(a.name)} <span class="small mute">${a.gender} · ${schoolTxt(a.birth)}</span></h3><button class="btn sm ghost" type="button" data-a="pickClose">닫기</button></div>
+    ${h}${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}
+    <div class="row between"><span class="small mute">참가비 ${won(c.fee[sport])}</span><button class="btn gold" type="button" data-a="addEntry">접수 목록에 넣기</button></div></div>`;}
+function vEnter(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class="empty">대회를 찾지 못했습니다.</div>';
+  if(compState(c)[0]==='closed')return `<div class="empty">접수가 끝난 대회입니다. <a href="#home">대회 일정</a></div>`;
+  if(!c.sports.includes(UI.tab))UI.tab=c.sports[0];
+  const u=me(),L=myAth(),sport=UI.tab;
+  const mine=D().entries.filter(e=>e.compId===c.id&&e.coachId===u.id&&e.status!=='cancel');
+  const cart=(UI.cart||[]).filter(e=>e.compId===c.id);
+  const inSport=new Set([...mine,...cart].filter(e=>e.sport===sport).flatMap(e=>e.athleteIds));
+  const total=cart.reduce((s,e)=>s+e.fee,0);
+  return `<div class="stack"><a class="small" href="#comp-${c.id}">← 대회 안내</a>
+    <div><span class="eyebrow">Entry</span><h1>${esc(c.name)}</h1><p class="mute" style="margin:6px 0 0">${fmtDate(c.date)} · ${esc(c.place)} · 마감 ${fmtDate(c.deadline)}</p></div>
+    <div class="desk"><div class="stack">
+      <div class="tabs">${c.sports.map(s=>`<button type="button" class="${s===sport?'on':''}" data-a="tab" data-s="${s}">${SPORTS[s].n}</button>`).join('')}</div>
+      <p class="small mute" style="margin:0">선수를 누르면 ${SPORTS[sport].n} 접수 칸이 열립니다. 부별·학년은 생년월일로 미리 맞춰 두었으니 확인만 해 주세요.</p>
+      ${L.length?L.map(a=>{const done=inSport.has(a.id);return `<div class="ath ${UI.pick===a.id?'picked':''}"><div><span class="nm">${esc(a.name)}</span> <span class="small mute">${a.gender} · ${schoolTxt(a.birth)}${a.weight?' · '+a.weight+'kg':''}</span></div>
+        ${done?'<span class="chip open">접수함</span>':`<button class="btn sm ${UI.pick===a.id?'':'gold'}" type="button" data-a="pick" data-id="${a.id}">${UI.pick===a.id?'작성 중':'접수'}</button>`}</div>
+        ${UI.pick===a.id?entryForm(c,sport,a):''}`;}).join(''):'<div class="empty">먼저 「내 선수」에서 선수를 등록해 주세요. <a href="#athletes">선수 등록하러 가기</a></div>'}
+    </div>
+    <aside class="card cart stack"><h3>접수 목록</h3>
+      ${cart.length?cart.map((e,i)=>{const l=entryLabel(e);return `<div class="line"><div><span class="chip ${SPORTS[e.sport].c}">${SPORTS[e.sport].n}</span> <b>${esc(l.who)}</b><div class="small mute">${esc(l.what)}</div></div>
+        <div style="text-align:right"><span class="num">${won(e.fee)}</span><br><button class="btn sm ghost" type="button" data-a="cartDel" data-i="${i}">빼기</button></div></div>`;}).join(''):'<span class="small mute">아직 넣은 선수가 없습니다.</span>'}
+      <div class="sum"><span class="mute">참가비 합계</span><b>${won(total)}</b></div>
+      <div class="acct small"><b>입금 계좌</b><br>${esc(c.account)}<br><span class="mute">입금자명은 「소속명」으로 해 주세요. 대회 본부가 입금을 확인하면 접수 내역에 「입금 확인」이 표시됩니다.</span></div>
+      <button class="btn gold" type="button" data-a="submit" data-c="${c.id}" ${cart.length?'':'disabled'}>${cart.length}건 접수하기</button>
+      ${mine.length?`<span class="small mute">이 대회에 이미 접수한 ${mine.length}건은 <a href="#entries">내 접수 내역</a>에 있습니다.</span>`:''}
+    </aside></div></div>`;}
+
+/* ---------- 내 접수 내역 ---------- */
+const STS={wait:['wait','입금 확인 전'],paid:['paid','입금 확인'],cancel:['cancel','취소함']};
+function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id);
+  const byComp=D().comps.filter(c=>E.some(e=>e.compId===c.id));
+  return `<div class="stack"><div><span class="eyebrow">My Entries</span><h1>내 접수 내역</h1></div>
+    ${byComp.length?byComp.map(c=>{const L=E.filter(e=>e.compId===c.id),live=L.filter(e=>e.status!=='cancel'),open=compState(c)[0]!=='closed';
+      return `<section class="card stack"><div class="row between"><div><h3>${esc(c.name)}</h3><span class="small mute">${fmtDate(c.date)} · 마감 ${fmtDate(c.deadline)}</span></div>
+        <div class="row">${open?`<a class="btn sm" href="#enter-${c.id}">선수 더 접수</a>`:''}<span class="num" style="font-size:20px;color:var(--gold2)">${won(live.reduce((s,e)=>s+e.fee,0))}</span></div></div>
+        <div class="tablewrap"><table><tr><th>종목</th><th>선수</th><th>부문</th><th>참가비</th><th>상태</th><th></th></tr>
+        ${L.map(e=>{const l=entryLabel(e),[k,t]=STS[e.status];return `<tr><td><span class="chip ${SPORTS[e.sport].c}">${SPORTS[e.sport].n}</span></td><td><b>${esc(l.who)}</b></td><td class="small">${esc(l.what)}</td><td class="num">${won(e.fee)}</td><td><span class="st ${k}">${t}</span></td>
+          <td>${open&&e.status==='wait'?`<button class="btn sm danger" type="button" data-a="cancelEntry" data-id="${e.id}">${UI.cArm===e.id?'한 번 더 누르면 취소':'접수 취소'}</button>`:''}</td></tr>`;}).join('')}</table></div>
+        <span class="small mute">입금 계좌: ${esc(c.account)}</span></section>`;}).join(''):'<div class="empty">아직 접수한 대회가 없습니다. <a href="#home">대회 일정</a>에서 대회를 골라 주세요.</div>'}</div>`;}
+
+/* ---------- 관리자 ---------- */
+function vAdmin(){const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.adminComp))UI.adminComp=C[0]&&C[0].id;
+  const c=C.find(x=>x.id===UI.adminComp);
+  const E=c?D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'):[];
+  const coaches=new Set(E.map(e=>e.coachId)).size,paid=E.filter(e=>e.status==='paid');
+  const sp=c&&c.sports.includes(UI.adminSport)?UI.adminSport:(c?c.sports[0]:'poomsae');
+  const ES=E.filter(e=>e.sport===sp);
+  return `<div class="stack"><div class="row between"><div><span class="eyebrow">Admin</span><h1>대회 관리 · 명단 내보내기</h1></div><button class="btn" type="button" data-a="newComp">+ 새 대회 만들기</button></div>
+    ${UI.newComp?compForm():''}
+    <div class="row"><label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label></div>
+    ${c?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>
+    <h2 style="margin-top:8px">대회 앱으로 보내기</h2>
+    <p class="small mute" style="margin:0">각 대회 앱의 「선수 등록 → 엑셀 · PDF 파일 고르기」에 그대로 올리는 명단 파일입니다. 올리면 부별·종목·체급대로 부문이 자동으로 만들어집니다. Supabase를 연결하면 대회 앱에서 「접수 명단 가져오기」 한 번으로 바로 불러오게 됩니다.</p>
+    <div class="exp">${c.sports.map(s=>{const n=E.filter(e=>e.sport===s).length;return `<div class="card"><span class="chip ${SPORTS[s].c}" style="align-self:flex-start">${SPORTS[s].n} 대회 앱</span><span class="n num">${n}<span class="small mute"> 건</span></span>
+      <button class="btn gold" type="button" data-a="export" data-s="${s}" ${n?'':'disabled'}>${SPORTS[s].n} 명단 엑셀 내려받기</button></div>`;}).join('')}</div>
+    <div class="row between" style="margin-top:8px"><h2>접수 현황</h2><div class="tabs">${c.sports.map(s=>`<button type="button" class="${s===sp?'on':''}" data-a="adTab" data-s="${s}">${SPORTS[s].n}</button>`).join('')}</div></div>
+    ${ES.length?`<div class="tablewrap"><table><tr><th>접수일</th><th>지도자 · 소속</th><th>선수</th><th>부문</th><th>참가비</th><th>입금</th></tr>
+      ${ES.map(e=>{const l=entryLabel(e),co=D().users.find(u=>u.id===e.coachId)||{};return `<tr><td class="num small">${e.at.slice(0,10)}</td><td>${esc(co.name||'')}<div class="small mute">${esc(co.org||'')} · ${esc(co.phone||'')}</div></td><td><b>${esc(l.who)}</b></td><td class="small">${esc(l.what)}</td><td class="num">${won(e.fee)}</td>
+        <td><button class="btn sm ${e.status==='paid'?'':'gold'}" type="button" data-a="paid" data-id="${e.id}">${e.status==='paid'?'입금 확인됨 ✓':'입금 확인'}</button></td></tr>`;}).join('')}</table></div>`:`<div class="empty">아직 ${SPORTS[sp].n} 접수가 없습니다.</div>`}`:'<div class="empty">대회가 없습니다. 「새 대회 만들기」를 눌러 주세요.</div>'}</div>`;}
+function compForm(){return `<form class="form" id="fComp"><div class="row between"><h3>새 대회 만들기</h3><button class="btn sm ghost" type="button" data-a="newCompClose">닫기</button></div>
+  <div class="grid2"><label class="f"><span>대회 이름 <i>*</i></span><input type="text" id="cName" required></label><label class="f"><span>장소 <i>*</i></span><input type="text" id="cPlace" required></label>
+    <label class="f"><span>대회일 <i>*</i></span><input type="date" id="cDate" required></label><label class="f"><span>접수 마감일 <i>*</i></span><input type="date" id="cDead" required></label></div>
+  <div class="grid3">${Object.entries(SPORTS).map(([k,s])=>`<label class="f"><span><input type="checkbox" id="cS_${k}" checked style="accent-color:var(--gold)"> ${s.n} 참가비</span><input type="number" id="cF_${k}" value="${k==='kyorugi'?40000:30000}" step="1000"></label>`).join('')}</div>
+  <label class="f"><span>입금 계좌</span><input type="text" id="cAcct" placeholder="은행 계좌번호 (예금주)"></label>
+  <label class="f"><span>안내 문구</span><textarea id="cNote" rows="2"></textarea></label>
+  ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}<div class="row"><button class="btn gold" type="submit">대회 만들기</button></div></form>`;}
+
+/* ---------- 대회 앱 불러오기 형식으로 엑셀 만들기 ---------- */
+function exportRows(c,sport){
+  const E=D().entries.filter(e=>e.compId===c.id&&e.sport===sport&&e.status!=='cancel');
+  const ath=id=>D().athletes.find(a=>a.id===id)||{},co=e=>D().users.find(u=>u.id===e.coachId)||{};
+  if(sport==='poomsae'){const H=['번호','이름','소속','지도자','부별','학년','성별','공인/자유','종목','팀원'];
+    return [H,...E.map((e,i)=>{const A=e.athleteIds.map(ath),f=e.f,g=new Set(A.map(a=>a.gender));const team=A.length>1;
+      return [i+1,team?A.map(a=>a.name).join(','):A[0].name,A[0].org||co(e).org,co(e).name,f.div,f.grade||'',g.size>1?'혼성':A[0].gender,f.type,f.kind,team?A.map(a=>a.name).join(','):''];})];}
+  if(sport==='kyorugi'){const H=['번호','이름','소속','지도자','부별','학년','성별','체급'];
+    return [H,...E.map((e,i)=>{const a=ath(e.athleteIds[0]);return [i+1,a.name,a.org||co(e).org,co(e).name,e.f.div,e.f.grade||'',a.gender,e.f.weight];})];}
+  const H=['이름','종목','성별','부별','소속','지도자','체중(kg)','신장(cm)','팀원','부문'];
+  return [H,...E.map(e=>{const A=e.athleteIds.map(ath),f=e.f,team=f.ev==='기술격파 단체전';
+    return [team?`${A[0].org||co(e).org} 팀`:A[0].name,f.ev,team?'':A[0].gender,f.div,A[0].org||co(e).org,co(e).name,f.weight||'',f.height||'',team?A.map(a=>a.name).join(','):'',''];})];
+}
+async function exportXlsx(c,sport){
+  if(!window.XLSX){toast('엑셀 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요');return;}
+  const rows=exportRows(c,sport);const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=rows[0].map(h=>({wch:Math.max(8,String(h).length*2+4)}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'선수명단');
+  const data=new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'}));
+  const name=`${c.name}_${SPORTS[sport].n}_접수명단.xlsx`.replace(/[\\/:*?"<>|]/g,'');
+  try{if(window.claude&&window.claude.use){const dl=await window.claude.use('downloads');if(dl){await dl.save({filename:name,data});toast(`${SPORTS[sport].n} 명단 ${rows.length-1}건을 내려받았습니다`);return;}}}catch(e){if(e&&e.code==='declined')return;}
+  try{const u=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},3000);toast('명단 파일을 내려받았습니다');}
+  catch(e){toast('이 화면에서는 파일을 내려받을 수 없습니다');}
+}
+
+/* ================= 동작 (Supabase에 저장) ================= */
+let BUSY=false;
+async function run(fn){if(BUSY)return;BUSY=true;document.body.style.cursor='progress';try{await fn();}catch(e){toast(msgOf(e));}finally{BUSY=false;document.body.style.cursor='';}}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,S=D();
+  if(a==='logout')run(async()=>{await sb.auth.signOut();UI.cart=[];go('home');toast('로그아웃했습니다');});
+  else if(a==='athEdit'){UI.editAth=b.dataset.id;UI.err='';render();window.scrollTo(0,0);}
+  else if(a==='athCancel'){UI.editAth=null;render();}
+  else if(a==='athDel'){const id=b.dataset.id;if(UI.delArm!==id){UI.delArm=id;render();setTimeout(()=>{UI.delArm=null;},4000);return;}
+    if(S.entries.some(x=>x.athleteIds.includes(id)&&x.status!=='cancel')){UI.delArm=null;render();toast('접수 내역이 있는 선수는 지울 수 없습니다. 먼저 접수를 취소해 주세요');return;}
+    run(async()=>{await q(sb.from('athletes').delete().eq('id',id));UI.delArm=null;await reload();toast('선수를 지웠습니다');});}
+  else if(a==='tab'){UI.tab=b.dataset.s;UI.pick=null;UI.form=null;UI.err='';render();}
+  else if(a==='pick'){UI.pick=b.dataset.id;UI.form=null;UI.err='';render();}
+  else if(a==='pickClose'){UI.pick=null;UI.form=null;render();}
+  else if(a==='addEntry'){
+    const c=S.comps.find(x=>x.id===route().slice(6)),ath=S.athletes.find(x=>x.id===UI.pick),f=UI.form,sp=UI.tab;
+    const ids=[ath.id,...(f.mates||[])];
+    if(sp==='poomsae'){const need=f.kind==='복식'?2:f.kind==='단체'?3:1;if(ids.length!==need){UI.err=`${f.kind}은(는) ${need}명입니다. 팀원을 ${need-1}명 골라 주세요`;render();return;}}
+    if(sp==='kyorugi'&&!f.weight){UI.err='체급을 골라 주세요';render();return;}
+    if(sp==='gyeokpa'){const ev=GP_EV.find(x=>x.n===f.ev);if(ev.k==='power'&&!f.weight){UI.err='위력격파는 체중을 적어 주세요';render();return;}if(ev.k==='height'&&!f.height){UI.err='높이 뛰어차기는 신장을 적어 주세요';render();return;}
+      if(ev.k==='team'&&(ids.length<5||ids.length>10)){UI.err='단체전은 5~10명입니다';render();return;}}
+    const clean={...f};delete clean.mates;
+    UI.cart=[...(UI.cart||[]),{id:uid('e'),compId:c.id,sport:sp,athleteIds:ids,f:clean,fee:c.fee[sp]}];
+    UI.pick=null;UI.form=null;UI.err='';render();toast(`${ath.name} 선수를 접수 목록에 넣었습니다`);}
+  else if(a==='cartDel'){const c=route().slice(6);const L=(UI.cart||[]).filter(x=>x.compId===c);const x=L[Number(b.dataset.i)];UI.cart=UI.cart.filter(y=>y!==x);render();}
+  else if(a==='submit'){const c=b.dataset.c;const L=(UI.cart||[]).filter(x=>x.compId===c);if(!L.length)return;
+    run(async()=>{await q(sb.from('entries').insert(L.map(x=>({comp_id:x.compId,sport:x.sport,athlete_ids:x.athleteIds,f:x.f,fee:x.fee}))));
+      UI.cart=UI.cart.filter(x=>x.compId!==c);await reload();go('entries');toast(`${L.length}건을 접수했습니다. 참가비를 입금해 주세요`);});}
+  else if(a==='cancelEntry'){const id=b.dataset.id;if(UI.cArm!==id){UI.cArm=id;render();setTimeout(()=>{UI.cArm=null;},4000);return;}
+    run(async()=>{await q(sb.from('entries').update({status:'cancel'}).eq('id',id));UI.cArm=null;await reload();toast('접수를 취소했습니다');});}
+  else if(a==='newComp'){UI.newComp=true;UI.err='';render();}
+  else if(a==='newCompClose'){UI.newComp=false;render();}
+  else if(a==='adTab'){UI.adminSport=b.dataset.s;render();}
+  else if(a==='paid'){const x=S.entries.find(y=>y.id===b.dataset.id);if(x)run(async()=>{await q(sb.from('entries').update({status:x.status==='paid'?'wait':'paid'}).eq('id',x.id));await reload();});}
+  else if(a==='export'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)exportXlsx(c,b.dataset.s);}
+});
+document.addEventListener('change',e=>{
+  const t=e.target,on=t.dataset&&t.dataset.on;
+  if(on==='ef'&&t.type==='number'){UI.form={...UI.form,[t.dataset.k]:t.value};return;}
+  if(on==='ef'){UI.form={...UI.form,[t.dataset.k]:t.value};if(t.dataset.k==='div'&&UI.tab==='kyorugi')UI.form.weight='';
+    if(t.dataset.k==='ev'){const ev=GP_EV.find(x=>x.n===t.value);if((ev.k==='power'||ev.k==='team')&&!['대학부',...GP_LV].includes(UI.form.div))UI.form.div='대학부';}
+    UI.err='';render();}
+  else if(on==='mate'){const s=new Set(UI.form.mates||[]);t.checked?s.add(t.value):s.delete(t.value);UI.form={...UI.form,mates:[...s]};}
+  else if(on==='adComp'){UI.adminComp=t.value;render();}
+  else if(on==='birth'){const g=document.getElementById('aGuard'),s=document.getElementById('aSchool'),ag=age(t.value);if(g)g.hidden=!(ag!==null&&ag<14);if(s)s.textContent=t.value?'학년 추정: '+schoolTxt(t.value):'';}
+});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.on==='ef'&&t.type==='number'){UI.form={...UI.form,[t.dataset.k]:t.value};}});
+function formErr(f,m){let el=f.querySelector('.err');if(!el){el=document.createElement('span');el.className='err';const btn=f.querySelector('button[type=submit]');(btn&&btn.closest('.row')||btn||f).before(el);}el.textContent=m;el.setAttribute('role','alert');}
+document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=>(document.getElementById(id)||{}).value||'';
+  if(f.id==='fLogin')run(async()=>{const {data,error}=await sb.auth.signInWithPassword({email:v('lEmail').trim(),password:v('lPw')});
+    if(error){formErr(f,msgOf(error));return;}await reload();const u=me();go(u&&u.role==='admin'?'admin':'home');toast(`${u?u.name:''}님, 반갑습니다`);});
+  else if(f.id==='fSignup')run(async()=>{
+    if(v('sPw').length<6){formErr(f,'비밀번호는 6자 이상으로 해 주세요');return;}
+    const {data,error}=await sb.auth.signUp({email:v('sEmail').trim(),password:v('sPw'),options:{data:{name:v('sName').trim(),org:v('sOrg').trim(),phone:v('sPhone').trim(),license:v('sLic').trim()},emailRedirectTo:location.origin+location.pathname}});
+    if(error){formErr(f,msgOf(error));return;}
+    if(!data.session){f.innerHTML=`<span class="eyebrow">Check your email</span><h2>가입 확인 메일을 보냈습니다</h2><p class="mute">${esc(v('sEmail'))} 메일함에서 「Confirm your signup」 메일의 링크를 누르면 가입이 끝납니다. 그다음 로그인해 주세요.</p><a class="btn gold" href="#login">로그인 화면으로</a>`;return;}
+    await reload();go('athletes');toast('가입했습니다. 이제 선수를 등록해 주세요');});
+  else if(f.id==='fAth'){const birth=v('aBirth'),ag=age(birth),guard=document.getElementById('aGuardOk');
+    if(ag!==null&&ag<14&&!(guard&&guard.checked)){formErr(f,'만 14세 미만 선수는 보호자 동의를 확인해 주세요');return;}
+    const data={name:v('aName').trim(),gender:v('aGender'),birth:birth||null,org:v('aOrg').trim()||me().org,weight:Number(v('aWeight'))||null,height:Number(v('aHeight'))||null,guardian:!!(guard&&guard.checked&&ag<14)};
+    run(async()=>{if(UI.editAth){await q(sb.from('athletes').update(data).eq('id',UI.editAth));toast('선수 정보를 고쳤습니다');}
+      else{await q(sb.from('athletes').insert(data));toast(`${data.name} 선수를 등록했습니다`);}
+      UI.editAth=null;UI.err='';await reload();});}
+  else if(f.id==='fComp'){const sports=Object.keys(SPORTS).filter(k=>document.getElementById('cS_'+k).checked);
+    if(!sports.length){formErr(f,'종목을 하나 이상 골라 주세요');return;}
+    if(v('cDead')>v('cDate')){formErr(f,'접수 마감일은 대회일보다 앞이어야 합니다');return;}
+    const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:Object.fromEntries(sports.map(k=>[k,Number(v('cF_'+k))||0])),account:v('cAcct').trim()||'입금 계좌를 적어 주세요',host:'KICKSTART UP',note:v('cNote').trim()};
+    run(async()=>{const r=await q(sb.from('comps').insert(c).select());UI.newComp=false;UI.adminComp=r&&r[0]&&r[0].id;UI.err='';await reload();toast('대회를 만들었습니다. 「대회 일정」에 바로 보입니다');});}
+});
+render();reload();
+</script>
+</body>
+</html>
