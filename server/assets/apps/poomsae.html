@@ -4349,7 +4349,20 @@ later();
    「💾 이 장면 저장」을 누른 구간(앞뒤 5초)만 노트북 「판독영상」 폴더에 저장합니다. 운영석 화면에서만 나타납니다. */
 (function(){
 const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
-const FPS=20,BUF_SEC=60,W=960,QUAL=0.72,SAVE_HALF=5;
+const FPS=20,W=960,QUAL=0.72,SAVE_HALF=5;
+/* 종목별로 담아 두는 시간 (경기 시간 + 앞뒤 여유)
+   격파: 40초 종목 1분 · 종합격파(1분) 1분 20초 · 단체전(5분) 3분
+   품새: 1품새 + 휴식 + 2품새를 한 번에 → 3분 30초
+   겨루기: 한 회전(2분) + 여유 → 2분 30초 */
+function bufSec(){
+  const app=(window.KS_FIELD&&KS_FIELD.app)||(window.KS_HOST&&KS_HOST.app)||'';
+  if(app==='poomsae')return 210;
+  if(app==='kyorugi')return 150;
+  try{const cur=g('curOf')();const ev=cur&&cur.ev;if(ev==='comp')return 80;if(ev==='team')return 180;}catch(e){}
+  return 60;
+}
+/* 오래 담는 종목은 초당 장수·화질을 조금 낮춰 노트북 메모리를 아낌 */
+const fpsNow=()=>bufSec()>100?15:FPS,qualNow=()=>bufSec()>100?0.64:QUAL;
 const LS={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}}};
 const F=window.KS_FIELD||null,HOST=window.KS_HOST||null;
 const COURT=(F&&F.court)||(HOST&&HOST.court)||'';
@@ -4384,10 +4397,12 @@ css.textContent=`
 #ksrpov .ctl button{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#F4EFE4;border-radius:12px;padding:12px 16px;font-weight:800;font-size:17px;cursor:pointer;min-width:64px}
 #ksrpov .ctl button.on{background:linear-gradient(180deg,#EBD5A3,#B8904E);color:#1A1306;border-color:#A07E43}
 #ksrpov .ctl .gap{width:14px}
+#ksrpov .ctl.jmp{padding-top:0}#ksrpov .ctl .lbl{font-size:13px;color:#A9AFB9;font-weight:800}
 #ksrpov .note{font-size:13px;color:#A9AFB9;text-align:center;padding-bottom:6px}`;
 (document.head||document.documentElement).appendChild(css);
 const box=document.createElement('div');box.id='ksrp';document.body.appendChild(box);
 
+const secTxt=s=>s>=60?(Math.floor(s/60)+'분'+(s%60?' '+(s%60)+'초':'')):s+'초';
 function camName(d,i){return d.label||('카메라 '+(i+1));}
 function drawBox(){
   if(!isOperator()){box.style.display='none';return;}
@@ -4399,13 +4414,13 @@ function drawBox(){
   }
   if(!box.querySelector('video')){
     const cur=LS.get('ks_rp_cam')||'';
-    box.innerHTML=`<div class="mini"><div class="vw"></div><div class="bar"><span class="rec"><i></i>녹화 중 · 최근 ${BUF_SEC}초</span><button class="b go" data-rp="open">⏪ 판독</button><button class="b" data-rp="off" title="카메라 끄기">✕</button></div>
+    box.innerHTML=`<div class="mini"><div class="vw"></div><div class="bar"><span class="rec"><i></i>녹화 중 · 최근 ${secTxt(bufSec())}</span><button class="b go" data-rp="open">⏪ 판독</button><button class="b" data-rp="off" title="카메라 끄기">✕</button></div>
       ${devices.length>1?`<select data-rp="cam">${devices.map((d,i)=>`<option value="${d.deviceId}" ${d.deviceId===cur?'selected':''}>${camName(d,i)}</option>`).join('')}</select>`:''}</div>`;
     box.querySelector('.vw').appendChild(video);video.play().catch(()=>{});
   }
 }
 /* 앱 화면이 다시 그려져도 판독 칸은 그대로 */
-setInterval(drawBox,1000);
+setInterval(()=>{drawBox();const r=box.querySelector('.rec');if(r&&stream){const x=`녹화 중 · 최근 ${secTxt(bufSec())}`;if(!r.textContent.endsWith(x)){r.innerHTML='<i></i>'+x;}}},1000);
 
 /* ---------- 카메라 켜기 · 담아 두기 ---------- */
 async function start(id){
@@ -4446,18 +4461,50 @@ function grab(){
   const vw=video.videoWidth,vh=video.videoHeight;if(!vw||!vh)return;
   const w=Math.min(W,vw),h=Math.round(vh*w/vw);
   if(cap.width!==w||cap.height!==h){cap.width=w;cap.height=h;}
+  const t=performance.now();if(frames.length&&t-frames[frames.length-1].t<1000/fpsNow()-8)return;
   busy=true;
   try{ctx.drawImage(video,0,0,w,h);}catch(e){busy=false;return;}
-  const t=performance.now(),wall=Date.now();
+  const wall=Date.now(),B=bufSec();
   cap.toBlob(b=>{busy=false;if(!b)return;frames.push({t,wall,b});
-    const cut=t-BUF_SEC*1000;let i=0;while(i<frames.length&&frames[i].t<cut)i++;if(i)frames.splice(0,i);},'image/jpeg',QUAL);
+    const cut=t-B*1000;let i=0;while(i<frames.length&&frames[i].t<cut)i++;if(i)frames.splice(0,i);
+    while(marks.length&&marks[0].t<cut-5000)marks.shift();},'image/jpeg',qualNow());
 }
+
+/* ---------- 경기 시작·그만 표시 (판독 화면의 바로 가기 단추) ---------- */
+let marks=[],wasRun=false,lastCall='',kStart='',kEnded=true;
+function appRun(){
+  const app=(window.KS_FIELD&&KS_FIELD.app)||(window.KS_HOST&&KS_HOST.app)||'';
+  try{
+    if(app==='kyorugi'){const L=g('live')();if(!L)return {run:false,kyo:true};const t=L.timer||{};
+      let left=1;try{left=g('remain')(t);}catch(e){}
+      return {kyo:true,run:!!t.running,key:(L.mid||L.matchId||'')+'|'+L.round,label:(g('roundLabel')(L.round)||'회전')+' 시작',
+        ended:L.phase==='rest'||L.phase==='decide'||!!L.result||(!t.running&&left<=0)};}
+    const st=g('ST')(),cur=g('curOf')(),t=st&&st.timer||{};
+    if(app==='poomsae'){let nm='';try{nm=g('pnameOfCall')(cur)||'';}catch(e){}return {run:!!t.running,call:cur&&cur.callId||'',label:nm,poom:true};}
+    return {run:!!t.running,call:cur&&cur.callId||'',label:cur?((g('EV')[cur.ev]||{}).label||'경기')+' 시작':'경기 시작'};
+  }catch(e){return {run:false};}
+}
+setInterval(()=>{
+  if(!stream)return;const r=appRun(),t=performance.now(),wall=Date.now();
+  if(r.kyo){/* 겨루기: 「갈려」로 잠깐 멈춰도 같은 회전이면 시작 표시를 다시 남기지 않음 */
+    if(r.run&&r.key!==kStart){marks.push({t,wall,kind:'start',label:r.label});kStart=r.key;kEnded=false;}
+    if(kStart&&!kEnded&&r.ended){marks.push({t,wall,kind:'stop'});kEnded=true;}
+    return;}
+  if(r.run&&!wasRun){
+    let label=r.label,n=0;
+    if(r.poom){/* 1품새를 끝내고 3분 20초 안에 다시 시작하면 2품새 */
+      const last=marks.filter(m=>m.kind==='start').pop();n=last&&last.n===1&&t-last.t<200000?2:1;
+      label=`${n}품새${r.label?' · '+r.label:''}`;}
+    marks.push({t,wall,kind:'start',label,n});lastCall=r.call;}
+  if(!r.run&&wasRun)marks.push({t,wall,kind:'stop'});
+  wasRun=!!r.run;
+},200);
 
 /* ---------- 판독 화면 ---------- */
 let cv=null,cctx=null,shown=-1,drawing=false;
 function openOv(){
   if(!frames.length){alert('아직 담긴 장면이 없습니다. 잠시 뒤 다시 눌러 주세요.');return;}
-  snap=frames.slice();pos=Math.max(0,snap.length-1-3*FPS);playing=false;speed=0.5;
+  snap=frames.slice();pos=idxAt(snap[snap.length-1].t-3000);playing=false;speed=0.5;
   ov=document.createElement('div');ov.id='ksrpov';ov.setAttribute('data-noi18n','');
   ov.innerHTML=`<div class="top"><span class="tag">영상 판독</span><b>${COURT?COURT+'코트 · ':''}${APPNAME}</b><span class="sp"></span><span class="t" data-rt></span></div>
     <canvas></canvas>
@@ -4467,12 +4514,30 @@ function openOv(){
       <button data-rv="play" style="min-width:110px">▶ 재생</button>
       <button data-rv="f1">한 장 ▶</button><button data-rv="3">3초 ⏩</button><span class="gap"></span>
       ${[0.25,0.5,1].map(s=>`<button data-rs="${s}">${s===1?'보통':s===0.5?'1/2 느리게':'1/4 느리게'}</button>`).join('')}<span class="gap"></span>
-      <button data-rv="save">💾 이 장면 저장</button><button data-rv="close">닫기 (실시간으로)</button></div>
-      <div class="note">스페이스: 재생/멈춤 · ←/→: 한 장씩 · Esc: 닫기 · 판독 중에도 카메라는 계속 녹화합니다</div></div>`;
+      <button data-rv="save">💾 이 장면 저장</button><button data-rv="seg">💾 구간 전체 저장</button><button data-rv="close">닫기 (실시간으로)</button></div>
+      <div class="ctl jmp">${jumpBtns()}</div>
+      <div class="note">스페이스: 재생/멈춤 · ←/→: 한 장씩 · Esc: 닫기 · 최근 ${secTxt(bufSec())}을 담아 둡니다 · 판독 중에도 카메라는 계속 녹화합니다</div></div>`;
   document.body.appendChild(ov);
   cv=ov.querySelector('canvas');cctx=cv.getContext('2d');shown=-1;
   try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}
   updUi();show(pos);
+}
+/* 바로 가기: 경기(품새·회전) 시작 지점, 30초 전, 처음 */
+let SM=[];
+function jumpBtns(){
+  if(!snap)return '';const t0=snap[0].t;
+  SM=marks.filter(m=>m.kind==='start'&&m.t>=t0-1000).slice(-3);
+  return `<span class="lbl">바로 가기</span>${SM.map((m,i)=>`<button data-rv="m${i}">▶ ${esc(m.label||'시작')}</button>`).join('')}
+    <button data-rv="b30">⏪ 30초 전</button><button data-rv="first">⏮ 맨 처음</button>`;
+}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function idxAt(t){if(!snap)return 0;let i=0;while(i<snap.length-1&&snap[i].t<t)i++;return i;}
+/* 지금 보는 장면이 들어 있는 구간: 시작 표시(1초 앞) ~ 그만 표시(2초 뒤) */
+function segOf(p){
+  const t=snap[p].t;const st=marks.filter(m=>m.kind==='start'&&m.t<=t+1500).pop();
+  const a=st?Math.max(snap[0].t,st.t-1000):snap[0].t;
+  const en=marks.find(m=>m.kind==='stop'&&m.t>(st?st.t:a));const b=en?Math.min(snap[snap.length-1].t,en.t+2000):snap[snap.length-1].t;
+  return [idxAt(a),Math.max(idxAt(a),idxAt(b))];
 }
 function closeOv(){
   playing=false;clearTimeout(playT);
@@ -4498,6 +4563,7 @@ function updUi(){
   ov.querySelectorAll('[data-rs]').forEach(b=>b.classList.toggle('on',Number(b.dataset.rs)===speed));
   const p=ov.querySelector('[data-rv=play]');if(p){p.textContent=playing?'⏸ 멈춤':'▶ 재생';p.classList.toggle('on',playing);}
   const s=ov.querySelector('[data-rv=save]');if(s){s.textContent=saving?'저장 중…':'💾 이 장면 저장';s.disabled=saving;}
+  const s2=ov.querySelector('[data-rv=seg]');if(s2){if(!saving)s2.textContent='💾 구간 전체 저장';s2.disabled=saving;}
 }
 function tick(){
   if(!playing||!snap)return;
@@ -4511,30 +4577,35 @@ function act(v){
   if(v==='play'){playing=!playing;if(playing){if(pos>=snap.length-1)pos=0;tick();}else clearTimeout(playT);updUi();return;}
   if(v==='close'){closeOv();return;}
   if(v==='save'){saveClip();return;}
+  if(v==='seg'){const [a,b]=segOf(pos);saveClip(a,b);return;}
+  if(/^m\d$/.test(v)){const m=SM[Number(v.slice(1))];if(m){playing=false;clearTimeout(playT);updUi();show(idxAt(m.t-1000));}return;}
+  if(v==='b30'){playing=false;clearTimeout(playT);updUi();show(idxAt(snap[snap.length-1].t-30000));return;}
+  if(v==='first'){playing=false;clearTimeout(playT);updUi();show(0);return;}
   playing=false;clearTimeout(playT);updUi();
   if(v==='f-1')show(pos-1);else if(v==='f1')show(pos+1);else seekSec(Number(v));
 }
 
 /* ---------- 이 장면 저장: 앞뒤 5초를 영상 파일(webm)로 ---------- */
-async function saveClip(){
-  if(saving||!snap)return;
+async function saveClip(A,B){
+  if(saving||!snap)return;const S0=snap;
   if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){alert('이 브라우저에서는 영상 저장을 할 수 없습니다. 크롬이나 엣지를 써 주세요.');return;}
   saving=true;updUi();
-  const c=snap[pos].t;let a=pos,b=pos;
-  while(a>0&&snap[a-1].t>=c-SAVE_HALF*1000)a--;while(b<snap.length-1&&snap[b+1].t<=c+SAVE_HALF*1000)b++;
-  const part=snap.slice(a,b+1);
+  let a=pos,b=pos;
+  if(A!=null){a=A;b=B;}else{const c=snap[pos].t;while(a>0&&snap[a-1].t>=c-SAVE_HALF*1000)a--;while(b<snap.length-1&&snap[b+1].t<=c+SAVE_HALF*1000)b++;}
+  const part=snap.slice(a,b+1),wall0=snap[pos].wall,segSave=A!=null;
+  if(segSave)note(`구간 ${Math.round((part[part.length-1].t-part[0].t)/1000)}초를 저장합니다. 영상 길이만큼 시간이 걸리며, 판독 화면을 닫아도 계속 저장합니다`);
   try{
     const first=await createImageBitmap(part[0].b);const ec=document.createElement('canvas');ec.width=first.width;ec.height=first.height;const ex=ec.getContext('2d');ex.drawImage(first,0,0);first.close&&first.close();
     const st=ec.captureStream(FPS);const mt=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t))||'';
     const rec=new MediaRecorder(st,mt?{mimeType:mt,videoBitsPerSecond:4e6}:{});const chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
     const done=new Promise(r=>rec.onstop=r);rec.start(500);
     for(let i=0;i<part.length;i++){const bm=await createImageBitmap(part[i].b);ex.drawImage(bm,0,0);bm.close&&bm.close();
-      const s=ov&&ov.querySelector('[data-rv=save]');if(s)s.textContent=`저장 중… ${Math.round(i/part.length*100)}%`;
+      const s=ov&&ov.querySelector(segSave?'[data-rv=seg]':'[data-rv=save]');if(s)s.textContent=`저장 중… ${Math.round(i/part.length*100)}%`;
       const dt=i<part.length-1?part[i+1].t-part[i].t:1000/FPS;await new Promise(r=>setTimeout(r,dt));}
     rec.stop();await done;st.getTracks().forEach(t=>t.stop());
     const blob=new Blob(chunks,{type:'video/webm'});
-    const d=new Date(snap[pos].wall),p2=n=>String(n).padStart(2,'0');
-    const name=`판독_${COURT?COURT+'코트_':''}${APPNAME}_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}.webm`;
+    const d=new Date(wall0),p2=n=>String(n).padStart(2,'0');
+    const name=`판독${segSave?'구간':''}_${COURT?COURT+'코트_':''}${APPNAME}_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}.webm`;
     await saveBlob(blob,name);
   }catch(e){alert('영상을 저장하지 못했습니다: '+(e&&e.message||e));}
   saving=false;updUi();
@@ -4571,7 +4642,7 @@ document.addEventListener('keydown',e=>{
 (()=>{let n=0;const t=setInterval(()=>{n++;if(stream||n>20||LS.get('ks_rp_on')!=='1'||!F){clearInterval(t);return;}
   if(isOperator()){clearInterval(t);start(LS.get('ks_rp_cam')||'');}},700);})();
 drawBox();
-window.KS_REPLAY={start,stop,open:openOv,close:closeOv,frames:()=>frames.length,act,state:()=>({on:!!stream,frames:frames.length,ov:!!ov,pos,saving}),video:()=>video,stream:()=>stream,box:()=>box};
+window.KS_REPLAY={start,stop,open:openOv,close:closeOv,frames:()=>frames.length,act,state:()=>({on:!!stream,frames:frames.length,ov:!!ov,pos,saving}),video:()=>video,stream:()=>stream,box:()=>box,bufSec,marks:()=>marks.slice(),seg:()=>snap?segOf(pos):null,pos:()=>pos,snapLen:()=>snap?snap.length:0,saveSeg:()=>{if(snap){const [a,b]=segOf(pos);return saveClip(a,b);}}};
 })();
 </script><script>/* ===== 구령 음성: 인터넷 없이도 나오게 (품새·격파 공통, 겨루기는 녹음 신호음이라 그대로) =====
    원인: 기기 음성 중 「Google 한국의」「Microsoft … Online」은 인터넷으로 만드는 목소리라 현장 모드(인터넷 없음)에서 소리가 안 납니다.
