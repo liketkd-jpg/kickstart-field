@@ -155,6 +155,21 @@ main{padding-block:28px 64px}
 @media (max-width:760px){.exp{grid-template-columns:minmax(0,1fr)}}
 .exp .card{display:flex;flex-direction:column;gap:10px}
 .exp .card .n{font-family:var(--f-num);font-size:34px;line-height:1;color:var(--text)}
+input[type=file]{width:100%;background:var(--ink);border:1px dashed var(--line2);border-radius:10px;padding:8px;color:var(--mute);font-size:13px}
+input[type=file]::file-selector-button{font:inherit;font-weight:800;border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:8px;padding:6px 12px;margin-right:10px;cursor:pointer}
+.flash{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#16200F;border:1px solid #2F5A2A;color:#D8F5C8;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.al{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-left:4px solid var(--gold3);background:var(--panel);border-radius:12px;padding:12px 14px}
+.al.warn{border-left-color:var(--warn)} .al.hot{border-left-color:var(--bad);background:#1E1214} .al.info{border-left-color:var(--blue)}
+.al>div{min-width:0} .al .btn{flex:none}
+@media (max-width:560px){.al{flex-direction:column;align-items:stretch}}
+.notice{border:1px solid #25407A;background:#0F1626;border-radius:12px;padding:12px 14px;white-space:pre-wrap}
+.notice b{display:block;color:#9DBBFF;font-size:13px;margin-bottom:2px}
+.atabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.atabs button{background:none;border:none;border-bottom:3px solid transparent;padding:10px 14px;font-weight:800;color:var(--mute);cursor:pointer;white-space:nowrap}
+.atabs button.on{color:var(--gold2);border-bottom-color:var(--gold)}
+tr.tot td{background:var(--panel2);font-weight:700}
+.danger-zone{border-color:#5A2A30}
 footer{border-top:1px solid var(--line);color:var(--dim);font-size:12.5px}
 footer .wrap{padding-block:18px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -196,14 +211,15 @@ const M={comps:[],athletes:[],entries:[],users:[],profile:null,ready:false,loadE
 const D=()=>M;
 const me=()=>M.profile;
 const uid=p=>p+Math.random().toString(36).slice(2,9);
-const mapComp=c=>({id:c.id,name:c.name,date:c.date,place:c.place,deadline:c.deadline,sports:c.sports||[],fee:c.fee||{},account:c.account,host:c.host,note:c.note});
+const mapComp=c=>({id:c.id,name:c.name,date:c.date,place:c.place,deadline:c.deadline,sports:c.sports||[],fee:c.fee||{},account:c.account,host:c.host,note:c.note,notice:c.notice||'',docUrl:c.doc_url||'',docName:c.doc_name||'',contact:c.contact||''});
 const mapAth=a=>({id:a.id,coachId:a.coach_id,name:a.name,gender:a.gender,birth:a.birth||'',org:a.org,weight:a.weight??'',height:a.height??'',guardian:a.guardian});
 const mapEnt=e=>({id:e.id,compId:e.comp_id,coachId:e.coach_id,sport:e.sport,athleteIds:e.athlete_ids||[],f:e.f||{},fee:e.fee,status:e.status,at:String(e.created_at||'').slice(0,19)});
-const mapUser=p=>({id:p.id,role:p.role,name:p.name,org:p.org,phone:p.phone,email:p.email});
+const mapUser=p=>({id:p.id,role:p.role,name:p.name,org:p.org,phone:p.phone,email:p.email,license:p.license||'',at:String(p.created_at||'').slice(0,10)});
 async function q(p){const {data,error}=await p;if(error)throw error;return data;}
 async function reload(){
   try{
     const {data:{session}}=await sb.auth.getSession();
+    fixAuthHash(session);
     M.comps=(await q(sb.from('comps').select('*').order('date',{ascending:true}))).map(mapComp);
     if(session){
       const prof=await q(sb.from('profiles').select('*').eq('id',session.user.id));
@@ -216,6 +232,14 @@ async function reload(){
   }catch(e){M.loadErr=msgOf(e);}
   M.ready=true;render();
 }
+/* 메일 링크(가입 확인·비밀번호 재설정)로 들어오면 주소 뒤에 붙은 긴 글을 정리 */
+const H0=location.hash;let HDONE=false;
+function fixAuthHash(session){if(HDONE)return;HDONE=true;
+  if(!/access_token=|error_description=|type=recovery/.test(H0))return;
+  const P=new URLSearchParams(H0.slice(1));
+  if(P.get('error_description')){UI.flash=/expired|invalid/i.test(P.get('error_description'))?'메일 링크가 만료되었거나 이미 사용되었습니다. 로그인해 보시고, 안 되면 대회 본부에 임시 비밀번호를 요청해 주세요':'메일 링크를 처리하지 못했습니다: '+P.get('error_description');history.replaceState(null,'','#login');return;}
+  if(P.get('type')==='recovery'||UI.recovery){UI.recovery=true;history.replaceState(null,'','#pwreset');return;}
+  history.replaceState(null,'',session?'#home':'#login');if(session)UI.flash='가입 확인이 끝났습니다. 환영합니다!';}
 function msgOf(e){const m=String(e&&e.message||e||'');
   if(/Invalid login credentials/i.test(m))return '이메일이나 비밀번호가 맞지 않습니다. 다시 확인해 주세요';
   if(/Email not confirmed/i.test(m))return '가입 확인 메일의 링크를 먼저 눌러 주세요';
@@ -223,9 +247,14 @@ function msgOf(e){const m=String(e&&e.message||e||'');
   if(/Password should be at least/i.test(m))return '비밀번호는 6자 이상으로 해 주세요';
   if(/Failed to fetch|NetworkError/i.test(m))return '인터넷 연결을 확인해 주세요';
   if(/rate limit/i.test(m))return '잠시 뒤 다시 시도해 주세요 (요청이 너무 많습니다)';
+  if(/sending (confirmation|recovery|magic)|email address not authorized/i.test(m))return '메일을 보내지 못했습니다. 대회 본부에 연락해 주세요 (관리자: Supabase에서 「Confirm email」을 꺼 주세요)';
+  if(/different from the old/i.test(m))return '지금 쓰는 비밀번호와 다른 비밀번호로 해 주세요';
+  if(/Signups not allowed/i.test(m))return '지금은 회원가입을 받지 않습니다';
+  if(/Bucket not found|row-level security.*objects|storage/i.test(m))return '파일 저장소에 올리지 못했습니다. 요강은 「링크」 칸에 주소로 넣어 주세요';
   return m.replace(/^.*?:\s*/,'')||'처리하지 못했습니다';
 }
-sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_IN'||ev==='SIGNED_OUT'||ev==='USER_UPDATED')reload();});
+sb.auth.onAuthStateChange((ev)=>{if(ev==='PASSWORD_RECOVERY'){UI.recovery=true;if(HDONE)go('pwreset');}
+  if(ev==='SIGNED_IN'||ev==='SIGNED_OUT'||ev==='USER_UPDATED'||ev==='PASSWORD_RECOVERY')reload();});
 
 /* ================= 도움 함수 ================= */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -248,6 +277,7 @@ function defaults(sport,a){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600);}
 function sel(id,list,v,attrs=''){return `<select id="${id}" ${attrs}>${list.map(x=>{const val=typeof x==='string'?x:x.v,lab=typeof x==='string'?(x||'선택 안 함'):x.l;return `<option value="${esc(val)}" ${String(v)===String(val)?'selected':''}>${esc(lab)}</option>`;}).join('')}</select>`;}
+const safeUrl=u=>/^https?:\/\//i.test(String(u||''))?u:'#';
 const sportChips=c=>c.sports.map(s=>`<span class="chip ${SPORTS[s].c}">${SPORTS[s].n}</span>`).join('');
 
 /* ================= 화면 (주소 #이름 으로 이동) ================= */
@@ -261,9 +291,10 @@ function render(){
   const links=[['home','대회 일정']];
   if(u&&u.role==='coach')links.push(['athletes','내 선수'],['entries','내 접수 내역']);
   if(u&&u.role==='admin')links.push(['admin','대회 관리 · 명단 내보내기']);
+  if(u)links.push(['me','내 정보']);
   const base=r.split('-')[0];
   document.getElementById('nav').innerHTML=links.map(([h,l])=>`<a href="#${h}" class="${base===h||(h==='home'&&base==='comp')?'on':''}">${l}</a>`).join('');
-  document.getElementById('who').innerHTML=u?`<span class="nm">${esc(u.name)}</span><span class="small mute">${u.role==='admin'?'관리자':esc(u.org)}</span><button class="btn sm ghost" data-a="logout" type="button">로그아웃</button>`
+  document.getElementById('who').innerHTML=u?`<a class="nm" href="#me" style="color:inherit;text-decoration:none">${esc(u.name)}</a><span class="small mute">${u.role==='admin'?'관리자':esc(u.org)}</span><button class="btn sm ghost" data-a="logout" type="button">로그아웃</button>`
     :`<a class="btn sm ghost" href="#login">로그인</a><a class="btn sm gold" href="#signup">지도자 회원가입</a>`;
   let h='';
   if(!M.ready){document.getElementById('view').innerHTML='<div class="empty">불러오는 중…</div>';return;}
@@ -277,9 +308,13 @@ function render(){
     else if(r==='athletes')h=need('coach',vAthletes);
     else if(r==='entries')h=need('coach',vEntries);
     else if(r==='admin')h=need('admin',vAdmin);
+    else if(r==='me')h=u?vMe():vLogin();
+    else if(r==='forgot')h=vForgot();
+    else if(r==='pwreset')h=vPwReset();
     else h+=vHome();
     h=(M.loadErr?`<div class="note" style="margin-bottom:14px">데이터를 불러오지 못했습니다: ${esc(M.loadErr)}</div>`:'')+h.replace(/^<div class="note" style="margin-bottom:14px">데이터를 불러오지 못했습니다:.*?<\/div>/,'');
   }catch(e){h=`<div class="empty">화면을 그리지 못했습니다: ${esc(e.message)}</div>`;}
+  if(UI.flash){h=`<div class="flash" role="status">${esc(UI.flash)}<button class="btn sm ghost" type="button" data-a="flashX" aria-label="닫기">✕</button></div>`+h;}
   document.getElementById('view').innerHTML=h;
 }
 function need(role,fn){const u=me();if(!u)return `<div class="auth"><div class="card"><h2>로그인이 필요합니다</h2><p class="mute">선수 등록과 대회 접수는 지도자 계정으로 로그인한 뒤 할 수 있습니다.</p><div class="row"><a class="btn gold" href="#login">로그인</a><a class="btn" href="#signup">지도자 회원가입</a></div></div></div>`;
@@ -297,12 +332,23 @@ function compCard(c){const [k,l]=compState(c),d=new Date(c.date+'T00:00:00'),n=d
   </article>`;}
 function vHome(){
   const L=D().comps.slice().sort((a,b)=>(compState(a)[0]==='closed')-(compState(b)[0]==='closed')||a.date.localeCompare(b.date));
-  return `<section class="hero"><div><span class="eyebrow">Taekwondo Competition Entry</span><h1>도장에서 접수하고,<br>대회장에서 바로 채점합니다</h1>
+  return `${vAlerts()}<section class="hero"><div><span class="eyebrow">Taekwondo Competition Entry</span><h1>도장에서 접수하고,<br>대회장에서 바로 채점합니다</h1>
     <p>지도자 회원으로 가입해 선수를 한 번 등록해 두면, 대회마다 종목과 부별만 골라 접수할 수 있습니다. 마감된 명단은 품새·겨루기·격파 대회 앱으로 그대로 넘어가 부문과 대진이 만들어집니다.</p></div>
     <div class="steps"><div><b>1</b><span>지도자 회원가입</span></div><div><b>2</b><span>내 선수 등록</span></div><div><b>3</b><span>대회 고르고 접수</span></div></div></section>
     <div class="row between" style="margin-bottom:14px"><h2>대회 일정</h2><span class="small mute">${L.filter(c=>compState(c)[0]!=='closed').length}개 대회 접수 중</span></div>
     <div class="comps">${L.map(compCard).join('')}</div>`;
 }
+/* ---------- 알림: 마감 임박 · 입금 전 · 대회 공지 ---------- */
+function alertsFor(u){const A=[];if(!u||u.role!=='coach')return A;
+  const E=D().entries.filter(e=>e.coachId===u.id&&e.status!=='cancel');
+  for(const c of D().comps){const [k]=compState(c);if(dday(c.date)<0)continue;const mine=E.filter(e=>e.compId===c.id),n=dday(c.deadline);
+    if(k!=='closed'&&n<=7)A.push({lv:n<=2?'hot':'warn',t:`「${c.name}」 접수 마감 ${n===0?'오늘':'D-'+n} (${fmtDate(c.deadline)})`,s:mine.length?`이 대회에 ${mine.length}건 접수했습니다.`:'아직 접수하지 않았습니다.',a:`<a class="btn sm gold" href="#enter-${c.id}">${mine.length?'선수 더 접수':'접수하기'}</a>`});
+    const wait=mine.filter(e=>e.status==='wait');
+    if(wait.length)A.push({lv:'warn',t:`「${c.name}」 입금 확인 전 ${wait.length}건 · ${won(wait.reduce((s,e)=>s+e.fee,0))}`,s:`입금 계좌: ${c.account} · 입금자명은 「${u.org}」`,a:`<a class="btn sm" href="#entries">접수 내역</a>`});
+    if(mine.length&&c.notice)A.push({lv:'info',t:`「${c.name}」 공지`,s:c.notice,a:''});}
+  return A;}
+function vAlerts(){const A=alertsFor(me());if(!A.length)return '';
+  return `<section class="alerts" aria-label="알림"><h2 class="small eyebrow" style="font-size:12px">알림 ${A.length}</h2>${A.map(x=>`<div class="al ${x.lv}"><div><b>${esc(x.t)}</b><div class="small mute">${esc(x.s)}</div></div>${x.a}</div>`).join('')}</section>`;}
 function vComp(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class="empty">대회를 찾지 못했습니다.</div>';
   const [k,l]=compState(c),u=me();
   const mine=u?D().entries.filter(e=>e.compId===c.id&&e.coachId===u.id&&e.status!=='cancel').length:0;
@@ -312,6 +358,8 @@ function vComp(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class
       <dl class="meta"><dt>대회일</dt><dd>${fmtDate(c.date)}</dd><dt>장소</dt><dd>${esc(c.place)}</dd><dt>주최</dt><dd>${esc(c.host)}</dd><dt>접수 마감</dt><dd>${fmtDate(c.deadline)}</dd>
         <dt>참가비</dt><dd>${c.sports.map(s=>`${SPORTS[s].n} ${won(c.fee[s])} (1명·1팀당)`).join('<br>')}</dd><dt>입금 계좌</dt><dd>${esc(c.account)}</dd></dl>
       ${c.note?`<p class="note">${esc(c.note)}</p>`:''}
+      ${c.notice?`<div class="notice"><b>대회 본부 공지</b><div>${esc(c.notice)}</div></div>`:''}
+      ${c.docUrl||c.contact?`<div class="row">${c.docUrl?`<a class="btn" href="${esc(safeUrl(c.docUrl))}" target="_blank" rel="noopener">📄 대회 요강${c.docName?' · '+esc(c.docName):''} 내려받기</a>`:''}${c.contact?`<span class="small mute">문의 · <b>${esc(c.contact)}</b></span>`:''}</div>`:''}
       <div class="row">${k==='closed'?'<span class="mute">접수가 끝난 대회입니다.</span>'
         :u&&u.role==='coach'?`<a class="btn gold" href="#enter-${c.id}">이 대회에 선수 접수하기</a>${mine?`<span class="small mute">이미 ${mine}건 접수했습니다</span>`:''}`
         :u?'<span class="small mute">관리자 계정입니다. 접수 현황은 「대회 관리」에서 봅니다.</span>':`<a class="btn gold" href="#login">로그인하고 접수하기</a><a class="btn" href="#signup">지도자 회원가입</a>`}</div></div></div>`;
@@ -323,7 +371,29 @@ function vLogin(){return `<div class="auth"><form class="card" id="fLogin"><span
   <label class="f"><span>비밀번호</span><input type="password" id="lPw" autocomplete="current-password" required></label>
   ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}
   <button class="btn gold" type="submit">로그인</button>
-  <span class="small mute">처음이신가요? <a href="#signup">지도자 회원가입</a></span></form></div>`;}
+  <div class="row between small"><span class="mute">처음이신가요? <a href="#signup">지도자 회원가입</a></span><a href="#forgot">비밀번호를 잊으셨나요?</a></div></form></div>`;}
+function vForgot(){return `<div class="auth"><div class="card"><span class="eyebrow">Password Help</span><h2>비밀번호를 잊으셨나요?</h2>
+  <div class="acct"><b>가장 빠른 방법 · 대회 본부에 연락</b><br><span class="mute">대회 본부(관리자)가 <b>임시 비밀번호</b>를 만들어 알려 드립니다. 그 비밀번호로 로그인한 뒤 「내 정보」에서 새 비밀번호로 바꾸세요.</span>${hqContact()?`<br><span>연락처: <b>${esc(hqContact())}</b></span>`:''}</div>
+  <form class="stack" id="fForgot" style="gap:10px"><b class="small">메일로 재설정 링크 받기</b>
+    <label class="f"><span>가입한 이메일</span><input type="email" id="fgEmail" required autocomplete="username"></label>
+    <button class="btn" type="submit">재설정 메일 보내기</button>
+    <span class="small mute">메일이 10분 안에 오지 않으면 위 방법(대회 본부 연락)을 써 주세요.</span></form>
+  <a class="small" href="#login">← 로그인으로</a></div></div>`;}
+function hqContact(){const c=D().comps.find(x=>x.contact&&compState(x)[0]!=='closed')||D().comps.find(x=>x.contact);return c?c.contact:'';}
+function pwFields(){return `<label class="f"><span>새 비밀번호 (6자 이상)</span><input type="password" id="pw1" required autocomplete="new-password"></label>
+  <label class="f"><span>새 비밀번호 한 번 더</span><input type="password" id="pw2" required autocomplete="new-password"></label>`;}
+function vPwReset(){if(!me())return `<div class="auth"><div class="card"><h2>링크를 확인하는 중…</h2><p class="mute">잠시 기다려도 화면이 바뀌지 않으면 링크가 만료된 것입니다. <a href="#forgot">다시 받기</a></p></div></div>`;
+  return `<div class="auth"><form class="card" id="fPwReset"><span class="eyebrow">New Password</span><h2>새 비밀번호 정하기</h2><p class="small mute" style="margin:0">${esc(me().email)}</p>${pwFields()}<button class="btn gold" type="submit">비밀번호 바꾸기</button></form></div>`;}
+function vMe(){const u=me();return `<div class="stack" style="max-width:720px;margin:0 auto"><div><span class="eyebrow">My Account</span><h1>내 정보</h1><p class="mute" style="margin:6px 0 0">${esc(u.email)} · ${u.role==='admin'?'대회 본부(관리자)':'지도자'}</p></div>
+  <form class="card stack" id="fMe"><h3>회원 정보</h3>
+    <div class="grid2"><label class="f"><span>이름 <i>*</i></span><input type="text" id="mName" required value="${esc(u.name)}"></label>
+      <label class="f"><span>소속 (도장·학교·팀) <i>*</i></span><input type="text" id="mOrg" required value="${esc(u.org)}"></label>
+      <label class="f"><span>휴대폰 <i>*</i></span><input type="tel" id="mPhone" required value="${esc(u.phone)}"></label>
+      <label class="f"><span>지도자 자격 번호 (선택)</span><input type="text" id="mLic" value="${esc(u.license||'')}"></label></div>
+    <div class="row"><button class="btn gold" type="submit">저장</button></div></form>
+  <form class="card stack" id="fPw"><h3>비밀번호 바꾸기</h3><div class="grid2">${pwFields()}</div>
+    <span class="small mute">대회 본부에서 받은 임시 비밀번호로 들어오셨다면 여기서 꼭 바꿔 주세요.</span>
+    <div class="row"><button class="btn" type="submit">비밀번호 바꾸기</button></div></form></div>`;}
 function vSignup(){return `<div class="auth" style="max-width:620px"><form class="card" id="fSignup"><span class="eyebrow">Coach Sign Up</span><h2>지도자 회원가입</h2>
   <p class="small mute" style="margin:0">선수를 대회에 접수하는 지도자(관장·사범·감독) 계정입니다. 선수 본인은 가입하지 않습니다.</p>
   <div class="grid2"><label class="f"><span>이름 <i>*</i></span><input type="text" id="sName" required></label>
@@ -428,34 +498,81 @@ function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id)
         <div class="tablewrap"><table><tr><th>종목</th><th>선수</th><th>부문</th><th>참가비</th><th>상태</th><th></th></tr>
         ${L.map(e=>{const l=entryLabel(e),[k,t]=STS[e.status];return `<tr><td><span class="chip ${SPORTS[e.sport].c}">${SPORTS[e.sport].n}</span></td><td><b>${esc(l.who)}</b></td><td class="small">${esc(l.what)}</td><td class="num">${won(e.fee)}</td><td><span class="st ${k}">${t}</span></td>
           <td>${open&&e.status==='wait'?`<button class="btn sm danger" type="button" data-a="cancelEntry" data-id="${e.id}">${UI.cArm===e.id?'한 번 더 누르면 취소':'접수 취소'}</button>`:''}</td></tr>`;}).join('')}</table></div>
-        <span class="small mute">입금 계좌: ${esc(c.account)}</span></section>`;}).join(''):'<div class="empty">아직 접수한 대회가 없습니다. <a href="#home">대회 일정</a>에서 대회를 골라 주세요.</div>'}</div>`;}
+        ${c.notice?`<div class="notice"><b>대회 본부 공지</b><div>${esc(c.notice)}</div></div>`:''}<span class="small mute">입금 계좌: ${esc(c.account)}${c.contact?' · 문의 '+esc(c.contact):''}</span></section>`;}).join(''):'<div class="empty">아직 접수한 대회가 없습니다. <a href="#home">대회 일정</a>에서 대회를 골라 주세요.</div>'}</div>`;}
 
 /* ---------- 관리자 ---------- */
+const ATABS=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['setup','대회 고치기 · 공지 · 요강']];
 function vAdmin(){const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.adminComp))UI.adminComp=C[0]&&C[0].id;
-  const c=C.find(x=>x.id===UI.adminComp);
+  const c=C.find(x=>x.id===UI.adminComp),tab=UI.atab||'status';
   const E=c?D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'):[];
   const coaches=new Set(E.map(e=>e.coachId)).size,paid=E.filter(e=>e.status==='paid');
-  const sp=c&&c.sports.includes(UI.adminSport)?UI.adminSport:(c?c.sports[0]:'poomsae');
-  const ES=E.filter(e=>e.sport===sp);
+  let body='';
+  if(tab==='members')body=vMembers();
+  else if(!c)body='<div class="empty">대회가 없습니다. 「새 대회 만들기」를 눌러 주세요.</div>';
+  else if(tab==='dojang')body=vDojang(c,E);
+  else if(tab==='setup')body=vSetup(c);
+  else body=vStatus(c,E);
   return `<div class="stack"><div class="row between"><div><span class="eyebrow">Admin</span><h1>대회 관리 · 명단 내보내기</h1></div><button class="btn" type="button" data-a="newComp">+ 새 대회 만들기</button></div>
-    ${UI.newComp?compForm():''}
-    <div class="row"><label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label></div>
-    ${c?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>
-    <h2 style="margin-top:8px">대회 앱으로 보내기</h2>
-    <p class="small mute" style="margin:0">각 대회 앱의 「선수 등록 → 엑셀 · PDF 파일 고르기」에 그대로 올리는 명단 파일입니다. 올리면 부별·종목·체급대로 부문이 자동으로 만들어집니다. Supabase를 연결하면 대회 앱에서 「접수 명단 가져오기」 한 번으로 바로 불러오게 됩니다.</p>
+    ${UI.newComp?compForm(null):''}
+    <div class="row">${tab!=='members'?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
+    ${c&&tab!=='members'?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
+    <div class="atabs" role="tablist">${ATABS.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''}" data-a="atab" data-t="${k}">${l}</button>`).join('')}</div>
+    ${body}</div>`;}
+function vStatus(c,E){const sp=c.sports.includes(UI.adminSport)?UI.adminSport:c.sports[0];const ES=E.filter(e=>e.sport===sp);
+  return `<h2>대회 앱으로 보내기</h2>
+    <p class="small mute" style="margin:0">방법 1 · 대회 앱 「선수 등록」의 <b>🌐 접수 홈페이지에서 가져오기</b>를 누르고 이 관리자 계정으로 로그인하면 바로 불러옵니다.<br>방법 2 · 아래 엑셀을 내려받아 대회 앱의 「📂 파일 고르기」에 올립니다. 부별·종목·체급대로 부문이 자동으로 만들어집니다.</p>
     <div class="exp">${c.sports.map(s=>{const n=E.filter(e=>e.sport===s).length;return `<div class="card"><span class="chip ${SPORTS[s].c}" style="align-self:flex-start">${SPORTS[s].n} 대회 앱</span><span class="n num">${n}<span class="small mute"> 건</span></span>
       <button class="btn gold" type="button" data-a="export" data-s="${s}" ${n?'':'disabled'}>${SPORTS[s].n} 명단 엑셀 내려받기</button></div>`;}).join('')}</div>
     <div class="row between" style="margin-top:8px"><h2>접수 현황</h2><div class="tabs">${c.sports.map(s=>`<button type="button" class="${s===sp?'on':''}" data-a="adTab" data-s="${s}">${SPORTS[s].n}</button>`).join('')}</div></div>
     ${ES.length?`<div class="tablewrap"><table><tr><th>접수일</th><th>지도자 · 소속</th><th>선수</th><th>부문</th><th>참가비</th><th>입금</th></tr>
-      ${ES.map(e=>{const l=entryLabel(e),co=D().users.find(u=>u.id===e.coachId)||{};return `<tr><td class="num small">${e.at.slice(0,10)}</td><td>${esc(co.name||'')}<div class="small mute">${esc(co.org||'')} · ${esc(co.phone||'')}</div></td><td><b>${esc(l.who)}</b></td><td class="small">${esc(l.what)}</td><td class="num">${won(e.fee)}</td>
-        <td><button class="btn sm ${e.status==='paid'?'':'gold'}" type="button" data-a="paid" data-id="${e.id}">${e.status==='paid'?'입금 확인됨 ✓':'입금 확인'}</button></td></tr>`;}).join('')}</table></div>`:`<div class="empty">아직 ${SPORTS[sp].n} 접수가 없습니다.</div>`}`:'<div class="empty">대회가 없습니다. 「새 대회 만들기」를 눌러 주세요.</div>'}</div>`;}
-function compForm(){return `<form class="form" id="fComp"><div class="row between"><h3>새 대회 만들기</h3><button class="btn sm ghost" type="button" data-a="newCompClose">닫기</button></div>
-  <div class="grid2"><label class="f"><span>대회 이름 <i>*</i></span><input type="text" id="cName" required></label><label class="f"><span>장소 <i>*</i></span><input type="text" id="cPlace" required></label>
-    <label class="f"><span>대회일 <i>*</i></span><input type="date" id="cDate" required></label><label class="f"><span>접수 마감일 <i>*</i></span><input type="date" id="cDead" required></label></div>
-  <div class="grid3">${Object.entries(SPORTS).map(([k,s])=>`<label class="f"><span><input type="checkbox" id="cS_${k}" checked style="accent-color:var(--gold)"> ${s.n} 참가비</span><input type="number" id="cF_${k}" value="${k==='kyorugi'?40000:30000}" step="1000"></label>`).join('')}</div>
-  <label class="f"><span>입금 계좌</span><input type="text" id="cAcct" placeholder="은행 계좌번호 (예금주)"></label>
-  <label class="f"><span>안내 문구</span><textarea id="cNote" rows="2"></textarea></label>
-  ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}<div class="row"><button class="btn gold" type="submit">대회 만들기</button></div></form>`;}
+      ${ES.map(e=>{const l=entryLabel(e),co=coachOf(e.coachId);return `<tr><td class="num small">${e.at.slice(0,10)}</td><td>${esc(co.name||'')}<div class="small mute">${esc(co.org||'')} · ${esc(co.phone||'')}</div></td><td><b>${esc(l.who)}</b></td><td class="small">${esc(l.what)}</td><td class="num">${won(e.fee)}</td>
+        <td><button class="btn sm ${e.status==='paid'?'':'gold'}" type="button" data-a="paid" data-id="${e.id}">${e.status==='paid'?'입금 확인됨 ✓':'입금 확인'}</button></td></tr>`;}).join('')}</table></div>`:`<div class="empty">아직 ${SPORTS[sp].n} 접수가 없습니다.</div>`}`;}
+const coachOf=id=>D().users.find(u=>u.id===id)||{};
+/* 도장(지도자)별 참가비 합계 */
+function dojangRows(c,E){const by=new Map();
+  for(const e of E){if(!by.has(e.coachId))by.set(e.coachId,{co:coachOf(e.coachId),n:{},cnt:0,total:0,paid:0});const r=by.get(e.coachId);
+    r.n[e.sport]=(r.n[e.sport]||0)+1;r.cnt++;r.total+=e.fee;if(e.status==='paid')r.paid+=e.fee;}
+  return [...by.entries()].map(([id,r])=>({id,...r,due:r.total-r.paid})).sort((a,b)=>(b.due>0)-(a.due>0)||String(a.co.org).localeCompare(String(b.co.org),'ko'));}
+function payMsg(c,r){return `[KICKSTART UP] ${c.name} 참가비 안내\n${r.co.org||''} ${r.co.name||''} 지도자님, 접수 ${r.cnt}건 참가비 ${won(r.total)} 중 ${won(r.due)}이 아직 확인되지 않았습니다.\n입금 계좌: ${c.account}\n입금자명: ${r.co.org||r.co.name||''}\n접수 마감: ${fmtDate(c.deadline)}${c.contact?'\n문의: '+c.contact:''}`;}
+function vDojang(c,E){const L=dojangRows(c,E),T=L.reduce((s,r)=>({cnt:s.cnt+r.cnt,total:s.total+r.total,paid:s.paid+r.paid}),{cnt:0,total:0,paid:0}),dueN=L.filter(r=>r.due>0).length;
+  if(!L.length)return '<div class="empty">아직 접수한 도장이 없습니다.</div>';
+  return `<div class="row between"><div><h2>도장별 참가비 합계표</h2><p class="small mute" style="margin:4px 0 0">한 도장이 여러 선수 참가비를 한꺼번에 입금하면 「모두 입금 확인」을 누르세요. 미입금 도장에는 안내 문자를 보낼 수 있습니다.</p></div>
+    <div class="row"><button class="btn" type="button" data-a="dojangX">합계표 엑셀</button>${dueN?`<button class="btn gold" type="button" data-a="copyAll">미입금 ${dueN}곳 안내문 복사</button>`:''}</div></div>
+    <div class="tablewrap"><table><tr><th>소속 · 지도자</th><th>연락처</th>${c.sports.map(s=>`<th>${SPORTS[s].n}</th>`).join('')}<th>참가비</th><th>입금 확인</th><th>남은 금액</th><th></th></tr>
+    ${L.map(r=>`<tr><td><b>${esc(r.co.org||'')}</b><div class="small mute">${esc(r.co.name||'')}</div></td><td class="small num">${esc(r.co.phone||'')}</td>${c.sports.map(s=>`<td class="num">${r.n[s]||''}</td>`).join('')}
+      <td class="num">${won(r.total)}</td><td class="num">${won(r.paid)}</td><td class="num" style="color:${r.due?'var(--warn)':'var(--ok)'};font-weight:800">${r.due?won(r.due):'완료 ✓'}</td>
+      <td style="white-space:nowrap">${r.due?`<button class="btn sm gold" type="button" data-a="payAll" data-id="${r.id}">${UI.payArm===r.id?'한 번 더 누르면 확인':'모두 입금 확인'}</button> <button class="btn sm" type="button" data-a="copyOne" data-id="${r.id}">안내문 복사</button>${r.co.phone?` <a class="btn sm ghost" href="sms:${esc(String(r.co.phone).replace(/[^0-9+]/g,''))}?body=${encodeURIComponent(payMsg(c,r))}">문자</a>`:''}`:''}</td></tr>`).join('')}
+    <tr class="tot"><td colspan="2"><b>합계 ${L.length}곳</b></td>${c.sports.map(s=>`<td class="num">${L.reduce((n,r)=>n+(r.n[s]||0),0)}</td>`).join('')}<td class="num"><b>${won(T.total)}</b></td><td class="num">${won(T.paid)}</td><td class="num"><b>${won(T.total-T.paid)}</b></td><td></td></tr></table></div>`;}
+/* 회원 관리 */
+function vMembers(){const U=D().users.slice().sort((a,b)=>(a.role==='admin'?0:1)-(b.role==='admin'?0:1)||String(a.org).localeCompare(String(b.org),'ko'));
+  const nA=id=>D().athletes.filter(a=>a.coachId===id).length,nE=id=>D().entries.filter(e=>e.coachId===id&&e.status!=='cancel').length;
+  return `<div class="row between"><div><h2>회원 관리</h2><p class="small mute" style="margin:4px 0 0">지도자가 비밀번호를 잊으면 「임시 비밀번호」를 눌러 새 비밀번호를 만들고 전화·문자로 알려 주세요.</p></div>
+    <label class="f" style="min-width:220px"><span>찾기 (이름·소속·전화)</span><input type="text" id="memQ" data-on="memQ" placeholder="예: 경민"></label></div>
+    ${UI.tempPw?`<div class="flash" role="status"><span><b>${esc(UI.tempPw.who)}</b> 임시 비밀번호: <b class="num" style="font-size:22px;letter-spacing:.06em">${esc(UI.tempPw.pw)}</b><br><span class="small">지도자에게 알려 주세요. 로그인한 뒤 「내 정보」에서 바꿀 수 있습니다.</span></span><button class="btn sm" type="button" data-a="copyPw">복사</button></div>`:''}
+    <div class="tablewrap"><table id="memT"><tr><th>이름</th><th>소속</th><th>휴대폰 · 이메일</th><th>선수</th><th>접수</th><th>가입일</th><th></th></tr>
+    ${U.map(u=>`<tr data-q="${esc([u.name,u.org,u.phone,u.email].join(' ').toLowerCase())}"><td><b>${esc(u.name)}</b>${u.role==='admin'?' <span class="chip ps">관리자</span>':''}</td><td>${esc(u.org)}</td><td class="small">${esc(u.phone)}<div class="mute">${esc(u.email)}</div></td>
+      <td class="num">${nA(u.id)}</td><td class="num">${nE(u.id)}</td><td class="small num">${esc(u.at||'')}</td>
+      <td>${u.id!==me().id?`<button class="btn sm" type="button" data-a="tempPw" data-id="${u.id}">${UI.pwArm===u.id?'한 번 더 누르면 만들기':'임시 비밀번호'}</button>`:''}</td></tr>`).join('')}</table></div>
+    <span class="small mute">회원 ${U.length}명 (관리자 ${U.filter(u=>u.role==='admin').length}명)</span>`;}
+/* 대회 설정: 고치기 · 공지 · 요강 · 지우기 */
+function vSetup(c){const n=D().entries.filter(e=>e.compId===c.id).length;
+  return `${compForm(c)}
+    <section class="card stack danger-zone"><h3>대회 지우기</h3><p class="small mute" style="margin:0">대회를 지우면 이 대회의 접수 ${n}건도 함께 지워지고 되돌릴 수 없습니다. 지우기 전에 「접수 현황」에서 명단 엑셀을 내려받아 두세요.</p>
+      <div class="row"><button class="btn danger" type="button" data-a="delComp" data-id="${c.id}">${UI.delCompArm===c.id?`정말 지웁니다 · 한 번 더 누르기`:'이 대회 지우기'}</button></div></section>`;}
+function compForm(c){const E=!!c;c=c||{sports:Object.keys(SPORTS),fee:{poomsae:30000,kyorugi:40000,gyeokpa:30000}};const f=k=>esc(c[k]||'');
+  return `<form class="form" id="fComp" data-id="${E?c.id:''}"><div class="row between"><h3>${E?'대회 고치기':'새 대회 만들기'}</h3>${E?'':'<button class="btn sm ghost" type="button" data-a="newCompClose">닫기</button>'}</div>
+  <div class="grid2"><label class="f"><span>대회 이름 <i>*</i></span><input type="text" id="cName" required value="${f('name')}"></label><label class="f"><span>장소 <i>*</i></span><input type="text" id="cPlace" required value="${f('place')}"></label>
+    <label class="f"><span>대회일 <i>*</i></span><input type="date" id="cDate" required value="${f('date')}"></label><label class="f"><span>접수 마감일 <i>*</i></span><input type="date" id="cDead" required value="${f('deadline')}"></label></div>
+  <div class="grid3">${Object.entries(SPORTS).map(([k,s])=>`<label class="f"><span><input type="checkbox" id="cS_${k}" ${c.sports.includes(k)?'checked':''} style="accent-color:var(--gold)"> ${s.n} 참가비</span><input type="number" id="cF_${k}" value="${c.fee[k]??(k==='kyorugi'?40000:30000)}" step="1000"></label>`).join('')}</div>
+  <div class="grid2"><label class="f"><span>입금 계좌</span><input type="text" id="cAcct" placeholder="은행 계좌번호 (예금주)" value="${E&&/관리자 화면에서|적어 주세요/.test(c.account)?'':f('account')}"></label>
+    <label class="f"><span>문의 연락처 (지도자에게 보임)</span><input type="text" id="cContact" placeholder="대회 본부 010-0000-0000" value="${f('contact')}"></label></div>
+  <label class="f"><span>안내 문구 (대회 안내에 늘 보임)</span><textarea id="cNote" rows="2">${f('note')}</textarea></label>
+  <label class="f"><span>대회 본부 공지 (계체 시간·변경 사항 등 · 접수한 지도자 첫 화면 알림에 뜸)</span><textarea id="cNotice" rows="2" placeholder="예: 계체는 대회 전날 오후 5시, 경민대 체육관 1층">${f('notice')}</textarea></label>
+  <div class="stack" style="gap:8px"><span class="small" style="font-weight:800;color:var(--mute)">대회 요강</span>
+    ${c.docUrl?`<span class="small">지금 요강: <a href="${esc(safeUrl(c.docUrl))}" target="_blank" rel="noopener">${esc(c.docName||'요강 보기')}</a> <label class="check" style="display:inline-flex;margin-left:10px"><input type="checkbox" id="cDocDel"><span>요강 빼기</span></label></span>`:''}
+    <div class="grid2"><label class="f"><span>파일 올리기 (PDF·한글·그림, 20MB까지)</span><input type="file" id="cDoc" accept=".pdf,.hwp,.hwpx,.doc,.docx,.jpg,.jpeg,.png"></label>
+      <label class="f"><span>또는 링크 (구글 드라이브·네이버 등)</span><input type="text" id="cDocUrl" placeholder="https://" value="${c.docUrl&&!/supabase\.co\/storage/.test(c.docUrl)?esc(c.docUrl):''}"></label></div></div>
+  ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}<div class="row"><button class="btn gold" type="submit">${E?'고친 내용 저장':'대회 만들기'}</button></div></form>`;}
 
 /* ---------- 대회 앱 불러오기 형식으로 엑셀 만들기 ---------- */
 function exportRows(c,sport){
@@ -470,16 +587,25 @@ function exportRows(c,sport){
   return [H,...E.map(e=>{const A=e.athleteIds.map(ath),f=e.f,team=f.ev==='기술격파 단체전';
     return [team?`${A[0].org||co(e).org} 팀`:A[0].name,f.ev,team?'':A[0].gender,f.div,A[0].org||co(e).org,co(e).name,f.weight||'',f.height||'',team?A.map(a=>a.name).join(','):'',''];})];
 }
-async function exportXlsx(c,sport){
+async function saveXlsx(rows,name,sheet,okMsg){
   if(!window.XLSX){toast('엑셀 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요');return;}
-  const rows=exportRows(c,sport);const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=rows[0].map(h=>({wch:Math.max(8,String(h).length*2+4)}));
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'선수명단');
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=rows[0].map(h=>({wch:Math.max(8,String(h).length*2+4)}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheet);
   const data=new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'}));
-  const name=`${c.name}_${SPORTS[sport].n}_접수명단.xlsx`.replace(/[\\/:*?"<>|]/g,'');
-  try{if(window.claude&&window.claude.use){const dl=await window.claude.use('downloads');if(dl){await dl.save({filename:name,data});toast(`${SPORTS[sport].n} 명단 ${rows.length-1}건을 내려받았습니다`);return;}}}catch(e){if(e&&e.code==='declined')return;}
-  try{const u=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},3000);toast('명단 파일을 내려받았습니다');}
+  name=name.replace(/[\\/:*?"<>|]/g,'');
+  try{if(window.claude&&window.claude.use){const dl=await window.claude.use('downloads');if(dl){await dl.save({filename:name,data});toast(okMsg);return;}}}catch(e){if(e&&e.code==='declined')return;}
+  try{const u=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},3000);toast(okMsg);}
   catch(e){toast('이 화면에서는 파일을 내려받을 수 없습니다');}
 }
+function exportXlsx(c,sport){const rows=exportRows(c,sport);return saveXlsx(rows,`${c.name}_${SPORTS[sport].n}_접수명단.xlsx`,'선수명단',`${SPORTS[sport].n} 명단 ${rows.length-1}건을 내려받았습니다`);}
+function dojangXlsx(c){const L=dojangRows(c,D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'));
+  const rows=[['소속','지도자','휴대폰','이메일',...c.sports.map(s=>SPORTS[s].n+' 건수'),'참가비 합계','입금 확인','남은 금액'],
+    ...L.map(r=>[r.co.org||'',r.co.name||'',r.co.phone||'',r.co.email||'',...c.sports.map(s=>r.n[s]||0),r.total,r.paid,r.due])];
+  rows.push(['합계','','','',...c.sports.map(s=>L.reduce((n,r)=>n+(r.n[s]||0),0)),L.reduce((n,r)=>n+r.total,0),L.reduce((n,r)=>n+r.paid,0),L.reduce((n,r)=>n+r.due,0)]);
+  return saveXlsx(rows,`${c.name}_도장별_참가비.xlsx`,'도장별 참가비','도장별 참가비 합계표를 내려받았습니다');}
+async function copyText(t,okMsg){let ok=false;try{await navigator.clipboard.writeText(t);ok=true;}catch(e){try{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove();}catch(_){}}
+  toast(ok?okMsg:'복사하지 못했습니다. 길게 눌러 직접 복사해 주세요');return ok;}
+function tempPassword(){const A='abcdefghjkmnpqrstuvwxyz',N='23456789';let p='';for(let i=0;i<3;i++)p+=A[Math.floor(Math.random()*A.length)];for(let i=0;i<4;i++)p+=N[Math.floor(Math.random()*N.length)];return p;}
 
 /* ================= 동작 (Supabase에 저장) ================= */
 let BUSY=false;
@@ -516,6 +642,18 @@ document.addEventListener('click',e=>{
   else if(a==='adTab'){UI.adminSport=b.dataset.s;render();}
   else if(a==='paid'){const x=S.entries.find(y=>y.id===b.dataset.id);if(x)run(async()=>{await q(sb.from('entries').update({status:x.status==='paid'?'wait':'paid'}).eq('id',x.id));await reload();});}
   else if(a==='export'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)exportXlsx(c,b.dataset.s);}
+  else if(a==='flashX'){UI.flash='';render();}
+  else if(a==='atab'){UI.atab=b.dataset.t;UI.err='';UI.tempPw=null;render();}
+  else if(a==='dojangX'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)dojangXlsx(c);}
+  else if(a==='payAll'){const id=b.dataset.id,c=UI.adminComp;if(UI.payArm!==id){UI.payArm=id;render();setTimeout(()=>{if(UI.payArm===id){UI.payArm=null;render();}},4000);return;}
+    run(async()=>{await q(sb.from('entries').update({status:'paid'}).eq('comp_id',c).eq('coach_id',id).eq('status','wait'));UI.payArm=null;await reload();toast(`${coachOf(id).org||'도장'} 입금을 모두 확인했습니다`);});}
+  else if(a==='copyOne'||a==='copyAll'){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;const L=dojangRows(c,S.entries.filter(e=>e.compId===c.id&&e.status!=='cancel')).filter(r=>r.due>0&&(a==='copyAll'||r.id===b.dataset.id));
+    copyText(L.map(r=>payMsg(c,r)+(a==='copyAll'&&r.co.phone?`\n(연락처 ${r.co.phone})`:'')).join('\n\n────────\n\n'),a==='copyAll'?`미입금 ${L.length}곳 안내문을 복사했습니다. 카카오톡·문자에 붙여 넣으세요`:'안내문을 복사했습니다. 카카오톡·문자에 붙여 넣으세요');}
+  else if(a==='tempPw'){const id=b.dataset.id;if(UI.pwArm!==id){UI.pwArm=id;render();setTimeout(()=>{if(UI.pwArm===id){UI.pwArm=null;render();}},4000);return;}
+    const pw=tempPassword(),u=coachOf(id);run(async()=>{const {error}=await sb.rpc('admin_set_password',{p_user:id,p_pw:pw});if(error)throw error;UI.pwArm=null;UI.tempPw={who:`${u.org||''} ${u.name||''}`.trim(),pw};render();});}
+  else if(a==='copyPw'){if(UI.tempPw)copyText(`[KICKSTART UP 대회 접수] 임시 비밀번호: ${UI.tempPw.pw}\n${location.origin+location.pathname}#login 에서 로그인한 뒤 「내 정보」에서 비밀번호를 바꿔 주세요.`,'임시 비밀번호 안내문을 복사했습니다');}
+  else if(a==='delComp'){const id=b.dataset.id;if(UI.delCompArm!==id){UI.delCompArm=id;render();setTimeout(()=>{if(UI.delCompArm===id){UI.delCompArm=null;render();}},5000);return;}
+    run(async()=>{const c=S.comps.find(x=>x.id===id);await q(sb.from('comps').delete().eq('id',id));UI.delCompArm=null;UI.adminComp=null;UI.atab='status';await reload();toast(`「${c?c.name:'대회'}」를 지웠습니다`);});}
 });
 document.addEventListener('change',e=>{
   const t=e.target,on=t.dataset&&t.dataset.on;
@@ -527,7 +665,8 @@ document.addEventListener('change',e=>{
   else if(on==='adComp'){UI.adminComp=t.value;render();}
   else if(on==='birth'){const g=document.getElementById('aGuard'),s=document.getElementById('aSchool'),ag=age(t.value);if(g)g.hidden=!(ag!==null&&ag<14);if(s)s.textContent=t.value?'학년 추정: '+schoolTxt(t.value):'';}
 });
-document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.on==='ef'&&t.type==='number'){UI.form={...UI.form,[t.dataset.k]:t.value};}});
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='memQ'){const v=t.value.trim().toLowerCase();document.querySelectorAll('#memT tr[data-q]').forEach(r=>{r.hidden=!!v&&!r.dataset.q.includes(v);});return;}if(t.dataset&&t.dataset.on==='ef'&&t.type==='number'){UI.form={...UI.form,[t.dataset.k]:t.value};}});
 function formErr(f,m){let el=f.querySelector('.err');if(!el){el=document.createElement('span');el.className='err';const btn=f.querySelector('button[type=submit]');(btn&&btn.closest('.row')||btn||f).before(el);}el.textContent=m;el.setAttribute('role','alert');}
 document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=>(document.getElementById(id)||{}).value||'';
   if(f.id==='fLogin')run(async()=>{const {data,error}=await sb.auth.signInWithPassword({email:v('lEmail').trim(),password:v('lPw')});
@@ -544,11 +683,33 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
     run(async()=>{if(UI.editAth){await q(sb.from('athletes').update(data).eq('id',UI.editAth));toast('선수 정보를 고쳤습니다');}
       else{await q(sb.from('athletes').insert(data));toast(`${data.name} 선수를 등록했습니다`);}
       UI.editAth=null;UI.err='';await reload();});}
-  else if(f.id==='fComp'){const sports=Object.keys(SPORTS).filter(k=>document.getElementById('cS_'+k).checked);
+  else if(f.id==='fComp'){const sports=Object.keys(SPORTS).filter(k=>document.getElementById('cS_'+k).checked),editId=f.dataset.id;
     if(!sports.length){formErr(f,'종목을 하나 이상 골라 주세요');return;}
     if(v('cDead')>v('cDate')){formErr(f,'접수 마감일은 대회일보다 앞이어야 합니다');return;}
-    const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:Object.fromEntries(sports.map(k=>[k,Number(v('cF_'+k))||0])),account:v('cAcct').trim()||'입금 계좌를 적어 주세요',host:'KICKSTART UP',note:v('cNote').trim()};
-    run(async()=>{const r=await q(sb.from('comps').insert(c).select());UI.newComp=false;UI.adminComp=r&&r[0]&&r[0].id;UI.err='';await reload();toast('대회를 만들었습니다. 「대회 일정」에 바로 보입니다');});}
+    const old=editId?D().comps.find(x=>x.id===editId):null,link=v('cDocUrl').trim(),file=(document.getElementById('cDoc')||{}).files,del=document.getElementById('cDocDel');
+    if(link&&!/^https?:\/\//i.test(link)){formErr(f,'요강 링크는 https:// 로 시작하는 주소로 넣어 주세요');return;}
+    if(file&&file[0]&&file[0].size>20*1024*1024){formErr(f,'요강 파일은 20MB까지 올릴 수 있습니다');return;}
+    const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:Object.fromEntries(sports.map(k=>[k,Number(v('cF_'+k))||0])),account:v('cAcct').trim()||'입금 계좌를 적어 주세요',note:v('cNote').trim(),notice:v('cNotice').trim(),contact:v('cContact').trim()};
+    if(!editId)c.host='KICKSTART UP';
+    run(async()=>{let doc=null;
+      if(file&&file[0]){const F=file[0],ext=(F.name.match(/\.[A-Za-z0-9]{1,5}$/)||['.pdf'])[0].toLowerCase(),path=`${editId||'new'}/${Date.now()}${ext}`;
+        const {error}=await sb.storage.from('comp-docs').upload(path,F,{upsert:true,contentType:F.type||undefined});if(error){formErr(f,msgOf(error));return;}
+        doc={doc_url:sb.storage.from('comp-docs').getPublicUrl(path).data.publicUrl,doc_name:F.name};}
+      else if(link)doc={doc_url:link,doc_name:old&&old.docUrl===link?old.docName:'링크'};
+      else if(del&&del.checked)doc={doc_url:'',doc_name:''};
+      Object.assign(c,doc||{});
+      if(editId){await q(sb.from('comps').update(c).eq('id',editId));UI.err='';await reload();toast('대회 정보를 고쳤습니다');}
+      else{const r=await q(sb.from('comps').insert(c).select());UI.newComp=false;UI.adminComp=r&&r[0]&&r[0].id;UI.err='';await reload();toast('대회를 만들었습니다. 「대회 일정」에 바로 보입니다');}});}
+  else if(f.id==='fMe'){const d={name:v('mName').trim(),org:v('mOrg').trim(),phone:v('mPhone').trim(),license:v('mLic').trim()};
+    if(!d.name||!d.org||!d.phone){formErr(f,'이름·소속·휴대폰을 모두 적어 주세요');return;}
+    run(async()=>{await q(sb.from('profiles').update(d).eq('id',me().id));await reload();toast('내 정보를 저장했습니다');});}
+  else if(f.id==='fPw'||f.id==='fPwReset'){const p1=v('pw1'),p2=v('pw2');
+    if(p1.length<6){formErr(f,'비밀번호는 6자 이상으로 해 주세요');return;}if(p1!==p2){formErr(f,'두 비밀번호가 서로 다릅니다');return;}
+    run(async()=>{const {error}=await sb.auth.updateUser({password:p1});if(error){formErr(f,msgOf(error));return;}
+      f.reset();UI.recovery=false;toast('비밀번호를 바꿨습니다. 다음부터 새 비밀번호로 로그인하세요');if(f.id==='fPwReset')go('home');});}
+  else if(f.id==='fForgot'){const em=v('fgEmail').trim();
+    run(async()=>{const {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});if(error){formErr(f,msgOf(error));return;}
+      f.innerHTML=`<b>${esc(em)}</b><span class="mute small">로 비밀번호 재설정 메일을 보냈습니다. 메일의 링크를 누르면 새 비밀번호를 정하는 화면이 열립니다. 메일이 오지 않으면 대회 본부에 임시 비밀번호를 요청해 주세요.</span>`;});}
 });
 render();reload();
 </script>
