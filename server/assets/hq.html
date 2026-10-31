@@ -142,6 +142,9 @@ body.mon #mon>*:not(.mwm){position:relative;z-index:1}
 .jch.ok{background:var(--ok-soft);color:var(--ok)}.jch.warn{background:var(--warn-soft);color:var(--warn)}.jch.bad{background:var(--red-soft);color:var(--red);animation:jblink 1.2s ease-in-out infinite}
 @keyframes jblink{50%{box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 35%,transparent)}}
 .jleg{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+.chip.livec{background:#C8102E;color:#fff;border-color:#E2334F}
+.chip.livec .dot{background:#fff}
 </style>
 
 <svg id="hqdefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ksGoldH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs></svg><header class="bar"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="ksword">KICKSTART<b>UP</b></span><span class="brand">대회 본부</span></header>
@@ -167,12 +170,15 @@ const saveCfg=p=>DB.doc('hqcfg/main').set({...CFG(),...p}).catch(()=>toast('저�
 const NOW=()=>Date.now();
 
 /* ---------- 코트 정리 ---------- */
+/* 코트별 유튜브 생중계 표시 */
+function liveChip(c){const L=c&&c.online&&c.live;if(!L)return '';const ok=L.state==='live';
+  return ` <span class="chip ${ok?'livec':'bad'}" title="유튜브 생중계"><i class="dot"></i>${ok?'🔴 생중계 중':L.state==='retry'?'생중계 끊김 · 다시 연결 중':'생중계 연결 중'}</span>`;}
 function courtList(){
   return Object.entries(S.courts).map(([id,c])=>{
     const apps=c.apps||{};let best=null;
     for(const [k,v] of Object.entries(apps)){const b=v&&v.board;if(b&&(!best||(b.at||0)>(best.board.at||0)))best={key:k,board:b,results:v.results||null};}
     const age=best&&best.board.at?NOW()-best.board.at:null;
-    return {id,addr:c.addr,via:c.via,court:c.court||'?',online:!!c.online,lastSeen:c.lastSeen||0,app:best,stale:c.online&&(!best||age>40000),apps};
+    return {id,addr:c.addr,via:c.via,court:c.court||'?',online:!!c.online,lastSeen:c.lastSeen||0,app:best,stale:c.online&&(!best||age>40000),apps,live:c.live&&c.live.on?c.live:null};
   }).sort((a,b)=>(a.court||'').localeCompare(b.court||'')||a.addr.localeCompare(b.addr));
 }
 function dupLetters(list){const m={};list.forEach(c=>{m[c.court]=(m[c.court]||0)+1;});return Object.keys(m).filter(k=>m[k]>1);}
@@ -180,6 +186,7 @@ function ago(t){if(!t||t<1e12)return '—';const s=Math.round((NOW()-t)/1000);re
 const VIA={beacon:'자동',scan:'주소 훑기',manual:'직접 입력'};
 function alerts(list){
   const out=[];
+  list.forEach(c=>{if(c.online&&c.live&&c.live.state==='retry')out.push(['bad',`${c.court}코트 유튜브 생중계가 끊겼습니다. 다시 연결하는 중입니다. 체육관 인터넷(공유기 인터넷선)을 확인해 주세요.`]);});
   list.forEach(c=>{if(!c.online)out.push(['bad',`${c.court}코트 노트북과 연결이 끊겼습니다 (${c.addr} · 마지막 연결 ${ago(c.lastSeen)}). 노트북 전원, 와이파이, 현장 모드 프로그램(검은 창)을 확인해 주세요.`]);
     else if(c.stale)out.push(['warn',`${c.court}코트: 운영석 화면이 열려 있지 않거나 멈춰 있습니다. 코트 노트북에서 운영석(경기 진행)을 열어 주세요.`]);
     else if(c.app)out.push(...judgeAlerts(c.court,c.app.board));});
@@ -219,7 +226,7 @@ function vAdmin(){
   const list=courtList(),cf=CFG(),al=alerts(list),n=cf.notice||{};
   const rows=list.length?list.map(c=>{const b=c.app&&c.app.board;
     return `<tr><td><b style="font-size:18px">${esc(c.court)}코트</b><div class="small muted">${esc(c.addr)} · ${VIA[c.via]||esc(c.via)}</div></td>
-      <td>${c.online?(c.stale?'<span class="chip warn"><i class="dot"></i>운영석 꺼짐</span>':'<span class="chip ok"><i class="dot"></i>연결됨</span>'):`<span class="chip bad"><i class="dot"></i>끊김 · ${ago(c.lastSeen)}</span>`}</td>
+      <td>${c.online?(c.stale?'<span class="chip warn"><i class="dot"></i>운영석 꺼짐</span>':'<span class="chip ok"><i class="dot"></i>연결됨</span>'):`<span class="chip bad"><i class="dot"></i>끊김 · ${ago(c.lastSeen)}</span>`}${liveChip(c)}</td>
       <td>${b?`<span class="chip">${esc(b.appName||'')}</span> <b>${esc(b.curDiv||'')}</b><div class="small muted">${b.now?esc(b.now.label)+' · '+esc((b.now.names||[]).map(x=>x.name).join(' · ')):'호출 대기'}${b.progress?` · 경기 ${b.progress.done}/${b.progress.total}`:''}</div>${b.nextDiv?`<div class="small">다음 부문: <b>${esc(b.nextDiv)}</b></div>`:''}${judgeChips(b,c.online&&!c.stale)}`:'<span class="muted small">진행 정보 없음</span>'}</td>
       <td style="white-space:nowrap">${b&&b.nextDiv?`<button class="btn sm primary" data-a="callNext" data-id="${esc(c.id)}">📣 다음 부문 호출</button> `:''}<button class="btn sm" data-a="forget" data-addr="${esc(c.addr)}" title="목록에서 빼기">빼기</button></td></tr>`;}).join('')
     :`<tr><td colspan="4"><div class="empty">아직 찾은 코트가 없습니다. 코트 노트북에서 현장 모드를 켜고 역할을 「코트」로 고르면 자동으로 나타납니다.<br>같은 공유기 와이파이에 연결되어 있는지 확인해 주세요.</div></td></tr>`;
@@ -279,7 +286,7 @@ function vMon(){
   const comp=(list.find(c=>c.app&&c.app.board.comp)||{app:{board:{}}}).app.board.comp||'태권도 대회';
   const col=c=>{const b=c.app&&c.app.board;
     const head=`<div class="ch"><span class="lt">${esc(c.court)}</span><span class="cn"><b>${esc(c.court)}코트</b><span>${esc(b?b.appName:'')}${b&&b.curDiv?' · '+esc(b.curDiv):''}</span></span>
-      <span class="st ${!c.online?'off':c.stale?'idle':'live'}">${!c.online?'● 연결 끊김':c.stale?'● 대기':'● 진행 중'}</span></div>`;
+      ${liveChip(c)}<span class="st ${!c.online?'off':c.stale?'idle':'live'}">${!c.online?'● 연결 끊김':c.stale?'● 대기':'● 진행 중'}</span></div>`;
     if(!c.online)return `<div class="col off">${head}<div class="offmsg">코트 노트북과 연결이 끊겼습니다 · ${ago(c.lastSeen)}</div>${b?`<div class="nd">마지막 경기: <b>${esc(b.now?b.now.label:'')}</b></div>`:''}</div>`;
     if(!b)return `<div class="col">${head}<div class="nocourt">경기 정보를 기다리는 중…</div></div>`;
     const nm=(x,big)=>`<div class="p ${x.side||''}">${x.side==='blue'?'청 ':x.side==='red'?'홍 ':''}${esc(x.name)}<small>${esc(x.team||'')}</small></div>`;

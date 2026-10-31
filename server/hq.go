@@ -28,6 +28,9 @@ type nodeConfig struct {
 	Court string `json:"court"` // "A" …
 	// 자동 업데이트: 비워 두면 켜짐. "꺼짐"/"off"/"false" 이면 끔 (설정.json에서 바꿈)
 	AutoUpdate string `json:"autoUpdate,omitempty"`
+	// 유튜브 생중계: 스트림 키(이 노트북에만 저장)와 송출 주소(비우면 유튜브 기본)
+	LiveKey string `json:"liveKey,omitempty"`
+	LiveURL string `json:"liveUrl,omitempty"`
 }
 
 func (c nodeConfig) autoUpdate() bool {
@@ -96,7 +99,9 @@ func handleNode(w http.ResponseWriter, r *http.Request) {
 		if req.Role == "hq" {
 			req.Court = ""
 		}
-		req.AutoUpdate = getConfig().AutoUpdate // 업데이트 설정은 그대로 둠
+		old := getConfig()
+		req.AutoUpdate = old.AutoUpdate // 업데이트 설정은 그대로 둠
+		req.LiveKey, req.LiveURL = old.LiveKey, old.LiveURL
 		setConfig(req)
 		fmt.Printf("\n  역할을 바꿨습니다: %s\n", roleLabel(req))
 	}
@@ -142,7 +147,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 			out[a.Key] = m
 		}
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "time": time.Now().UnixMilli()})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "time": time.Now().UnixMilli()})
 }
 
 // ---------------- 코트: 신호 보내기 ----------------
@@ -197,6 +202,7 @@ type courtEntry struct {
 	online    bool
 	lastSeen  time.Time
 	lastFeed  json.RawMessage
+	lastLive  []byte
 	curDiv    map[string]string // app -> 현재 부문
 	announced map[string]time.Time
 	written   bool
@@ -386,6 +392,14 @@ type feedMsg struct {
 	Role  string                     `json:"role"`
 	Court string                     `json:"court"`
 	Apps  map[string]json.RawMessage `json:"apps"`
+	Live  struct {
+		On    bool   `json:"on"`
+		State string `json:"state"`
+		App   string `json:"app"`
+		Err   string `json:"err"`
+		Slow  bool   `json:"slow"`
+		Since int64  `json:"since"`
+	} `json:"live"`
 }
 
 func pollCourt(addr string) {
@@ -419,6 +433,11 @@ func pollCourt(addr string) {
 			changed = true
 		}
 		c.court = fm.Court
+		lv, _ := json.Marshal(fm.Live)
+		if !bytes.Equal(lv, c.lastLive) {
+			changed = true
+			c.lastLive = lv
+		}
 		apps, _ := json.Marshal(fm.Apps)
 		if !bytes.Equal(apps, c.lastFeed) {
 			changed = true
@@ -459,7 +478,7 @@ func pollCourt(addr string) {
 	if !c.lastSeen.IsZero() {
 		ls = c.lastSeen.UnixMilli()
 	}
-	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed))}
+	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive))}
 	hqMu.Unlock()
 	s := stores["hq"]
 	if changed {

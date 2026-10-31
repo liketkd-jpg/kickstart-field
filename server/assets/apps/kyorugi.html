@@ -3119,7 +3119,9 @@ async function start(id){
     stop(true);
     const want={width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}};
     if(id)want.deviceId={exact:id};
-    stream=await navigator.mediaDevices.getUserMedia({video:want,audio:false});
+    try{stream=await navigator.mediaDevices.getUserMedia({video:want,audio:false});}
+    catch(e1){/* 지난번 카메라 번호가 바뀐 경우(다른 USB 구멍 등): 연결된 아무 카메라로 */
+      if(id&&e1&&(e1.name==='OverconstrainedError'||e1.name==='NotFoundError')){delete want.deviceId;stream=await navigator.mediaDevices.getUserMedia({video:want,audio:false});}else throw e1;}
     const tr=stream.getVideoTracks()[0];const st=tr.getSettings?tr.getSettings():{};if(st.deviceId)LS.set('ks_rp_cam',st.deviceId);
     tr.addEventListener('ended',()=>{err='카메라 연결이 끊겼습니다. USB 케이블을 확인한 뒤 「다시 켜기」를 눌러 주세요.';stop(true);drawBox();});
     try{devices=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');}catch(e){devices=[];}
@@ -3270,9 +3272,10 @@ document.addEventListener('keydown',e=>{
 },true);
 
 /* 지난번에 켜 두었으면 운영석을 열 때 자동으로 다시 켬 (현장 모드 노트북) */
-setTimeout(()=>{if(LS.get('ks_rp_on')==='1'&&isOperator()&&F)start(LS.get('ks_rp_cam')||'');},1500);
+(()=>{let n=0;const t=setInterval(()=>{n++;if(stream||n>20||LS.get('ks_rp_on')!=='1'||!F){clearInterval(t);return;}
+  if(isOperator()){clearInterval(t);start(LS.get('ks_rp_cam')||'');}},700);})();
 drawBox();
-window.KS_REPLAY={start,stop,open:openOv,close:closeOv,frames:()=>frames.length,act,state:()=>({on:!!stream,frames:frames.length,ov:!!ov,pos,saving})};
+window.KS_REPLAY={start,stop,open:openOv,close:closeOv,frames:()=>frames.length,act,state:()=>({on:!!stream,frames:frames.length,ov:!!ov,pos,saving}),video:()=>video,stream:()=>stream,box:()=>box};
 })();
 </script><script>/* ===== 구령 음성: 인터넷 없이도 나오게 (품새·격파 공통, 겨루기는 녹음 신호음이라 그대로) =====
    원인: 기기 음성 중 「Google 한국의」「Microsoft … Online」은 인터넷으로 만드는 목소리라 현장 모드(인터넷 없음)에서 소리가 안 납니다.
@@ -3434,5 +3437,307 @@ function refreshBtn(){
 setInterval(refreshBtn,1500);
 
 window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep,warmTTS,unlock};
+})();
+</script><script>/* ===== 유튜브 생중계 (품새·격파·겨루기 운영석 공통 · 현장 모드 전용) =====
+   영상 판독에 쓰는 웹캠 한 대로 생중계까지 합니다.
+   - 판독 카메라 화면 아래에 선수 이름·점수·타이머 띠를 얹어 H.264로 압축(브라우저 WebCodecs)
+   - 현장 모드 프로그램이 그 영상을 유튜브(RTMPS)로 보냄 (OBS 필요 없음)
+   - 「🔴 생중계 시작」 · 「생중계 끝내기」 · 방송 중 표시 · 인터넷 끊김 경고
+   - 유튜브 스트림 키는 처음 한 번만 넣으면 이 노트북에 저장됩니다 */
+(function(){
+if(window.KS_LIVE)return;
+const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
+const F=window.KS_FIELD||null,HOST=window.KS_HOST||null;
+const APP=(F&&F.app)||(HOST&&HOST.app)||'';
+const COURT=(F&&F.court)||(HOST&&HOST.court)||'';
+const APPNAME={poomsae:'품새',gyeokpa:'격파',kyorugi:'겨루기'}[APP]||'';
+const LW=1280,LH=720,FPS=30,KEY_EVERY=FPS*2,VBR=2500000;
+const LS={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}}};
+const R=()=>window.KS_REPLAY;
+let on=false,starting=false,st=null,enc=null,aenc=null,atrack=null,areader=null,cv=null,cx=null,t0=0,fno=0,ticker=null,flushT=null;
+let queue=[],qBytes=0,inflight=false,forceKey=true,lastOk=0,armedStop=0,audioOn=false,aBase=null,aOff=0,lastWarn='',dropUntilKey=false;
+
+/* ---------- 화면 조각 ---------- */
+const css=document.createElement('style');
+css.textContent=`
+#ksrp .klive{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:0 8px 8px}
+#ksrp .klive .b.lv{background:#C8102E;border-color:#E2334F;color:#fff}
+#ksrp .klive .onair{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:900;color:#fff;background:#C8102E;border-radius:7px;padding:4px 8px;margin-right:auto;white-space:nowrap}
+#ksrp .klive .onair i{width:8px;height:8px;border-radius:50%;background:#fff;animation:ksrpb 1.2s infinite}
+#ksrp .klive .onair.wait{background:#7A5A10}
+#ksrp .klive .kb{font-size:11.5px;color:#A9AFB9;white-space:nowrap}
+#ksrp .klive .warn{flex-basis:100%;font-size:12px;line-height:1.45;color:#FFD38A;background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);border-radius:8px;padding:6px 8px}
+#ksrp .klive .warn.bad{color:#FFC9CC;background:rgba(255,60,80,.14);border-color:rgba(255,60,80,.45)}
+#kslvm{position:fixed;inset:0;z-index:2147483000;background:rgba(5,6,9,.72);display:grid;place-items:center;padding:16px;font-family:"Noto Sans KR","Malgun Gothic",sans-serif}
+#kslvm .card{width:min(560px,100%);background:#0F1218;color:#F4EFE4;border:1px solid rgba(230,205,151,.45);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 30px 80px -20px #000}
+#kslvm h2{margin:0;font-size:21px;color:#E6CD97}
+#kslvm ol{margin:0;padding-left:20px;font-size:14px;line-height:1.7;color:#C9CFD8}
+#kslvm input[type=password],#kslvm input[type=text]{width:100%;box-sizing:border-box;background:#1A1E25;color:#fff;border:1px solid #3A404C;border-radius:10px;padding:12px;font-size:16px}
+#kslvm label.ck{display:flex;gap:8px;align-items:center;font-size:14px;color:#DDE2EA}
+#kslvm .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+#kslvm button{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#F4EFE4;border-radius:10px;padding:10px 16px;font-weight:800;font-size:15px;cursor:pointer}
+#kslvm button.go{background:#C8102E;border-color:#E2334F;color:#fff}
+#kslvm .small{font-size:12.5px;color:#9AA1AD;line-height:1.5}
+#kslvm .err{color:#FFC9CC;font-size:13px}`;
+(document.head||document.documentElement).appendChild(css);
+
+function note(m){try{const t=g('toast');if(typeof t==='function'){t(m);return;}}catch(e){}}
+const api=(p,body,bin)=>fetch('/live/'+p,{method:body===undefined?'GET':'POST',headers:bin?{'Content-Type':'application/octet-stream'}:{'Content-Type':'application/json'},body:bin?body:(body===undefined?undefined:JSON.stringify(body)),cache:'no-store'}).then(r=>r.json());
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mmss=s=>{s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');};
+
+/* ---------- 점수 띠에 들어갈 내용 (종목별) ---------- */
+function info(){
+  const o={title:(()=>{try{return (g('SET')()||{}).name||'';}catch(e){return '';}})(),div:'',sides:[],timer:'',note:''};
+  try{
+    if(APP==='kyorugi'){
+      const L=g('live')();if(!L)return o;const E=g('eng')(),sc=g('shownScore')(L,E);
+      o.div=`${L.divName||''} · ${L.label||''}`;o.timer=g('mmss')(g('remain')(L.timer));o.note=g('roundLabel')(L.round)||'';
+      o.sides=['blue','red'].map(s=>({color:s,name:L[s]&&L[s].name||'',team:L[s]&&L[s].team||'',score:String(sc[s]??''),win:!!(L.result&&L.result.side===s)}));
+      if(L.result)o.note=`${g('sideName')(L.result.side)} 승`;
+      return o;
+    }
+    const cur=g('curOf')();if(!cur)return o;const S=g('S'),stt=g('ST')(),rev=stt.status==='revealed';
+    o.div=`${cur.divName||''} · ${cur.label||''}`;o.timer=g('cdText')(stt.timer)||'';
+    if(APP==='poomsae'){
+      const f3=g('fmt3');
+      o.sides=(cur.entries||[]).map(e=>{const r=rev&&S.results[e.perfId];return {color:e.side||'',name:e.name||'',team:e.team||'',score:r?f3(r.final):''};});
+      try{const n=g('pnameOfCall')(cur);if(n)o.note=(cur.rm?'재경기 ':'')+n;}catch(e){}
+    }else{
+      const r=rev&&S.results[cur.perfId];
+      o.sides=[{color:'',name:cur.name||'',team:cur.team||'',score:r?g('resultText')(r):''}];
+      try{o.note=(g('EV')[cur.ev]||{}).label||'';}catch(e){}
+    }
+  }catch(e){}
+  return o;
+}
+
+/* ---------- 방송 화면 그리기 ---------- */
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function fit(c,t,max){let s=String(t||'');while(s.length>1&&c.measureText(s).width>max)s=s.slice(0,-1);return s===String(t||'')?s:s+'…';}
+const FONT='"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+function draw(){
+  const v=R()&&R().video();
+  cx.fillStyle='#000';cx.fillRect(0,0,LW,LH);
+  if(v&&v.readyState>=2&&v.videoWidth){const k=Math.min(LW/v.videoWidth,LH/v.videoHeight),w=v.videoWidth*k,h=v.videoHeight*k;try{cx.drawImage(v,(LW-w)/2,(LH-h)/2,w,h);}catch(e){}}
+  else{cx.fillStyle='#9AA1AD';cx.font=`700 34px ${FONT}`;cx.textAlign='center';cx.fillText('카메라 준비 중…',LW/2,LH/2);cx.textAlign='left';}
+  const I=info();
+  /* 왼쪽 위: 대회 이름 · 코트 */
+  cx.font=`800 22px ${FONT}`;const tl=`KICKSTART UP${I.title?'  ·  '+I.title:''}${COURT?'  ·  '+COURT+'코트':''}${APPNAME?' '+APPNAME:''}`;
+  const tw=Math.min(cx.measureText(tl).width+28,LW-40);rr(cx,20,18,tw,38,10);cx.fillStyle='rgba(8,9,12,.72)';cx.fill();
+  cx.fillStyle='#E6CD97';cx.fillText(fit(cx,tl,tw-28),34,45);
+  /* 아래 점수 띠 */
+  if(!I.sides.length&&!I.div)return;
+  const H=I.sides.length>1?132:108,Y=LH-H-18,X=20,Wd=LW-40;
+  rr(cx,X,Y,Wd,H,16);const gr=cx.createLinearGradient(0,Y,0,Y+H);gr.addColorStop(0,'rgba(14,16,22,.90)');gr.addColorStop(1,'rgba(6,7,10,.94)');cx.fillStyle=gr;cx.fill();
+  cx.fillStyle='#C9A55C';cx.fillRect(X+16,Y,Wd-32,3);
+  const TW=200;/* 오른쪽 시간 칸 */
+  cx.fillStyle='rgba(255,255,255,.06)';rr(cx,X+Wd-TW-12,Y+12,TW,H-24,12);cx.fill();
+  cx.textAlign='center';cx.fillStyle='#fff';cx.font=`800 ${I.sides.length>1?54:50}px "Barlow Condensed",${FONT}`;cx.fillText(I.timer||'',X+Wd-12-TW/2,Y+H/2+14);
+  if(I.note){cx.font=`700 16px ${FONT}`;cx.fillStyle='#E6CD97';cx.fillText(fit(cx,I.note,TW-16),X+Wd-12-TW/2,Y+H-18);}
+  cx.textAlign='left';
+  cx.font=`600 17px ${FONT}`;cx.fillStyle='#AEB5C1';cx.fillText(fit(cx,I.div,Wd-TW-60),X+22,Y+30);
+  const area=Wd-TW-40;
+  if(I.sides.length<=1){
+    const s=I.sides[0]||{};
+    cx.font=`900 40px ${FONT}`;cx.fillStyle='#fff';const nm=fit(cx,s.name,area-260);cx.fillText(nm,X+22,Y+80);
+    const nw=cx.measureText(nm).width;cx.font=`600 19px ${FONT}`;cx.fillStyle='#AEB5C1';cx.fillText(fit(cx,s.team,area-nw-280),X+34+nw,Y+79);
+    if(s.score){cx.textAlign='right';cx.font=`800 52px "Barlow Condensed",${FONT}`;cx.fillStyle='#E6CD97';cx.fillText(s.score,X+area,Y+84);cx.textAlign='left';}
+  }else{
+    const half=(area-10)/2;
+    I.sides.slice(0,2).forEach((s,i)=>{
+      const x0=X+14+i*(half+10),y0=Y+44,col=s.color==='red'?'#D7263D':s.color==='blue'?'#1E5BD8':'#3A404C';
+      rr(cx,x0,y0,half,H-56,10);cx.fillStyle=col;cx.globalAlpha=.9;cx.fill();cx.globalAlpha=1;
+      if(s.win){cx.lineWidth=4;cx.strokeStyle='#E6CD97';rr(cx,x0,y0,half,H-56,10);cx.stroke();}
+      cx.font=`900 30px ${FONT}`;cx.fillStyle='#fff';const nm=fit(cx,s.name,half-150);cx.fillText(nm,x0+14,y0+38);
+      cx.font=`600 15px ${FONT}`;cx.fillStyle='rgba(255,255,255,.85)';cx.fillText(fit(cx,s.team,half-150),x0+14,y0+62);
+      if(s.score!==''){cx.textAlign='right';cx.font=`800 58px "Barlow Condensed",${FONT}`;cx.fillStyle='#fff';cx.fillText(s.score,x0+half-14,y0+60);cx.textAlign='left';}
+    });
+  }
+}
+
+/* ---------- 압축 · 보내기 ---------- */
+function rec(typ,key,ts,data){const u=data instanceof Uint8Array?data:new Uint8Array(data);const b=new Uint8Array(10+u.length),dv=new DataView(b.buffer);
+  dv.setUint8(0,typ);dv.setUint8(1,key?1:0);dv.setUint32(2,Math.max(0,Math.round(ts))>>>0);dv.setUint32(6,u.length);b.set(u,10);return b;}
+function put(b,video){
+  if(qBytes>12e6){if(video){dropUntilKey=true;forceKey=true;}return;}
+  queue.push(b);qBytes+=b.length;
+}
+async function flush(){
+  if(inflight||!queue.length||!on)return;inflight=true;
+  const parts=queue;queue=[];qBytes=0;
+  const n=parts.reduce((a,b)=>a+b.length,0),all=new Uint8Array(n);let o=0;for(const p of parts){all.set(p,o);o+=p.length;}
+  try{const s=await api('data',all,true);onStatus(s);lastOk=Date.now();}
+  catch(e){/* 현장 서버(이 노트북 프로그램)가 꺼짐 */st={...(st||{}),state:'local',err:'현장 모드 프로그램에 닿지 않습니다'};drawRow();}
+  finally{inflight=false;}
+}
+function onStatus(s){
+  if(!s)return;const prev=st&&st.state;st=s;
+  if(s.needKey)forceKey=true;
+  if(on&&!s.on&&!starting){note('생중계가 다른 곳에서 꺼졌습니다');stopLocal();}
+  if(prev!==s.state){
+    if(s.state==='live'&&prev&&prev!=='live')note('🔴 유튜브 생중계가 연결되었습니다');
+    if(s.state==='retry')note('⚠ 유튜브 연결이 끊겼습니다. 다시 연결하는 중입니다 · '+(s.err||''));
+  }
+  drawRow();
+}
+async function pickVideoConfig(){
+  if(typeof VideoEncoder==='undefined')return null;
+  const base={width:LW,height:LH,bitrate:VBR,framerate:FPS,avc:{format:'avc'},latencyMode:'realtime',bitrateMode:'constant'};
+  for(const codec of ['avc1.4d401f','avc1.42e01f','avc1.640028','avc1.42001f'])for(const hw of ['prefer-hardware','no-preference']){
+    const c={...base,codec,hardwareAcceleration:hw};
+    try{const r=await VideoEncoder.isConfigSupported(c);if(r&&r.supported)return r.config||c;}catch(e){}
+    try{const c2={...c};delete c2.bitrateMode;const r=await VideoEncoder.isConfigSupported(c2);if(r&&r.supported)return r.config||c2;}catch(e){}
+  }
+  return null;
+}
+async function startAudio(){
+  audioOn=false;
+  if(typeof AudioEncoder==='undefined'||typeof MediaStreamTrackProcessor==='undefined')return false;
+  try{
+    const ms=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:true}});
+    atrack=ms.getAudioTracks()[0];if(!atrack)return false;
+    const set=atrack.getSettings?atrack.getSettings():{};const sr=set.sampleRate||48000,ch=Math.min(2,set.channelCount||1);
+    const cfg={codec:'mp4a.40.2',sampleRate:sr,numberOfChannels:ch,bitrate:128000};
+    const ok=await AudioEncoder.isConfigSupported(cfg).then(r=>r&&r.supported).catch(()=>false);
+    if(!ok){atrack.stop();atrack=null;return false;}
+    aBase=null;
+    aenc=new AudioEncoder({output:(chunk,meta)=>{
+        if(meta&&meta.decoderConfig&&meta.decoderConfig.description)put(rec(3,0,0,meta.decoderConfig.description),false);
+        if(aBase===null){aBase=chunk.timestamp;aOff=performance.now()-t0;}
+        const b=new Uint8Array(chunk.byteLength);chunk.copyTo(b);put(rec(4,0,aOff+(chunk.timestamp-aBase)/1000,b),false);},
+      error:e=>{audioOn=false;}});
+    aenc.configure(cfg);
+    areader=new MediaStreamTrackProcessor({track:atrack}).readable.getReader();
+    (async()=>{try{while(on&&areader){const {value,done}=await areader.read();if(done)break;if(aenc&&aenc.state==='configured')aenc.encode(value);value.close();}}catch(e){}})();
+    audioOn=true;return true;
+  }catch(e){if(atrack){try{atrack.stop();}catch(_){}}atrack=null;return false;}
+}
+/* 탭이 뒤로 가도 멈추지 않게: 작업 스레드 시계로 그리기 */
+function makeTicker(fn){
+  try{const src=`let t=null;onmessage=e=>{clearInterval(t);if(e.data>0)t=setInterval(()=>postMessage(0),e.data);}`;
+    const w=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));w.onmessage=fn;w.postMessage(1000/FPS);return {stop:()=>{w.postMessage(0);w.terminate();}};}
+  catch(e){const t=setInterval(fn,1000/FPS);return {stop:()=>clearInterval(t)};}
+}
+function frame(){
+  if(!on||!enc||enc.state!=='configured')return;
+  if(enc.encodeQueueSize>3)return;
+  draw();
+  const ts=(performance.now()-t0)*1000;let vf;
+  try{vf=new VideoFrame(cv,{timestamp:ts});}catch(e){return;}
+  const key=forceKey||fno%KEY_EVERY===0;forceKey=false;fno++;
+  try{enc.encode(vf,{keyFrame:key});}catch(e){}
+  vf.close();
+}
+
+async function startLive(opts){
+  if(on||starting)return;
+  if(!F){note('유튜브 생중계는 현장 모드 프로그램에서만 됩니다');return;}
+  const rp=R();if(!rp||!rp.state().on){note('먼저 「🎥 영상 판독 켜기」로 카메라를 켜 주세요');return;}
+  starting=true;drawRow();
+  try{
+    const vcfg=await pickVideoConfig();
+    if(!vcfg){note('이 브라우저는 생중계 압축(H.264)을 지원하지 않습니다. 크롬이나 엣지 최신 버전으로 운영석을 열어 주세요');starting=false;drawRow();return;}
+    cv=document.createElement('canvas');cv.width=LW;cv.height=LH;cx=cv.getContext('2d');
+    queue=[];qBytes=0;fno=0;forceKey=true;dropUntilKey=false;t0=performance.now();on=true;
+    enc=new VideoEncoder({output:(chunk,meta)=>{
+        if(meta&&meta.decoderConfig&&meta.decoderConfig.description)put(rec(1,0,0,meta.decoderConfig.description),false);
+        if(dropUntilKey){if(chunk.type!=='key')return;dropUntilKey=false;}
+        const b=new Uint8Array(chunk.byteLength);chunk.copyTo(b);put(rec(2,chunk.type==='key',chunk.timestamp/1000,b),true);},
+      error:e=>{note('영상 압축 오류: '+(e&&e.message||e));stopLive();}});
+    enc.configure(vcfg);
+    const wantAudio=opts&&opts.audio!==undefined?opts.audio:LS.get('ks_live_audio')!=='0';
+    const aok=wantAudio?await startAudio():false;
+    if(wantAudio&&!aok)note('마이크 소리를 보낼 수 없어 무음으로 방송합니다');
+    const s=await api('start',{app:APP,audio:aok,width:LW,height:LH});
+    if(s&&s.error){note(s.error);await stopLocal();starting=false;drawRow();return;}
+    onStatus(s);
+    ticker=makeTicker(frame);flushT=setInterval(flush,250);
+    LS.set('ks_live_on','1');
+    note('🔴 생중계를 시작합니다. 유튜브 스튜디오에서 화면이 들어오는지 확인해 주세요');
+  }catch(e){note('생중계를 시작하지 못했습니다: '+(e&&e.message||e));await stopLocal();}
+  starting=false;drawRow();
+}
+async function stopLocal(){
+  on=false;
+  if(ticker){ticker.stop();ticker=null;}clearInterval(flushT);flushT=null;
+  try{if(enc&&enc.state!=='closed')enc.close();}catch(e){}enc=null;
+  try{if(aenc&&aenc.state!=='closed')aenc.close();}catch(e){}aenc=null;
+  try{if(areader)areader.cancel();}catch(e){}areader=null;
+  if(atrack){try{atrack.stop();}catch(e){}atrack=null;}
+  queue=[];qBytes=0;
+}
+async function stopLive(){
+  await stopLocal();LS.set('ks_live_on','0');
+  try{onStatus(await api('stop',{}));}catch(e){}
+  note('생중계를 끝냈습니다');drawRow();
+}
+
+/* ---------- 스트림 키 넣기 ---------- */
+function keyDialog(thenStart){
+  if(document.getElementById('kslvm'))return;
+  const m=document.createElement('div');m.id='kslvm';m.setAttribute('data-noi18n','');
+  const hint=st&&st.keySet?`지금 저장된 키: <b>${esc(st.keyHint)}</b> (바꿀 때만 새로 넣으세요)`:'처음 한 번만 넣으면 이 노트북에 저장됩니다.';
+  m.innerHTML=`<div class="card"><h2>🔴 유튜브 생중계 · 스트림 키</h2>
+    <ol><li>유튜브 스튜디오(studio.youtube.com) → 오른쪽 위 <b>만들기</b> → <b>라이브 스트리밍 시작</b></li>
+      <li>왼쪽 <b>스트림</b> 화면의 <b>스트림 키</b> 옆 「복사」를 누르기</li><li>아래 칸에 붙여 넣기 (Ctrl+V)</li></ol>
+    <input type="password" id="kslvk" placeholder="xxxx-xxxx-xxxx-xxxx-xxxx" autocomplete="off" spellcheck="false">
+    <span class="small">${hint} 키는 비밀번호와 같으니 다른 사람에게 보이지 않게 해 주세요.</span>
+    <label class="ck"><input type="checkbox" id="kslva" ${LS.get('ks_live_audio')!=='0'?'checked':''}> 경기장 소리도 함께 보내기 (웹캠·노트북 마이크)</label>
+    <span class="err" id="kslve"></span>
+    <div class="row"><button data-lvm="cancel">취소</button><button class="go" data-lvm="save">${thenStart?'저장하고 생중계 시작':'저장'}</button></div></div>`;
+  document.body.appendChild(m);setTimeout(()=>{const i=m.querySelector('#kslvk');if(i)i.focus();},50);
+  m.addEventListener('click',async e=>{const b=e.target.closest('[data-lvm]');if(!b)return;e.preventDefault();e.stopPropagation();
+    if(b.dataset.lvm==='cancel'){m.remove();return;}
+    const k=m.querySelector('#kslvk').value.trim(),au=m.querySelector('#kslva').checked;LS.set('ks_live_audio',au?'1':'0');
+    if(!k&&!(st&&st.keySet)){m.querySelector('#kslve').textContent='스트림 키를 붙여 넣어 주세요';return;}
+    try{if(k)onStatus(await api('key',{key:k}));}catch(err){m.querySelector('#kslve').textContent='현장 모드 프로그램에 저장하지 못했습니다';return;}
+    m.remove();if(thenStart)startLive({audio:au});});
+  m.addEventListener('keydown',e=>{if(e.key==='Escape'){m.remove();}e.stopPropagation();},true);
+}
+
+/* ---------- 판독 칸 아래 생중계 줄 ---------- */
+function warnText(){
+  if(!on)return '';
+  if(!navigator.onLine)return ['bad','⚠ 인터넷 연결이 끊겼습니다. 방송이 멈춰 있습니다. 공유기 인터넷선을 확인해 주세요.'];
+  if(!st)return '';
+  if(st.state==='local')return ['bad','⚠ 현장 모드 프로그램(검은 창)에 닿지 않습니다.'];
+  if(st.state==='retry')return ['bad','⚠ 인터넷 끊김 · 유튜브에 다시 연결하는 중… '+(st.err||'')];
+  if(st.state==='connecting')return ['','유튜브에 연결하는 중…'];
+  if(st.slow)return ['','⚠ 인터넷이 느려 화면 일부를 건너뛰고 있습니다.'];
+  if(st.err)return ['',st.err];
+  return '';
+}
+function drawRow(){
+  const rp=R();const box=rp&&rp.box&&rp.box();const mini=box&&box.querySelector('.mini');
+  if(!mini||!rp.state().on){if(on&&rp&&!rp.state().on){note('판독 카메라가 꺼져 생중계를 끝냅니다');stopLive();}return;}
+  let row=mini.querySelector('.klive');if(!row){row=document.createElement('div');row.className='klive';row.setAttribute('data-noi18n','');mini.appendChild(row);}
+  let h;
+  if(!F)h=`<span class="kb">유튜브 생중계는 현장 모드 노트북에서만 됩니다</span>`;
+  else if(starting)h=`<span class="onair wait"><i></i>생중계 준비 중…</span>`;
+  else if(on){const sec=st&&st.sec||0,live=st&&st.state==='live';
+    h=`<span class="onair ${live?'':'wait'}"><i></i>${live?'방송 중':'연결 중'} ${mmss(sec)}</span><span class="kb">${st&&st.kbps?Math.round(st.kbps/100)/10+'Mbps':''}${audioOn?' · 🎤':' · 무음'}</span>
+      <button class="b" data-lv="stop">${Date.now()-armedStop<4000?'한 번 더 누르면 끝냄':'생중계 끝내기'}</button>`;
+    const w=warnText();if(w)h+=`<div class="warn ${w[0]}">${esc(w[1])}</div>`;}
+  else h=`<button class="b lv" data-lv="start">🔴 생중계 시작</button><button class="b" data-lv="key" title="유튜브 스트림 키">🔑 키</button>${st&&st.on?'<span class="kb">다른 화면에서 방송 중</span>':''}`;
+  if(row.__h!==h){row.innerHTML=h;row.__h=h;}
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-lv]');if(!b)return;e.preventDefault();e.stopPropagation();
+  const v=b.dataset.lv;
+  if(v==='start'){if(st&&st.keySet)startLive();else api('status').then(s=>{st=s;s.keySet?startLive():keyDialog(true);}).catch(()=>keyDialog(true));}
+  else if(v==='key')keyDialog(false);
+  else if(v==='stop'){if(Date.now()-armedStop<4000){armedStop=0;stopLive();}else{armedStop=Date.now();drawRow();setTimeout(drawRow,4100);}}
+},true);
+setInterval(()=>{drawRow();
+  if(F&&!on&&!starting)api('status').then(s=>{st=s;
+    /* 운영석 화면을 새로 고쳐도 방송을 이어 감 */
+    if(s.on&&LS.get('ks_live_on')==='1'&&R()){if(R().state().on)startLive();else if(!R().__lvTry||Date.now()-R().__lvTry>8000){R().__lvTry=Date.now();try{R().start(LS.get('ks_rp_cam')||'');}catch(e){}}}
+    drawRow();}).catch(()=>{});
+  else if(on&&Date.now()-lastOk>5000&&!inflight)api('status').then(onStatus).catch(()=>{st={...(st||{}),state:'local'};drawRow();});
+},1500);
+addEventListener('online',drawRow);addEventListener('offline',()=>{drawRow();if(on)note('⚠ 인터넷 연결이 끊겼습니다. 생중계가 멈춥니다');});
+
+window.KS_LIVE={start:startLive,stop:stopLive,info,state:()=>({on,starting,st,audio:audioOn,frames:fno,queue:queue.length}),draw:()=>{if(!cv){cv=document.createElement('canvas');cv.width=LW;cv.height=LH;cx=cv.getContext('2d');}draw();return cv;}};
 })();
 </script><!--@@END-->
