@@ -2113,6 +2113,7 @@ function resultsPanel(){
   const coach=ca.length?ca.map((c,i)=>`<div class="row between awcoachrow"><span><b>${e(c.coach||'(지도자 이름 없음)')}</b> <span class="small muted">${e(c.team)} · <span>${e(c.why)}</span>${c.mvp?` (${e(c.mvp)})`:''}</span></span>${c.coach?`<button class="btn sm primary" data-aw="certCoach" data-i="${i}">최우수 지도자 상장</button>`:'<span class="small muted">위 표에 지도자 이름을 넣어 주세요</span>'}</div>`).join(''):'<div class="empty small">종합 순위가 나오면 자동으로 정해집니다.</div>';
   const cur=S.divs.find(x=>x.id===ui.resDiv);
   return `<div class="panel awpanel"><div class="row between"><h2>시상 · 상장</h2>${scopeSel}</div>
+    <div class="rgsend"><button class="btn primary" type="button" data-rgact="sendRes">🌐 결과를 접수 홈페이지로 보내기</button><span class="small muted">입상 결과를 홈페이지로 보내면 지도자가 상장을 직접 내려받습니다</span></div>
     <span class="small muted"><span>금메달</span> ${cf.gold} · <span>은메달</span> ${cf.silver} · <span>동메달</span> ${cf.bronze}${cf.partOn?` · <span>출전 점수</span> ${cf.part}`:''} · <span>${cf.small?'4명 미만 부문 포함':'4명 미만 부문 제외 (제6조)'}</span> · <span>규정은 "대회 설정"에서 바꿉니다.</span></span>
     <h3>팀 종합 순위</h3>${team}
     <h3>최우수 선수 <span class="small muted">(<span>${(RULES[cf.mvpRule]||RULES.sf).l}</span> · <span>${cf.mvpAgg==='avg'?'평균':'합계'}</span> · <span>입상자 중</span>)</span></h3>${mvp}
@@ -2237,6 +2238,8 @@ async function printCerts(list,fname){
   const ok=await saveFile(`${safe}.pdf`,doc.output('arraybuffer'));if(ok)toast(`상장 ${list.length}장을 저장했습니다`);
 }
 window.AW.printCerts=printCerts;window.AW.drawCert=drawCert;window.AW.medalCert=medalCert;
+window.AW.results=()=>{const cf=CFG(),comp=(SET()||{}).name||'';let med=[],team=[];try{med=medalists();}catch(err){}try{team=teamStandings(false)||[];}catch(err){}
+  return {comp,meta:{host:cf.host||'',title:cf.title||'',rep:cf.rep||'',date:cf.date||'',serial:cf.serial||''},rows:[...med.map(x=>({kind:'medal',div:x.div.name||'',rank:x.rank,name:x.name,team:x.team,coach:x.coach||coachOf(x.team)||'',members:x.members||''})),...team.filter(r=>r.rank<=3).map(r=>({kind:'team',div:'',rank:r.rank,name:r.team,team:'',coach:r.coach||'',members:''}))]};};
 })();
 </script><script>/* ===== 노트북 음악 폴더: 운영석 컴퓨터의 폴더를 골라 파일 이름으로 선수(팀)와 자동 연결, 이 컴퓨터에 보관해 바로 재생 =====
    서버에 올리지 않으므로 용량 걱정이 없고, 한 번 고르면 이 컴퓨터(같은 브라우저)에 남아 새로고침해도 그대로입니다. */
@@ -3852,22 +3855,33 @@ function rows(sp,E){
 function toFile(R,name){if(!window.XLSX)throw new Error('엑셀 도구를 불러오지 못했습니다. 새로고침해 주세요');
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(R),'선수명단');
   return new File([XLSX.write(wb,{bookType:'xlsx',type:'array'})],name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});}
+async function publish(comp,res){const t=await token();if(!t)throw new Error('로그인이 필요합니다');
+  return await call('/rest/v1/rpc/publish_results',{method:'POST',headers:H(t),body:JSON.stringify({p_comp:comp,p_sport:sport(),p_rows:res.rows,p_meta:res.meta})});}
 async function feed(file){const f=typeof window.readExcel==='function'?window.readExcel:(0,eval)('typeof readExcel==="function"?readExcel:null');
   if(!f)throw new Error('이 화면에서는 명단을 불러올 수 없습니다');await f(file);}
 
 /* ---------- 창 ---------- */
 const S={step:'list',L:[],comp:null,E:null,paidOnly:false,err:'',busy:false};
 let BOX=null;
-function open_(){if(!BOX){BOX=document.createElement('div');BOX.className='rgov';BOX.setAttribute('role','dialog');BOX.setAttribute('aria-modal','true');BOX.setAttribute('aria-label','접수 홈페이지에서 명단 가져오기');document.body.appendChild(BOX);}
-  S.err='';S.E=null;S.comp=null;S.step=A?'list':'login';draw();if(A)loadList();}
+function open_(mode){S.mode=mode||'import';if(!BOX){BOX=document.createElement('div');BOX.className='rgov';BOX.setAttribute('role','dialog');BOX.setAttribute('aria-modal','true');BOX.setAttribute('aria-label','접수 홈페이지에서 명단 가져오기');document.body.appendChild(BOX);}
+  S.err='';S.E=null;S.comp=null;S.sent=null;S.step=A?'list':'login';draw();if(A)loadList();}
 function close_(){if(BOX){BOX.remove();BOX=null;}}
 function draw(){if(!BOX)return;const sp=sport();let b='';
   if(S.step==='login')b=`<p class="small muted">접수 홈페이지의 <b>대회 본부(관리자)</b> 이메일과 비밀번호를 넣어 주세요. 이 기기에서는 한 번만 넣으면 됩니다.</p>
     <form class="rgf" id="rgLogin"><label><span>이메일</span><input type="email" id="rgE" required autocomplete="username" value="${esc(S.email||(A&&A.email)||'')}"></label>
       <label><span>비밀번호</span><input type="password" id="rgP" required autocomplete="current-password"></label>
       <button class="btn primary" type="submit" ${S.busy?'disabled':''}>${S.busy?'로그인 중…':'로그인'}</button></form>`;
-  else if(S.step==='list')b=S.busy&&!S.L.length?'<p class="muted">대회 목록을 불러오는 중…</p>':S.L.length?`<p class="small muted">${SP[sp]} 종목이 있는 대회입니다. 명단을 가져올 대회를 누르세요.</p><div class="rgl">${S.L.map(c=>`<button type="button" class="rgc" data-rgact="pick" data-id="${esc(c.id)}"><b>${esc(c.name)}</b><span class="small muted">${esc(c.date)} · 접수 마감 ${esc(c.deadline)}</span></button>`).join('')}</div>`
+  else if(S.step==='list')b=S.busy&&!S.L.length?'<p class="muted">대회 목록을 불러오는 중…</p>':S.L.length?`<p class="small muted">${SP[sp]} 종목이 있는 대회입니다. ${S.mode==='send'?'결과를 보낼':'명단을 가져올'} 대회를 누르세요.</p><div class="rgl">${S.L.map(c=>`<button type="button" class="rgc" data-rgact="pick" data-id="${esc(c.id)}"><b>${esc(c.name)}</b><span class="small muted">${esc(c.date)} · 접수 마감 ${esc(c.deadline)}</span></button>`).join('')}</div>`
       :`<p class="muted">${SP[sp]} 종목이 있는 대회가 없습니다. 접수 홈페이지 「대회 관리」에서 대회를 만들어 주세요.</p>`;
+  else if(S.step==='send'){const R0=S.res||{rows:[]},med=R0.rows.filter(r=>r.kind==='medal'),tm=R0.rows.filter(r=>r.kind==='team'),c=n=>med.filter(r=>r.rank===n).length;
+    b=S.sent?`<p><b>${esc(S.comp.name)}</b></p><div class="rgk"><div><b>${S.sent.rows}</b><span>보낸 결과</span></div><div><b>${S.sent.matched}</b><span>지도자 연결</span></div><div><b>${S.sent.rows-S.sent.matched}</b><span>연결 안 됨</span></div></div>
+      <p class="small muted">홈페이지 「대회 관리 → 결과 · 상장」에서 확인하고, 연결 안 된 결과는 지도자를 골라 주세요. 「지도자에게 공개」를 켜면 지도자가 상장을 내려받습니다.</p>
+      <div class="rgrow"><a class="btn primary" href="${SITE}#admin" target="_blank" rel="noopener">접수 홈페이지 열기</a><button type="button" class="btn" data-rgact="x">닫기</button></div>`
+    :`<p><b>${esc(S.comp.name)}</b><br><span class="small muted">${SP[sp]} 결과</span></p>
+      ${R0.rows.length?`<div class="rgk"><div><b>${c(1)}</b><span>금</span></div><div><b>${c(2)}</b><span>은</span></div><div><b>${c(3)}</b><span>동</span></div></div>
+      <p class="small muted">입상 ${med.length}건${tm.length?` + 팀 종합 ${tm.length}건`:''}을 보냅니다. 이 대회 ${SP[sp]} 결과를 전에 보냈다면 새 결과로 바뀝니다. 「시상」 설정의 주최·대표 이름도 상장에 함께 쓰입니다.</p>
+      <div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button><button type="button" class="btn primary" data-rgact="send" ${S.busy?'disabled':''}>${S.busy?'보내는 중…':`${R0.rows.length}건 보내기`}</button></div>`
+      :`<p class="muted">아직 입상 결과가 없습니다. 경기가 끝나 순위가 나온 뒤 보내 주세요.</p><div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button></div>`}`;}
   else if(S.step==='preview'){const E=S.E||[],paid=E.filter(e=>e.status==='paid').length,use=S.paidOnly?E.filter(e=>e.status==='paid'):E,n=use.reduce((s,e)=>s+e.athletes.length,0);
     b=`<p><b>${esc(S.comp.name)}</b><br><span class="small muted">${esc(S.comp.date)}</span></p>
       ${E.length?`<div class="rgk"><div><b>${E.length}</b><span>${SP[sp]} 접수</span></div><div><b>${paid}</b><span>입금 확인</span></div><div><b>${E.length-paid}</b><span>입금 전</span></div></div>
@@ -3875,7 +3889,7 @@ function draw(){if(!BOX)return;const sp=sport();let b='';
       <p class="small muted">「가져오기」를 누르면 엑셀 파일을 올린 것과 똑같이 ${use.length}건(선수 ${n}명)을 읽어 부문을 만듭니다.</p>
       <div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button><button type="button" class="btn primary" data-rgact="go" ${use.length&&!S.busy?'':'disabled'}>${S.busy?'가져오는 중…':`${use.length}건 가져오기`}</button></div>`
       :`<p class="muted">아직 ${SP[sp]} 접수가 없습니다.</p><div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button></div>`}`;}
-  BOX.innerHTML=`<div class="rgbox"><div class="rghd"><b>🌐 접수 홈페이지에서 가져오기</b><button type="button" class="btn" data-rgact="x" aria-label="닫기">✕</button></div>
+  BOX.innerHTML=`<div class="rgbox"><div class="rghd"><b>${S.mode==='send'?'🌐 결과를 접수 홈페이지로 보내기':'🌐 접수 홈페이지에서 가져오기'}</b><button type="button" class="btn" data-rgact="x" aria-label="닫기">✕</button></div>
     ${S.err?`<div class="rgerr" role="alert">${esc(S.err)}</div>`:''}${b}
     <div class="rgft small muted">${A?`${esc(A.email)} 로그인 · <button type="button" class="rglink" data-rgact="logout">로그아웃</button> · `:''}<a href="${SITE}" target="_blank" rel="noopener">접수 홈페이지 열기</a></div></div>`;
   const e=BOX.querySelector('#rgE');if(e&&!e.value)e.focus();else{const p=BOX.querySelector('#rgP');if(p)p.focus();}}
@@ -3885,11 +3899,17 @@ document.addEventListener('submit',async e=>{if(!e.target||e.target.id!=='rgLogi
   catch(err){S.busy=false;S.err=err.message;draw();}},true);
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-rgact]');if(!b)return;const a=b.dataset.rgact;
   if(a==='open'){e.preventDefault();open_();return;}
+  if(a==='sendRes'){e.preventDefault();open_('send');return;}
   if(a!=='paidOnly'){e.preventDefault();e.stopPropagation();}
   if(a==='x')close_();
   else if(a==='logout'){A=null;saveA();S.step='login';S.err='';draw();}
-  else if(a==='back'){S.step='list';S.E=null;S.err='';draw();}
+  else if(a==='back'){S.step='list';S.E=null;S.sent=null;S.err='';draw();}
   else if(a==='paidOnly'){S.paidOnly=b.checked;draw();}
+  else if(a==='pick'&&S.mode==='send'){S.comp=S.L.find(c=>c.id===b.dataset.id);S.sent=null;S.err='';
+    try{S.res=window.AW&&AW.results?AW.results():{rows:[]};}catch(err){S.res={rows:[]};}S.step='send';draw();}
+  else if(a==='send'){S.busy=true;S.err='';draw();
+    try{S.sent=await publish(S.comp.id,S.res);say(`결과 ${S.sent.rows}건을 접수 홈페이지로 보냈습니다`);}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 결과를 보낼 수 있습니다.':/publish_results|function/i.test(err.message)?'홈페이지 데이터베이스에 결과 기능이 아직 없습니다. Supabase에서 3단계 SQL을 실행해 주세요.':err.message;}
+    S.busy=false;draw();}
   else if(a==='pick'){S.comp=S.L.find(c=>c.id===b.dataset.id);S.busy=true;S.err='';draw();
     try{S.E=await roster(S.comp.id);S.step='preview';}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 명단을 가져올 수 있습니다. 관리자 계정으로 다시 로그인해 주세요.':err.message;if(!A)S.step='login';}
     S.busy=false;draw();}
@@ -3904,6 +3924,7 @@ function attach(){document.querySelectorAll('.rpick:not([data-rg])').forEach(p=>
 new MutationObserver(()=>attach()).observe(document.documentElement,{childList:true,subtree:true});attach();
 const css=document.createElement('style');css.textContent=`.rgline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .rgopen{min-height:40px;padding:8px 14px;font-size:14px}
+.rgsend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 4px;padding:10px 12px;border:1px dashed var(--line,#ddd);border-radius:12px}
 .rgov{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
 .rgbox{width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--surface,#fff);color:var(--ink,#111);border:1px solid var(--line,#ddd);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .rghd{display:flex;justify-content:space-between;align-items:center;gap:10px}.rghd b{font-size:17px}.rghd .btn{padding:6px 10px}

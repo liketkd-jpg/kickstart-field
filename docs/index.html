@@ -6,7 +6,7 @@
 <title>KICKSTART UP 대회 접수</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Barlow+Condensed:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Barlow+Condensed:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Noto+Serif+KR:wght@500;600;700;900&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="supabase.js"></script>
 <style>
@@ -157,6 +157,19 @@ main{padding-block:28px 64px}
 .exp .card .n{font-family:var(--f-num);font-size:34px;line-height:1;color:var(--text)}
 input[type=file]{width:100%;background:var(--ink);border:1px dashed var(--line2);border-radius:10px;padding:8px;color:var(--mute);font-size:13px}
 input[type=file]::file-selector-button{font:inherit;font-weight:800;border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:8px;padding:6px 12px;margin-right:10px;cursor:pointer}
+.mdl{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:30px;padding:0 10px;border-radius:999px;font-weight:900;font-size:13px;color:#1A1306;white-space:nowrap}
+.mdl.r1{background:linear-gradient(135deg,#F3DFAE,#C9A262)} .mdl.r2{background:linear-gradient(135deg,#F1F3F6,#A9B1BC)} .mdl.r3{background:linear-gradient(135deg,#F0C6A4,#B07042)}
+.awl{display:flex;flex-direction:column;gap:8px}
+.awr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.certgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+@media (max-width:820px){.certgrid{grid-template-columns:minmax(0,1fr)}}
+.certprev{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px}
+.certprev canvas{width:100%;max-width:270px;height:auto;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.45);background:#FBF8F1}
+.switch{display:inline-flex;align-items:center;gap:10px;font-weight:800;cursor:pointer;border:1px solid var(--line2);border-radius:999px;padding:8px 14px;background:var(--panel)}
+.switch input{width:20px;height:20px;accent-color:var(--ok)}
+.ovl{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+.dlg{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.dlg textarea{min-height:170px}
 .flash{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#16200F;border:1px solid #2F5A2A;color:#D8F5C8;border-radius:12px;padding:12px 14px;margin-bottom:14px}
 .alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
 .al{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-left:4px solid var(--gold3);background:var(--panel);border-radius:12px;padding:12px 14px}
@@ -207,13 +220,14 @@ const YEAR=2026;
 const SUPA_URL='https://nwdptjumclgzbwbsaoxr.supabase.co';
 const SUPA_KEY='sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG';
 const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
-const M={comps:[],athletes:[],entries:[],users:[],profile:null,ready:false,loadErr:''};
+const M={comps:[],athletes:[],entries:[],users:[],results:[],profile:null,ready:false,loadErr:''};
 const D=()=>M;
 const me=()=>M.profile;
 const uid=p=>p+Math.random().toString(36).slice(2,9);
-const mapComp=c=>({id:c.id,name:c.name,date:c.date,place:c.place,deadline:c.deadline,sports:c.sports||[],fee:c.fee||{},account:c.account,host:c.host,note:c.note,notice:c.notice||'',docUrl:c.doc_url||'',docName:c.doc_name||'',contact:c.contact||''});
+const mapComp=c=>({id:c.id,name:c.name,date:c.date,place:c.place,deadline:c.deadline,sports:c.sports||[],fee:c.fee||{},account:c.account,host:c.host,note:c.note,notice:c.notice||'',docUrl:c.doc_url||'',docName:c.doc_name||'',contact:c.contact||'',resultsOpen:!!c.results_open,cert:c.cert||{}});
 const mapAth=a=>({id:a.id,coachId:a.coach_id,name:a.name,gender:a.gender,birth:a.birth||'',org:a.org,weight:a.weight??'',height:a.height??'',guardian:a.guardian});
 const mapEnt=e=>({id:e.id,compId:e.comp_id,coachId:e.coach_id,sport:e.sport,athleteIds:e.athlete_ids||[],f:e.f||{},fee:e.fee,status:e.status,at:String(e.created_at||'').slice(0,19)});
+const mapRes=r=>({id:r.id,compId:r.comp_id,sport:r.sport,kind:r.kind,div:r.div,rank:r.rank,name:r.name,team:r.team,coach:r.coach,members:r.members,coachId:r.coach_id});
 const mapUser=p=>({id:p.id,role:p.role,name:p.name,org:p.org,phone:p.phone,email:p.email,license:p.license||'',at:String(p.created_at||'').slice(0,10)});
 async function q(p){const {data,error}=await p;if(error)throw error;return data;}
 async function reload(){
@@ -227,7 +241,8 @@ async function reload(){
       M.athletes=(await q(sb.from('athletes').select('*').order('created_at',{ascending:true}))).map(mapAth);
       M.entries=(await q(sb.from('entries').select('*').order('created_at',{ascending:true}))).map(mapEnt);
       M.users=M.profile.role==='admin'?(await q(sb.from('profiles').select('*'))).map(mapUser):[M.profile];
-    }else{M.profile=null;M.athletes=[];M.entries=[];M.users=[];}
+      try{M.results=(await q(sb.from('results').select('*').order('rank',{ascending:true}))).map(mapRes);}catch(e){M.results=[];}
+    }else{M.profile=null;M.athletes=[];M.entries=[];M.users=[];M.results=[];}
     M.loadErr='';
   }catch(e){M.loadErr=msgOf(e);}
   M.ready=true;render();
@@ -289,7 +304,7 @@ function route(){return (location.hash||'#home').slice(1)||'home';}
 function render(){
   const r=route(),u=me();
   const links=[['home','대회 일정']];
-  if(u&&u.role==='coach')links.push(['athletes','내 선수'],['entries','내 접수 내역']);
+  if(u&&u.role==='coach')links.push(['athletes','내 선수'],['entries','내 접수 내역'],['awards','결과 · 상장']);
   if(u&&u.role==='admin')links.push(['admin','대회 관리 · 명단 내보내기']);
   if(u)links.push(['me','내 정보']);
   const base=r.split('-')[0];
@@ -309,13 +324,17 @@ function render(){
     else if(r==='entries')h=need('coach',vEntries);
     else if(r==='admin')h=need('admin',vAdmin);
     else if(r==='me')h=u?vMe():vLogin();
+    else if(r==='awards')h=need('coach',vAwards);
     else if(r==='forgot')h=vForgot();
     else if(r==='pwreset')h=vPwReset();
     else h+=vHome();
     h=(M.loadErr?`<div class="note" style="margin-bottom:14px">데이터를 불러오지 못했습니다: ${esc(M.loadErr)}</div>`:'')+h.replace(/^<div class="note" style="margin-bottom:14px">데이터를 불러오지 못했습니다:.*?<\/div>/,'');
   }catch(e){h=`<div class="empty">화면을 그리지 못했습니다: ${esc(e.message)}</div>`;}
+  if(UI.contact&&u&&u.role==='admin')h+=vContact();
   if(UI.flash){h=`<div class="flash" role="status">${esc(UI.flash)}<button class="btn sm ghost" type="button" data-a="flashX" aria-label="닫기">✕</button></div>`+h;}
   document.getElementById('view').innerHTML=h;
+  if(r==='admin'&&UI.atab==='results')setTimeout(certPreview,0);
+  const ta=document.getElementById('ctText');if(ta&&UI.contact&&UI.contact.focus){UI.contact.focus=false;ta.focus();}
 }
 function need(role,fn){const u=me();if(!u)return `<div class="auth"><div class="card"><h2>로그인이 필요합니다</h2><p class="mute">선수 등록과 대회 접수는 지도자 계정으로 로그인한 뒤 할 수 있습니다.</p><div class="row"><a class="btn gold" href="#login">로그인</a><a class="btn" href="#signup">지도자 회원가입</a></div></div></div>`;
   if(u.role!==role)return `<div class="empty">${role==='admin'?'대회 본부(관리자) 계정만 볼 수 있는 화면입니다.':'지도자 계정으로 로그인해 주세요.'}</div>`;return fn();}
@@ -501,7 +520,7 @@ function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id)
         ${c.notice?`<div class="notice"><b>대회 본부 공지</b><div>${esc(c.notice)}</div></div>`:''}<span class="small mute">입금 계좌: ${esc(c.account)}${c.contact?' · 문의 '+esc(c.contact):''}</span></section>`;}).join(''):'<div class="empty">아직 접수한 대회가 없습니다. <a href="#home">대회 일정</a>에서 대회를 골라 주세요.</div>'}</div>`;}
 
 /* ---------- 관리자 ---------- */
-const ATABS=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['setup','대회 고치기 · 공지 · 요강']];
+const ATABS=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['results','결과 · 상장'],['setup','대회 고치기 · 공지 · 요강']];
 function vAdmin(){const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.adminComp))UI.adminComp=C[0]&&C[0].id;
   const c=C.find(x=>x.id===UI.adminComp),tab=UI.atab||'status';
   const E=c?D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'):[];
@@ -511,6 +530,7 @@ function vAdmin(){const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.admin
   else if(!c)body='<div class="empty">대회가 없습니다. 「새 대회 만들기」를 눌러 주세요.</div>';
   else if(tab==='dojang')body=vDojang(c,E);
   else if(tab==='setup')body=vSetup(c);
+  else if(tab==='results')body=vAdminResults(c);
   else body=vStatus(c,E);
   return `<div class="stack"><div class="row between"><div><span class="eyebrow">Admin</span><h1>대회 관리 · 명단 내보내기</h1></div><button class="btn" type="button" data-a="newComp">+ 새 대회 만들기</button></div>
     ${UI.newComp?compForm(null):''}
@@ -541,7 +561,7 @@ function vDojang(c,E){const L=dojangRows(c,E),T=L.reduce((s,r)=>({cnt:s.cnt+r.cn
     <div class="tablewrap"><table><tr><th>소속 · 지도자</th><th>연락처</th>${c.sports.map(s=>`<th>${SPORTS[s].n}</th>`).join('')}<th>참가비</th><th>입금 확인</th><th>남은 금액</th><th></th></tr>
     ${L.map(r=>`<tr><td><b>${esc(r.co.org||'')}</b><div class="small mute">${esc(r.co.name||'')}</div></td><td class="small num">${esc(r.co.phone||'')}</td>${c.sports.map(s=>`<td class="num">${r.n[s]||''}</td>`).join('')}
       <td class="num">${won(r.total)}</td><td class="num">${won(r.paid)}</td><td class="num" style="color:${r.due?'var(--warn)':'var(--ok)'};font-weight:800">${r.due?won(r.due):'완료 ✓'}</td>
-      <td style="white-space:nowrap">${r.due?`<button class="btn sm gold" type="button" data-a="payAll" data-id="${r.id}">${UI.payArm===r.id?'한 번 더 누르면 확인':'모두 입금 확인'}</button> <button class="btn sm" type="button" data-a="copyOne" data-id="${r.id}">안내문 복사</button>${r.co.phone?` <a class="btn sm ghost" href="sms:${esc(String(r.co.phone).replace(/[^0-9+]/g,''))}?body=${encodeURIComponent(payMsg(c,r))}">문자</a>`:''}`:''}</td></tr>`).join('')}
+      <td style="white-space:nowrap">${r.due?`<button class="btn sm gold" type="button" data-a="payAll" data-id="${r.id}">${UI.payArm===r.id?'한 번 더 누르면 확인':'모두 입금 확인'}</button> <button class="btn sm" type="button" data-a="contact" data-id="${r.id}" data-t="pay">💬 연락</button>`:`<button class="btn sm ghost" type="button" data-a="contact" data-id="${r.id}" data-t="free">💬 연락</button>`}</td></tr>`).join('')}
     <tr class="tot"><td colspan="2"><b>합계 ${L.length}곳</b></td>${c.sports.map(s=>`<td class="num">${L.reduce((n,r)=>n+(r.n[s]||0),0)}</td>`).join('')}<td class="num"><b>${won(T.total)}</b></td><td class="num">${won(T.paid)}</td><td class="num"><b>${won(T.total-T.paid)}</b></td><td></td></tr></table></div>`;}
 /* 회원 관리 */
 function vMembers(){const U=D().users.slice().sort((a,b)=>(a.role==='admin'?0:1)-(b.role==='admin'?0:1)||String(a.org).localeCompare(String(b.org),'ko'));
@@ -552,7 +572,7 @@ function vMembers(){const U=D().users.slice().sort((a,b)=>(a.role==='admin'?0:1)
     <div class="tablewrap"><table id="memT"><tr><th>이름</th><th>소속</th><th>휴대폰 · 이메일</th><th>선수</th><th>접수</th><th>가입일</th><th></th></tr>
     ${U.map(u=>`<tr data-q="${esc([u.name,u.org,u.phone,u.email].join(' ').toLowerCase())}"><td><b>${esc(u.name)}</b>${u.role==='admin'?' <span class="chip ps">관리자</span>':''}</td><td>${esc(u.org)}</td><td class="small">${esc(u.phone)}<div class="mute">${esc(u.email)}</div></td>
       <td class="num">${nA(u.id)}</td><td class="num">${nE(u.id)}</td><td class="small num">${esc(u.at||'')}</td>
-      <td>${u.id!==me().id?`<button class="btn sm" type="button" data-a="tempPw" data-id="${u.id}">${UI.pwArm===u.id?'한 번 더 누르면 만들기':'임시 비밀번호'}</button>`:''}</td></tr>`).join('')}</table></div>
+      <td style="white-space:nowrap">${u.id!==me().id?`<button class="btn sm" type="button" data-a="contact" data-id="${u.id}" data-t="free">💬 연락</button> <button class="btn sm ghost" type="button" data-a="tempPw" data-id="${u.id}">${UI.pwArm===u.id?'한 번 더 누르면 만들기':'임시 비밀번호'}</button>`:''}</td></tr>`).join('')}</table></div>
     <span class="small mute">회원 ${U.length}명 (관리자 ${U.filter(u=>u.role==='admin').length}명)</span>`;}
 /* 대회 설정: 고치기 · 공지 · 요강 · 지우기 */
 function vSetup(c){const n=D().entries.filter(e=>e.compId===c.id).length;
@@ -574,6 +594,126 @@ function compForm(c){const E=!!c;c=c||{sports:Object.keys(SPORTS),fee:{poomsae:3
       <label class="f"><span>또는 링크 (구글 드라이브·네이버 등)</span><input type="text" id="cDocUrl" placeholder="https://" value="${c.docUrl&&!/supabase\.co\/storage/.test(c.docUrl)?esc(c.docUrl):''}"></label></div></div>
   ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}<div class="row"><button class="btn gold" type="submit">${E?'고친 내용 저장':'대회 만들기'}</button></div></form>`;}
 
+/* ---------- 결과 · 상장 ---------- */
+const MEDAL={1:['금','GOLD','#E9CB7A','#A47C2C','#5A4210'],2:['은','SILVER','#E4E8EE','#9AA2AD','#3E4550'],3:['동','BRONZE','#E7B28A','#9A5E33','#4A2A12']};
+function awardTitle(r){if(r.kind==='team')return r.rank===1?'종합 우승':r.rank===2?'종합 준우승':'종합 3위';return `${MEDAL[r.rank]?MEDAL[r.rank][0]+'메달 · ':''}제${r.rank}위`;}
+function medalChip(r){const m=MEDAL[r.rank];return `<span class="mdl r${r.rank}" aria-label="${r.rank}위">${r.kind==='team'?'종합 ':''}${m?m[0]:r.rank+'위'}</span>`;}
+function resultsOf(c,u){return D().results.filter(r=>r.compId===c.id&&(!u||r.coachId===u.id)).sort((a,b)=>(a.kind==='team')-(b.kind==='team')||a.sport.localeCompare(b.sport)||a.rank-b.rank||a.div.localeCompare(b.div,'ko'));}
+function vAwards(){const u=me();const C=D().comps.filter(c=>c.resultsOpen&&D().results.some(r=>r.compId===c.id&&r.coachId===u.id));
+  return `<div class="stack"><div><span class="eyebrow">Results &amp; Certificates</span><h1>결과 · 상장</h1><p class="mute" style="margin:6px 0 0">대회 본부가 결과를 공개하면 내 선수의 입상 결과와 상장이 여기에 나옵니다. 상장은 A4 PDF로 내려받아 바로 인쇄할 수 있습니다.</p></div>
+    ${C.length?C.map(c=>{const L=resultsOf(c,u);return `<section class="card stack"><div class="row between"><div><h3>${esc(c.name)}</h3><span class="small mute">${fmtDate(c.date)} · 입상 ${L.length}건</span></div>
+      <button class="btn gold" type="button" data-a="certAll" data-c="${c.id}">🏅 상장 ${L.length}장 모두 내려받기</button></div>
+      <div class="awl">${L.map(r=>`<div class="awr">${medalChip(r)}<div><b>${esc(r.name)}</b><div class="small mute">${r.kind==='team'?'팀 종합 순위':esc(r.div)} · ${SPORTS[r.sport].n}</div></div><button class="btn sm" type="button" data-a="certOne" data-id="${r.id}">상장 PDF</button></div>`).join('')}</div></section>`;}).join('')
+    :'<div class="empty">아직 공개된 결과가 없습니다. 대회가 끝나고 대회 본부가 결과를 공개하면 여기에 나옵니다.</div>'}</div>`;}
+function vAdminResults(c){const L=resultsOf(c),coaches=D().users.filter(x=>x.role==='coach');const cf={host:'',title:'',rep:'',date:'',serial:'',...c.cert};
+  const byCoach=new Map();L.forEach(r=>{if(r.coachId){byCoach.set(r.coachId,(byCoach.get(r.coachId)||0)+1);}});const un=L.filter(r=>!r.coachId).length;
+  return `<div class="row between"><div><h2>결과 · 상장</h2><p class="small mute" style="margin:4px 0 0">대회 앱의 「결과·시상」 화면에서 <b>🌐 결과를 접수 홈페이지로 보내기</b>를 누르면 입상 결과가 여기에 들어옵니다. 확인한 뒤 「지도자에게 공개」를 켜면 지도자가 자기 선수 상장을 내려받습니다.</p></div>
+    <label class="switch"><input type="checkbox" data-on="resOpen" ${c.resultsOpen?'checked':''}><span>${c.resultsOpen?'지도자에게 공개 중':'공개 전 (관리자만 봄)'}</span></label></div>
+    <div class="certgrid"><form class="card stack" id="fCert"><h3>상장 설정</h3>
+      <div class="grid2"><label class="f"><span>주최 (상장 아래 큰 글씨)</span><input type="text" id="ceHost" value="${esc(cf.host)}" placeholder="KICKSTART UP 대회 조직위원회"></label>
+        <label class="f"><span>상장 날짜</span><input type="date" id="ceDate" value="${esc(cf.date||c.date)}"></label>
+        <label class="f"><span>직함</span><input type="text" id="ceTitle" value="${esc(cf.title)}" placeholder="대회장"></label>
+        <label class="f"><span>대표 이름</span><input type="text" id="ceRep" value="${esc(cf.rep)}" placeholder="홍길동"></label>
+        <label class="f"><span>상장 번호 머리 (선택)</span><input type="text" id="ceSerial" value="${esc(cf.serial)}" placeholder="2026-KS-"></label></div>
+      <div class="row"><button class="btn gold" type="submit">상장 설정 저장</button><button class="btn" type="button" data-a="certPrev">미리보기</button></div></form>
+      <div class="card certprev"><canvas id="certCv" width="620" height="877" aria-label="상장 미리보기"></canvas><span class="small mute">미리보기 · A4 세로</span></div></div>
+    ${L.length?`<div class="kpis"><div><b>${L.length}</b><span>입상 결과</span></div><div><b>${byCoach.size}</b><span>입상한 지도자(도장)</span></div><div><b style="color:${un?'var(--warn)':'var(--ok)'}">${un}</b><span>지도자 연결 안 됨</span></div><div><b>${c.resultsOpen?'공개':'비공개'}</b><span>지도자 화면</span></div></div>
+    <div class="row"><button class="btn gold" type="button" data-a="certAll" data-c="${c.id}">🏅 전체 상장 ${L.length}장 PDF</button>${byCoach.size?`<button class="btn" type="button" data-a="certNotice">입상 도장 ${byCoach.size}곳 안내문 복사</button>`:''}</div>
+    <div class="tablewrap"><table><tr><th>종목</th><th>순위</th><th>부문</th><th>이름 · 소속</th><th>연결된 지도자</th><th></th></tr>
+    ${L.map(r=>`<tr><td><span class="chip ${SPORTS[r.sport].c}">${SPORTS[r.sport].n}</span></td><td>${medalChip(r)}</td><td class="small">${r.kind==='team'?'팀 종합 순위':esc(r.div)}</td><td><b>${esc(r.name)}</b><div class="small mute">${esc(r.team)}</div></td>
+      <td>${sel('rc_'+r.id,[{v:'',l:'— 연결 안 됨 —'},...coaches.map(x=>({v:x.id,l:`${x.org} · ${x.name}`}))],r.coachId||'',`data-on="resCoach" data-id="${r.id}" aria-label="${esc(r.name)} 지도자" style="${r.coachId?'':'border-color:var(--warn)'}"`)}</td>
+      <td style="white-space:nowrap"><button class="btn sm" type="button" data-a="certOne" data-id="${r.id}">상장</button>${r.coachId?` <button class="btn sm ghost" type="button" data-a="contact" data-id="${r.coachId}" data-t="cert">💬</button>`:''}</td></tr>`).join('')}</table></div>`
+    :'<div class="empty">아직 받은 결과가 없습니다. 대회 앱 「결과·시상」에서 결과를 보내 주세요.</div>'}`;}
+
+/* 상장 그리기: 모던 · A4 세로 (1240×1754 = 150dpi) */
+const CW=1240,CH=1754,SERIF='"Noto Serif KR","Nanum Myeongjo",serif',SANS='"Noto Sans KR","Malgun Gothic",sans-serif',DISP='"Archivo","Noto Sans KR",sans-serif';
+function wrapT(ctx,text,maxW){const out=[];let line='';for(const w of String(text).split(' ')){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w;}else line=t;}if(line)out.push(line);return out;}
+function fitFont(ctx,text,weight,size,family,maxW){let s=size;do{ctx.font=`${weight} ${s}px ${family}`;if(ctx.measureText(text).width<=maxW)break;s-=2;}while(s>24);return s;}
+async function certFonts(){try{await Promise.all(['900 200px','700 60px','600 40px','500 36px'].map(f=>document.fonts.load(`${f} "Noto Serif KR"`)).concat([document.fonts.load('700 30px "Noto Sans KR"'),document.fonts.load('800 30px Archivo')]));}catch(e){}}
+function drawCert(ctx,r,comp,no){
+  const cf={host:'',title:'',rep:'',date:'',...comp.cert},team=r.kind==='team',m=MEDAL[r.rank]||['','',"#D8D3C6","#8F8A7C","#333"];
+  ctx.save();ctx.textBaseline='alphabetic';
+  /* 종이 */
+  ctx.fillStyle='#FBF8F1';ctx.fillRect(0,0,CW,CH);
+  const g=ctx.createRadialGradient(CW*.75,CH*.18,40,CW*.75,CH*.18,900);g.addColorStop(0,'rgba(216,180,110,.16)');g.addColorStop(1,'rgba(216,180,110,0)');ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
+  /* 왼쪽 검은 띠 + 금선 */
+  ctx.fillStyle='#0E0F12';ctx.fillRect(0,0,118,CH);
+  const gl=ctx.createLinearGradient(0,0,0,CH);gl.addColorStop(0,'#F3DFAE');gl.addColorStop(.5,'#B8904E');gl.addColorStop(1,'#E9CB7A');ctx.fillStyle=gl;ctx.fillRect(118,0,6,CH);
+  ctx.save();ctx.translate(72,CH-120);ctx.rotate(-Math.PI/2);ctx.fillStyle='#D8B46E';ctx.font=`800 26px ${DISP}`;ctx.letterSpacing='10px';ctx.textAlign='left';
+  ctx.fillText('KICKSTART UP  ·  TAEKWONDO CHAMPIONSHIP',0,0);ctx.restore();ctx.letterSpacing='0px';
+  /* 위: 번호 · 대회 */
+  ctx.textAlign='left';ctx.fillStyle='#8E6A30';ctx.font=`800 22px ${DISP}`;ctx.letterSpacing='6px';ctx.fillText('CERTIFICATE OF AWARD',200,190);ctx.letterSpacing='0px';
+  if(no){ctx.textAlign='right';ctx.fillStyle='#8F887A';ctx.font=`500 24px ${SERIF}`;ctx.fillText(`제 ${no} 호`,CW-110,190);}
+  /* 큰 제목 */
+  ctx.textAlign='left';ctx.fillStyle='#111';ctx.font=`900 210px ${SERIF}`;ctx.fillText('상장',190,430);
+  /* 메달 원 */
+  const cx=CW-270,cy=330,R=150;
+  ctx.save();ctx.shadowColor='rgba(60,40,10,.25)';ctx.shadowBlur=30;ctx.shadowOffsetY=10;
+  const mg=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);mg.addColorStop(0,m[2]);mg.addColorStop(1,m[3]);ctx.fillStyle=mg;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();ctx.restore();
+  ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,R-18,0,Math.PI*2);ctx.stroke();
+  ctx.textAlign='center';ctx.fillStyle=m[4];ctx.font=`800 150px ${DISP}`;ctx.fillText(String(r.rank),cx,cy+50);
+  ctx.font=`800 24px ${DISP}`;ctx.letterSpacing='8px';ctx.fillText(team?'OVERALL':(m[1]||'PLACE'),cx+4,cy+98);ctx.letterSpacing='0px';
+  /* 상 이름 */
+  ctx.textAlign='left';ctx.fillStyle='#8E6A30';ctx.font=`700 56px ${SERIF}`;ctx.fillText(awardTitle(r),196,560);
+  ctx.fillStyle='#D8B46E';ctx.fillRect(200,600,140,5);
+  /* 내용 */
+  let y=720;const lx=200,vx=380,maxW=CW-vx-120;
+  const row=(k,v,big)=>{if(!v)return;ctx.font=`700 26px ${SANS}`;ctx.fillStyle='#9A927F';ctx.fillText(k,lx,y);
+    if(big){const s=fitFont(ctx,v,800,92,SERIF,maxW);ctx.fillStyle='#0E0F12';ctx.fillText(v,vx,y+Math.round(s*.28));y+=Math.max(120,s+40);}
+    else{ctx.font=`600 38px ${SERIF}`;ctx.fillStyle='#1C1C1C';const ls=wrapT(ctx,v,maxW);ls.forEach((l,i)=>ctx.fillText(l,vx,y+i*50));y+=ls.length*50+40;}};
+  const isPair=!team&&r.name.includes(',');
+  row('대회',comp.name);
+  if(!team)row('부문',`${SPORTS[r.sport].n} · ${r.div}`);
+  row(team?'팀명':'성명',isPair?r.name.replace(/,/g,' · '):r.name,true);
+  if(!team)row('소속',r.team);else if(r.coach)row('지도자',r.coach);
+  /* 본문 */
+  const body=team?`위 팀은 ${comp.name}에서 우수한 성적으로 팀 종합 순위 위와 같이 입상하였으므로 이 상장을 수여합니다.`:`위 ${isPair?'선수들은':'선수는'} ${comp.name}에서 위와 같이 우수한 성적을 거두었으므로 이 상장을 수여합니다.`;
+  ctx.font=`500 38px ${SERIF}`;ctx.fillStyle='#262626';const bl=wrapT(ctx,body,CW-200-150);const by=Math.max(y+40,1210);bl.forEach((l,i)=>ctx.fillText(l,lx,by+i*64));
+  /* 아래: 날짜 · 주최 · 서명 */
+  const d=/^\d{4}-\d{2}-\d{2}$/.test(cf.date||'')?new Date(cf.date+'T00:00:00'):new Date(comp.date+'T00:00:00');
+  ctx.font=`500 34px ${SERIF}`;ctx.fillStyle='#4A4A4A';ctx.fillText(`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`,lx,1490);
+  ctx.textAlign='right';const rx=CW-120;ctx.fillStyle='#111';ctx.font=`700 40px ${SERIF}`;ctx.fillText(cf.host||'KICKSTART UP 대회 조직위원회',rx,1490);
+  const sig=`${cf.title||''}  ${cf.rep||''}`.trim();
+  if(sig){ctx.font=`900 58px ${SERIF}`;const w=ctx.measureText(sig).width;ctx.fillText(sig,rx-120,1590);
+    ctx.save();ctx.translate(rx-50,1565);ctx.rotate(-.06);ctx.strokeStyle='rgba(196,38,38,.75)';ctx.lineWidth=5;ctx.strokeRect(-48,-48,96,96);ctx.fillStyle='rgba(196,38,38,.8)';ctx.font=`900 30px ${SERIF}`;ctx.textAlign='center';ctx.fillText('직인',0,12);ctx.restore();}
+  /* 바닥 금선 */
+  ctx.fillStyle='#D8B46E';ctx.fillRect(200,CH-110,CW-320,2);ctx.textAlign='left';ctx.fillStyle='#A39A86';ctx.font=`700 18px ${DISP}`;ctx.letterSpacing='4px';ctx.fillText('KICKSTART UP · TAEKWONDO COMPETITION SYSTEM',200,CH-72);ctx.letterSpacing='0px';
+  ctx.restore();
+}
+let JSPDF=null;
+function loadJsPDF(){if(window.jspdf)return Promise.resolve(window.jspdf);if(JSPDF)return JSPDF;
+  JSPDF=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=()=>res(window.jspdf);s.onerror=()=>{JSPDF=null;rej(new Error('PDF 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요'));};document.head.appendChild(s);});return JSPDF;}
+async function certPdf(list,fname){if(!list.length)return;toast(`상장 ${list.length}장 만드는 중…`);
+  const lib=await loadJsPDF();await certFonts();const cv=document.createElement('canvas');cv.width=CW;cv.height=CH;const ctx=cv.getContext('2d');
+  const doc=new lib.jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+  for(let i=0;i<list.length;i++){const {r,comp}=list[i];if(i)doc.addPage('a4','portrait');const cf=comp.cert||{};drawCert(ctx,r,comp,cf.serial?`${cf.serial}${String(i+1).padStart(3,'0')}`:'');
+    doc.addImage(cv.toDataURL('image/jpeg',.88),'JPEG',0,0,210,297,undefined,'FAST');if(i%6===5){toast(`상장 만드는 중… ${i+1}/${list.length}`);await new Promise(x=>setTimeout(x,0));}}
+  await saveBytes(new Uint8Array(doc.output('arraybuffer')),fname.replace(/[\\/:*?"<>|]/g,'_').slice(0,90)+'.pdf','application/pdf',`상장 ${list.length}장을 내려받았습니다`);}
+async function certPreview(){const cv=document.getElementById('certCv');if(!cv)return;const c=D().comps.find(x=>x.id===UI.adminComp);if(!c)return;
+  const r=resultsOf(c).find(x=>x.kind==='medal')||{kind:'medal',sport:c.sports[0]||'poomsae',rank:1,div:'공인 남자 개인전 초등 5학년부',name:'김태권',team:'의정부태권도',coach:''};
+  const v=id=>(document.getElementById(id)||{}).value;const cert={...c.cert,host:v('ceHost')??c.cert.host,title:v('ceTitle')??c.cert.title,rep:v('ceRep')??c.cert.rep,date:v('ceDate')??c.cert.date};
+  await certFonts();const ctx=cv.getContext('2d');ctx.save();ctx.scale(cv.width/CW,cv.height/CH);drawCert(ctx,r,{...c,cert},cert.serial?cert.serial+'001':'');ctx.restore();}
+
+/* ---------- 연락 (문자·카카오톡 복사·전화) ---------- */
+const SITE_URL=()=>location.origin+location.pathname;
+function contactText(id,t){const u=coachOf(id),c=D().comps.find(x=>x.id===UI.adminComp)||D().comps[0],hi=`[KICKSTART UP] ${u.org||''} ${u.name||''} 지도자님, 안녕하세요.`;
+  if(t==='pay'&&c){const r=dojangRows(c,D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel')).find(x=>x.id===id);if(r&&r.due)return payMsg(c,r);
+    return `${hi}\n${c.name} 참가비 입금 안내드립니다.\n입금 계좌: ${c.account}\n입금자명: ${u.org||u.name||''}`;}
+  if(t==='cert'&&c){const n=D().results.filter(r=>r.compId===c.id&&r.coachId===id).length;
+    return `${hi}\n${c.name} 결과와 상장이 준비되었습니다.${n?` 입상 ${n}건을 축하드립니다!`:''}\n접수 홈페이지에 로그인 → 「결과 · 상장」에서 상장 PDF를 내려받아 인쇄하실 수 있습니다.\n${SITE_URL()}`;}
+  if(t==='notice'&&c)return `${hi}\n${c.name} (${fmtDate(c.date)} · ${c.place}) 안내드립니다.\n${c.notice||'(공지 내용을 적어 주세요)'}${c.contact?'\n문의: '+c.contact:''}`;
+  return `${hi}\n`;}
+function smsHref(phone,text){const n=String(phone||'').replace(/[^0-9+]/g,'');return `sms:${n}?&body=${encodeURIComponent(text)}`;}
+function vContact(){const k=UI.contact,u=coachOf(k.id);const T=[['pay','미납 안내'],['cert','상장 준비 완료'],['notice','대회 공지'],['free','직접 쓰기']];
+  const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  return `<div class="ovl" data-a="contactX"><div class="dlg" role="dialog" aria-modal="true" aria-label="${esc(u.name)} 지도자에게 연락" data-stop>
+    <div class="row between"><div><span class="eyebrow">Contact</span><h3>${esc(u.org||'')} · ${esc(u.name||'')}</h3><span class="small mute num">${esc(u.phone||'휴대폰 번호 없음')}</span></div><button class="btn sm ghost" type="button" data-a="contactX" aria-label="닫기">✕</button></div>
+    <div class="tabs">${T.map(([t,l])=>`<button type="button" class="${k.t===t?'on':''}" data-a="contactT" data-t="${t}">${l}</button>`).join('')}</div>
+    <label class="f"><span>보낼 내용 (고쳐 써도 됩니다)</span><textarea id="ctText" rows="8">${esc(k.text)}</textarea></label>
+    <div class="row">${u.phone?`<a class="btn gold" id="ctSms" href="${esc(smsHref(u.phone,k.text))}">📱 문자 보내기</a>`:''}<button class="btn ${u.phone?'':'gold'}" type="button" data-a="contactCopy">📋 복사 (카카오톡에 붙여넣기)</button>${u.phone?`<a class="btn ghost" href="tel:${esc(String(u.phone).replace(/[^0-9+]/g,''))}">📞 전화</a>`:''}</div>
+    <span class="small mute">${mobile?'「문자 보내기」를 누르면 이 휴대폰의 문자 앱이 내용이 채워진 채로 열립니다. 교수님 요금제로 나갑니다.':'노트북에서는 「복사」한 뒤 카카오톡 PC나 휴대폰 문자에 붙여 넣으세요. 휴대폰으로 이 화면을 열면 「문자 보내기」로 바로 보낼 수 있습니다.'}</span>
+  </div></div>`;}
+
 /* ---------- 대회 앱 불러오기 형식으로 엑셀 만들기 ---------- */
 function exportRows(c,sport){
   const E=D().entries.filter(e=>e.compId===c.id&&e.sport===sport&&e.status!=='cancel');
@@ -591,10 +731,11 @@ async function saveXlsx(rows,name,sheet,okMsg){
   if(!window.XLSX){toast('엑셀 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요');return;}
   const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=rows[0].map(h=>({wch:Math.max(8,String(h).length*2+4)}));
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheet);
-  const data=new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'}));
-  name=name.replace(/[\\/:*?"<>|]/g,'');
+  return saveBytes(new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'})),name.replace(/[\\/:*?"<>|]/g,''),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',okMsg);
+}
+async function saveBytes(data,name,mime,okMsg){
   try{if(window.claude&&window.claude.use){const dl=await window.claude.use('downloads');if(dl){await dl.save({filename:name,data});toast(okMsg);return;}}}catch(e){if(e&&e.code==='declined')return;}
-  try{const u=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},3000);toast(okMsg);}
+  try{const u=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},3000);toast(okMsg);}
   catch(e){toast('이 화면에서는 파일을 내려받을 수 없습니다');}
 }
 function exportXlsx(c,sport){const rows=exportRows(c,sport);return saveXlsx(rows,`${c.name}_${SPORTS[sport].n}_접수명단.xlsx`,'선수명단',`${SPORTS[sport].n} 명단 ${rows.length-1}건을 내려받았습니다`);}
@@ -612,6 +753,7 @@ let BUSY=false;
 async function run(fn){if(BUSY)return;BUSY=true;document.body.style.cursor='progress';try{await fn();}catch(e){toast(msgOf(e));}finally{BUSY=false;document.body.style.cursor='';}}
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,S=D();
+  if(a==='contactX'&&b.classList.contains('ovl')&&e.target.closest('[data-stop]'))return;
   if(a==='logout')run(async()=>{await sb.auth.signOut();UI.cart=[];go('home');toast('로그아웃했습니다');});
   else if(a==='athEdit'){UI.editAth=b.dataset.id;UI.err='';render();window.scrollTo(0,0);}
   else if(a==='athCancel'){UI.editAth=null;render();}
@@ -643,6 +785,16 @@ document.addEventListener('click',e=>{
   else if(a==='paid'){const x=S.entries.find(y=>y.id===b.dataset.id);if(x)run(async()=>{await q(sb.from('entries').update({status:x.status==='paid'?'wait':'paid'}).eq('id',x.id));await reload();});}
   else if(a==='export'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)exportXlsx(c,b.dataset.s);}
   else if(a==='flashX'){UI.flash='';render();}
+  else if(a==='contact'){const t=b.dataset.t||'free';UI.contact={id:b.dataset.id,t,text:contactText(b.dataset.id,t),focus:true};render();}
+  else if(a==='contactT'){UI.contact={...UI.contact,t:b.dataset.t,text:contactText(UI.contact.id,b.dataset.t)};render();}
+  else if(a==='contactX'){UI.contact=null;render();}
+  else if(a==='contactCopy'){const ta=document.getElementById('ctText');copyText(ta?ta.value:UI.contact.text,'복사했습니다. 카카오톡이나 문자에 붙여 넣으세요');}
+  else if(a==='certOne'){const r=S.results.find(x=>x.id===b.dataset.id),c=r&&S.comps.find(x=>x.id===r.compId);if(r&&c)run(()=>certPdf([{r,comp:c}],`상장_${r.name}_${r.kind==='team'?'종합':r.div}`));}
+  else if(a==='certAll'){const c=S.comps.find(x=>x.id===b.dataset.c);if(!c)return;const u=me(),L=resultsOf(c,u.role==='admin'?null:u);
+    run(()=>certPdf(L.map(r=>({r,comp:c})),`${c.name}_상장${u.role==='admin'?'_전체':'_'+(u.org||u.name)}`));}
+  else if(a==='certPrev'){certPreview();}
+  else if(a==='certNotice'){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;const ids=[...new Set(resultsOf(c).filter(r=>r.coachId).map(r=>r.coachId))];
+    copyText(ids.map(id=>contactText(id,'cert')+(coachOf(id).phone?`\n(연락처 ${coachOf(id).phone})`:'')).join('\n\n────────\n\n'),`입상 도장 ${ids.length}곳 안내문을 복사했습니다`);}
   else if(a==='atab'){UI.atab=b.dataset.t;UI.err='';UI.tempPw=null;render();}
   else if(a==='dojangX'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)dojangXlsx(c);}
   else if(a==='payAll'){const id=b.dataset.id,c=UI.adminComp;if(UI.payArm!==id){UI.payArm=id;render();setTimeout(()=>{if(UI.payArm===id){UI.payArm=null;render();}},4000);return;}
@@ -663,9 +815,14 @@ document.addEventListener('change',e=>{
     UI.err='';render();}
   else if(on==='mate'){const s=new Set(UI.form.mates||[]);t.checked?s.add(t.value):s.delete(t.value);UI.form={...UI.form,mates:[...s]};}
   else if(on==='adComp'){UI.adminComp=t.value;render();}
+  else if(on==='resOpen'){const c=UI.adminComp,v=t.checked;run(async()=>{await q(sb.from('comps').update({results_open:v}).eq('id',c));await reload();toast(v?'지도자에게 결과·상장을 공개했습니다':'결과·상장을 비공개로 바꿨습니다');});}
+  else if(on==='resCoach'){const id=t.dataset.id,v=t.value||null;run(async()=>{await q(sb.from('results').update({coach_id:v}).eq('id',id));await reload();toast(v?'지도자를 연결했습니다':'연결을 풀었습니다');});}
   else if(on==='birth'){const g=document.getElementById('aGuard'),s=document.getElementById('aSchool'),ag=age(t.value);if(g)g.hidden=!(ag!==null&&ag<14);if(s)s.textContent=t.value?'학년 추정: '+schoolTxt(t.value):'';}
 });
+let PREVT=0;
 document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='ctText'&&UI.contact){UI.contact.text=t.value;const a=document.getElementById('ctSms');if(a)a.href=smsHref(coachOf(UI.contact.id).phone,t.value);return;}
+  if(/^ce(Host|Title|Rep|Date)$/.test(t.id)){clearTimeout(PREVT);PREVT=setTimeout(certPreview,250);return;}
   if(t.id==='memQ'){const v=t.value.trim().toLowerCase();document.querySelectorAll('#memT tr[data-q]').forEach(r=>{r.hidden=!!v&&!r.dataset.q.includes(v);});return;}if(t.dataset&&t.dataset.on==='ef'&&t.type==='number'){UI.form={...UI.form,[t.dataset.k]:t.value};}});
 function formErr(f,m){let el=f.querySelector('.err');if(!el){el=document.createElement('span');el.className='err';const btn=f.querySelector('button[type=submit]');(btn&&btn.closest('.row')||btn||f).before(el);}el.textContent=m;el.setAttribute('role','alert');}
 document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=>(document.getElementById(id)||{}).value||'';
@@ -700,6 +857,9 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
       Object.assign(c,doc||{});
       if(editId){await q(sb.from('comps').update(c).eq('id',editId));UI.err='';await reload();toast('대회 정보를 고쳤습니다');}
       else{const r=await q(sb.from('comps').insert(c).select());UI.newComp=false;UI.adminComp=r&&r[0]&&r[0].id;UI.err='';await reload();toast('대회를 만들었습니다. 「대회 일정」에 바로 보입니다');}});}
+  else if(f.id==='fCert'){const c=D().comps.find(x=>x.id===UI.adminComp);if(!c)return;
+    const cert={...c.cert,host:v('ceHost').trim(),title:v('ceTitle').trim(),rep:v('ceRep').trim(),date:v('ceDate'),serial:v('ceSerial').trim()};
+    run(async()=>{await q(sb.from('comps').update({cert}).eq('id',c.id));await reload();toast('상장 설정을 저장했습니다');});}
   else if(f.id==='fMe'){const d={name:v('mName').trim(),org:v('mOrg').trim(),phone:v('mPhone').trim(),license:v('mLic').trim()};
     if(!d.name||!d.org||!d.phone){formErr(f,'이름·소속·휴대폰을 모두 적어 주세요');return;}
     run(async()=>{await q(sb.from('profiles').update(d).eq('id',me().id));await reload();toast('내 정보를 저장했습니다');});}
@@ -711,6 +871,7 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
     run(async()=>{const {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});if(error){formErr(f,msgOf(error));return;}
       f.innerHTML=`<b>${esc(em)}</b><span class="mute small">로 비밀번호 재설정 메일을 보냈습니다. 메일의 링크를 누르면 새 비밀번호를 정하는 화면이 열립니다. 메일이 오지 않으면 대회 본부에 임시 비밀번호를 요청해 주세요.</span>`;});}
 });
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UI.contact){UI.contact=null;render();}});
 render();reload();
 </script>
 </body>
