@@ -693,7 +693,7 @@ function drawCert(ctx,r,comp,no){
 /* ===== 상장 디자인: 띠 리본(크림 종이) · 밤하늘 리본(남색) · 모던(검정 띠) ===== */
 const BRUSH='"Nanum Brush Script","Noto Serif KR",serif';
 const BELT={k:'#141414',r:'#C8162F',b:'#1E4FA6'};
-const CERT_STYLES=[['belt','띠 리본 (크림 종이)'],['night','밤하늘 리본 (남색)'],['modern','모던 (검정 띠)']];
+const CERT_STYLES=[['belt','태권도 띠 (크림 종이)'],['night','밤하늘 리본 (남색)'],['modern','모던 (검정 띠)']];
 /* 정해진 순서의 난수 (같은 상장은 언제나 같은 모양) */
 function rng(seed){let s=seed>>>0||1;return ()=>((s=Math.imul(s^s>>>15,1|s)+0x6D2B79F5|0,(s>>>0)%100000)/100000);}
 function shade(hex,f){const n=parseInt(hex.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(f<1?v*f:v+(255-v)*(f-1)))));return `rgb(${c[0]},${c[1]},${c[2]})`;}
@@ -733,7 +733,7 @@ function centerText(ctx,r,comp,no,T){
   if(no){ctx.textAlign=T.noRight?'left':'right';ctx.fillStyle=T.mute;ctx.font=`500 24px ${SERIF}`;ctx.fillText(`제 ${no} 호`,T.noRight?150:CW-150,160);ctx.textAlign='center';}
   ctx.fillStyle=T.gold;ctx.font=`800 22px ${DISP}`;ctx.letterSpacing='9px';ctx.fillText('CERTIFICATE OF AWARD',X+4,232);ctx.letterSpacing='0px';
   /* 제목 */
-  if(T.brush){ctx.fillStyle=T.title;ctx.font=`400 250px ${BRUSH}`;ctx.fillText('상 장',X,450);}
+  if(T.brush){brushTitle(ctx,'상 장',X,452,250,T.title);}
   else{const g=ctx.createLinearGradient(0,300,0,450);g.addColorStop(0,'#F7E6B8');g.addColorStop(1,'#C9A262');ctx.fillStyle=g;ctx.font=`900 170px ${SERIF}`;ctx.letterSpacing='40px';ctx.fillText('상장',X+20,440);ctx.letterSpacing='0px';}
   /* 메달 줄: ● 금메달 · 제1위 */
   const aw=awardTitle(r);ctx.font=`700 50px ${SERIF}`;const aw_w=ctx.measureText(aw).width,cx=X-aw_w/2-44,cy=546;
@@ -758,22 +758,58 @@ function centerText(ctx,r,comp,no,T){
   if(sig){ctx.font=`900 56px ${SERIF}`;ctx.fillStyle=T.name;const w=ctx.measureText(sig).width;ctx.fillText(sig,X,fy+148);
     ctx.save();ctx.translate(X+w/2+62,fy+128);ctx.rotate(-.07);ctx.strokeStyle=T.seal;ctx.lineWidth=5;ctx.strokeRect(-46,-46,92,92);ctx.fillStyle=T.seal;ctx.font=`900 28px ${SERIF}`;ctx.fillText('직인',0,10);ctx.restore();}
   if(T.foot!==false){ctx.fillStyle=T.mute;ctx.globalAlpha=.8;ctx.font=`700 17px ${DISP}`;ctx.letterSpacing='5px';ctx.fillText('KICKSTART UP · TAEKWONDO',X+2,CH-96);ctx.letterSpacing='0px';ctx.globalAlpha=1;}}
-/* ① 띠 리본: 크림 한지 + 검정·홍·청 띠가 두 모서리에서 흐름 */
+/* 진짜 태권도 띠: 넓은 천 띠 + 촘촘한 박음질 줄 + 빛에 따른 입체감 + 그림자 + 잘린 띠 끝 */
+function belt(ctx,segs,w,col,o){o=o||{};const N=150,P=[];
+  segs.forEach((sg,si)=>{for(let i=si?1:0;i<=N;i++)P.push(bez(sg,i/N));});
+  const M=P.length,L=[],R=[],A=[],tw=o.twist||0;
+  for(let i=0;i<M;i++){const a=P[Math.max(0,i-1)],b=P[Math.min(M-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;
+    const s=i/(M-1),f=tw?Math.max(.08,Math.abs(Math.cos((s*tw+(o.ph||0))*Math.PI))):1,hw=w*f/2;
+    L.push([P[i][0]-dy*hw,P[i][1]+dx*hw]);R.push([P[i][0]+dy*hw,P[i][1]-dx*hw]);A.push([Math.atan2(dy,dx),f]);}
+  const poly=()=>{ctx.beginPath();L.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));for(let i=M-1;i>=0;i--)ctx.lineTo(R[i][0],R[i][1]);ctx.closePath();};
+  const at=(i,t)=>[L[i][0]+(R[i][0]-L[i][0])*t,L[i][1]+(R[i][1]-L[i][1])*t];
+  /* 그림자 */
+  ctx.save();ctx.shadowColor='rgba(40,25,10,.30)';ctx.shadowBlur=w*.45;ctx.shadowOffsetX=w*.06;ctx.shadowOffsetY=w*.22;poly();ctx.fillStyle=col;ctx.fill();ctx.restore();
+  ctx.save();poly();ctx.clip();
+  /* 빛: 띠가 꺾이는 방향에 따라 밝고 어둡게 */
+  const strong=o.dark?.75:1;
+  for(let i=0;i<M-1;i++){const [ang,f]=A[i];const li=Math.cos(ang+Math.PI*.3)*.5+.5,dk=1-f;
+    ctx.beginPath();ctx.moveTo(L[i][0],L[i][1]);ctx.lineTo(L[i+1][0],L[i+1][1]);ctx.lineTo(R[i+1][0],R[i+1][1]);ctx.lineTo(R[i][0],R[i][1]);ctx.closePath();
+    ctx.fillStyle=`rgba(255,255,255,${(li*.16*strong*(1-dk)).toFixed(3)})`;ctx.fill();
+    if(dk>.05||li<.35){ctx.fillStyle=`rgba(0,0,0,${Math.min(.6,dk*.55+(.35-Math.min(li,.35))*.5).toFixed(3)})`;ctx.fill();}}
+  /* 가장자리 둥근 그늘 */
+  const edge=(t,a,lw)=>{ctx.beginPath();for(let i=0;i<M;i++){const p=at(i,t);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}ctx.strokeStyle=a;ctx.lineWidth=lw;ctx.stroke();};
+  edge(0,'rgba(0,0,0,.35)',w*.12);edge(1,'rgba(0,0,0,.30)',w*.12);edge(.5,`rgba(255,255,255,${o.dark?.035:.05})`,w*.4);
+  /* 박음질 줄 (진한 홈 + 밝은 턱) */
+  const n=o.stitch||Math.max(4,Math.round(w/12));
+  for(let k=1;k<=n;k++){const t=k/(n+1);
+    ctx.beginPath();for(let i=0;i<M;i++){const p=at(i,t);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}ctx.strokeStyle=o.dark?'rgba(0,0,0,.55)':'rgba(0,0,0,.26)';ctx.lineWidth=Math.max(1.2,w/70);ctx.stroke();
+    ctx.beginPath();for(let i=0;i<M;i++){const p=at(i,t+.012);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}ctx.strokeStyle=o.dark?'rgba(255,255,255,.07)':'rgba(255,255,255,.14)';ctx.lineWidth=1;ctx.stroke();}
+  /* 천 결 */
+  const rr=rng(o.seed||5);ctx.globalAlpha=.06;for(let i=0;i<M;i+=2)for(let k=0;k<3;k++){const p=at(i,rr());ctx.fillStyle=rr()<.5?'#000':'#fff';ctx.fillRect(p[0],p[1],2,2);}ctx.globalAlpha=1;
+  /* 띠 끝: 박음질 가로줄 */
+  if(o.endCap){const i=o.endCap==='start'?Math.round(M*.012)+1:M-1-Math.round(M*.012)-1;ctx.beginPath();const a=at(i,0),b=at(i,1);ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=2;ctx.stroke();}
+  ctx.restore();}
+/* 붓글씨 제목: 굵게 + 마른 붓 결 */
+function brushTitle(ctx,text,x,y,size,col){const c=document.createElement('canvas');c.width=Math.ceil(size*3.4);c.height=Math.ceil(size*1.5);const g=c.getContext('2d');
+  g.fillStyle=col;g.strokeStyle=col;g.lineJoin='round';g.lineCap='round';g.textAlign='center';g.textBaseline='alphabetic';g.font=`400 ${size}px ${BRUSH}`;
+  const bx=c.width/2,by=size*1.08;g.fillText(text,bx,by);g.lineWidth=size*.035;g.strokeText(text,bx,by);
+  ctx.save();ctx.shadowColor='rgba(20,20,20,.25)';ctx.shadowBlur=3;ctx.drawImage(c,x-bx,y-by);ctx.restore();}
+/* ① 띠 리본: 크림 한지 + 위아래에서 휘날리는 검정·홍·청 띠 */
 function drawBelt(ctx,r,comp,no){
   ctx.save();paper(ctx,'#F8F4EA',7,5200);
-  const v=ctx.createRadialGradient(CW/2,CH/2,300,CW/2,CH/2,1150);v.addColorStop(0,'rgba(255,255,255,0)');v.addColorStop(1,'rgba(150,120,70,.10)');ctx.fillStyle=v;ctx.fillRect(0,0,CW,CH);
-  /* 왼쪽 위 */
-  ribbon(ctx,[[[-80,520],[120,470],[240,330],[300,150]],[[300,150],[340,40],[430,-10],[560,-60]]],72,BELT.k,{twist:1.6,ph:.15});
-  ribbon(ctx,[[[-60,300],[160,330],[330,250],[440,80]],[[440,80],[480,20],[540,-20],[640,-50]]],46,BELT.r,{twist:1.2,ph:.4});
-  ribbon(ctx,[[[-60,400],[140,390],[300,300],[380,120]],[[380,120],[420,30],[500,-20],[600,-60]]],10,BELT.b,{stitch:0,shadow:false});
-  ribbon(ctx,[[[-60,445],[150,430],[320,330],[410,140]],[[410,140],[450,60],[520,0],[620,-40]]],5,BELT.r,{stitch:0,shadow:false});
-  /* 오른쪽 아래 */
-  ribbon(ctx,[[[640,CH+80],[860,CH-90],[1060,CH-170],[1320,CH-90]]],62,BELT.r,{twist:1.3,ph:.3});
-  ribbon(ctx,[[[900,CH+80],[1030,CH-120],[1140,CH-330],[1320,CH-560]]],74,BELT.b,{twist:1.5,ph:.05});
-  ribbon(ctx,[[[800,CH+60],[990,CH-70],[1170,CH-200],[1320,CH-270]]],10,BELT.k,{stitch:0,shadow:false});
-  ribbon(ctx,[[[740,CH+60],[960,CH-40],[1150,CH-130],[1320,CH-170]]],5,BELT.b,{stitch:0,shadow:false});
+  const v=ctx.createRadialGradient(CW/2,CH/2,300,CW/2,CH/2,1150);v.addColorStop(0,'rgba(255,255,255,0)');v.addColorStop(1,'rgba(150,120,70,.12)');ctx.fillStyle=v;ctx.fillRect(0,0,CW,CH);
   frame(ctx,'rgba(176,140,72,.85)',62);
-  centerText(ctx,r,comp,no,{noRight:false,brush:true,title:'#141414',gold:'#A07A36',award:'#9A2230',mute:'#8D8473',text:'#1E1E1E',name:'#0E0E0E',body:'#2A2A2A',seal:'rgba(196,30,46,.8)'});
+  /* 위: 검정 띠가 왼쪽에서 크게 휘어 올라가고, 홍띠가 위를 가로지름, 청 끈 */
+  belt(ctx,[[[-140,120],[260,60],[620,10],[1000,-60]]],18,'#1E4FA6',{stitch:2,seed:3});
+  belt(ctx,[[[-160,250],[180,300],[420,140],[640,-30]],[[640,-30],[700,-80],[760,-110],[820,-160]]],118,'#C8162F',{seed:4,twist:.35,ph:.62});
+  belt(ctx,[[[-200,470],[120,420],[260,250],[420,40]],[[420,40],[470,-30],[560,-90],[700,-150]]],128,'#111111',{dark:true,seed:6});
+  belt(ctx,[[[1460,-40],[1240,90],[1130,170],[1010,130]]],104,'#1E4FA6',{seed:7,endCap:'end'});
+  /* 아래: 청띠가 오른쪽에서 휘날리고, 홍띠가 아래를 가로지르며, 검정 끈 */
+  belt(ctx,[[[620,CH+120],[900,CH-130],[1140,CH-170],[1440,CH-40]]],20,'#111111',{dark:true,stitch:2,seed:8});
+  belt(ctx,[[[380,CH+200],[720,CH-50],[1020,CH-110],[1460,CH-260]]],116,'#C8162F',{seed:9,twist:.3,ph:.1});
+  belt(ctx,[[[1460,CH-760],[1210,CH-560],[1150,CH-300],[1000,CH+150]]],130,'#1E4FA6',{seed:10});
+  belt(ctx,[[[-150,CH-150],[60,CH-120],[170,CH-60],[230,CH+40]]],96,'#111111',{dark:true,seed:12,endCap:'start'});
+  centerText(ctx,r,comp,no,{noRight:false,foot:false,brush:true,title:'#141414',gold:'#A07A36',award:'#9A2230',mute:'#8D8473',text:'#1E1E1E',name:'#0E0E0E',body:'#2A2A2A',seal:'rgba(196,30,46,.8)'});
   ctx.restore();}
 /* ② 밤하늘 리본: 남색 바탕 + 홍·청 리본 물결과 가는 선 다발 */
 function drawNight(ctx,r,comp,no){
