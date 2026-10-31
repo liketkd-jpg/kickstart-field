@@ -1941,7 +1941,8 @@ function aPlayers(){
       ${imp.length>8?`<span class="small muted">외 ${imp.length-8}건</span>`:''}
       ${(()=>{const nl=imp.filter(a=>!LEVELS.includes(a.level)&&a.level!=='대학부').length,ng=imp.filter(a=>a.gGuess&&EV[a.ev]&&EV[a.ev].kind!=='team').length;
         return (nl?`<span class="small" style="color:var(--warn)">부별을 알아보지 못한 줄이 ${nl}개 있습니다 ("부별 미정"으로 들어감). "부별" 칸에 초등 고학년부 · 중등 2학년부 · 대학 1부처럼 적어 주세요.</span>`:'')+(ng?`<span class="small" style="color:var(--warn)">성별 칸이 없어 ${ng}명을 남자로 넣었습니다. "성별" 칸에 남·여를 적어 주세요.</span>`:'');})()}
-      ${imp.some(a=>!EV[a.ev])?`<span class="small" style="color:var(--warn)"><span>종목을 알아보지 못한 줄이</span> ${imp.filter(a=>!EV[a.ev]).length} · <span>"종목" 칸에 종목 이름(예: 체공 도약 격파, 주먹 격파)을 적어 주세요.</span></span>`:''}
+      ${imp.some(a=>!EV[a.ev])?`<span class="small" style="color:var(--warn)"><span>종목을 알아보지 못한 줄이</span> ${imp.filter(a=>!EV[a.ev]).length} · <span>"종목" 칸에 종목 이름(예: 체공 도약 격파, 주먹 격파)을 적어 주세요.</span></span>
+      <div class="row"><span class="small"><b>종목을 모르는 줄을 한꺼번에</b></span>${evSelect('impEv','air')}<button class="btn" data-act="importSetEv">이 종목으로 정하기</button></div>`:''}
       <div class="row"><button class="btn primary" data-act="importAdd">명단에 추가</button><button class="btn" data-act="armed" data-do="importReplace">기존 명단 교체</button><button class="btn" data-act="importCancel">취소</button></div></div>`:''}
   </div>
   <div class="panel">
@@ -2024,6 +2025,10 @@ function aDraw(){
   ${divDetail(d)}</div>`;
 }
 function divDetail(d){
+  if(!EV[d.ev])return `<div class="stack"><div class="panel"><div class="row between"><h2>${esc(d.name)}</h2><span class="chip">${(d.order||[]).length}명(팀)</span></div>
+    <div class="banner warn">이 부문은 <b>종목이 정해지지 않았습니다.</b> 종목을 알아야 경기규칙에 맞는 심판 채점표(기술별 완성도·표현성, 종합격파, 단체전, 기록·위력격파)를 만들 수 있습니다. 종목을 고르기 전에는 선수를 호출할 수 없습니다.</div>
+    <div class="row"><label class="field"><span class="label">이 부문의 종목</span>${evSelect('dEv_'+d.id,'air')}</label><button class="btn primary" data-act="divSetEv" data-id="${d.id}">종목 정하기</button></div>
+    <span class="small muted">겨루기 대진표처럼 종목 칸이 없는 명단을 불러오면 이렇게 됩니다. 선수마다 다르면 「선수 등록」에서 한 명씩 「수정」으로 종목을 고를 수 있습니다.</span></div></div>`;
   const k=kindOf(d),p=planOf(d),sts=stagesOf(d),has=divHasResults(d),n=(d.order||[]).length;
   const advOpts=[['',`자동 (${Math.max(1,Math.ceil((Number(SET().finalN)||8)/p.G))}명)`],...[1,2,3,4,5,6,8].map(x=>[x,x+'명'])];
   const planBox=`<div class="panel" style="background:var(--sunk)"><b>컷오프 계획</b>
@@ -2278,6 +2283,7 @@ function vJudge(){
   }
   const head=SOLO_ON?`<div class="row between"><span class="chip live" style="font-size:14px">1심제 · 혼자 운영 채점</span><button class="btn sm" data-act="soloHideBtn">운영석 보기</button></div>`:`<div class="row between"><span class="chip live" style="font-size:15px">${myJudge}심 채점기</span>${FIXED?'<span class="small muted">이 기기에 잠김</span>':'<button class="btn sm" data-act="armed" data-do="unlockJudge">잠금 해제</button>'}</div>`;
   if(!cur)return `<div class="stack">${banner}${head}<div class="empty">운영석에서 선수를 호출하면 채점표가 나타납니다.</div></div>`;
+  if(!EV[cur.ev]||(cur.kind==='tech'&&!(cur.techs||[]).length))return `<div class="stack">${banner}${head}<div class="empty"><b>이 부문은 종목이 정해지지 않아 채점표를 만들 수 없습니다.</b><br>운영석 「부문·조 편성」에서 종목을 고른 뒤 선수를 다시 호출해 주세요.</div></div>`;
   if(myJudge>cur.judgeCount)return `<div class="stack">${banner}${head}<div class="empty">이번 경기는 ${cur.judgeCount}심제라 ${myJudge}번 심판은 채점하지 않습니다.</div></div>`;
   const revealed=st.status==='revealed',id=`${cur.perfId}__j${myJudge}`;
   const ob=OUTBOX[id],sent=(ob&&ob.epoch===(st.epoch||0)&&ob.callId===cur.callId)?ob:curScores().find(x=>x._id===id);
@@ -2414,6 +2420,7 @@ function patchState(p){const n={...ST(),...p};S.state=n;schedule();return saveSt
 async function callIt(callId){
   const f=findCall(callId);if(!f)return;
   const {c,d}=f,s=SET(),st=ST(),a=athlete(c.athleteId)||{},kind=kindOf(d);
+  if(!EV[d.ev]){ui.div=d.id;toast(`「${d.name}」은(는) 종목이 정해지지 않아 채점표를 만들 수 없습니다. 「부문·조 편성」에서 이 부문의 종목을 먼저 골라 주세요`);render();return;}
   const lim=d.ev==='team'?300:evTime(d.ev,d.level),prev=S.results[c.perfId];
   ui.div=d.id;ui.editing=false;clearTimeout(READY_T);try{window.LMUS&&LMUS.stop();}catch(err){}
   await saveState(jclean({status:'open',epoch:(st.epoch||0)+1,calledAt:Date.now(),readyAt:null,prep:null,voice:st.voice||null,
@@ -2519,6 +2526,11 @@ const ACT={
   setCat:b=>{ui.cat=b.dataset.v;render();},
   pickDraw:b=>{ui.drawDiv=b.dataset.id;render();},
   regen:()=>regenerateDivs(),
+  divSetEv:async b=>{const id=b.dataset.id,d=S.divs.find(x=>x.id===id),sel=$('#dEv_'+id);if(!d||!sel)return;const ev=sel.value,ids=new Set(d.order||[]);
+    rosterSnap(`「${d.name}」 종목 정하기`);await saveRoster(S.roster.map(a=>ids.has(a.id)&&!EV[a.ev]?{...a,ev,level:(LEVELS.includes(a.level)||a.level==='대학부')?a.level:normLevel(d.name.replace(/[A-Za-z]_/,''),'',a.age),gender:EV[ev].kind==='team'?'혼성':(a.gGuess||!a.gender)&&/여/.test(d.name)?'여':a.gender}:a));
+    for(let i=0;i<30&&S.roster.some(a=>ids.has(a.id)&&!EV[a.ev]);i++)await new Promise(r=>setTimeout(r,100));
+    await regenerateDivs();toast(`「${d.name}」을(를) ${EV[ev].label}(으)로 정했습니다. 이제 경기규칙대로 채점표가 나옵니다`);},
+  importSetEv:()=>{const sel=$('#impEv');if(!sel||!ui.importRows)return;const ev=sel.value;ui.importRows=ui.importRows.map(a=>EV[a.ev]?a:{...a,ev,gender:EV[ev].kind==='team'?'혼성':a.gender});render();toast(`종목을 ${EV[ev].label}(으)로 정했습니다`);},
   divPre:b=>{const d=divById(b.dataset.id);if(!d)return;const v=b.dataset.v;saveDiv({...d,forcePre:v==='on'?true:v==='off'?false:null,stages:null});},
   divAdv:b=>{const d=divById(b.dataset.id);if(!d)return;saveDiv({...d,adv:b.dataset.v?Number(b.dataset.v):null});},
   drawAll:async()=>{const L=S.divs.filter(d=>!divHasResults(d));if(!L.length)return toast('추첨할 부문이 없습니다 (모든 부문에 점수가 있습니다)');const ids=new Set(L.map(d=>d.id));await saveDivs(S.divs.map(d=>ids.has(d.id)?{...d,order:shuffle(d.order||[]),stages:null}:d));addLog('전체 출전 순서 추첨',L.length+'개 부문','');toast(`${L.length}개 부문의 출전 순서를 추첨했습니다${L.length<S.divs.length?' (점수가 있는 부문은 그대로)':''}`);},
