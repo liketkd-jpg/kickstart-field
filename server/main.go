@@ -30,7 +30,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.3.1" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.3.2" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -124,6 +124,7 @@ func main() {
 		for range t.C {
 			for _, s := range stores {
 				s.flushIfDirty()
+				s.expireGhosts()
 			}
 		}
 	}()
@@ -370,10 +371,17 @@ type Store struct {
 	dirty   bool
 	clients map[string]*client
 	leases  map[string]lease
+	// 실시간 연결을 다른 화면과 나눠 쓰는 화면의 접속 표시 (6초마다 다시 알림, 20초 지나면 지움)
+	ghosts map[string]ghost
+}
+
+type ghost struct {
+	presence json.RawMessage
+	until    time.Time
 }
 
 func openStore(key string) *Store {
-	s := &Store{key: key, docs: map[string]json.RawMessage{}, clients: map[string]*client{}, leases: map[string]lease{},
+	s := &Store{key: key, docs: map[string]json.RawMessage{}, clients: map[string]*client{}, leases: map[string]lease{}, ghosts: map[string]ghost{},
 		file: filepath.Join(dataDir, key+".json")}
 	if b, err := os.ReadFile(s.file); err == nil {
 		var saved struct {
@@ -389,6 +397,22 @@ func openStore(key string) *Store {
 		}
 	}
 	return s
+}
+
+// 20초 동안 다시 알리지 않은 화면의 접속 표시를 지움
+func (s *Store) expireGhosts() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now, changed := time.Now(), false
+	for id, g := range s.ghosts {
+		if now.After(g.until) {
+			delete(s.ghosts, id)
+			changed = true
+		}
+	}
+	if changed {
+		s.broadcast(s.peersMsg())
+	}
 }
 
 func (s *Store) flushIfDirty() {
@@ -451,6 +475,12 @@ func (s *Store) peersMsg() []byte {
 	for _, c := range s.clients {
 		if c.presence != nil {
 			ps = append(ps, peer{c.id, c.presence})
+		}
+	}
+	now := time.Now()
+	for id, g := range s.ghosts {
+		if _, live := s.clients[id]; !live && now.Before(g.until) {
+			ps = append(ps, peer{id, g.presence})
 		}
 	}
 	sort.Slice(ps, func(i, j int) bool { return ps[i].ID < ps[j].ID })
@@ -556,6 +586,19 @@ func (s *Store) api(w http.ResponseWriter, r *http.Request, op string) {
 		if ok {
 			c.presence = req.Presence
 			s.broadcast(s.peersMsg())
+		} else if req.CID != "" {
+			// 실시간 연결을 나눠 쓰는 화면: 따로 기억해 두고 20초 동안 접속으로 표시
+			old, had := s.ghosts[req.CID]
+			had = had && string(old.presence) == string(req.Presence)
+			if len(req.Presence) == 0 || string(req.Presence) == "null" {
+				delete(s.ghosts, req.CID)
+			} else if len(s.ghosts) < 500 {
+				s.ghosts[req.CID] = ghost{presence: req.Presence, until: time.Now().Add(20 * time.Second)}
+			}
+			if !had || len(req.Presence) == 0 || string(req.Presence) == "null" {
+				s.broadcast(s.peersMsg())
+			}
+			ok = true
 		}
 		s.mu.Unlock()
 		writeJSON(w, 200, map[string]any{"ok": ok})

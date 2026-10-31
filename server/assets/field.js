@@ -7,7 +7,8 @@ const F=window.KS_FIELD||{};
 const API='/'+(F.app||'poomsae')+'/api/';
 /* 노트북에 주소가 여러 개면 운영자가 고른 주소로 QR·링크를 만듦 */
 try{const ip=localStorage.getItem('ks_field_ip');if(F.local&&ip&&(F.ips||[]).includes(ip))F.base='http://'+ip+':'+F.port+'/'+F.app+'/';}catch(e){}
-const CID=(()=>{let c=null;try{c=sessionStorage.getItem('ks_field_cid');}catch(e){}if(!c){c='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);try{sessionStorage.setItem('ks_field_cid',c);}catch(e){}}return c;})();
+/* 화면(탭)마다 새 이름: 예전처럼 sessionStorage에 두면 「새 창으로 열기」 때 그대로 복사돼, 두 화면이 서로의 연결을 끊는 일이 생겼습니다 */
+const CID='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const UID=(()=>{let u=null;try{u=localStorage.getItem('ks_field_uid');}catch(e){}if(!u){u='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);try{localStorage.setItem('ks_field_uid',u);}catch(e){}}return u;})();
 
 /* ---------- 연결 상태 (화면 표시에 사용) ---------- */
@@ -32,28 +33,60 @@ function scheduleNotify(path){if(path==null)notifyAll=true;else pendingNotify.ad
     for(const [p,set] of docL){if(all||paths.has(p))set.forEach(cb=>{try{cb(docSnap(p));}catch(e){console.error(e);}});}
     collL.forEach(q=>{let hit=all;if(!hit)for(const p of paths){if(p.startsWith(q.coll+'/')){hit=true;break;}}if(hit){try{q.cb(collSnap(q));}catch(e){console.error(e);}}});});}
 
-/* ---------- 실시간 연결 (서버가 보내는 변경 사항) ---------- */
+/* ---------- 실시간 연결 (서버가 보내는 변경 사항) ----------
+   브라우저는 한 주소에 동시에 6개까지만 연결합니다. 노트북 한 대에서 운영석·전광판·본부 등 여러 화면을 열면
+   화면마다 붙잡은 실시간 연결 때문에 저장·클릭 요청이 줄을 서서 멈춘 것처럼 보였습니다.
+   이제 같은 종목의 화면들은 실시간 연결 하나를 나눠 씁니다: 한 화면(대표)만 서버와 연결하고 받은 내용을 다른 화면에 전해 줍니다.
+   대표 화면을 닫으면 남은 화면 중 하나가 곧바로 대표가 됩니다. */
 let es=null,lastSeq=0,lastMsg=0;
+const SHARE=!!(navigator.locks&&window.BroadcastChannel);
+let LEADER=!SHARE,BC=null;
+function relay(t,data){if(LEADER&&BC){try{BC.postMessage({t,data});}catch(e){}}}
 function lost(){if(NET.connected){NET.connected=false;NET.lastFail=Date.now();NET.since=Date.now();netChanged();}}
 function connect(){
   try{if(es)es.close();}catch(e){}
   es=new EventSource(API+'events?cid='+encodeURIComponent(CID));
   ['init','chg','peers','ka'].forEach(t=>es.addEventListener(t,()=>{lastMsg=Date.now();}));
-  es.addEventListener('init',ev=>{const m=JSON.parse(ev.data);cache.clear();for(const [k,v] of Object.entries(m.docs||{}))cache.set(k,v);lastSeq=m.seq||0;
-    const first=!NET.ready;NET.ready=true;NET.connected=true;NET.lastOk=Date.now();NET.since=Date.now();netChanged();scheduleNotify(null);
-    if(myPresence)sendPresence();if(first)readyWaiters.splice(0).forEach(f=>f());});
-  es.addEventListener('chg',ev=>{const m=JSON.parse(ev.data);if(m.seq&&m.seq<=lastSeq&&cache.has(m.path)===(m.data!=null)&&JSON.stringify(cache.get(m.path))===JSON.stringify(m.data))return;
-    lastSeq=Math.max(lastSeq,m.seq||0);if(m.data==null)cache.delete(m.path);else cache.set(m.path,m.data);NET.lastOk=Date.now();scheduleNotify(m.path);});
-  es.addEventListener('peers',ev=>{PEERS=JSON.parse(ev.data)||[];peerL.forEach(f=>{try{f({peers:PEERS});}catch(e){}});});
+  es.addEventListener('init',ev=>{const m=JSON.parse(ev.data);relay('init',{seq:m.seq,docs:m.docs});onInit(m);});
+  es.addEventListener('chg',ev=>{const m=JSON.parse(ev.data);relay('chg',m);onChg(m);});
+  es.addEventListener('peers',ev=>{const ps=JSON.parse(ev.data)||[];relay('peers',ps);onPeers(ps);});
+  es.addEventListener('ka',()=>relay('ka',null));
   es.onopen=()=>{NET.lastOk=Date.now();};
-  es.onerror=()=>lost();
+  es.onerror=()=>{lost();relay('net',false);};
   lastMsg=Date.now();
+}
+function onInit(m){cache.clear();for(const [k,v] of Object.entries(m.docs||{}))cache.set(k,v);lastSeq=m.seq||0;
+    const first=!NET.ready;NET.ready=true;NET.connected=true;NET.lastOk=Date.now();NET.since=Date.now();netChanged();scheduleNotify(null);
+    if(myPresence)sendPresence();if(first)readyWaiters.splice(0).forEach(f=>f());}
+function onChg(m){if(m.seq&&m.seq<=lastSeq&&cache.has(m.path)===(m.data!=null)&&JSON.stringify(cache.get(m.path))===JSON.stringify(m.data))return;
+    lastSeq=Math.max(lastSeq,m.seq||0);if(m.data==null)cache.delete(m.path);else cache.set(m.path,m.data);NET.lastOk=Date.now();scheduleNotify(m.path);}
+function onPeers(ps){PEERS=ps;peerL.forEach(f=>{try{f({peers:PEERS});}catch(e){}});}
+/* 나눠 쓰기: 대표 정하기 · 대표가 받은 내용 전달 */
+if(SHARE){
+  BC=new BroadcastChannel('ksf:'+(F.app||'poomsae'));
+  BC.onmessage=ev=>{const m=ev.data||{};
+    if(LEADER){if(m.t==='hello'&&NET.ready){try{BC.postMessage({t:'init',data:{seq:lastSeq,docs:Object.fromEntries(cache)}});BC.postMessage({t:'peers',data:PEERS});}catch(e){}}return;}
+    lastMsg=Date.now();
+    if(m.t==='init'){onInit(m.data);}
+    else if(m.t==='chg'){onChg(m.data);}
+    else if(m.t==='peers'){onPeers(m.data||[]);}
+    else if(m.t==='net'){if(m.data===false)lost();}
+    else if(m.t==='ka'){if(NET.ready&&!NET.connected){NET.connected=true;NET.since=Date.now();netChanged();}}
+  };
+  try{BC.postMessage({t:'hello'});}catch(e){}
+  navigator.locks.request('ksf:'+(F.app||'poomsae'),()=>new Promise(()=>{LEADER=true;connect();}));
+  /* 대표가 아닌 화면도 접속 표시는 따로 서버에 알림 (6초마다) */
+  setInterval(()=>{if(!LEADER&&myPresence&&NET.connected)sendPresence();},6000);
+  window.addEventListener('pagehide',()=>{if(!LEADER&&myPresence){try{navigator.sendBeacon(API+'presence',new Blob([JSON.stringify({cid:CID,presence:null})],{type:'application/json'}));}catch(e){}}});
 }
 const readyWaiters=[];
 const whenReady=()=>NET.ready?Promise.resolve():new Promise(r=>readyWaiters.push(r));
 /* 서버는 4초마다 신호를 보냄. 12초 동안 아무 신호가 없으면(와이파이가 조용히 끊김) 끊김으로 보고 다시 연결 */
-setInterval(()=>{if(!es)return;if(es.readyState===2){connect();return;}if(Date.now()-lastMsg>12000){lost();connect();}},2000);
-window.addEventListener('online',()=>{if(!NET.connected)connect();});
+setInterval(()=>{
+  if(!LEADER){if(Date.now()-lastMsg>12000){lost();try{BC.postMessage({t:'hello'});}catch(e){}lastMsg=Date.now()-6000;}return;}
+  if(!es)return;if(es.readyState===2){connect();return;}if(Date.now()-lastMsg>12000){lost();connect();}},2000);
+window.addEventListener('online',()=>{if(!NET.connected&&LEADER)connect();});
+if(!SHARE)connect();
 
 /* ---------- 서버 요청 (시간 제한) ---------- */
 async function call(op,body,ms){
@@ -62,7 +95,7 @@ async function call(op,body,ms){
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw {code:j.error||'unavailable'};
     NET.lastOk=Date.now();return j;}
-  catch(e){NET.lastFail=Date.now();const appErr=e&&typeof e.code==='string';if(!appErr){lost();setTimeout(()=>{if(!NET.connected)connect();},500);}throw appErr?e:{code:'unavailable',message:String(e&&e.message||e)};}
+  catch(e){NET.lastFail=Date.now();const appErr=e&&typeof e.code==='string';if(!appErr){lost();setTimeout(()=>{if(!NET.connected&&LEADER)connect();},500);}throw appErr?e:{code:'unavailable',message:String(e&&e.message||e)};}
   finally{clearTimeout(t);}
 }
 
@@ -133,7 +166,7 @@ const downloads={
 F.db=db;
 window.claude={
   use:async n=>{
-    if(n==='db'){if(!es)connect();return db;}
+    if(n==='db'){if(!es&&LEADER)connect();return db;}
     if(n==='room')return room;
     if(n==='user')return user;
     if(n==='downloads')return downloads;
