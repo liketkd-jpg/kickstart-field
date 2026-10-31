@@ -370,3 +370,96 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
 })();
 })();
 </script>
+<!--@@AUDIOFIX--><script>/* ===== 경기 소리 안정화 (품새·격파·겨루기 공통) =====
+   1) HDMI·모니터 스피커는 소리가 잠깐 멈추면 절전으로 꺼졌다가 다음 소리 앞부분을 잘라 먹습니다("띠디디", "준…비").
+      → 들리지 않을 만큼 아주 작은 소리를 계속 흘려 소리 장치가 꺼지지 않게 합니다.
+   2) 녹음 파일·신호음은 미리 읽어(디코딩) 두었다가 누르는 즉시 같은 소리 통로로 냅니다.
+   3) 기기 음성(TTS)은 첫 구령이 늦게 나오지 않도록 미리 깨워 둡니다.
+   4) 브라우저는 화면을 한 번 눌러야 소리를 허락하므로, 전광판에서 소리가 막혀 있으면 「🔊 소리 켜기」 단추를 보여 줍니다. */
+(function(){
+if(window.KS_AUDIO)return;
+const AC=window.AudioContext||window.webkitAudioContext;
+const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
+let ctx=null,master=null,keep=null;
+function C(){
+  if(!AC)return null;
+  if(!ctx){try{ctx=new AC({latencyHint:'interactive'});}catch(e){try{ctx=new AC();}catch(_){return null;}}
+    master=ctx.createGain();master.gain.value=1;master.connect(ctx.destination);
+    ctx.onstatechange=()=>{if(ctx.state==='running')startKeep();refreshBtn();};}
+  if(ctx.state==='suspended'||ctx.state==='interrupted'){try{ctx.resume().catch(()=>{});}catch(e){}}
+  return ctx;
+}
+const running=()=>!!ctx&&ctx.state==='running';
+/* 1) 소리 장치 깨워 두기: -80dB 정도의 아주 작은 잡음(사람 귀에는 들리지 않음) */
+function startKeep(){
+  const c=C();if(!c||keep||c.state!=='running')return;
+  try{const n=c.sampleRate*2,b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);
+    for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*0.0001;
+    const s=c.createBufferSource();s.buffer=b;s.loop=true;s.connect(c.destination);s.start();keep=s;}catch(e){}
+}
+/* 2) 미리 읽어 둔 소리 재생 */
+const CACHE=new Map();
+function buf(url){
+  if(!url)return Promise.reject(new Error('no url'));
+  if(CACHE.has(url))return CACHE.get(url);
+  const c=C();if(!c)return Promise.reject(new Error('no audio'));
+  const p=fetch(url).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.arrayBuffer();})
+    .then(ab=>new Promise((res,rej)=>{const q=c.decodeAudioData(ab,res,rej);if(q&&q.then)q.then(res,rej);}));
+  CACHE.set(url,p);p.catch(()=>CACHE.delete(url));
+  if(CACHE.size>60){const k=CACHE.keys().next().value;CACHE.delete(k);}
+  return p;
+}
+let NOWS=[];
+function stopAll(){NOWS.forEach(s=>{try{s.stop();}catch(e){}});NOWS=[];}
+/* 재생할 수 있으면 true. 소리가 아직 막혀 있으면 false → 앱이 원래 방식으로 재생 */
+function play(url,opt){
+  opt=opt||{};if(!url||url==='null')return false;const c=C();if(!c||!running())return false;
+  buf(url).then(b=>{const s=c.createBufferSource();s.buffer=b;const v=c.createGain();v.gain.value=opt.vol==null?1:opt.vol;s.connect(v);v.connect(master);
+    s.onended=()=>{NOWS=NOWS.filter(x=>x!==s);if(opt.onended)opt.onended();};
+    s.start(c.currentTime+0.03);NOWS.push(s);startKeep();})
+   .catch(()=>{try{const a=new Audio(url);a.volume=1;if(opt.onended)a.onended=opt.onended;a.play().catch(()=>{});}catch(e){}});
+  return true;
+}
+function preload(url){if(url&&C())buf(url).catch(()=>{});}
+/* 3) 기기 음성 미리 깨우기 */
+let TTSW=0;
+function warmTTS(){try{const ss=window.speechSynthesis;if(!ss||Date.now()-TTSW<60000||ss.speaking||ss.pending)return;TTSW=Date.now();
+  const u=new SpeechSynthesisUtterance(' ');u.volume=0;u.lang='ko-KR';ss.speak(u);}catch(e){}}
+
+/* 앱별 연결 ---------------------------------------------------------- */
+function hookKyorugi(){
+  /* 겨루기 신호음(경적·부저): 미리 읽어 두고 바로 재생 */
+  const DEF=g('DEF_SND'),FILE=g('SND_FILE');
+  if(!DEF||typeof window.playFile!=='function'||window.playFile.__ks)return;
+  const old=window.playFile;
+  const nf=function(key){const d=(FILE&&FILE[key])||DEF[key];if(!d)return false;if(play(d))return true;return old(key);};
+  nf.__ks=1;window.playFile=nf;
+  if(typeof window.actx==='function'){const oa=window.actx;window.actx=function(){return C()||oa();};}
+  const pre=()=>{Object.values(DEF).forEach(preload);if(FILE)Object.values(FILE).forEach(u=>u&&preload(u));};
+  pre();setInterval(pre,60000);
+}
+function preloadVoices(){try{if(typeof window.KS_VOICE_URLS==='function')(window.KS_VOICE_URLS()||[]).forEach(p=>Promise.resolve(p).then(preload,()=>{}));}catch(e){}}
+
+/* 4) 소리 허락 받기 */
+function unlock(){const c=C();if(!c)return;startKeep();warmTTS();preloadVoices();hookKyorugi();refreshBtn();}
+['pointerdown','touchstart','keydown','click'].forEach(t=>addEventListener(t,unlock,{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ctx)C();});
+/* 바로 시도 (현장 모드 등 자동 재생이 허용된 경우) */
+setTimeout(()=>{C();if(running())unlock();},300);
+setInterval(()=>{if(running()){startKeep();preloadVoices();}},30000);
+hookKyorugi();
+
+/* 전광판에서 소리가 막혀 있으면 단추 표시 */
+let BTN=null;
+function isDisp(){return document.body&&document.body.classList.contains('disp');}
+function refreshBtn(){
+  const need=isDisp()&&!running()&&!document.querySelector('.tapv');
+  if(need&&!BTN){BTN=document.createElement('button');BTN.type='button';BTN.className='ksaudio';BTN.setAttribute('data-noi18n','');
+    BTN.textContent='🔊 소리 켜기 (한 번 눌러 주세요)';BTN.addEventListener('click',e=>{e.stopPropagation();unlock();setTimeout(refreshBtn,200);});document.body.appendChild(BTN);}
+  else if(!need&&BTN){BTN.remove();BTN=null;}
+}
+setInterval(refreshBtn,1500);
+
+window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep,warmTTS,unlock};
+})();
+</script><!--@@END-AF-->
