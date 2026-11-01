@@ -1229,7 +1229,7 @@ function drawWT(ctx,r,comp,no){
     if(lang==='both'){y+=L?14:20;ctx.fillStyle='#6A6355';ctx.font=`italic 500 ${L?24:28}px ${SERIF}`;const lh=L?34:42;wrapT(ctx,bothF,L?CW-760:bw).forEach(l=>{y+=lh;P(l,X,y);});}
     if(lang==='fx'){ctx.fillStyle='#262626';ctx.font=`500 ${L?30:35}px ${SERIF}`;const lh=L?46:58;bodyF.map((s,k)=>k===bodyF.length-1?dot(s):s).forEach(s=>wrapT(ctx,s,bw).forEach(l=>{y+=lh;P(l,X,y);}));}
     return y;};
-  const by=fb-(L?150:190),dTop=by-(L?80:110)-(lang==='both'?(L?32:36):0)-(L?40:56);
+  const by=fb-(L?150:190),dGap=lang==='both'?(L?32:36):0,dTop=by-(L?112:146)-dGap-(L?40:56);
   const yEnd=mid(y,true),shift=Math.max(0,Math.min(L?90:200,(dTop-yEnd)*.45));y=mid(y+shift,false);
   /* 아래: 메달 휘장 · 날짜 · 서명 */
   const sealX=L?mx+40:mx+60,sigX=L?CW-mx-150:CW-mx-140;
@@ -1238,21 +1238,23 @@ function drawWT(ctx,r,comp,no){
   const placeF=(cf.place_f||'').trim(),placeKo=comp.place||'';
   ctx.fillStyle='#3A362E';ctx.font=`600 ${L?25:28}px ${SERIF}`;
   const dateLines=lang==='ko'?[dKo]:lang==='fx'?[placeF?`${placeF}, ${dF}`:dF]:[dKo,placeF?`${placeF}, ${dF}`:dF];
-  let dy=Math.max(y+(L?50:70),by-(L?80:110));dateLines.forEach((l,i)=>{if(i)ctx.font=`italic 500 ${L?21:24}px ${SERIF}`;ctx.fillText(l,X,dy+i*(L?32:36));});
-  /* 서명란 */
+  let dy=Math.max(y+(L?40:56),by-(L?112:146)-dGap);dateLines.forEach((l,i)=>{if(i)ctx.font=`italic 500 ${L?21:24}px ${SERIF}`;ctx.fillText(l,X,dy+i*(L?32:36));});
+  /* 서명란: 주최 → 직함·이름 (직인이 이름 끝에 겹침) → 서명 줄 → 외국어 */
   const hostKo=cf.host||'KICKSTART UP 대회 조직위원회',hostF=(cf.host_f||'').trim()||`KICKSTART UP ${T.host}`;
   const repKo=`${cf.title||''} ${cf.rep||''}`.trim(),repF=`${(cf.rep_f||'').trim()||(/[가-힣]/.test(cf.rep||'')?'':cf.rep||'')}`.trim(),titF=(cf.title_f||'').trim();
-  const lw=L?330:360,ly=by+(L?18:24);ctx.strokeStyle='#0E0F12';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(sigX-lw/2,ly-(L?52:62));ctx.lineTo(sigX+lw/2,ly-(L?52:62));ctx.stroke();
-  let sy=ly-(L?20:24);ctx.fillStyle='#0E0F12';
-  const sigName=lang==='fx'?(repF||repKo):repKo;
-  if(sigName){ctx.font=`800 ${L?30:34}px ${/[가-힣]/.test(sigName)?SERIF:CINZEL}`;ctx.fillText(sigName,sigX,sy);sy+=L?32:38;}
-  if(lang==='both'&&(repF||titF)){ctx.fillStyle='#6A6355';ctx.font=`italic 500 ${L?20:23}px ${SERIF}`;ctx.fillText([titF,repF].filter(Boolean).join(' · '),sigX,sy);sy+=L?28:32;}
-  if(lang==='fx'&&titF){ctx.fillStyle='#6A6355';ctx.font=`italic 500 ${L?21:24}px ${SERIF}`;ctx.fillText(titF,sigX,sy);sy+=L?28:32;}
-  const inR=CW-(o+16+band+6)-24,hw=Math.min(lw+120,(inR-sigX)*2);
-  ctx.fillStyle='#8E6A30';const hs=lang==='fx'?hostF:hostKo,hf=/[가-힣]/.test(hs)?SERIF:CINZEL;fitTo(ctx,hs,700,L?22:25,hf,hw);ctx.fillText(hs,sigX,sy);
-  if(lang==='both'){sy+=L?26:30;fitTo(ctx,hostF,700,L?17:19,CINZEL,hw);ctx.fillText(hostF,sigX,sy);}
-  /* 직인 (한국어가 들어갈 때) */
-  if(lang!=='fx'&&repKo){ctx.save();ctx.translate(sigX+lw/2-20,ly-(L?92:108));ctx.rotate(-.06);ctx.strokeStyle='rgba(196,30,46,.85)';ctx.lineWidth=5;ctx.strokeRect(-40,-40,80,80);ctx.fillStyle='rgba(196,30,46,.85)';ctx.font=`900 26px ${SERIF}`;ctx.fillText('직인',0,9);ctx.restore();}
+  const seal=lang!=='fx'&&!!repKo,sx0=sigX-(seal?30:0),inR=CW-(o+16+band+6)-24,hw=Math.min(L?420:440,(inR-sx0)*2-(seal?120:0));
+  let sy=by-(L?56:66);
+  const hs=lang==='fx'?hostF:hostKo,hf=/[가-힣]/.test(hs)?SERIF:CINZEL;ctx.fillStyle='#8E6A30';fitTo(ctx,hs,700,L?23:26,hf,hw);ctx.fillText(hs,sx0,sy);
+  if(lang==='both'){sy+=L?24:28;fitTo(ctx,hostF,700,L?16:18,CINZEL,hw);ctx.fillText(hostF,sx0,sy);}
+  const sigName=lang==='fx'?(repF||repKo):repKo,nsz=L?36:42;sy+=L?50:60;
+  let nw=0;if(sigName){ctx.fillStyle='#0E0F12';fitTo(ctx,sigName,900,nsz,/[가-힣]/.test(sigName)?SERIF:CINZEL,hw);ctx.letterSpacing=/[가-힣]/.test(sigName)?'4px':'1px';nw=ctx.measureText(sigName).width;ctx.fillText(sigName,sx0,sy);ctx.letterSpacing='0px';}
+  const lw=Math.max(L?300:330,nw+60);ctx.strokeStyle='#0E0F12';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(sx0-lw/2,sy+16);ctx.lineTo(sx0+lw/2,sy+16);ctx.stroke();
+  /* 직인: 이름 끝 글자에 반쯤 겹쳐 찍음 */
+  if(seal){const R=L?38:44;ctx.save();ctx.globalCompositeOperation='multiply';ctx.translate(sx0+nw/2+R*.55,sy-nsz*.36);ctx.rotate(-.06);ctx.strokeStyle='rgba(200,28,44,.88)';ctx.lineWidth=5;ctx.strokeRect(-R,-R,R*2,R*2);ctx.lineWidth=1.5;ctx.strokeRect(-R+8,-R+8,R*2-16,R*2-16);
+    ctx.fillStyle='rgba(200,28,44,.88)';ctx.font=`900 ${Math.round(R*.74)}px ${SERIF}`;ctx.fillText('직인',0,R*.26);ctx.restore();}
+  let fy=sy+16;
+  if(lang==='both'&&(repF||titF)){fy+=L?30:34;ctx.fillStyle='#6A6355';ctx.font=`italic 500 ${L?20:23}px ${SERIF}`;ctx.fillText([titF,repF].filter(Boolean).join(' · '),sx0,fy);}
+  if(lang==='fx'&&titF){fy+=L?30:34;ctx.fillStyle='#6A6355';ctx.font=`italic 500 ${L?21:24}px ${SERIF}`;ctx.fillText(titF,sx0,fy);}
   ctx.restore();}
 
 /* 상장 설정 화면에서 지금 고른 값 */
