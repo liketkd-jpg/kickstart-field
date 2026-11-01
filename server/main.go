@@ -30,7 +30,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.3" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.4" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -217,6 +217,15 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/node":
 		handleNode(w, r)
+		return
+	case p == "/view" || p == "/view/":
+		serveAsset(w, "assets/view.html", "text/html; charset=utf-8")
+		return
+	case p == "/view.js":
+		serveAsset(w, "assets/view.js", "application/javascript; charset=utf-8")
+		return
+	case p == "/api/view":
+		handleView(w, r)
 		return
 	case p == "/api/hqfeed":
 		handleFeed(w, r)

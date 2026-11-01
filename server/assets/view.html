@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B0D12">
+<title>KICKSTART UP 실시간 결과</title>
+<link rel="stylesheet" href="/vendor/fonts/fonts.css">
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:radial-gradient(1200px 500px at 80% -10%,rgba(201,162,98,.12),transparent),#0B0D12;color:#F2EEE6;font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;line-height:1.45;min-height:100vh}
+body>header{display:flex;align-items:center;gap:10px;padding:12px max(16px,env(safe-area-inset-left));border-bottom:1px solid rgba(214,182,124,.3);background:linear-gradient(180deg,#14171D,#0B0D12);position:sticky;top:0;z-index:5}
+body>header .w{font-family:"Archivo",sans-serif;font-stretch:125%;font-weight:800;letter-spacing:.06em;font-size:14px}
+body>header .w b{color:#E6CD97;margin-left:.3em}
+body>header .t{font-weight:800;font-size:15px;color:#CFC8B8}
+body>header .sp{margin-left:auto;display:flex;gap:8px}
+.hb{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#F2EEE6;border-radius:10px;padding:7px 12px;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer}
+.hb.gold{background:linear-gradient(180deg,#EBD5A3,#B8904E);color:#1A1306;border-color:transparent}
+main{max-width:1240px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-left)) 40px;display:flex;flex-direction:column;gap:16px}
+.send{background:linear-gradient(160deg,#2A2519,#14110B);border:1px solid rgba(214,182,124,.5);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.send h2{margin:0;font-size:19px}
+.send p{margin:0;color:#CFC8B8;font-size:14px}
+.send .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.send label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:800;color:#CFC8B8;flex:1;min-width:200px}
+.send input,.send select{background:#0E1015;border:1px solid rgba(255,255,255,.18);color:#F2EEE6;border-radius:10px;padding:10px 12px;font:inherit;font-size:15px}
+.send select option{background:#181B22;color:#F2EEE6}
+.st{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:13.5px;border-radius:999px;padding:5px 12px;background:rgba(255,255,255,.08)}
+.st.ok{background:rgba(67,201,133,.16);color:#6BE0A4}.st.bad{background:rgba(255,92,108,.14);color:#FF8A96}
+.err{color:#FF8A96;font-weight:700;font-size:14px}
+.share{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.share .qr{background:#fff;border-radius:12px;padding:6px;line-height:0}.share code{font-size:13.5px;word-break:break-all;color:#F3DFAE}
+.ov{position:fixed;inset:0;background:rgba(5,6,8,.85);display:grid;place-items:center;z-index:20;padding:20px}
+.ovc{background:#14171D;border:1px solid rgba(214,182,124,.5);border-radius:22px;padding:22px;max-width:520px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.ovc .qr{background:#fff;border-radius:14px;padding:10px;line-height:0}.ovc .qr svg{width:min(70vw,340px);height:auto}
+.ovc h2{margin:0}.ovc code{font-size:18px;color:#F3DFAE;word-break:break-all}
+.note{color:#A39C8E;font-size:13px;text-align:center}
+@media (min-width:1600px){main{max-width:1500px;zoom:1.25}}
+</style></head><body>
+<header><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#g)" d="M19 16h7.5v32H19z"/><path fill="url(#g)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#g)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#g)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg>
+<span class="w">KICKSTART<b>UP</b></span><span class="t">실시간 결과</span>
+<span class="sp"><button class="hb" type="button" id="qrBtn" hidden>📱 QR</button></span></header>
+<main>
+  <section class="send" id="send" hidden></section>
+  <div id="lv"></div>
+  <p class="note" id="foot"></p>
+</main>
+<div id="ov"></div>
+<script src="/view.js"></script>
+<script src="/vendor/qrcode.js"></script>
+<script>
+const SUPA_URL='https://nwdptjumclgzbwbsaoxr.supabase.co',SUPA_KEY='sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG',SITE='https://liketkd-jpg.github.io/kickstart-field/';
+const V=LV.mount(document.getElementById('lv'));
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function qrSvg(t,cell){try{const q=qrcode(0,'M');q.addData(t,'Byte');q.make();return q.createSvgTag(cell||5,8);}catch(e){return '';}}
+let SNAP=null,FAIL=0,NODE=null;
+/* ---------- 같은 와이파이: 2초마다 진행 상황 ---------- */
+async function poll(){try{const r=await fetch('/api/view',{cache:'no-store'});if(!r.ok)throw 0;SNAP=await r.json();FAIL=0;V.set(SNAP);if(SEND.on)push();}
+  catch(e){FAIL++;if(SNAP&&FAIL>2){V.set({...SNAP,at:SNAP.at-61000});}}}
+setInterval(poll,2000);poll();
+/* 이 화면 주소 (와이파이 안에서 쓰는 주소) */
+fetch('/api/node').then(r=>r.json()).then(n=>{NODE=n;const ip=(n.ips||[])[0];const url=ip?`http://${ip}:${n.port}/view`:location.origin+'/view';
+  $('foot').textContent=`같은 와이파이에서 ${url} 로 들어오면 이 화면을 볼 수 있습니다.`;$('qrBtn').hidden=false;$('qrBtn').onclick=()=>showQR(url,'대회장 와이파이에서 보기','같은 와이파이에 연결한 휴대폰으로 찍으세요');}).catch(()=>{});
+function showQR(url,title,sub){$('ov').innerHTML=`<div class="ov" data-x="1"><div class="ovc"><h2>${esc(title)}</h2><div class="qr">${qrSvg(url,6)}</div><code>${esc(url)}</code><p class="note">${esc(sub)}</p><button class="hb gold" type="button" data-x="1">닫기</button></div></div>`;}
+$('ov').addEventListener('click',e=>{if(e.target.dataset.x)$('ov').innerHTML='';});
+
+/* ---------- 인터넷으로 보내기 (#send): 접수 홈페이지 「실시간 결과」로 ---------- */
+const SEND={on:false,comp:'',compName:'',last:'',lastAt:0,n:0,err:'',busy:false,email:''};
+let SB=null,COMPS=[];
+try{const s=JSON.parse(localStorage.getItem('ks_live_send')||'{}');SEND.comp=s.comp||'';SEND.compName=s.compName||'';SEND.want=!!s.on;}catch(e){}
+function saveSend(){try{localStorage.setItem('ks_live_send',JSON.stringify({comp:SEND.comp,compName:SEND.compName,on:SEND.on}));}catch(e){}}
+function loadSB(){if(window.supabase)return Promise.resolve();return new Promise((res,rej)=>{const s=document.createElement('script');s.src='/vendor/supabase.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+async function sendInit(){$('send').hidden=false;sendDraw();
+  try{await loadSB();SB=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'ks-live-send'}});
+    const {data}=await SB.auth.getSession();if(data&&data.session){SEND.email=data.session.user.email;await loadComps();if(SEND.want&&SEND.comp)SEND.on=true;}}
+  catch(e){SEND.err='접수 홈페이지 연결 도구를 불러오지 못했습니다';}
+  sendDraw();}
+async function loadComps(){const {data,error}=await SB.from('comps').select('id,name,date').order('date',{ascending:false});if(error)throw error;COMPS=data||[];
+  if(!SEND.comp){const t=new Date().toISOString().slice(0,10);const c=COMPS.slice().sort((a,b)=>Math.abs(new Date(a.date)-new Date(t))-Math.abs(new Date(b.date)-new Date(t)))[0];if(c){SEND.comp=c.id;SEND.compName=c.name;}}}
+function sendDraw(){const el=$('send');const link=SEND.comp?SITE+'#live-'+SEND.comp:'';
+  if(!SEND.email){el.innerHTML=`<h2>📡 인터넷으로 보내기</h2><p>대회장 밖의 학부모도 휴대폰으로 보도록, 이 노트북이 모은 결과를 <b>접수 홈페이지</b>로 보냅니다. 대회 본부(관리자) 계정으로 한 번 로그인하세요.</p>
+    <form class="row" id="fIn"><label>이메일<input type="email" id="iEm" required autocomplete="username"></label><label>비밀번호<input type="password" id="iPw" required autocomplete="current-password"></label><button class="hb gold" type="submit">로그인</button></form>${SEND.err?`<span class="err">${esc(SEND.err)}</span>`:''}`;return;}
+  el.innerHTML=`<h2>📡 인터넷으로 보내기 <span class="st ${SEND.on?(SEND.err?'bad':'ok'):''}">${SEND.on?(SEND.err?'보내기 실패 · 다시 시도 중':'보내는 중'):'멈춤'}</span></h2>
+    <div class="row"><label>대회<select id="iComp">${COMPS.map(c=>`<option value="${c.id}" ${c.id===SEND.comp?'selected':''}>${esc(c.name)} (${esc(c.date)})</option>`).join('')}</select></label>
+      <button class="hb ${SEND.on?'':'gold'}" type="button" id="iGo">${SEND.on?'⏸ 보내기 멈추기':'▶ 보내기 시작'}</button></div>
+    <p>${SEND.on?`보낸 횟수 ${SEND.n}번${SEND.lastAt?` · 마지막 ${new Date(SEND.lastAt).toLocaleTimeString('ko-KR')}`:''} · 바뀐 것이 있을 때만 보냅니다. <b>이 창을 닫지 마세요.</b>`:'시작하면 코트 진행 상황과 입상 결과가 접수 홈페이지에 나옵니다.'} <span class="note">${esc(SEND.email)} · <a href="#send" id="iOut" style="color:inherit">로그아웃</a></span></p>
+    ${SEND.err?`<span class="err">${esc(SEND.err)}</span>`:''}
+    ${link?`<div class="share"><div class="qr">${qrSvg(link,3)}</div><div><b>관람객 주소 (인터넷)</b><br><code>${esc(link)}</code><br><button class="hb" type="button" id="iCopy">주소 복사</button> <button class="hb" type="button" id="iBig">QR 크게 보기</button></div></div>`:''}`;}
+document.addEventListener('submit',async e=>{if(e.target.id!=='fIn')return;e.preventDefault();SEND.err='';
+  const {data,error}=await SB.auth.signInWithPassword({email:$('iEm').value.trim(),password:$('iPw').value});
+  if(error){SEND.err='로그인하지 못했습니다: '+error.message;sendDraw();return;}SEND.email=((data.user||(data.session&&data.session.user))||{}).email||$("iEm").value.trim();try{await loadComps();}catch(x){SEND.err=x.message;}sendDraw();});
+document.addEventListener('change',e=>{if(e.target.id==='iComp'){const c=COMPS.find(x=>x.id===e.target.value);SEND.comp=c.id;SEND.compName=c.name;SEND.last='';saveSend();sendDraw();}});
+document.addEventListener('click',async e=>{const t=e.target;
+  if(t.id==='iGo'){SEND.on=!SEND.on;SEND.err='';SEND.last='';saveSend();sendDraw();if(SEND.on)push();}
+  else if(t.id==='iOut'){e.preventDefault();SEND.on=false;saveSend();await SB.auth.signOut();SEND.email='';sendDraw();}
+  else if(t.id==='iCopy'){const l=SITE+'#live-'+SEND.comp;try{await navigator.clipboard.writeText(l);t.textContent='복사했습니다';}catch(x){prompt('주소를 복사하세요',l);}}
+  else if(t.id==='iBig'){showQR(SITE+'#live-'+SEND.comp,'인터넷으로 보기','휴대폰 카메라로 찍으면 어디서나 볼 수 있습니다');}});
+/* 바뀐 것이 있을 때만 (없어도 30초마다 한 번: 「LIVE」 유지) */
+async function push(){if(!SEND.on||SEND.busy||!SB||!SEND.comp||!SNAP)return;const now=Date.now();
+  const key=JSON.stringify({...SNAP,at:0});if(key===SEND.last&&now-SEND.lastAt<30000)return;if(now-SEND.lastAt<4000&&!SEND.err)return;
+  SEND.busy=true;try{const {error}=await SB.rpc('push_live',{p_comp:SEND.comp,p_data:{...SNAP,comp:SNAP.comp||SEND.compName}});if(error)throw error;SEND.last=key;SEND.lastAt=now;SEND.n++;SEND.err='';}
+  catch(x){SEND.err=(x&&x.message)||'인터넷 연결을 확인해 주세요';SEND.lastAt=now;}
+  finally{SEND.busy=false;sendDraw();}}
+if(location.hash==='#send')sendInit();
+window.addEventListener('hashchange',()=>{if(location.hash==='#send'&&$('send').hidden)sendInit();});
+</script>
+</body></html>
