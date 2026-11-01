@@ -180,9 +180,23 @@ input[type=file]::file-selector-button{font:inherit;font-weight:800;border:1px s
 .ovl{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}
 .dlg{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .dlg textarea{min-height:170px}
-.langsel{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line2);border-radius:9px;padding:0 6px;background:var(--panel)}
-.langsel select{background:transparent;border:none;color:var(--text);font-weight:800;font-size:13px;padding:6px 2px;width:auto;cursor:pointer}
-.langsel select:focus{box-shadow:none}
+.langsel{position:relative;flex:none}
+.langbtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 11px 0 9px;border:1px solid var(--line2);border-radius:10px;background:var(--panel);color:var(--text);font-weight:800;font-size:13px;cursor:pointer}
+.langbtn:hover,.langsel.open .langbtn{border-color:var(--gold3);background:#1A170F}
+.langbtn b{font-family:var(--f-disp);font-size:12px;letter-spacing:.08em;color:var(--gold2)}
+.langbtn .lname{color:var(--text)}
+.langbtn .lcar{font-size:10px;color:var(--mute);transition:transform .15s}
+.langsel.open .lcar{transform:rotate(180deg)}
+.langmenu{position:absolute;top:calc(100% + 6px);inset-inline-end:0;z-index:20;min-width:200px;padding:6px;background:#14161B;border:1px solid var(--gold3);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:2px}
+.langmenu::before{content:"";position:absolute;inset:0 0 auto;height:2px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,var(--gold3),var(--gold2),var(--gold3))}
+.langmenu button{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;padding:9px 10px;border:none;border-radius:9px;background:transparent;color:#F2EEE6;font:inherit;font-size:14px;font-weight:700;text-align:start;cursor:pointer}
+.langmenu button:hover,.langmenu button:focus-visible{background:#22252D;outline:none}
+.langmenu button.on{background:linear-gradient(180deg,#2A2312,#1E1A10);color:var(--gold2)}
+.langmenu .lc{font-family:var(--f-disp);font-size:11.5px;font-weight:800;letter-spacing:.08em;color:var(--gold);border:1px solid #4A3B1C;border-radius:6px;text-align:center;padding:3px 0}
+.langmenu button.on .lc{background:var(--gold);color:var(--goldInk);border-color:var(--gold)}
+.langmenu .lk{color:var(--gold2);font-weight:900}
+@media (max-width:760px){.langbtn .lname{display:none}.langmenu{inset-inline-end:auto;inset-inline-start:0;min-width:210px;max-width:calc(100vw - 32px)}}
+select option,select optgroup{background:#181B22;color:#F2EEE6}
 [dir=rtl] .cart{text-align:right}
 .flash{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#16200F;border:1px solid #2F5A2A;color:#D8F5C8;border-radius:12px;padding:12px 14px;margin-bottom:14px}
 .alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
@@ -263,7 +277,18 @@ new MutationObserver(ms=>{if(BUSYTR||LANG==='ko')return;for(const m of ms){if(m.
 function fmtDateL(s){const d=new Date(s+'T00:00:00');if(LANG==='ko')return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}. (${wd[d.getDay()]})`;
   return new Intl.DateTimeFormat(LOC[LANG],{year:'numeric',month:'short',day:'numeric',weekday:'short'}).format(d);}
 function weekdayL(d){return LANG==='ko'?wd[d.getDay()]+'요일':new Intl.DateTimeFormat(LOC[LANG],{weekday:'long'}).format(d);}
-function langSel(){return `<label class="langsel" data-notr><span aria-hidden="true">🌐</span><select data-on="lang" aria-label="Language">${SL.map(([k,l])=>`<option value="${k}" ${k===LANG?'selected':''}>${l}</option>`).join('')}</select></label>`;}
+const LCODE={ko:'KO',en:'EN',es:'ES',zh:'中',vi:'VI',fr:'FR',ar:'AR',de:'DE'};
+let LANGOPEN=false;
+function langSel(){const cur=SL.find(l=>l[0]===LANG)||SL[0];
+  return `<div class="langsel ${LANGOPEN?'open':''}" data-notr><button type="button" class="langbtn" data-a="langOpen" aria-haspopup="listbox" aria-expanded="${LANGOPEN}" aria-label="Language · ${cur[1]}"><span class="lglobe" aria-hidden="true">🌐</span><b>${LCODE[cur[0]]}</b><span class="lname">${cur[1]}</span><span class="lcar" aria-hidden="true">▾</span></button>
+    ${LANGOPEN?`<div class="langmenu" role="listbox" aria-label="Language">${SL.map(([k,l])=>`<button type="button" role="option" aria-selected="${k===LANG}" class="${k===LANG?'on':''}" data-a="langPick" data-l="${k}" lang="${k}"><span class="lc">${LCODE[k]}</span><span class="ln">${l}</span>${k===LANG?'<span class="lk" aria-hidden="true">✓</span>':''}</button>`).join('')}</div>`:''}</div>`;}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-a]');const a=b&&b.dataset.a;
+  if(a==='langOpen'){e.stopImmediatePropagation();LANGOPEN=!LANGOPEN;render();if(LANGOPEN){const f=document.querySelector('.langmenu .on')||document.querySelector('.langmenu button');if(f)f.focus();}return;}
+  if(a==='langPick'){e.stopImmediatePropagation();LANGOPEN=false;const l=b.dataset.l;if(l!==LANG)setLang(l);else render();const t=document.querySelector('.langbtn');if(t)t.focus();return;}
+  if(LANGOPEN&&!(e.target.closest&&e.target.closest('.langsel'))){LANGOPEN=false;render();}},true);
+document.addEventListener('keydown',e=>{if(!LANGOPEN)return;const L=[...document.querySelectorAll('.langmenu button')];const i=L.indexOf(document.activeElement);
+  if(e.key==='Escape'){LANGOPEN=false;render();const t=document.querySelector('.langbtn');if(t)t.focus();e.preventDefault();}
+  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const n=L[(i+(e.key==='ArrowDown'?1:-1)+L.length)%L.length];if(n)n.focus();}},true);
 </script><!--@@END-->
 <script>
 /* ================= 기본 자료 (대회 앱 불러오기 형식과 같은 값) ================= */
@@ -1188,7 +1213,6 @@ document.addEventListener('change',e=>{
     UI.err='';render();}
   else if(on==='mate'){const s=new Set(UI.form.mates||[]);t.checked?s.add(t.value):s.delete(t.value);UI.form={...UI.form,mates:[...s]};}
   else if(on==='adComp'){UI.adminComp=t.value;render();}
-  else if(on==='lang'){setLang(t.value);}
   else if(on==='ceOrient'){document.querySelectorAll('.seg2 label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));certPreview();}
   else if(on==='ceBg'){const F=t.files&&t.files[0];if(!F)return;run(async()=>{UI.certBg=await uploadCertBg(F);toast('배경 사진을 올렸습니다. 「상장 설정 저장」을 눌러 주세요');certPreview();});}
   else if(on==='ceStyle'){document.querySelectorAll('.stylepick .sp').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));certPreview();}
