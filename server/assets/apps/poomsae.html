@@ -4859,6 +4859,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const mmss=s=>{s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');};
 
 /* ---------- 점수 띠에 들어갈 내용 (종목별) ---------- */
+const ath=id=>{try{return (g('athlete')||(()=>null))(id)||{};}catch(e){return {};}};
 function info(){
   const o={title:(()=>{try{return (g('SET')()||{}).name||'';}catch(e){return '';}})(),div:'',sides:[],timer:'',note:''};
   try{
@@ -4873,11 +4874,11 @@ function info(){
     o.div=`${cur.divName||''} · ${cur.label||''}`;o.timer=g('cdText')(stt.timer)||'';
     if(APP==='poomsae'){
       const f3=g('fmt3');
-      o.sides=(cur.entries||[]).map(e=>{const r=rev&&S.results[e.perfId];return {color:e.side||'',name:e.name||'',team:e.team||'',score:r?f3(r.final):''};});
+      o.sides=(cur.entries||[]).map(e=>{const r=rev&&S.results[e.perfId],p=ath(e.athleteId);return {color:e.side||'',name:e.name||p.name||'',team:e.team||p.team||'',score:r?f3(r.final):''};});
       try{const n=g('pnameOfCall')(cur);if(n)o.note=(cur.rm?'재경기 ':'')+n;}catch(e){}
     }else{
       const r=rev&&S.results[cur.perfId];
-      o.sides=[{color:'',name:cur.name||'',team:cur.team||'',score:r?g('resultText')(r):''}];
+      const p=ath(cur.athleteId);o.sides=[{color:'',name:cur.name||p.name||'',team:cur.team||p.team||'',score:r?g('resultText')(r):''}];
       try{o.note=(g('EV')[cur.ev]||{}).label||'';}catch(e){}
     }
   }catch(e){}
@@ -4888,6 +4889,12 @@ function info(){
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function fit(c,t,max){let s=String(t||'');while(s.length>1&&c.measureText(s).width>max)s=s.slice(0,-1);return s===String(t||'')?s:s+'…';}
 const FONT='"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+/* 국제 대회: 이름 앞에 국기 + 나라 코드 (nat.js) */
+function natOf(s){try{const N=window.KS_NAT;if(!N||!N.intl()||!s||!s.name)return null;const c=N.get(s.name,s.team);return c?{c,im:N.img(c)}:null;}catch(e){return null;}}
+function flag(n,x,y,h){if(!n)return 0;const w=Math.round(h*4/3);
+  if(n.im){try{cx.drawImage(n.im,x,y,w,h);}catch(e){}cx.strokeStyle='rgba(255,255,255,.45)';cx.lineWidth=1;cx.strokeRect(x+.5,y+.5,w-1,h-1);}
+  else{cx.fillStyle='rgba(255,255,255,.16)';cx.fillRect(x,y,w,h);}
+  cx.font=`800 ${Math.round(h*.78)}px "Barlow Condensed",${FONT}`;cx.fillStyle='#F4EFE4';cx.textAlign='left';cx.fillText(n.c,x+w+8,y+h*.84);return w+8+cx.measureText(n.c).width+14;}
 function draw(){
   const v=R()&&R().video();
   cx.fillStyle='#000';cx.fillRect(0,0,LW,LH);
@@ -4912,8 +4919,9 @@ function draw(){
   const area=Wd-TW-40;
   if(I.sides.length<=1){
     const s=I.sides[0]||{};
-    cx.font=`900 40px ${FONT}`;cx.fillStyle='#fff';const nm=fit(cx,s.name,area-260);cx.fillText(nm,X+22,Y+80);
-    const nw=cx.measureText(nm).width;cx.font=`600 19px ${FONT}`;cx.fillStyle='#AEB5C1';cx.fillText(fit(cx,s.team,area-nw-280),X+34+nw,Y+79);
+    const fx=flag(natOf(s),X+22,Y+52,32);
+    cx.font=`900 40px ${FONT}`;cx.fillStyle='#fff';const nm=fit(cx,s.name,area-260-fx);cx.fillText(nm,X+22+fx,Y+80);
+    const nw=cx.measureText(nm).width+fx;cx.font=`600 19px ${FONT}`;cx.fillStyle='#AEB5C1';cx.fillText(fit(cx,s.team,area-nw-280),X+34+nw,Y+79);
     if(s.score){cx.textAlign='right';cx.font=`800 52px "Barlow Condensed",${FONT}`;cx.fillStyle='#E6CD97';cx.fillText(s.score,X+area,Y+84);cx.textAlign='left';}
   }else{
     const half=(area-10)/2;
@@ -4921,7 +4929,8 @@ function draw(){
       const x0=X+14+i*(half+10),y0=Y+44,col=s.color==='red'?'#D7263D':s.color==='blue'?'#1E5BD8':'#3A404C';
       rr(cx,x0,y0,half,H-56,10);cx.fillStyle=col;cx.globalAlpha=.9;cx.fill();cx.globalAlpha=1;
       if(s.win){cx.lineWidth=4;cx.strokeStyle='#E6CD97';rr(cx,x0,y0,half,H-56,10);cx.stroke();}
-      cx.font=`900 30px ${FONT}`;cx.fillStyle='#fff';const nm=fit(cx,s.name,half-150);cx.fillText(nm,x0+14,y0+38);
+      const fx=flag(natOf(s),x0+14,y0+13,26);
+      cx.font=`900 30px ${FONT}`;cx.fillStyle='#fff';const nm=fit(cx,s.name,half-150-fx);cx.fillText(nm,x0+14+fx,y0+38);
       cx.font=`600 15px ${FONT}`;cx.fillStyle='rgba(255,255,255,.85)';cx.fillText(fit(cx,s.team,half-150),x0+14,y0+62);
       if(s.score!==''){cx.textAlign='right';cx.font=`800 58px "Barlow Condensed",${FONT}`;cx.fillStyle='#fff';cx.fillText(s.score,x0+half-14,y0+60);cx.textAlign='left';}
     });
@@ -5141,7 +5150,10 @@ async function comps(){const sp=sport();const L=await call('/rest/v1/comps?selec
 async function roster(comp){const t=await token();if(!t)throw new Error('로그인이 필요합니다');
   return await call('/rest/v1/rpc/get_roster',{method:'POST',headers:H(t),body:JSON.stringify({p_comp:comp,p_sport:sport()})})||[];}
 /* 접수 홈페이지의 엑셀 내보내기와 같은 모양 (각 앱 불러오기 형식) */
-function rows(sp,E){
+/* 나라 칸을 맨 뒤에 붙임 (nat.js 가 읽어 국기에 씀) */
+function rows(sp,E){const R=rows0(sp,E);const nat=e=>[...new Set(e.athletes.map(a=>a.country||(e.coach&&e.coach.country)||'').filter(Boolean))].join(',');
+  if(!E.some(e=>nat(e)))return R;R[0]=[...R[0],'나라'];E.forEach((e,i)=>{if(R[i+1])R[i+1]=[...R[i+1],nat(e)];});return R;}
+function rows0(sp,E){
   const org=e=>(e.athletes[0]&&e.athletes[0].org)||e.coach.org||'',names=e=>e.athletes.map(a=>a.name).join(',');
   if(sp==='poomsae')return [['번호','이름','소속','지도자','부별','학년','성별','공인/자유','종목','팀원'],...E.map((e,i)=>{const A=e.athletes,g=new Set(A.map(a=>a.gender)),team=A.length>1;
     return [i+1,team?names(e):A[0].name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',g.size>1?'혼성':A[0].gender,e.f.type||'공인',e.f.kind||'개인',team?names(e):''];})];
@@ -5335,5 +5347,63 @@ const css=document.createElement('style');css.textContent=`.kslchip{position:fix
 @media print{.kslchip{display:none}}`;
 (document.head||document.documentElement).appendChild(css);
 window.KS_LIC={ok,state,lic,open:open_,apply,limit:LIMIT};
+})();
+</script><script>/* ===== 나라 코드 · 국기 (국제 대회) =====
+   - 명단 엑셀(또는 접수 홈페이지 가져오기)의 「나라」 칸을 읽어 선수별 나라를 기억합니다 (대회 설정에 저장 → 모든 기기 공유)
+   - 명단에 나라가 두 곳 이상이면 국제 대회로 보고, 전광판의 선수 이름 앞에 국기를 붙입니다
+   - 유튜브 중계 점수 띠(live.js)도 KS_NAT 로 국기를 그립니다 */
+(function(){
+if(window.KS_NAT)return;
+const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
+const ISO={};'KOR:kr,USA:us,ESP:es,GER:de,CHN:cn,VIE:vn,FRA:fr,MEX:mx,BRA:br,IRI:ir,TUR:tr,GBR:gb,JPN:jp,ITA:it,CAN:ca,AUS:au,THA:th,PHI:ph,INA:id,MAS:my,KAZ:kz,UZB:uz,EGY:eg,MAR:ma,JOR:jo,ARG:ar,CHI:cl,COL:co,PER:pe,NED:nl,BEL:be,SUI:ch,AUT:at,POL:pl,CRO:hr,SRB:rs,GRE:gr,POR:pt,SWE:se,NOR:no,DEN:dk,FIN:fi,UKR:ua,AZE:az,IND:in,NEP:np,MGL:mn,SGP:sg,HKG:hk,MAC:mo,TPE:,AFG:af,ALB:al,ALG:dz,AND:ad,ARM:am,BAN:bd,BLR:by,BIH:ba,BOL:bo,BRN:bh,BRU:bn,BUL:bg,CAM:kh,CIV:ci,CMR:cm,CRC:cr,CUB:cu,CYP:cy,CZE:cz,DOM:do,ECU:ec,ESA:sv,EST:ee,ETH:et,FIJ:fj,GAB:ga,GEO:ge,GHA:gh,GUA:gt,HON:hn,HUN:hu,IRL:ie,IRQ:iq,ISL:is,ISR:il,JAM:jm,KEN:ke,KGZ:kg,KOS:xk,KSA:sa,KUW:kw,LAO:la,LAT:lv,LBN:lb,LBA:ly,LTU:lt,LUX:lu,MDA:md,MKD:mk,MLI:ml,MLT:mt,MNE:me,MON:mc,MYA:mm,NCA:ni,NGR:ng,NIG:ne,NZL:nz,OMA:om,PAK:pk,PAN:pa,PAR:py,PLE:ps,PUR:pr,QAT:qa,ROU:ro,RSA:za,RWA:rw,SEN:sn,SLO:si,SVK:sk,SRI:lk,SMR:sm,SYR:sy,TJK:tj,TKM:tm,TGA:to,TTO:tt,TUN:tn,UAE:ae,UGA:ug,URU:uy,VEN:ve,YEM:ye,ZAM:zm,ZIM:zw'.split(',').forEach(p=>{const [a,b]=p.split(':');ISO[a]=b;});
+const ALIAS={KR:'KOR',KOREA:'KOR','대한민국':'KOR','한국':'KOR',US:'USA',USA:'USA',DE:'GER',GERMANY:'GER','독일':'GER',ES:'ESP',SPAIN:'ESP','스페인':'ESP',CN:'CHN','중국':'CHN',VN:'VIE','베트남':'VIE',FR:'FRA','프랑스':'FRA',JP:'JPN','일본':'JPN',GB:'GBR',UK:'GBR','영국':'GBR','미국':'USA',MX:'MEX','멕시코':'MEX',BR:'BRA','브라질':'BRA',IR:'IRI','이란':'IRI',TR:'TUR','튀르키예':'TUR','터키':'TUR',IT:'ITA','이탈리아':'ITA',CA:'CAN','캐나다':'CAN',AU:'AUS','호주':'AUS',TH:'THA','태국':'THA',PH:'PHI','필리핀':'PHI',MY:'MAS','말레이시아':'MAS',ID:'INA','인도네시아':'INA'};
+function norm(v){v=String(v||'').trim();if(!v)return '';const u=v.toUpperCase();if(ISO[u]!==undefined)return u;if(ALIAS[u])return ALIAS[u];if(ALIAS[v])return ALIAS[v];
+  for(const [k,i] of Object.entries(ISO))if(i&&i.toUpperCase()===u)return k;return /^[A-Z]{3}$/.test(u)?u:'';}
+const key=(n,t)=>String(n||'').replace(/\s+/g,'')+'|'+String(t||'').replace(/\s+/g,'').replace(/팀$/,'');
+function store(){const S=g('S');return (S&&S.settings&&S.settings.nat)||{};}
+function byName(){const m=new Map(),amb=new Set();for(const [k,v] of Object.entries(store())){const n=k.split('|')[0];if(m.has(n)&&m.get(n)!==v)amb.add(n);else m.set(n,v);}amb.forEach(n=>m.delete(n));return m;}
+function get(name,team){const s=store();const n=String(name||'');let v=s[key(n,team)];if(v)return v;
+  /* 페어·팀: 이름이 여러 명이면 모두 같은 나라일 때만 */
+  if(n.includes(',')){const L=n.split(',').map(x=>get(x.trim(),team));return L.length&&L.every(x=>x&&x===L[0])?L[0]:'';}
+  return byName().get(n.replace(/\s+/g,''))||'';}
+function count(){return new Set(Object.values(store())).size;}
+const intl=()=>count()>=2;
+/* 국기 그림: 현장 모드 프로그램에 들어 있는 것 먼저, 없으면 인터넷 */
+let LOCAL=null;const CDN='https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/flags/4x3/';
+fetch('/vendor/flags/kr.svg',{method:'HEAD',cache:'no-store'}).then(r=>{LOCAL=r.ok;}).catch(()=>{LOCAL=false;});
+function url(code){const i=ISO[code];if(!i)return '';return (LOCAL?'/vendor/flags/':CDN)+i+'.svg';}
+const IMG={};
+function img(code){const u=url(code);if(!u)return null;const o=IMG[code];if(o&&o.u===u)return o.ok?o.im:null;
+  const im=new Image();im.crossOrigin='anonymous';const x={u,im,ok:false};im.onload=()=>{x.ok=true;};im.src=u;IMG[code]=x;return null;}
+async function save(map){const S=g('S'),sv=g('saveSettings');if(!S||!sv)return false;const nat={...store(),...map};
+  const ks=Object.keys(nat);if(ks.length>4000)ks.slice(0,ks.length-4000).forEach(k=>delete nat[k]);
+  await sv({...(S.settings||{}),nat});S.settings={...(S.settings||{}),nat};return true;}
+/* 엑셀의 「나라」 칸 읽기 (이름 · 소속(팀명) · 나라) */
+async function learnFile(file){try{if(!window.XLSX||!file)return 0;const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});let add={},n=0;
+  for(const sn of wb.SheetNames){const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''});
+    for(let h=0;h<Math.min(A.length,15);h++){const H=A[h].map(x=>String(x).replace(/\s/g,''));const ci=H.findIndex(x=>/^(나라|국가|Country|NOC|Nation)/i.test(x));if(ci<0)continue;
+      const ni=H.findIndex(x=>/^(이름|성명|선수)/.test(x)),ti=H.findIndex(x=>/^(소속|팀명|도장|팀)/.test(x));if(ni<0)continue;
+      for(const r of A.slice(h+1)){const nm=String(r[ni]||'').trim(),c=norm(String(r[ci]||'').split(',')[0]);if(!nm||!c)continue;const tm=ti>=0?String(r[ti]||'').trim():'';
+        add[key(nm,tm)]=c;n++;if(nm.includes(','))nm.split(',').forEach(x=>{if(x.trim())add[key(x.trim(),tm)]=c;});}
+      break;}}
+  if(n)await save(add);return n;}catch(e){return 0;}}
+function hook(){const f=window.readExcel;if(typeof f!=='function'||f.__nat)return typeof f==='function';
+  const w=async function(file){const r=await f.apply(this,arguments);try{const n=await learnFile(file);if(n)setTimeout(deco,300);}catch(e){}return r;};w.__nat=true;window.readExcel=w;return true;}
+if(!hook()){let k=0;const t=setInterval(()=>{if(hook()||++k>40)clearInterval(t);},250);}
+/* 전광판: 선수 이름 앞에 국기 (나라가 두 곳 이상인 국제 대회일 때만) */
+const css=document.createElement('style');css.textContent='img.ksnat{height:.78em;width:auto;aspect-ratio:4/3;vertical-align:.02em;margin-right:.3em;border-radius:.08em;box-shadow:0 0 0 1px rgba(255,255,255,.35);object-fit:cover}img.ksnat+.ksnatc{font-size:.5em;margin-right:.45em;opacity:.85;letter-spacing:.06em;font-weight:800;vertical-align:.25em}';(document.head||document.documentElement).appendChild(css);
+let busy=false;
+function deco(){if(busy)return;busy=true;try{
+  const on=document.body&&document.body.classList.contains('disp')&&intl();
+  document.querySelectorAll('img.ksnat').forEach(im=>{if(!on||!im.isConnected){const c=im.nextSibling;if(c&&c.classList&&c.classList.contains('ksnatc'))c.remove();im.remove();}});
+  if(!on)return;const M=byName();if(!M.size)return;
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentElement;if(!p||/^(SCRIPT|STYLE|TEXTAREA|BUTTON|OPTION)$/.test(p.tagName)||p.closest('#kslvm,.rgov,[contenteditable]'))return NodeFilter.FILTER_REJECT;
+    const t=n.nodeValue.trim();return t.length>=2&&t.length<=40&&M.has(t.replace(/\s+/g,''))?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP;}});
+  const L=[];let n;while((n=w.nextNode()))L.push(n);
+  for(const t of L){const prev=t.previousSibling;if(prev&&prev.classList&&prev.classList.contains('ksnatc'))continue;const c=M.get(t.nodeValue.trim().replace(/\s+/g,''));const u=url(c);if(!u)continue;
+    const im=document.createElement('img');im.className='ksnat';im.alt=c;im.src=u;const s=document.createElement('span');s.className='ksnatc';s.textContent=c;t.parentNode.insertBefore(im,t);t.parentNode.insertBefore(s,t);}
+}finally{busy=false;}}
+let raf=0;new MutationObserver(()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;deco();});}).observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']});
+window.KS_NAT={get,norm,url,img,intl,count,save,learnFile,deco,key,ISO};
 })();
 </script><!--@@END-->
