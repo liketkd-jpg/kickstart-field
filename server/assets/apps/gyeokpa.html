@@ -4716,9 +4716,11 @@ function draw(){
   cx.fillStyle='#000';cx.fillRect(0,0,LW,LH);
   if(v&&v.readyState>=2&&v.videoWidth){const k=Math.min(LW/v.videoWidth,LH/v.videoHeight),w=v.videoWidth*k,h=v.videoHeight*k;try{cx.drawImage(v,(LW-w)/2,(LH-h)/2,w,h);}catch(e){}}
   else{cx.fillStyle='#9AA1AD';cx.font=`700 34px ${FONT}`;cx.textAlign='center';cx.fillText('카메라 준비 중…',LW/2,LH/2);cx.textAlign='left';}
-  const I=info();
+  let I=info();
+  /* 이 창(종목)에 지금 경기가 없으면, 같은 노트북 다른 종목 운영석의 지금 경기를 씀 */
+  if(!I.sides.length&&OTH)I=OTH;
   /* 왼쪽 위: 대회 이름 · 코트 */
-  cx.font=`800 22px ${FONT}`;const tl=`KICKSTART UP${I.title?'  ·  '+I.title:''}${COURT?'  ·  '+COURT+'코트':''}${APPNAME?' '+APPNAME:''}`;
+  cx.font=`800 22px ${FONT}`;const tl=`KICKSTART UP${I.title?'  ·  '+I.title:''}${COURT?'  ·  '+COURT+'코트':''}${(I.appName||APPNAME)?' '+(I.appName||APPNAME):''}`;
   const tw=Math.min(cx.measureText(tl).width+28,LW-40);rr(cx,20,18,tw,38,10);cx.fillStyle='rgba(8,9,12,.72)';cx.fill();
   cx.fillStyle='#E6CD97';cx.fillText(fit(cx,tl,tw-28),34,45);
   /* 아래 점수 띠 */
@@ -4933,6 +4935,15 @@ setInterval(()=>{drawRow();
     drawRow();}).catch(()=>{});
   else if(on&&Date.now()-lastOk>5000&&!inflight)api('status').then(onStatus).catch(()=>{st={...(st||{}),state:'local'};drawRow();});
 },1500);
+/* 생중계를 다른 종목 창에서 켜 두었을 때: 이 운영석의 지금 경기를 알려 주고(put), 생중계 창은 받아서(get) 점수 띠에 씀 */
+let OTH=null,lastPub='',lastPubAt=0;
+setInterval(()=>{if(!F||on||!st||!st.on||!st.app||st.app===APP||!/^#admin/.test(location.hash||''))return;
+  let I;try{I=info();}catch(e){return;}if(!I.sides.length&&!I.div)return;const j=JSON.stringify(I),now=Date.now();if(j===lastPub&&now-lastPubAt<4000)return;lastPub=j;lastPubAt=now;
+  fetch('/'+APP+'/api/put',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:'live/band',data:{...I,app:APP,appName:APPNAME,at:now}})}).catch(()=>{});},600);
+setInterval(async()=>{if(!(on||window.__ksLivePull)||!F)return;let best=null;
+  for(const a of ['poomsae','kyorugi','gyeokpa']){if(a===APP)continue;try{const r=await fetch('/'+a+'/api/get?path=live/band',{cache:'no-store'});if(!r.ok)continue;const j=await r.json();const d=j&&j.exists&&j.data;
+    if(d&&Date.now()-(d.at||0)<15000&&(d.sides||[]).length&&(!best||d.at>best.at))best=d;}catch(e){}}
+  OTH=best;},800);
 addEventListener('online',drawRow);addEventListener('offline',()=>{drawRow();if(on)note('⚠ 인터넷 연결이 끊겼습니다. 생중계가 멈춥니다');});
 
 window.KS_LIVE={start:startLive,stop:stopLive,info,state:()=>({on,starting,st,audio:audioOn,frames:fno,queue:queue.length}),draw:()=>{if(!cv){cv=document.createElement('canvas');cv.width=LW;cv.height=LH;cx=cv.getContext('2d');}draw();return cv;}};
