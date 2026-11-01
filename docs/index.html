@@ -230,7 +230,7 @@ const YEAR=2026;
 const SUPA_URL='https://nwdptjumclgzbwbsaoxr.supabase.co';
 const SUPA_KEY='sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG';
 const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
-const M={comps:[],athletes:[],entries:[],users:[],results:[],profile:null,ready:false,loadErr:''};
+const M={comps:[],athletes:[],entries:[],users:[],results:[],licenses:[],profile:null,ready:false,loadErr:''};
 const D=()=>M;
 const me=()=>M.profile;
 const uid=p=>p+Math.random().toString(36).slice(2,9);
@@ -252,6 +252,7 @@ async function reload(){
       M.entries=(await q(sb.from('entries').select('*').order('created_at',{ascending:true}))).map(mapEnt);
       M.users=M.profile.role==='admin'?(await q(sb.from('profiles').select('*'))).map(mapUser):[M.profile];
       try{M.results=(await q(sb.from('results').select('*').order('rank',{ascending:true}))).map(mapRes);}catch(e){M.results=[];}
+      M.licenses=[];M.licErr='';if(M.profile.role==='admin'){try{M.licenses=await q(sb.from('licenses').select('*').order('created_at',{ascending:false}));}catch(e){M.licErr=msgOf(e);}}
     }else{M.profile=null;M.athletes=[];M.entries=[];M.users=[];M.results=[];}
     M.loadErr='';
   }catch(e){M.loadErr=msgOf(e);}
@@ -530,13 +531,14 @@ function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id)
         ${c.notice?`<div class="notice"><b>대회 본부 공지</b><div>${esc(c.notice)}</div></div>`:''}<span class="small mute">입금 계좌: ${esc(c.account)}${c.contact?' · 문의 '+esc(c.contact):''}</span></section>`;}).join(''):'<div class="empty">아직 접수한 대회가 없습니다. <a href="#home">대회 일정</a>에서 대회를 골라 주세요.</div>'}</div>`;}
 
 /* ---------- 관리자 ---------- */
-const ATABS=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['results','결과 · 상장'],['setup','대회 고치기 · 공지 · 요강']];
+const ATABS=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['results','결과 · 상장'],['setup','대회 고치기 · 공지 · 요강'],['lic','허가 코드']];
 function vAdmin(){const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.adminComp))UI.adminComp=C[0]&&C[0].id;
   const c=C.find(x=>x.id===UI.adminComp),tab=UI.atab||'status';
   const E=c?D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'):[];
   const coaches=new Set(E.map(e=>e.coachId)).size,paid=E.filter(e=>e.status==='paid');
   let body='';
   if(tab==='members')body=vMembers();
+  else if(tab==='lic')body=vLic();
   else if(!c)body='<div class="empty">대회가 없습니다. 「새 대회 만들기」를 눌러 주세요.</div>';
   else if(tab==='dojang')body=vDojang(c,E);
   else if(tab==='setup')body=vSetup(c);
@@ -544,8 +546,8 @@ function vAdmin(){const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.admin
   else body=vStatus(c,E);
   return `<div class="stack"><div class="row between"><div><span class="eyebrow">Admin</span><h1>대회 관리 · 명단 내보내기</h1></div><button class="btn" type="button" data-a="newComp">+ 새 대회 만들기</button></div>
     ${UI.newComp?compForm(null):''}
-    <div class="row">${tab!=='members'?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
-    ${c&&tab!=='members'?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
+    <div class="row">${tab!=='members'&&tab!=='lic'?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
+    ${c&&tab!=='members'&&tab!=='lic'?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
     <div class="atabs" role="tablist">${ATABS.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''}" data-a="atab" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}</div>`;}
 function vStatus(c,E){const sp=c.sports.includes(UI.adminSport)?UI.adminSport:c.sports[0];const ES=E.filter(e=>e.sport===sp);
@@ -584,6 +586,31 @@ function vMembers(){const U=D().users.slice().sort((a,b)=>(a.role==='admin'?0:1)
       <td class="num">${nA(u.id)}</td><td class="num">${nE(u.id)}</td><td class="small num">${esc(u.at||'')}</td>
       <td style="white-space:nowrap">${u.id!==me().id?`<button class="btn sm" type="button" data-a="contact" data-id="${u.id}" data-t="free">💬 연락</button> <button class="btn sm ghost" type="button" data-a="tempPw" data-id="${u.id}">${UI.pwArm===u.id?'한 번 더 누르면 만들기':'임시 비밀번호'}</button>`:''}</td></tr>`).join('')}</table></div>
     <span class="small mute">회원 ${U.length}명 (관리자 ${U.filter(u=>u.role==='admin').length}명)</span>`;}
+/* 허가 코드: 대회 앱(품새·겨루기·격파)을 파는 단위 */
+const LKIND={event:'대회 1회권',year:'1년권'};
+function newCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=new Uint8Array(16);crypto.getRandomValues(b);let s='';for(let i=0;i<16;i++){s+=A[b[i]%A.length];if(i%4===3&&i<15)s+='-';}return 'KS-'+s;}
+function addD(s,n){const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+function licState(l){const t=today();if(l.revoked)return ['cancel','중지됨'];if(t>l.ends)return ['closed','기간 끝남'];if(t<l.starts)return ['soon','시작 전'];return ['paid','사용 중'];}
+function licMsg(l){return `[KICKSTART UP] 대회 운영 프로그램 허가 코드\n${l.holder?l.holder+' 님, ':''}${LKIND[l.kind]} 허가 코드를 보내 드립니다.\n\n코드: ${l.code}\n사용 기간: ${l.starts} ~ ${l.ends}\n\n넣는 곳: 품새·겨루기·격파 앱 관리자 화면 왼쪽 아래 「🔒 연습 모드 · 허가 코드 넣기」 → 코드 붙여넣기 → 「코드 확인하고 풀기」\n(처음 한 번은 인터넷이 필요하고, 그 뒤에는 현장 모드에서도 기간 안에 그대로 쓰입니다)`;}
+function vLic(){const L=M.licenses,f=UI.licForm||{kind:'event',date:'',starts:'',ends:''};
+  if(M.licErr&&/licenses|relation|schema cache/i.test(M.licErr))return `<div class="note">허가 코드 표가 아직 데이터베이스에 없습니다. Supabase SQL 편집기에서 4단계 SQL을 실행해 주세요.</div>`;
+  const ev=f.kind==='event',st=f.starts||(ev?(f.date?addD(f.date,-3):''):today()),en=f.ends||(ev?(f.date?addD(f.date,1):''):addD(today(),364));
+  return `<div><h2>허가 코드</h2><p class="small mute" style="margin:4px 0 0">대회 앱은 코드가 없으면 <b>연습 모드</b>(선수 20명까지, 전광판·상장에 「연습용」)로 열립니다. 여기서 만든 코드를 넣으면 기간 동안 모두 풀립니다. 우리 대회에 쓸 코드도 여기서 만드세요.</p></div>
+    <form class="form" id="fLic"><h3>새 허가 코드 만들기</h3>
+      <div class="tabs">${Object.entries(LKIND).map(([k,l])=>`<button type="button" class="${f.kind===k?'on':''}" data-a="licKind" data-k="${k}">${l}</button>`).join('')}</div>
+      <div class="grid2"><label class="f"><span>받는 곳 (단체·도장 이름) <i>*</i></span><input type="text" id="lcHolder" required value="${esc(f.holder||'')}" placeholder="○○시 태권도협회"></label>
+        <label class="f"><span>연락처</span><input type="text" id="lcContact" value="${esc(f.contact||'')}" placeholder="010-0000-0000"></label>
+        ${ev?`<label class="f"><span>대회 날짜 <i>*</i> (3일 전부터 다음 날까지 쓰임)</span><input type="date" id="lcDate" value="${esc(f.date||'')}" data-on="licDate"></label><span></span>`:''}
+        <label class="f"><span>쓰기 시작하는 날</span><input type="date" id="lcStarts" value="${esc(st)}"></label>
+        <label class="f"><span>끝나는 날</span><input type="date" id="lcEnds" value="${esc(en)}"></label></div>
+      <label class="f"><span>메모 (금액·입금 등)</span><input type="text" id="lcNote" value="${esc(f.note||'')}"></label>
+      ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}<div class="row"><button class="btn gold" type="submit">코드 만들기</button></div></form>
+    ${UI.licNew?`<div class="flash" role="status"><span>새 코드 <b class="num" style="font-size:22px;letter-spacing:.04em">${esc(UI.licNew)}</b><br><span class="small">아래 「안내문 복사」로 받는 곳에 보내 주세요.</span></span><button class="btn sm" type="button" data-a="licCopy" data-c="${esc(UI.licNew)}">안내문 복사</button></div>`:''}
+    ${L.length?`<div class="tablewrap"><table><tr><th>코드</th><th>종류</th><th>받는 곳</th><th>기간</th><th>상태</th><th>사용</th><th></th></tr>
+      ${L.map(l=>{const [k,t]=licState(l);return `<tr><td class="num" style="white-space:nowrap"><b>${esc(l.code)}</b></td><td>${LKIND[l.kind]}</td><td>${esc(l.holder)}<div class="small mute">${esc(l.contact)}${l.note?' · '+esc(l.note):''}</div></td>
+        <td class="small num" style="white-space:nowrap">${esc(l.starts)}<br>~ ${esc(l.ends)}</td><td><span class="st ${k}">${t}</span></td><td class="small">${l.seen_count||0}회${l.last_seen?`<div class="mute">${esc(String(l.last_seen).slice(0,10))}</div>`:''}</td>
+        <td style="white-space:nowrap"><button class="btn sm" type="button" data-a="licCopy" data-c="${esc(l.code)}">안내문 복사</button> <button class="btn sm ${l.revoked?'':'danger'}" type="button" data-a="licRevoke" data-c="${esc(l.code)}">${l.revoked?'다시 쓰게':UI.licArm===l.code?'한 번 더 누르면 중지':'중지'}</button></td></tr>`;}).join('')}</table></div>`
+    :'<div class="empty">아직 만든 허가 코드가 없습니다. 먼저 우리 대회용 1년권을 하나 만들어 두세요.</div>'}`;}
 /* 대회 설정: 고치기 · 공지 · 요강 · 지우기 */
 function vSetup(c){const n=D().entries.filter(e=>e.compId===c.id).length;
   return `${compForm(c)}
@@ -1071,6 +1098,10 @@ document.addEventListener('click',e=>{
   else if(a==='paid'){const x=S.entries.find(y=>y.id===b.dataset.id);if(x)run(async()=>{await q(sb.from('entries').update({status:x.status==='paid'?'wait':'paid'}).eq('id',x.id));await reload();});}
   else if(a==='export'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)exportXlsx(c,b.dataset.s);}
   else if(a==='flashX'){UI.flash='';render();}
+  else if(a==='licKind'){UI.licForm={...(UI.licForm||{}),kind:b.dataset.k,starts:'',ends:'',holder:(document.getElementById('lcHolder')||{}).value||'',contact:(document.getElementById('lcContact')||{}).value||''};UI.err='';render();}
+  else if(a==='licCopy'){const l=S.licenses.find(x=>x.code===b.dataset.c);if(l)copyText(licMsg(l),'허가 코드 안내문을 복사했습니다. 카카오톡·문자에 붙여 넣으세요');}
+  else if(a==='licRevoke'){const l=S.licenses.find(x=>x.code===b.dataset.c);if(!l)return;if(!l.revoked&&UI.licArm!==l.code){UI.licArm=l.code;render();setTimeout(()=>{if(UI.licArm===l.code){UI.licArm=null;render();}},4000);return;}
+    run(async()=>{await q(sb.from('licenses').update({revoked:!l.revoked}).eq('code',l.code));UI.licArm=null;await reload();toast(l.revoked?'코드를 다시 쓸 수 있게 했습니다':'코드를 중지했습니다. 앱이 인터넷에 연결되면 연습 모드로 바뀝니다');});}
   else if(a==='contact'){const t=b.dataset.t||'free';UI.contact={id:b.dataset.id,t,text:contactText(b.dataset.id,t),focus:true};render();}
   else if(a==='contactT'){UI.contact={...UI.contact,t:b.dataset.t,text:contactText(UI.contact.id,b.dataset.t)};render();}
   else if(a==='contactX'){UI.contact=null;render();}
@@ -1104,6 +1135,7 @@ document.addEventListener('change',e=>{
   else if(on==='ceOrient'){document.querySelectorAll('.seg2 label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));certPreview();}
   else if(on==='ceBg'){const F=t.files&&t.files[0];if(!F)return;run(async()=>{UI.certBg=await uploadCertBg(F);toast('배경 사진을 올렸습니다. 「상장 설정 저장」을 눌러 주세요');certPreview();});}
   else if(on==='ceStyle'){document.querySelectorAll('.stylepick .sp').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));certPreview();}
+  else if(on==='licDate'){const d=t.value;UI.licForm={...(UI.licForm||{kind:'event'}),date:d,starts:'',ends:'',holder:(document.getElementById('lcHolder')||{}).value||'',contact:(document.getElementById('lcContact')||{}).value||'',note:(document.getElementById('lcNote')||{}).value||''};render();}
   else if(on==='resOpen'){const c=UI.adminComp,v=t.checked;run(async()=>{await q(sb.from('comps').update({results_open:v}).eq('id',c));await reload();toast(v?'지도자에게 결과·상장을 공개했습니다':'결과·상장을 비공개로 바꿨습니다');});}
   else if(on==='resCoach'){const id=t.dataset.id,v=t.value||null;run(async()=>{await q(sb.from('results').update({coach_id:v}).eq('id',id));await reload();toast(v?'지도자를 연결했습니다':'연결을 풀었습니다');});}
   else if(on==='birth'){const g=document.getElementById('aGuard'),s=document.getElementById('aSchool'),ag=age(t.value);if(g)g.hidden=!(ag!==null&&ag<14);if(s)s.textContent=t.value?'학년 추정: '+schoolTxt(t.value):'';}
@@ -1146,6 +1178,10 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
       Object.assign(c,doc||{});
       if(editId){await q(sb.from('comps').update(c).eq('id',editId));UI.err='';await reload();toast('대회 정보를 고쳤습니다');}
       else{const r=await q(sb.from('comps').insert(c).select());UI.newComp=false;UI.adminComp=r&&r[0]&&r[0].id;UI.err='';await reload();toast('대회를 만들었습니다. 「대회 일정」에 바로 보입니다');}});}
+  else if(f.id==='fLic'){const fm=UI.licForm||{kind:'event'},holder=v('lcHolder').trim(),starts=v('lcStarts'),ends=v('lcEnds');
+    if(!holder){formErr(f,'받는 곳을 적어 주세요');return;}if(!starts||!ends){formErr(f,fm.kind==='event'?'대회 날짜를 골라 주세요':'기간을 정해 주세요');return;}if(ends<starts){formErr(f,'끝나는 날이 시작하는 날보다 앞입니다');return;}
+    const row={code:newCode(),kind:fm.kind||'event',holder,contact:v('lcContact').trim(),starts,ends,note:v('lcNote').trim()};
+    run(async()=>{await q(sb.from('licenses').insert(row));UI.licForm=null;UI.licNew=row.code;UI.err='';await reload();toast('허가 코드를 만들었습니다');});}
   else if(f.id==='fCert'){const c=D().comps.find(x=>x.id===UI.adminComp);if(!c)return;
     const cert={...c.cert,style:(document.querySelector('input[name=ceStyle]:checked')||{}).value||c.cert.style||'cloth',orient:(document.querySelector('input[name=ceOrient]:checked')||{}).value||c.cert.orient||'port',bg:UI.certBg!==undefined?UI.certBg:c.cert.bg,host:v('ceHost').trim(),title:v('ceTitle').trim(),rep:v('ceRep').trim(),date:v('ceDate'),serial:v('ceSerial').trim()};
     if(cert.style==='photo'&&!cert.bg){formErr(f,'배경 사진을 먼저 골라 주세요');return;}
