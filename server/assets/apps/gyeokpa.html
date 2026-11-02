@@ -5584,6 +5584,46 @@ body.disp .board.ksb-solo .cbr.me{border-color:#F6E3AE;box-shadow:0 0 2em rgba(2
 .ksb-free .ksb-spot.c{left:50%;margin-left:-15em;opacity:.55}
 @keyframes ksswa{0%{transform:rotate(-22deg)}100%{transform:rotate(12deg)}}@keyframes ksswb{0%{transform:rotate(22deg)}100%{transform:rotate(-12deg)}}
 @media (prefers-reduced-motion:reduce){.ksb-free .ksb-spot,.ky .kg i::before{animation:none}}
+
+/* ===== 운영석 브랜드 디자인 (전광판과 같은 흑연·금색) ===== */
+html[data-ksop] body.ksop{background:radial-gradient(1200px 520px at 50% -160px,rgba(201,162,98,.16),transparent 70%),linear-gradient(180deg,#0B0D12,#06070A) fixed!important}
+html[data-ksop] body.ksop::before{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(115deg,rgba(255,255,255,.016) 0 2px,transparent 2px 22px);z-index:0}
+html[data-ksop] body.ksop>main,html[data-ksop] body.ksop>header{position:relative;z-index:1}
+html[data-ksop] body.ksop header.bar{background:linear-gradient(180deg,#0A0B0F,#07080B)!important;border-bottom:1px solid rgba(217,181,106,.35)!important;box-shadow:0 1px 0 rgba(217,181,106,.12),0 10px 30px -18px rgba(0,0,0,.9)}
+html[data-ksop] body.ksop .panel,html[data-ksop] body.ksop .tabs,html[data-ksop] body.ksop .lstrip{background:linear-gradient(180deg,#15181F,#0F1116)!important;border-color:rgba(217,181,106,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 18px 40px -24px rgba(0,0,0,.9)!important}
+html[data-ksop] body.ksop .tab.on,html[data-ksop] body.ksop .tab[aria-selected="true"]{background:linear-gradient(180deg,#EBD5A3,#B8904E)!important;color:#1A1306!important;border-color:transparent!important;box-shadow:0 6px 18px -8px rgba(217,181,106,.8)}
+html[data-ksop] body.ksop .panel>h2:first-child::before,html[data-ksop] body.ksop .panel>h3:first-child::before{background:linear-gradient(180deg,#F6E3AE,#9C7434)!important}
+html[data-ksop] body.ksop .btn{background:linear-gradient(180deg,#1E222A,#171A21);border-color:#2E333D;color:#F1EEE7}
+html[data-ksop] body.ksop .btn:hover:not(:disabled){border-color:rgba(217,181,106,.6)}
+html[data-ksop] body.ksop .btn.primary,html[data-ksop] body.ksop .seg button.on{background:linear-gradient(180deg,#EBD5A3,#B8904E)!important;color:#1A1306!important;border-color:#A07E43!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 16px -8px rgba(217,181,106,.9)}
+html[data-ksop] body.ksop input[type=text],html[data-ksop] body.ksop input[type=number],html[data-ksop] body.ksop select,html[data-ksop] body.ksop textarea{background:#0D0F14;border-color:#2C313B;color:#F1EEE7}
+html[data-ksop] body.ksop .timer,html[data-ksop] body.ksop .bh-now{background:linear-gradient(180deg,#FFFFFF,#F6E3AE 60%,#C9A262);-webkit-background-clip:text;background-clip:text;color:transparent!important;filter:drop-shadow(0 2px 10px rgba(201,162,98,.25))}
+/* 겨루기 운영석: 청·홍 판을 전광판처럼 진하게 */
+html[data-ksop] body.ksop .sbox{border-width:2px!important;color:#fff}
+html[data-ksop] body.ksop .sbox::before{background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)!important;height:2px!important}
+html[data-ksop] body.ksop .sbox.blue{background:linear-gradient(140deg,#2E62FF 0%,#1747D6 35%,#0B2A9C 72%,#06155A 100%)!important;border-color:#7FA2FF!important;box-shadow:0 0 30px -6px rgba(40,90,255,.55),inset 0 0 40px rgba(0,0,0,.3)}
+html[data-ksop] body.ksop .sbox.red{background:linear-gradient(220deg,#FF3B5A 0%,#E0102F 35%,#A0001E 72%,#5A0010 100%)!important;border-color:#FF8296!important;box-shadow:0 0 30px -6px rgba(255,30,70,.55),inset 0 0 40px rgba(0,0,0,.3)}
+html[data-ksop] body.ksop .sbox .sscore{color:#fff!important;text-shadow:0 .03em .12em rgba(0,0,0,.5)}
+html[data-ksop] body.ksop .sbox .sname{color:#fff}
+html[data-ksop] body.ksop .sbox .steam,html[data-ksop] body.ksop .sbox .sbrk,html[data-ksop] body.ksop .sbox .small{color:rgba(255,255,255,.86)!important}
+html[data-ksop] body.ksop .sbox .sbrk b,html[data-ksop] body.ksop .sbox .small b{color:#fff}
+html[data-ksop] body.ksop .sbox .chip{background:rgba(255,255,255,.18)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important}
+html[data-ksop] body.ksop .sbox .wins,html[data-ksop] body.ksop .sbox .gjd{color:#fff}
+html[data-ksop] body.ksop .sbox .gjd i.on{background:#FFC93C!important;border-color:#FFC93C!important;box-shadow:0 0 8px #FFC93C}
+html[data-ksop] body.ksop .sbox .wins i.on{background:linear-gradient(135deg,#F6E3AE,#9C7434)!important;border-color:#F6E3AE!important}
+html[data-ksop] body.ksop .sbox.win{box-shadow:0 0 0 3px #F6E3AE,0 0 40px rgba(246,227,174,.5)!important}
+html[data-ksop] body.ksop .sbox.win .sscore{color:#F6E3AE!important}
+html[data-ksop] body.ksop .scenter{position:relative;padding:14px 10px;border-radius:16px;background:radial-gradient(120px 90px at 50% 50%,rgba(201,162,98,.14),transparent 70%)}
+html[data-ksop] body.ksop .scenter .rchip{color:#D9B56A!important}
+/* 품새·격파 운영석: 지금 선수 카드 */
+html[data-ksop] body.ksop .bent{background:linear-gradient(160deg,#1A1D25,#101217)!important;border-color:rgba(217,181,106,.55)!important;box-shadow:0 0 0 1px rgba(217,181,106,.15),0 0 34px -10px rgba(217,181,106,.4)!important}
+html[data-ksop] body.ksop .bent.blue{background:linear-gradient(140deg,#1E3F9E,#0B2A9C 55%,#06155A)!important;border-color:#7FA2FF!important}
+html[data-ksop] body.ksop .bent.red{background:linear-gradient(220deg,#C31B37,#A0001E 55%,#5A0010)!important;border-color:#FF8296!important}
+html[data-ksop] body.ksop .bscore:not(.wait){background:linear-gradient(180deg,#FFFFFF,#F6E3AE 55%,#C9A262);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+html[data-ksop] body.ksop .bname{color:#fff}
+/* 진행 순서: 지금 경기 */
+html[data-ksop] body.ksop .bitem.cur,html[data-ksop] body.ksop .crow.on,html[data-ksop] body.ksop .perf.cur{background:linear-gradient(90deg,rgba(217,181,106,.22),rgba(217,181,106,.05))!important;border-color:rgba(217,181,106,.7)!important}
+html[data-ksop] body.ksop .toast{background:linear-gradient(180deg,#EBD5A3,#B8904E)!important;color:#1A1306!important;border:0!important}
 `;
 (document.head||document.documentElement).appendChild(css);
 /* ---------- 효과 (번개·불꽃·나무 조각·금빛) + 효과음 ----------
@@ -5759,10 +5799,17 @@ const FX=(()=>{
   const testPlay=()=>{try{const c=ac();if(!c)return;const go=()=>{try{SND.zap(4);setTimeout(()=>SND.boom(4),60);}catch(e){}};if(c.state==='running')go();else c.resume().then(go).catch(()=>{});}catch(e){}};
   return {play,burst,bolt,rays,flash,sound:soundHere,setFx,fxs:FXS,testPlay,_state:()=>({KY,SO,P:P.length,B:BOLTS.length})};
 })();
+/* ---------- 운영석 화면: 전광판과 같은 어두운 브랜드 디자인 (대회 설정 opTheme: brand · light) ---------- */
+function opApply(){const r=location.hash||'',on=/^#admin/.test(r)&&settings().opTheme!=='light',de=document.documentElement;
+  if(on){if(de.dataset.theme!=='dark'||!de.dataset.ksop){de.dataset.theme='dark';de.dataset.ksop='1';}}
+  else if(de.dataset.ksop){delete de.dataset.ksop;delete de.dataset.theme;}
+  if(document.body)document.body.classList.toggle('ksop',on);}
+addEventListener('hashchange',opApply);setInterval(opApply,700);opApply();
 /* 대회 설정 화면: 전광판 효과 · 효과음 고르기 */
 function fxPanel(){const f=FX.fxs(),b=(k,v,l,on)=>`<button class="${on?'on':''}" data-ksfxset="${k}" data-v="${v}" aria-pressed="${on}">${l}</button>`;
-  return `<div class="panel ksfx-set"><h2>전광판 효과 · 효과음</h2>
+  return `<div class="panel ksfx-set"><h2>화면 디자인 · 효과음</h2>
     <div class="field"><span class="label">점수·승리 효과음이 나올 컴퓨터</span><div class="seg">${b('fxSound','display','전광판',f.snd==='display')}${b('fxSound','admin','운영석',f.snd==='admin')}${b('fxSound','both','둘 다',f.snd==='both')}${b('fxSound','off','끄기',f.snd==='off')}</div></div>
+    <div class="field"><span class="label">운영석 화면 디자인</span><div class="seg">${b('opTheme','brand','브랜드 (어두운 흑연·금색)',settings().opTheme!=='light')}${b('opTheme','light','밝은 화면',settings().opTheme==='light')}</div></div>
     <div class="field"><span class="label">화면 효과 (번개·불꽃·나무 조각·금빛)</span><div class="seg">${b('fxVisual','on','켬',f.vis)}${b('fxVisual','off','끔',!f.vis)}</div></div>
     <span class="small muted">겨루기는 득점(3점 이상은 번개 소리)·감점·승리, 품새·격파는 점수 공개·격파 때 소리가 납니다. 전광판 컴퓨터에서 소리를 내려면 전광판 화면을 처음에 한 번 눌러 주세요(브라우저 규칙). 운영석과 전광판을 한 노트북에서 띄우면 「둘 다」는 소리가 겹치니 한쪽만 고르세요.</span>
     <div><button class="btn sm" data-ksfxset="test">🔊 효과음 들어보기</button></div></div>`;}
