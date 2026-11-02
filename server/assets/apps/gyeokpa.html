@@ -2105,6 +2105,10 @@ function advanceBox(d){
       <div class="row"><button class="btn primary" data-act="stageDraw" data-id="${d.id}">🎲 결선 순서 추첨</button><button class="btn" data-act="armed" data-do="stageBack" data-id="${d.id}">진출 취소</button></div></div>`;
     if(sts.length>1&&st0.drawnAt&&!Object.values(S.results).some(r=>r.divId===d.id&&r.stage===st0.key))
       return `<div class="row"><span class="small"><b>결선 순서 추첨 완료</b> · ${stIds(st0).map((id,i)=>`<span style="white-space:nowrap">${i+1}. ${esc(aName(id))}</span>`).join(' · ')}</span><button class="btn" data-act="armed" data-do="stageDraw" data-id="${d.id}">다시 추첨</button></div>`;}
+  if(sts.length===1&&sts[0].key==='final'){const n=stIds(sts[0]).length,p=planOf(d);
+    return `<div class="panel" style="background:var(--sunk);gap:6px"><span class="small">이 부문은 <b>예선 없이 결선만</b> 치릅니다 (${d.forcePre===false?'「결선만」으로 정해 둠':`예선 자동 기준 ${SET().preMin||16}명 미만`}). 이 기록이 바로 최종 순위입니다.</span>
+      ${n>2?`<div class="row" style="gap:6px;align-items:center"><span class="small"><b>예선 → 결선</b>으로 바꾸기 · 결선 진출</span><div class="seg">${[2,3,4,5,6,8].filter(x=>x<n).map(x=>`<button data-act="armed" data-do="divTwo" data-id="${d.id}" data-v="${x}">${x}명</button>`).join('')}</div></div>
+      <span class="small muted">바꾸면 이미 치른 기록은 예선 기록으로 그대로 옮겨지고, 예선이 끝나면 상위 선수가 결선에 자동으로 올라갑니다.</span>`:''}</div>`;}
   if(sts.length>1||sts[0].key!=='pre')return '';
   const ap=advancePlan(d);if(!ap)return '';
   if(!ap.done)return `<span class="small muted">예선이 모두 끝나면 여기서 결선 진출자를 확정합니다.</span>`;
@@ -2564,6 +2568,19 @@ async function confirmRecord(){
   await saveState(jclean({...st,rec,status:'revealed',revealedAt:Date.now(),timer:t}));
 }
 let AUTO_KEY='',AUTO_T=null;
+/* 예선 여부·진출 인원을 바꿀 때: 이미 치른 첫 단계 점수는 새 첫 단계 점수로 옮겨 그대로 씁니다
+   예) 「결선만」으로 8명이 모두 끝난 뒤 「예선 → 결선, 4명」으로 바꾸면, 그 점수가 예선 점수가 되고 상위 4명이 결선에 올라갑니다 */
+async function changePlan(d,patchObj){
+  const sts=stagesOf(d);if(sts.length>1){await saveDiv({...d,...patchObj});toast('이미 결선으로 진행된 부문이라 바뀐 방식은 적용되지 않습니다');return;}
+  const nd={...d,...patchObj,stages:null},oldK=sts[0].key,newK=stagesOf(nd)[0].key;let moved=0;
+  if(oldK!==newK){
+    for(const r of Object.values(S.results).filter(r=>r.divId===d.id&&r.stage===oldK&&String(r.perfId||'').startsWith(`${d.id}_${oldK}_`))){
+      const pid=`${d.id}_${newK}_`+r.perfId.slice(`${d.id}_${oldK}_`.length);
+      await store.put('results/'+pid,{...clean(r),perfId:pid,callId:pid,stage:newK,label:String(r.label||'').replace(STAGE_NAME[oldK],STAGE_NAME[newK])});await store.del('results/'+r.perfId);moved++;}
+    const st=ST();if(st.current&&st.current.divId===d.id&&st.current.stage===oldK)await saveState({...st,status:'idle',current:null,epoch:(st.epoch||0)+1});}
+  await saveDiv(nd);
+  if(moved){addLog('경기 방식 변경',d.name,`${STAGE_NAME[oldK]} 점수 ${moved}건 → ${STAGE_NAME[newK]} 점수`);toast(`이미 치른 점수 ${moved}건을 ${STAGE_NAME[newK]} 점수로 옮겼습니다`);}
+}
 /* 예선이 모두 끝나면 결선 진출자를 결선으로 자동으로 올립니다. 순서는 「결선 순서 추첨」을 눌러 정합니다 */
 async function advanceTo(d,ap,auto){
   const pre=stagesOf(d)[0];await saveDiv({...d,noAutoAdv:false,stages:[pre,{key:'final',order:[...ap.adv],pending:true}]});
@@ -2574,8 +2591,8 @@ const ADV_SEEN={};
 function maybeAutoAdvance(){
   if(KIOSK||!(routeNow().startsWith('admin')||SOLO())||SET().autoAdvance===false)return;
   for(const d of S.divs){if(d.noAutoAdv)continue;const sts=stagesOf(d);if(sts.length>1||sts[0].key!=='pre')continue;
-    const ap=advancePlan(d);if(!ap||!ap.done||(ap.tie&&ap.need)||!ap.adv.length)continue;
-    const k=d.id+'|1';if(ADV_SEEN[k])continue;ADV_SEEN[k]=1;
+    const k=d.id+'|1',ap=advancePlan(d);if(!ap)continue;if(!ap.done){delete ADV_SEEN[k];continue;}if((ap.tie&&ap.need)||!ap.adv.length)continue;
+    if(ADV_SEEN[k])continue;ADV_SEEN[k]=1;
     setTimeout(()=>{const d2=divById(d.id);if(!d2)return;const s2=stagesOf(d2);if(s2.length>1||s2[0].key!=='pre')return;const a2=advancePlan(d2);
       if(!a2||!a2.done||(a2.tie&&a2.need)||!a2.adv.length){ADV_SEEN[k]=0;return;}advanceTo(d2,a2,true).catch(()=>{ADV_SEEN[k]=0;});},4000);}
 }
@@ -2663,8 +2680,9 @@ const ACT={
     for(let i=0;i<30&&S.roster.some(a=>ids.has(a.id)&&!EV[a.ev]);i++)await new Promise(r=>setTimeout(r,100));
     await regenerateDivs();toast(`「${d.name}」을(를) ${EV[ev].label}(으)로 정했습니다. 이제 경기규칙대로 채점표가 나옵니다`);},
   importSetEv:()=>{const sel=$('#impEv');if(!sel||!ui.importRows)return;const ev=sel.value;ui.importRows=ui.importRows.map(a=>EV[a.ev]?a:{...a,ev,gender:EV[ev].kind==='team'?'혼성':a.gender});render();toast(`종목을 ${EV[ev].label}(으)로 정했습니다`);},
-  divPre:b=>{const d=divById(b.dataset.id);if(!d)return;const v=b.dataset.v;saveDiv({...d,forcePre:v==='on'?true:v==='off'?false:null,stages:null});},
-  divAdv:b=>{const d=divById(b.dataset.id);if(!d)return;saveDiv({...d,adv:b.dataset.v?Number(b.dataset.v):null});},
+  divPre:b=>{const d=divById(b.dataset.id);if(!d)return;const v=b.dataset.v;return changePlan(d,{forcePre:v==='on'?true:v==='off'?false:null});},
+  divAdv:b=>{const d=divById(b.dataset.id);if(!d)return;return changePlan(d,{adv:b.dataset.v?Number(b.dataset.v):null});},
+  divTwo:b=>{const d=divById(b.dataset.id);if(!d)return;return changePlan(d,{forcePre:true,G:1,adv:Number(b.dataset.v)||null,noAutoAdv:false});},
   drawAll:async()=>{const L=S.divs.filter(d=>!divHasResults(d));if(!L.length)return toast('추첨할 부문이 없습니다 (모든 부문에 점수가 있습니다)');const ids=new Set(L.map(d=>d.id));await saveDivs(S.divs.map(d=>ids.has(d.id)?{...d,order:shuffle(d.order||[]),stages:null}:d));addLog('전체 출전 순서 추첨',L.length+'개 부문','');toast(`${L.length}개 부문의 출전 순서를 추첨했습니다${L.length<S.divs.length?' (점수가 있는 부문은 그대로)':''}`);},
   redraw:b=>{const d=divById(b.dataset.id);if(!d||divHasResults(d))return;saveDiv({...d,order:shuffle(d.order||[]),stages:null});addLog('출전 순서 추첨',d.name,'');toast('출전 순서를 다시 추첨했습니다');},
   techReset:b=>{const d=divById(b.dataset.id);if(d)saveDiv({...d,tech:null});},
@@ -3491,9 +3509,10 @@ function panel(entries,opt){
   const has=entries.filter(en=>fileOf(en.id)).length;
   return `<div class="panel mu-panel lm"><div class="row between"><h2>${opt.title||'음악 (노트북 폴더)'}</h2><span class="chip ${has===entries.length&&entries.length?'ok':'warn'}">${has}/${entries.length} 연결</span></div>
     <span class="small muted">운영석 노트북의 음악 폴더를 고르면, <b>파일 이름에 들어 있는 팀명(이름)</b>으로 자동 연결됩니다. 예: "경민대A팀.mp3". 음악은 서버에 올리지 않고 <b>이 컴퓨터에만</b> 담아 두므로 용량 걱정이 없고, 새로고침해도 남아 있습니다. 대회 당일에는 음악을 담은 이 노트북으로 운영해 주세요.</span>
-    <div class="row" style="gap:6px">${pickBtn('📁 음악 폴더 고르기',true,true)}${pickBtn('＋ 파일 더 넣기',false,false)}${FILES.length?`<button class="btn danger" data-lm="clear">이 컴퓨터의 음악 비우기</button>`:''}</div>
+    <div class="row" style="gap:6px">${pickBtn('📁 음악 폴더 고르기',true,true)}${pickBtn('＋ 파일 더 넣기',false,false)}${FILES.length||(window.KS_MUSIC_UPLOADS&&KS_MUSIC_UPLOADS())?`<button class="btn danger" data-lm="clear">🗑 대회 음악 전체 삭제</button>`:''}</div>
     ${BUSY?`<div class="banner warn">${BUSY}</div>`:''}
     <span class="small muted">${!LOADED?'이 컴퓨터에 담긴 음악을 확인하는 중…':FILES.length?`이 컴퓨터에 담긴 음악 ${FILES.length}곡 · ${fmtMB(total)}`:'아직 이 컴퓨터에 담긴 음악이 없습니다.'}</span>
+    ${FILES.length?`<span class="small muted">대회가 끝나면 「🗑 대회 음악 전체 삭제」로 이 앱에 담아 둔 음악을 한 번에 지울 수 있습니다. 지워지는 것은 앱에 담은 <b>사본</b>뿐이고, 컴퓨터 폴더에 있는 <b>원본 음악 파일은 그대로</b> 남습니다.</span>`:''}
     ${entries.length?`<div class="tablewrap"><table class="mu-t"><tr><th>${opt.who||'선수(팀)'}</th><th>음악 파일</th><th></th><th></th></tr>${rows}</table></div>`:''}
     ${opt.note?`<span class="small muted">${opt.note}</span>`:''}</div>`;
 }
@@ -3501,8 +3520,11 @@ function runCtl(id){const f=fileOf(id),playing=NOW&&NOW.id===id;
   return `<div class="lmrun"><span class="small">🎵 ${f?e(f.name):'연결된 음악 없음'}</span>${f?`<button class="btn ${playing?'stopb':'primary'}" data-lm="${playing?'stop':'play'}" data-id="${e(id)}">${playing?'■ 음악 정지':'▶ 음악 재생'}</button>`:''}</div>`;}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-lm]');if(!b)return;const k=b.dataset.lm;
   if(k==='play')play(b.dataset.id);else if(k==='stop')stop();
-  else if(k==='clear'){if(b.dataset.armed){(async()=>{stop();const old=await tx('readonly',os=>os.index('app').getAllKeys(APPK));await tx('readwrite',os=>{(old||[]).forEach(x=>os.delete(x));});URLS.forEach(u=>URL.revokeObjectURL(u));URLS.clear();toast('이 컴퓨터의 음악을 비웠습니다');loadList();})();}
-    else{b.dataset.armed='1';b.textContent='한 번 더 누르면 비웁니다';setTimeout(()=>{delete b.dataset.armed;schedule();},3000);}}
+  else if(k==='clear'){if(b.dataset.armed){(async()=>{stop();const n=FILES.length;const old=await tx('readonly',os=>os.index('app').getAllKeys(APPK));await tx('readwrite',os=>{(old||[]).forEach(x=>os.delete(x));});URLS.forEach(u=>URL.revokeObjectURL(u));URLS.clear();
+      MAP={};saveMap();let up=0;try{if(window.KS_MUSIC_CLEAR)up=await KS_MUSIC_CLEAR();}catch(err){}
+      try{addLog('대회 음악 전체 삭제','음악',`앱에 담은 음악 ${n+up}곡 삭제 (컴퓨터 원본 파일은 그대로)`);}catch(err){}
+      toast(`대회 음악 ${n+up}곡을 지웠습니다. 컴퓨터 폴더의 원본 파일은 그대로 있습니다`);loadList();})();}
+    else{b.dataset.armed='1';b.textContent='한 번 더 누르면 모두 지웁니다 (원본 파일은 그대로)';setTimeout(()=>{delete b.dataset.armed;schedule();},3500);}}
 });
 document.addEventListener('change',ev=>{const el=ev.target.closest('[data-lmsel]');if(!el)return;const id=el.dataset.lmsel;if(el.value)MAP[id]=el.value;else delete MAP[id];saveMap();schedule();});
 window.LMUS={panel,runCtl,play,stop,has:id=>!!fileOf(id),fileOf,urlOfId:id=>{const f=fileOf(id);return f?urlOf(f.k):Promise.reject(new Error('none'));},
