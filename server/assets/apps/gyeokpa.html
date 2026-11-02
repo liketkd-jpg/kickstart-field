@@ -2809,7 +2809,7 @@ document.addEventListener('input',e=>{const el=e.target.closest('[data-on]');if(
 document.addEventListener('change',e=>{const el=e.target.closest('[data-on]');if(!el||!ON_CHANGE.has(el.dataset.on))return;ON[el.dataset.on]?.(el);});
 
 /* ===================== 엑셀 ===================== */
-function pick(row,inc,exc=[]){for(const k of Object.keys(row)){const n=k.replace(/\s/g,'');if(inc.some(x=>n.includes(x))&&!exc.some(x=>n.includes(x)))return row[k];}return '';}
+function pick(row,inc,exc=[]){for(const k of Object.keys(row)){const n=k.replace(/\s/g,'');if(/중문|중국|영문|영어|한자/.test(n)&&!inc.some(x=>/중문|중국|영문|영어|한자/.test(x)))continue;if(inc.some(x=>n.includes(x))&&!exc.some(x=>n.includes(x)))return row[k];}return '';}
 function parseEv(t){const s=String(t||'').replace(/\s/g,'');if(!s)return '';
   if(EV[s])return s;
   if(/높이/.test(s))return 'hjump';if(/후려/.test(s)&&/연속/.test(s))return 'cbk';if(/돌개/.test(s)&&/연속/.test(s))return 'ctn';
@@ -2840,7 +2840,7 @@ async function readExcel(file){
       if(!LEVELS.includes(level)&&level!=='대학부'){const m=others.match(/(초등|중등|중학|고등|고교|대학|일반)[가-힣]*\s*(\d)?\s*(학년|부)?/);if(m){const lv=normLevel(m[0],(others.match(/(\d)\s*학년/)||[])[1]||'',age);if(LEVELS.includes(lv)||lv==='대학부')level=lv;}}
       const gTxt=g||((/여자|여성|\(여\)|(^|\s)여(\s|$)/.test(others))?'여':(/남자|남성|\(남\)|(^|\s)남(\s|$)/.test(others))?'남':'');
       if(!ev&&!/[가-힣]/.test(name)&&!String(pick(r,['소속','도장','학교'])).trim())return null;
-      return {id:rid('a'),name,ev,level,team:String(pick(r,['소속','도장','학교'],['팀원'])).trim(),coach:String(pick(r,['지도자','코치','감독'])).trim(),
+      return {id:rid('a'),zh:String(pick(r,['중문','중국','한자'],['소속','도장','학교','팀원'])).trim(),en:String(pick(r,['영문','영어'],['소속','도장','학교','팀원'])).trim(),zhTeam:String(pick(r,['중문소속','중국소속','중문도장','한자소속'])).trim(),enTeam:String(pick(r,['영문소속','영어소속','영문도장'])).trim(),name,ev,level,team:String(pick(r,['소속','도장','학교'],['팀원'])).trim(),coach:String(pick(r,['지도자','코치','감독'])).trim(),
         gender:EV[ev]&&EV[ev].kind==='team'?'혼성':/여|f|w/i.test(gTxt)?'여':'남',...(gTxt?{}:{gGuess:true}),age,weight:num(pick(r,['체중','몸무게','계체'])),height:num(pick(r,['신장','키'])),
         applied:null,members:String(pick(r,['팀원','명단','구성'])).trim(),division:String(pick(r,['부문'])).trim()};
     }).filter(Boolean);
@@ -3042,8 +3042,45 @@ const FK=Object.keys(DICT).filter(k=>k.length>1||'청홍남여승'.includes(k)).
 const mk=ks=>ks.length?new RegExp('(?<![가-힣])('+ks.map(esc).join('|')+')(?![가-힣])','g'):null;
 const FRE_D=mk(FK.filter(k=>/\d/.test(k))),FRE_L=mk(FK.filter(k=>!/\d/.test(k)&&k.replace(/\s/g,'').length>=5)),FRE=mk(FK.filter(k=>!/\d/.test(k)));
 const cache=new Map();
+/*@@NAMES 선수·소속 이름을 고른 언어로: 영어·독일어는 로마자, 중국어는 명단의 「중문 이름」 칸(없으면 로마자)*/
+const RI=['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'];
+const RV=['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'];
+const RF=['','k','k','k','n','n','n','t','l','k','m','l','l','l','p','l','m','p','p','t','t','ng','t','t','k','t','p','t'];
+const SUR={'김':'Kim','이':'Lee','박':'Park','최':'Choi','정':'Jung','강':'Kang','조':'Cho','윤':'Yoon','장':'Jang','임':'Lim','한':'Han','오':'Oh','서':'Seo','신':'Shin','권':'Kwon','황':'Hwang','안':'Ahn','송':'Song','류':'Ryu','유':'Yoo','홍':'Hong','전':'Jeon','고':'Ko','문':'Moon','양':'Yang','손':'Son','배':'Bae','백':'Baek','허':'Heo','노':'Noh','남':'Nam','심':'Shim','하':'Ha','곽':'Kwak','성':'Sung','차':'Cha','주':'Joo','우':'Woo','구':'Koo','민':'Min','진':'Jin','나':'Na','지':'Ji','엄':'Eom','채':'Chae','원':'Won','천':'Cheon','방':'Bang','공':'Kong','현':'Hyun','함':'Ham','변':'Byun','염':'Yeom','여':'Yeo','추':'Choo','도':'Do','소':'So','석':'Seok','선':'Sun','설':'Seol','마':'Ma','길':'Gil','연':'Yeon','위':'Wi','표':'Pyo','명':'Myung','기':'Ki','반':'Ban','왕':'Wang','금':'Keum','옥':'Ok','육':'Yook','인':'In','맹':'Maeng','제':'Je','모':'Mo','탁':'Tak','국':'Kook','은':'Eun','용':'Yong','경':'Kyung','봉':'Bong','태':'Tae','형':'Hyung','두':'Doo','감':'Kam','동':'Dong','호':'Ho','범':'Beom','승':'Seung','남궁':'Namgung','황보':'Hwangbo','제갈':'Jegal','선우':'Sunwoo','독고':'Dokgo','사공':'Sagong','서문':'Seomun'};
+const SUR2=['남궁','황보','제갈','선우','독고','사공','서문'];
+function rom(s){let o='';for(const ch of String(s)){const c=ch.charCodeAt(0)-0xAC00;if(c<0||c>11171){o+=ch;continue;}o+=RI[Math.floor(c/588)]+RV[Math.floor(c%588/28)]+RF[c%28];}return o;}
+const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+const capw=s=>String(s).split(' ').map(cap).join(' ');
+function romName(n){const t=String(n).replace(/\s+/g,'');if(!/^[가-힣]{2,5}$/.test(t))return capw(rom(n));const sn=SUR2.find(x=>t.startsWith(x)&&t.length>=4)||t[0];const g=t.slice(sn.length);return (SUR[sn]||cap(rom(sn)))+' '+cap([...g].map(c=>GV[c]||rom(c)).join(''));}
+const GV={'우':'woo'};
+const TSUF=[['태권도장',['Taekwondo','Taekwondo','跆拳道馆']],['태권도',['Taekwondo','Taekwondo','跆拳道']],['체육관',['Gym','Sporthalle','体育馆']],['도장',['Dojang','Dojang','道场']],['초등학교',['Elementary School','Grundschule','小学']],['중학교',['Middle School','Mittelschule','中学']],['고등학교',['High School','Oberschule','高中']],['대학교',['University','Universität','大学']],['시범단',['Demo Team','Demo-Team','示范团']]];
+function romTeam(t,i){t=String(t).trim();for(const [k,v] of TSUF){if(t.endsWith(k)&&t.length>k.length){const p=t.slice(0,-k.length).trim();return capw(rom(p))+' '+v[i];}}return capw(rom(t));}
+let NM=new Map(),NRE=null,NSIG='',NT=0;
+function names(){const now=Date.now();if(now-NT<700)return;NT=now;let R=[];try{R=(typeof S!=='undefined'&&S&&Array.isArray(S.roster))?S.roster:[];}catch(e){}
+  let sig=String(R.length);for(const a of R)sig+='|'+(a&&a.name)+(a&&a.zh||'')+(a&&a.en||'')+(a&&a.team)+(a&&a.zhTeam||'')+(a&&a.members||'');
+  if(sig===NSIG)return;NSIG=sig;const M=new Map();
+  const put=(k,v)=>{k=String(k||'').trim();if(!k||!HG.test(k)||DICT[k]||GMAP.has(k))return;if(!M.has(k)||v.force)M.set(k,v.v);};
+  for(const a of R){if(!a)continue;
+    const nm=String(a.name||'').trim();
+    if(nm&&HG.test(nm)){const parts=nm.split(/\s*[·,，\/]\s*/).filter(Boolean);
+      if(parts.length>1){const zp=String(a.zh||'').split(/\s*[·,，\/]\s*/),ep=String(a.en||'').split(/\s*[·,，\/]\s*/);
+        parts.forEach((p,j)=>{const e=(ep[j]||'').trim()||romName(p);put(p,{v:[e,e,(zp[j]||'').trim()||e],force:!!(zp[j]||ep[j])});});}
+      const e=String(a.en||'').trim()||(parts.length>1?parts.map(p=>(M.get(p)||[romName(p)])[0]).join('·'):romName(nm));
+      const z=String(a.zh||'').trim()||(parts.length>1?parts.map(p=>(M.get(p)||[0,0,romName(p)])[2]).join('·'):e);
+      put(nm,{v:[e,e,z],force:!!(a.zh||a.en)});}
+    const tm=String(a.team||'').trim();
+    if(tm&&HG.test(tm)){const et=String(a.enTeam||'').trim();put(tm,{v:[et||romTeam(tm,0),et||romTeam(tm,1),String(a.zhTeam||'').trim()||romTeam(tm,2)],force:!!(a.zhTeam||a.enTeam)});}
+    for(const p of String(a.members||'').split(/\s*[·,，\/、]\s*/))if(/^[가-힣]{2,5}$/.test(p.trim()))put(p,{v:[romName(p),romName(p),romName(p)]});}
+  NM=M;const ks=[...M.keys()].sort((x,y)=>y.length-x.length);
+  NRE=ks.length?new RegExp('(?<![가-힣])('+ks.map(esc).join('|')+')(?![가-힣])','g'):null;cache.clear();}
+function trNames(s){names();if(!NRE)return s;return s.replace(NRE,m=>{const v=NM.get(m);return v?v[IDX[LANG]]:m;});}
+[['en',['🌐 Import from entry website','Loads the online entry list directly','🌐 Send results to entry website','Send the winners to the website so coaches can download their certificates','🔒 Practice mode (up to $1 athletes) · Enter license code']],
+ ['de',['🌐 Von der Anmeldeseite laden','Lädt die Online-Anmeldeliste direkt','🌐 Ergebnisse an die Anmeldeseite senden','Senden Sie die Platzierungen an die Website, damit Trainer die Urkunden herunterladen können','🔒 Übungsmodus (bis $1 Athleten) · Lizenzcode eingeben']],
+ ['zh',['🌐 从报名网站导入','直接导入在线报名名单','🌐 将成绩发送到报名网站','将获奖结果发送到网站后，教练可直接下载奖状','🔒 练习模式（最多$1名选手）· 输入授权码']]].forEach(([l,v])=>{if(PRE[l])PRE[l].unshift([/🌐\s*접수 홈페이지에서 가져오기/g,v[0]],[/온라인 접수 명단을 바로 불러옵니다/g,v[1]],[/🌐\s*결과를 접수 홈페이지로 보내기/g,v[2]],[/입상 결과를 홈페이지로 보내면 지도자가 상장을 직접 내려받습니다/g,v[3]],[/🔒\s*연습 모드\s*\(선수\s*(\d+)\s*명까지\)\s*·\s*허가 코드 넣기/g,v[4]]);});
+window.I18N_NAMES={rom:romName,team:romTeam,refresh(){NT=0;NSIG='';names();}};
 function tr(s){
   if(LANG==='ko'||!s||!HG.test(s))return s;
+  s=trNames(s);if(!HG.test(s))return s;
   const ck=LANG+'\u0001'+s;if(cache.has(ck))return cache.get(ck);
   const i=IDX[LANG];let out;
   const lead=s.match(/^\s*/)[0],trail=s.match(/\s*$/)[0],core=s.trim();
