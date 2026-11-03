@@ -4164,7 +4164,7 @@ function rowOf(a){
   if(GP)return [a.name||'',a.gender||'','',a.age==null?'':a.age,a.team||'',a.coach||'',a.level||'','',a.weight||'',a.height||'',(typeof EV!=='undefined'&&EV[a.ev])?EV[a.ev].label:'',a.members||''];
   const ev=a.event==='team'?'단체전':a.event==='pair'?'복식전':'개인전';
   return [a.name||'',a.gender||'',a.birth||'',a.age==null?'':a.age,a.team||'',a.coach||'',a.group||'',a.grade||'',a.weight||'',
-    KY?'':(a.type==='freestyle'?'자유':'공인'),KY?'':ev,a.members||''];
+    KY?'':((typeof TYPE_XLS!=='undefined'&&TYPE_XLS[a.type])||(a.type==='freestyle'?'자유':'공인')),KY?'':ev,a.members||''];
 }
 function exportRoster(){
   if(!window.XLSX)return toast('엑셀 도구를 불러오지 못했습니다');
@@ -4206,7 +4206,7 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('[data-op
     else{await readBackup(new Blob([x.json],{type:'application/json'}));toast(`${when(x.at)} 보관본을 불러왔습니다. 「복구 실행」을 눌러야 바뀝니다`);
       setTimeout(()=>{const el=document.querySelector('[data-do="restoreRun"]');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},120);}}
 });
-window.KS_OPS={autoSave,listSnaps,exportRoster,closeComp,snaps:()=>SNAPS};
+window.KS_OPS={autoSave,listSnaps,exportRoster,closeComp,snaps:()=>SNAPS,cols:COLS,rowOf};
 })();
 </script><script>/* ===== 심판 키패드 글씨 자동 맞춤 (품새·격파·겨루기 공통) =====
    화면 크기가 바뀌면 키패드 칸이 먼저 정해지고, 칸 안의 숫자·글씨는 칸에 들어갈 만큼만 줄어듭니다.
@@ -5223,7 +5223,100 @@ const css=document.createElement('style');css.textContent=`.rgline{display:flex;
 .rgerr{background:#FDECEC;color:#B3261E;border:1px solid #F3B8B8;border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px}
 .rgft{border-top:1px solid var(--line,#eee);padding-top:10px}.rglink{background:none;border:none;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}`;
 (document.head||document.documentElement).appendChild(css);
-window.KS_REGIMPORT={open:open_,rows,sport,state:S};
+window.KS_REGIMPORT={open:open_,rows,sport,state:S,toFile,feed};
+})();
+/* ===== 코트 나누기 · 본부 → 코트 노트북 명단 보내기 (현장 모드, 품새·겨루기·격파 공통) =====
+   - 본부 노트북: 「코트 나누기」에서 코트를 정한 뒤 「📡 A코트로 보내기」 → 와이파이로 A코트 노트북에 그 코트 명단이 갑니다.
+   - 코트 노트북: 「📥 본부에서 A코트 명단이 왔습니다」 → 「명단 가져오기」를 누르면 엑셀을 올린 것과 똑같이 들어갑니다. */
+(function(){
+if(window.KS_COURT)return;
+const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const say=m=>{try{(window.toast||g('toast'))(m);}catch(e){}};
+const APPK=(()=>{const t=document.title||'';return /격파/.test(t)?'gyeokpa':/겨루기/.test(t)?'kyorugi':'poomsae';})();
+const APPN={poomsae:'품새',kyorugi:'겨루기',gyeokpa:'격파'}[APPK];
+const FIELD=()=>!!(window.KS_FIELD&&window.KS_FIELD.status);
+const L8='ABCDEFGH';
+/* 코트 명단 (각 앱의 「공통 명단」 칸 + 부문 이름) */
+function rowsFor(divs){const O=window.KS_OPS,S=g('S');if(!O||!O.cols||!S)return null;const by=new Map((S.roster||[]).map(a=>[a.id,a]));
+  const R=[[...O.cols,'부문']];for(const d of divs)for(const id of d.order||[]){const a=by.get(id);if(a)R.push([...O.rowOf(a),d.name]);}return R;}
+async function push(court,divs){if(!FIELD())throw new Error('현장 모드(노트북 프로그램)에서만 보낼 수 있습니다');
+  const rows=rowsFor(divs);if(!rows||rows.length<2)throw new Error(court+'코트에 보낼 명단이 없습니다');
+  const S=g('S'),SET=g('SET');const name=((SET&&SET())||{}).name||'';
+  let r;try{r=await fetch('/api/hq/push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({court,app:APPK,name,divs:divs.length,rows,from:'본부'})});}catch(e){throw new Error('현장 프로그램에 연결하지 못했습니다');}
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'보내지 못했습니다');return {n:rows.length-1,addr:j.addr};}
+async function pushAll(courts){const S=g('S'),out=[];for(const c of courts){const ds=S.divs.filter(d=>d.court===c);if(!ds.length)continue;
+    try{const r=await push(c,ds);out.push(`${c}코트 ${r.n}건 ✓`);}catch(e){out.push(`${c}코트 ✕ ${e.message}`);}}
+  return out;}
+/* ---------- 겨루기·격파: 코트 나누기 칸 (품새는 앱 안에 있음) ---------- */
+const UIc={open:false};
+function est(d){const n=(d.order||[]).length;if(!n)return {perf:0,min:0};
+  if(APPK==='kyorugi'){const m=Math.max(0,n-1);return {perf:m,min:m*6};}
+  const p=n+(n>8?8:0);return {perf:p,min:p*2};}
+const hm=m=>{m=Math.round(m);const h=Math.floor(m/60);return h?`${h}시간 ${m%60}분`:`${m}분`;};
+const clockAt=(st,m)=>{const [h,mm]=String(st||'09:30').split(':').map(Number),t=h*60+mm+Math.round(m);return `${String(Math.floor(t/60)%24).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;};
+function panel(){const S=g('S'),SET=g('SET');if(!S||!S.divs||!S.divs.length||!SET)return '';
+  const s=SET(),N=s.courts||4,st=s.courtStart||'09:30',CL=L8.slice(0,N).split(''),has=S.divs.some(d=>d.court);
+  const tot=CL.map(c=>{const ds=S.divs.filter(d=>d.court===c);return {c,ds,min:ds.reduce((a,d)=>a+est(d).min,0),perf:ds.reduce((a,d)=>a+est(d).perf,0),ppl:ds.reduce((a,d)=>a+(d.order||[]).length,0)};});
+  const unit=APPK==='kyorugi'?'체급':'부문';
+  return `<details class="panel kscourt" style="margin-bottom:14px" ${UIc.open?'open':''}><summary style="cursor:pointer;list-style:none" class="row between"><h3 style="margin:0">🏟 코트 나누기 · 코트로 보내기</h3>
+    <span class="small muted">${has?tot.map(t=>`${t.c}코트 ${hm(t.min)}`).join(' · '):`${unit} ${S.divs.length}개 · 전체 ${hm(S.divs.reduce((a,d)=>a+est(d).min,0))} (코트 1개 기준)`}</span></summary>
+    <div class="stack" style="margin-top:12px">
+      <div class="row" style="gap:10px;align-items:flex-end"><div class="field"><span class="label">코트 수</span><div class="seg">${[2,3,4,5,6].map(n=>`<button class="${N===n?'on':''}" data-cs="n" data-n="${n}">${n}코트</button>`).join('')}</div></div>
+        <label class="field"><span class="label">시작 시각</span><input type="time" value="${esc(st)}" data-cs-start style="width:120px"></label>
+        <button class="btn primary" data-cs="auto">${has?'다시 자동으로 나누기':'자동으로 나누기'}</button>
+        ${has&&FIELD()?`<button class="btn" data-cs="sendAll">📡 모든 코트로 보내기</button>`:''}</div>
+      <span class="small muted">한 경기 예상: ${APPK==='kyorugi'?'겨루기 1경기 6분 (체급 인원 − 1 경기)':'격파 1명 2분 (결선 8명 포함)'} · 개회식·점심은 빠져 있습니다.</span>
+      ${has?`<div class="grid2" style="grid-template-columns:repeat(${Math.min(N,4)},minmax(0,1fr))">${tot.map(t=>`<div class="panel" style="background:var(--sunk);gap:6px">
+          <div class="row between"><b style="font-size:20px">${t.c}코트</b><span class="chip ok">끝 약 ${clockAt(st,t.min)}</span></div>
+          <span class="small">${t.ds.length}${unit} · ${t.ppl}명(팀) · 약 ${t.perf}경기 · ${hm(t.min)}</span>
+          ${FIELD()?`<button class="btn sm primary" data-cs="send" data-c="${t.c}" ${t.ds.length?'':'disabled'}>📡 ${t.c}코트로 보내기</button>`:''}
+          <button class="btn sm" data-cs="file" data-c="${t.c}" ${t.ds.length?'':'disabled'}>📥 ${t.c}코트 명단 엑셀</button>
+          <div class="small" style="max-height:200px;overflow:auto;display:flex;flex-direction:column;gap:2px">${t.ds.map(d=>`<div class="row between" style="gap:6px;flex-wrap:nowrap"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)}</span>
+            <select data-cs-set="${esc(d.id)}" style="width:auto;padding:2px 4px">${CL.map(c=>`<option ${c===d.court?'selected':''}>${c}</option>`).join('')}</select></div>`).join('')}</div></div>`).join('')}</div>`:''}
+      ${FIELD()?'<span class="small muted">「보내기」는 본부 노트북에서 누릅니다. 코트 노트북 운영석에 「본부에서 명단이 왔습니다」가 뜨면 그 노트북에서 「명단 가져오기」를 누르세요.</span>':'<span class="small muted">코트 노트북으로 바로 보내기는 현장 모드(노트북 프로그램)에서 됩니다.</span>'}
+    </div></details>`;}
+async function autoSplit(N){const S=g('S'),sv=g('saveDivs');const C=Array(N).fill(0),out={};
+  S.divs.slice().sort((a,b)=>est(b).min-est(a).min).forEach(d=>{let k=0;for(let i=1;i<N;i++)if(C[i]<C[k])k=i;C[k]+=est(d).min;out[d.id]=L8[k];});
+  await sv(S.divs.map(d=>({...d,court:out[d.id]})));say(`${S.divs.length}개를 ${N}개 코트에 나눴습니다`);}
+if(APPK!=='poomsae'){
+  const wrap=()=>{const f=window.aDraw;if(typeof f!=='function'||f.__ksc)return typeof f==='function';const w=function(){const h=f.apply(this,arguments);try{return panel()+h;}catch(e){return h;}};w.__ksc=1;window.aDraw=w;return true;};
+  if(!wrap()){const t=setInterval(()=>{if(wrap())clearInterval(t);},300);}
+  document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-cs]');if(!b)return;const a=b.dataset.cs,S=g('S'),SET=g('SET'),ss=g('saveSettings'),rd=g('render');
+    if(a==='n'){UIc.open=true;await ss({...SET(),courts:Number(b.dataset.n)});}
+    else if(a==='auto'){UIc.open=true;await autoSplit(SET().courts||4);}
+    else if(a==='send'){UIc.open=true;b.disabled=true;try{const c=b.dataset.c,r=await push(c,S.divs.filter(d=>d.court===c));say(`${c}코트 노트북으로 ${r.n}건을 보냈습니다`);}catch(err){say(err.message);}b.disabled=false;}
+    else if(a==='file'){UIc.open=true;const c=b.dataset.c,R=rowsFor(S.divs.filter(d=>d.court===c));if(R&&window.XLSX){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(R),'선수명단');
+      const ok=await g('saveFile')(`${(SET().name||APPN+'대회')}_${c}코트_명단.xlsx`,XLSX.write(wb,{bookType:'xlsx',type:'array'}));if(ok)say(`${c}코트 명단 ${R.length-1}건을 내려받았습니다`);}}
+    else if(a==='sendAll'){UIc.open=true;b.disabled=true;const out=await pushAll(L8.slice(0,SET().courts||4).split(''));say(out.join(' · '));b.disabled=false;}
+    try{rd();}catch(err){}});
+  document.addEventListener('change',async e=>{const t=e.target;if(t.dataset&&t.dataset.csSet){UIc.open=true;const S=g('S');await g('saveDivs')(S.divs.map(d=>d.id===t.dataset.csSet?{...d,court:t.value}:d));}
+    else if(t.hasAttribute&&t.hasAttribute('data-cs-start')){UIc.open=true;await g('saveSettings')({...g('SET')(),courtStart:t.value||'09:30'});}});
+}
+/* ---------- 코트 노트북: 본부에서 온 명단 ---------- */
+let INB=null,BAN=null,WATCHED=false;
+function watchInbox(){if(WATCHED||!FIELD())return;const st=g('store');if(!st||!st.watchColl)return;WATCHED=true;
+  st.watchColl('inbox',null,null,list=>{INB=(list||[]).find(x=>x._id==='roster'||x.id==='roster')||null;drawBan();});}
+setInterval(()=>{try{watchInbox();drawBan();}catch(e){}},1500);
+function drawBan(){const show=INB&&!INB.done&&/^#?admin/.test(location.hash||'#admin')&&Array.isArray(INB.rows);
+  if(!show){if(BAN){BAN.remove();BAN=null;}return;}
+  const key=INB.at+'';if(BAN&&BAN.dataset.k===key)return;if(BAN)BAN.remove();
+  BAN=document.createElement('div');BAN.className='ksinb';BAN.dataset.k=key;const n=INB.rows.length-1,t=new Date(INB.at);
+  BAN.innerHTML=`<div><b>📥 본부에서 ${esc(INB.court||'')}코트 ${APPN} 명단이 왔습니다</b><span>${n}건${INB.divs?` · ${INB.divs}개 부문`:''} · ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}</span></div>
+    <div class="ksinbb"><button class="btn primary" data-inb="take">명단 가져오기</button><button class="btn" data-inb="later">나중에</button></div>`;
+  document.body.appendChild(BAN);}
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-inb]');if(!b||!INB)return;
+  if(b.dataset.inb==='later'){if(BAN){BAN.remove();BAN=null;}INB={...INB,done:true,later:true};return;}
+  const doc=INB;b.disabled=true;
+  try{location.hash='admin-players';await new Promise(r=>setTimeout(r,400));
+    const RI=window.KS_REGIMPORT;const f=RI.toFile(doc.rows,`${doc.court||''}코트_${APPN}_명단.xlsx`);await RI.feed(f);
+    const st=g('store'),{_id,id,...rest}=doc;await st.put('inbox/roster',{...rest,done:true,takenAt:Date.now()});
+    say(`본부에서 온 ${doc.court}코트 명단 ${doc.rows.length-1}건을 읽었습니다. 아래 미리보기에서 「교체」 또는 「추가」를 눌러 주세요`);}
+  catch(err){say(err.message||'명단을 읽지 못했습니다');b.disabled=false;}});
+const css=document.createElement('style');css.textContent=`.ksinb{position:fixed;left:16px;bottom:64px;z-index:9990;display:flex;gap:14px;align-items:center;flex-wrap:wrap;max-width:min(560px,calc(100vw - 32px));
+  background:var(--surface,#fff);color:var(--ink,#111);border:2px solid var(--brass-2,#B8904E);border-radius:16px;padding:14px 16px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.ksinb b{display:block;font-size:16px}.ksinb span{font-size:13px;color:var(--muted,#777)}.ksinbb{display:flex;gap:8px}`;(document.head||document.documentElement).appendChild(css);
+window.KS_COURT={push,pushAll,rowsFor,panel,inbox:()=>INB};
 })();
 </script><script>/* ===== 허가 코드 (품새·겨루기·격파 공통) =====
    코드가 없으면 「연습 모드」: 선수 20명까지, 전광판·상장에 「연습용」 표시.
