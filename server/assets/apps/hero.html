@@ -159,7 +159,7 @@ textarea{min-height:220px;resize:vertical;font-family:var(--f-body);line-height:
 .bround{font-family:var(--f-disp);font-weight:400;font-size:1.7vw;background:var(--red);border:.3vw solid var(--ink);box-shadow:.4vw .4vw 0 var(--ink);padding:.3vw 1.2vw;border-radius:1vw;transform:skew(-8deg);white-space:nowrap}
 .bmain{min-height:0;position:relative;display:grid;margin-top:1.4vh}
 .bevbig{justify-self:center;text-align:center;font-family:var(--f-disp);font-size:3.4vw;line-height:1.05;color:var(--gold);-webkit-text-stroke:.08vw var(--ink);text-shadow:.3vw .3vw 0 var(--red);text-wrap:balance;max-width:90%}
-.board.live .bev b{display:none}.board.live .bev span{font-size:1.9vw;font-family:var(--f-disp);color:var(--paper)}
+.board.live .bev b{display:block}.board.live .bev span{font-size:1.9vw;font-family:var(--f-disp);color:var(--paper)}
 .blive{display:grid;grid-template-rows:auto auto 1fr;gap:1.2vh;min-height:0}
 .bclock{justify-self:center;font-family:var(--f-num);font-weight:700;font-size:5vw;line-height:1;font-variant-numeric:tabular-nums;color:var(--paper);text-shadow:.35vw .35vw 0 var(--ink),0 0 2vw color-mix(in srgb,var(--blue) 70%,transparent)}
 .blanes{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:1.4vw;min-height:0}
@@ -330,7 +330,7 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .flowpill{display:flex;align-items:center;gap:8px;background:var(--gold);color:var(--ink);border:3px solid var(--ink);border-radius:999px;padding:3px 4px 3px 14px;font-family:var(--f-disp);animation:pulse .6s infinite alternate}
 .flowpill .btn{padding:2px 10px;font-size:.85rem;box-shadow:none}
 .medalsvg{display:block;width:100%;height:100%;overflow:visible}
-.runbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:14px;align-items:center;padding:8px 14px}
+.runbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:14px;align-items:center;padding:8px 14px}
 .runbar .lbl{font-family:var(--f-disp);font-size:1.3rem;line-height:1.15}
 .runbar .lbl small{display:block;font-family:var(--f-body);font-size:.85rem;color:var(--muted)}
 .runbar .clock{font-size:clamp(2rem,6.5vh,3.4rem)}
@@ -391,6 +391,61 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .rgf input{background:var(--night)!important;color:var(--paper)!important;border-color:var(--line)!important}
 .rgc,.rgk div{background:var(--night)!important;border-color:var(--line)!important;color:var(--paper)!important}.rgc:hover{border-color:var(--gold)!important}
 .rgk span,.rgbox .muted{color:var(--muted)!important}.rgbox a{color:var(--gold)}
+
+/* ---- brand: KICKSTART UP mark + shining hero logo ---- */
+.ks{display:inline-flex;align-items:center;gap:8px}.ks svg{width:34px;height:34px;flex:none}
+.ksw{font-family:"Archivo Black","Black Han Sans",Impact,sans-serif;letter-spacing:.18em;font-size:1rem;color:#F3E9D2}.ks .ksw b{color:#D6B36E;margin-left:.35em;font-weight:400;font-size:inherit;font-family:inherit;text-shadow:none;letter-spacing:inherit}
+.hlogo{display:flex;align-items:center;gap:10px;justify-self:center;min-width:0}
+.hlogo svg{width:44px;height:44px;flex:none;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--gold) 55%,transparent))}
+.hlogo b{font-family:var(--f-disp);font-weight:400;font-size:1.9rem;line-height:1;white-space:nowrap}
+.hlogo small{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}
+.shine{position:relative;color:var(--gold);text-shadow:2px 2px 0 var(--red)}
+.shine::after{content:attr(data-txt);position:absolute;left:0;top:0;color:transparent;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.95) 45%,rgba(255,250,210,.6) 52%,transparent 66%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;animation:shine 3.2s linear infinite;text-shadow:none}
+@keyframes shine{from{background-position:120% 0}to{background-position:-130% 0}}
+.hlogo .tw{animation:twk 1.6s ease-in-out infinite alternate}
+@keyframes twk{to{opacity:.35}}
+.runbar .hlogo.mid{grid-column:2}
+@media (max-width:900px){.runbar .hlogo.mid{display:none}}
+/* footer: next heat */
+.runfoot .sp{display:flex;justify-content:center;min-width:0}
+.nxt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;background:var(--night);border:2px dashed var(--line);border-radius:999px;padding:4px 12px}
+.nxt .nl{font-family:var(--f-disp);color:var(--gold);font-size:.9rem;margin-right:4px}
+.nxt .nc{display:inline-flex;align-items:center;gap:4px;font-size:.85rem;background:color-mix(in srgb,var(--c) 22%,var(--panel));border:2px solid var(--c);border-radius:999px;padding:1px 8px 1px 4px}
+.nxt.deco{gap:14px;opacity:.6;border-style:solid}.nxt.deco svg{animation:twk 1.4s ease-in-out infinite alternate}.nxt.deco svg:nth-child(2n){animation-delay:.7s}
+/* ---- scoreboard: bigger names, heroes and text ---- */
+.bks .ks svg{width:4.2vw;height:4.2vw}.bks .ksw{font-size:1.5vw}
+.bev b{font-size:2.6vw!important}.bev span{font-size:1.9vw!important;color:var(--paper)!important;font-family:var(--f-disp)}
+.bround{font-size:2.1vw!important}
+.bevbig{margin-top:-.4vh}
+.bevbig .hlogo svg{width:5.6vw;height:5.6vw}
+.bevbig .hlogo b{font-size:5vw}.bevbig .hlogo small{font-size:1.4vw;text-align:center;text-shadow:none;-webkit-text-stroke:0;color:var(--paper);font-family:var(--f-body);letter-spacing:.08em}
+.blive{gap:.6vh!important}
+.bclock{font-size:5.4vw!important}
+.blanes{gap:1vw!important}
+.bl{padding:.6vh .6vw 1.2vh!important}
+.bl .hero svg{max-height:44vh!important}
+.bl .htag{font-size:2vw!important}
+.bl .bn{font-size:4.6vw!important;line-height:1.05!important}
+.bl .bt{font-size:1.7vw!important}
+.bl .btime{font-size:4.4vw!important}
+.bl .bpen span{font-size:1.5vw!important}
+.srow{font-size:var(--fs,2.2vw)}
+.nextup b{font-size:3.8vw!important}.nextup span{font-size:1.8vw!important}.nextup i{font-size:2vw!important}
+.squad b{font-size:2.6vw!important}.squad span{font-size:2.1vw!important}
+.stitle{font-size:3.6vw!important}
+.podium b{font-size:3.2vw!important}.podium.p1 b{font-size:4.8vw!important}.podium small{font-size:1.7vw!important}.podium .tm{font-size:2.2vw!important}
+.bheat{font-size:calc(var(--bfs,1.3vw)*1.15)!important}
+.bcol h3{font-size:2.2vw!important}
+/* license */
+.licchip{background:var(--panel);border:2px solid var(--line);border-radius:999px;padding:3px 12px;font-size:.8rem;color:var(--paper);max-width:22rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.licchip.ok{border-color:var(--good)}
+.licov{position:fixed;inset:0;z-index:300;background:color-mix(in srgb,var(--ink) 75%,transparent);display:grid;place-items:center;padding:16px}
+.licbox{width:min(520px,100%);background:var(--panel);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);border-radius:16px;padding:18px;display:grid;gap:12px}
+.licbox .lt{font-family:var(--f-disp);font-weight:400;font-size:1.2rem}
+.licst{background:var(--night);border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-family:var(--f-disp)}.licst.ok{border-color:var(--good)}
+.licerr{background:color-mix(in srgb,var(--bad) 20%,var(--night));border:2px solid var(--bad);border-radius:10px;padding:8px 12px}
+.wm{position:fixed;inset:0;z-index:90;pointer-events:none;display:grid;place-items:center}
+.wm span{transform:rotate(-18deg);font-family:var(--f-hero);font-size:9vw;letter-spacing:.08em;color:transparent;-webkit-text-stroke:.25vw color-mix(in srgb,var(--paper) 22%,transparent)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -422,7 +477,7 @@ const STICON={
 const T={
  ko:{app:'태권 히어로',sub:'유아·초등 장애물 스피드 챌린지',tSetup:'설정',tRun:'경기 진행',tBoard:'전광판',openBoard:'전광판 새 창',
   focusOk:'버튼 입력 준비됨',focusNo:'화면을 한 번 클릭하세요',
-  evInfo:'대회 정보',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
+  evInfo:'대회 정보',licTitle:'사용 권한 (허가 코드)',licPractice:'연습 모드 · 허가 코드 넣기',licLife:'평생',licKinds:{event:'대회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'},licSt_expired:'사용 기간이 끝났습니다',licSt_early:'사용 기간 전입니다',licSt_place:'이 코드는 홈페이지 앱 주소에서만 쓸 수 있습니다',licSt_need:'인터넷에 연결해 권한을 다시 확인해 주세요',licSt_app:'태권 히어로용 코드가 아닙니다',licNet:'인터넷에 연결되어 있어야 코드를 확인할 수 있습니다',licFail:'코드를 확인하지 못했습니다',licHelp:'코드가 없으면 연습 모드로 모든 기능을 써 볼 수 있습니다. 다만 선수는 {n}명까지이고 전광판에 「연습용」이 표시됩니다. KICKSTART UP에서 받은 코드를 넣으면 풀립니다.',licGo:'코드 확인하고 풀기',licBusy:'확인 중…',licRe:'지금 다시 확인',licDel:'이 기기에서 코드 빼기',licNeed:'코드를 넣어 주세요',licDone:'허가되었습니다 · {h}',licCap:'연습 모드는 선수 {n}명까지입니다 ({c}명은 넣지 못했습니다). 허가 코드를 넣으면 모두 등록됩니다',licOnline:'인터넷 주소에서만',licFile:'인터넷 없이 {n}일',licChecked:'마지막 확인',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
   mode:'경기 방식',mCut:'컷오프만',mTour:'토너먼트만',mBoth:'컷오프 후 토너먼트',
   mCutD:'모든 선수가 한 번씩 뛰고 기록 순으로 최종 순위를 정합니다.',mTourD:'4명씩 한 조로 뛰고 조별 상위 선수가 다음 라운드로 올라갑니다.',mBothD:'컷오프 기록 상위 선수만 토너먼트에 진출합니다.',
   advN:'토너먼트 진출 인원',perHeat:'조별 진출 인원',
@@ -442,7 +497,7 @@ const T={
   heatOf:'{h}조 / 전체 {n}조',full:'전체 화면',waiting:'대기',lanes:'레인 배정',course0:'코스'},
  en:{app:'Taekwon Heroes',sub:'Kids Obstacle Speed Challenge',tSetup:'Setup',tRun:'Run Event',tBoard:'Scoreboard',openBoard:'Scoreboard window',
   focusOk:'Buttons ready',focusNo:'Click the screen once',
-  evInfo:'Event',evNameEn:'Event name (English screens)',evDivEn:'Division (English screens)',evName:'Event name',evDiv:'Division',
+  evInfo:'Event',licTitle:'License code',licPractice:'Practice mode · enter code',licLife:'lifetime',licKinds:{event:'Event pass',week:'1 week',month:'1 month',year:'1 year',life:'Lifetime'},licSt_expired:'License period has ended',licSt_early:'License period has not started',licSt_place:'This code works only at the online app address',licSt_need:'Connect to the internet to re-check the license',licSt_app:'This code is not for Taekwon Heroes',licNet:'Internet is needed to check the code',licFail:'Could not check the code',licHelp:'Without a code you can try every feature in practice mode, with up to {n} runners and a “PRACTICE” mark on the scoreboard. Enter the code from KICKSTART UP to unlock.',licGo:'Check & unlock',licBusy:'Checking…',licRe:'Re-check now',licDel:'Remove code from this device',licNeed:'Enter a code',licDone:'Unlocked · {h}',licCap:'Practice mode allows {n} runners ({c} not added). Enter a license code to add everyone.',licOnline:'online only',licFile:'{n} days offline',licChecked:'last check',evNameEn:'Event name (English screens)',evDivEn:'Division (English screens)',evName:'Event name',evDiv:'Division',
   mode:'Format',mCut:'Cut-off only',mTour:'Tournament only',mBoth:'Cut-off, then tournament',
   mCutD:'Every child runs once; final ranking by time.',mTourD:'Heats of 4; the top runners of each heat move on.',mBothD:'Only the fastest cut-off runners enter the tournament.',
   advN:'Runners into tournament',perHeat:'Advance per heat',
@@ -590,7 +645,7 @@ function projection(){ // future tournament rounds not built yet
 }
 
 /* ================= actions ================= */
-function commit(opts={}){save();if(ROLE==='ctrl'){render();send({t:'sync',S,R})}}
+function commit(opts={}){save();if(ROLE==='ctrl'){render();send({t:'sync',S,R,L:licOk()})}}
 function ensureHeat(){const h=curHeat();return h&&!h.done?h:null}
 function startHeat(){
   const h=ensureHeat();if(!h||R.phase!=='idle')return;
@@ -689,7 +744,8 @@ async function readExcel(file){
 }
 window.readExcel=readExcel;
 function nextPid(){let m=0;S.roster.forEach(a=>{const n=parseInt(String(a.id).slice(1),10);if(n>m)m=n});return 'p'+(m+1)}
-function addRoster(list,replace){if(replace)S.roster=[];list.forEach(a=>{const x={...a,id:nextPid()};delete x.gGuess;S.roster.push(x)});S.sampleRoster=false}
+function addRoster(list,replace){if(replace)S.roster=[];let cut=0;list.forEach(a=>{if(!licOk()&&S.roster.length>=LIC.LIMIT){cut++;return}const x={...a,id:nextPid()};delete x.gGuess;S.roster.push(x)});S.sampleRoster=false;
+  if(cut){setTimeout(()=>{toast(t('licCap',{n:LIC.LIMIT,c:cut}));licOpen()},60)}}
 function downloadTemplate(){if(!window.XLSX)return toast(t('xlsLib'));
   const H=['번호','이름','소속','지도자','부별','성별','생년월일','영문 이름'];
   const ex=[[1,'홍길동 (예시)','경민태권도','김관장','6세부','남','2021-03-05','Gildong Hong'],[2,'김하나 (예시)','경민태권도','김관장','7세부','여','','Hana Kim']];
@@ -704,6 +760,56 @@ window.AW={results(){stashDiv();const rows=[];
   divKeys().forEach(k=>{const d=S.divs[k];if(!d||!d.champ)return;
     d.champ.order.slice(0,4).forEach((pid,i)=>{const p=d.players.find(x=>x.id===pid)||{};rows.push({kind:'medal',div:k,rank:Math.min(i+1,3),name:p.name||'',team:p.team||'',coach:p.coach||''})})});
   return {rows,meta:{}};}};
+
+
+/* ================= 사용 권한 (허가 코드) =================
+   코드가 없으면 연습 모드: 선수 20명까지, 전광판에 「연습용」.
+   접수 홈페이지 「허가 코드」에서 만든 코드(일주일·한 달·1년·평생)를 넣으면 풀립니다.
+   · 인터넷 주소에서만(online): 홈페이지에 올린 앱 주소에서만, 켤 때마다 인터넷으로 확인
+   · 파일·현장 모드에서도(file): 한 번 확인한 뒤 정한 날 수만큼 인터넷 없이 사용
+   관리자가 코드를 중지하면 다음 확인 때 바로 막힙니다. */
+const LIC={URL:'https://nwdptjumclgzbwbsaoxr.supabase.co',KEY:'sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG',LIMIT:20,LS:'tkhero.lic'};
+let lic=null,LIVE=false,BOARD_LIC=false;const LICS={busy:false,err:''};
+try{lic=JSON.parse(localStorage.getItem(LIC.LS)||'null')}catch(e){}
+function licSave(){try{lic?localStorage.setItem(LIC.LS,JSON.stringify(lic)):localStorage.removeItem(LIC.LS)}catch(e){}}
+const kst=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+const addDay=(d,n)=>{const x=new Date(d+'T00:00:00Z');x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};
+const onlineHome=()=>/(^|\.)github\.io$/.test(location.hostname);
+function licStatus(){if(!lic||!lic.code)return 'none';const d=kst();
+  if(lic.app&&lic.app!=='all'&&lic.app!=='hero')return 'app';
+  if(d>lic.ends)return 'expired';if(d<lic.starts)return 'early';
+  if(lic.mode==='online'){if(!onlineHome())return 'place';return LIVE?'ok':'need'}
+  if(lic.checked&&addDay(lic.checked,Math.max(0,lic.grace??3))<d)return 'need';return 'ok'}
+const licOk=()=>licStatus()==='ok';
+function licLabel(){const st=licStatus(),L=t('licKinds')[lic&&lic.kind]||'';
+  return st==='ok'?`✅ ${L} · ${lic.kind==='life'?t('licLife'):'~'+lic.ends}`:st==='none'?`🔒 ${t('licPractice')}`:`⚠️ ${t('licSt_'+st)}`}
+async function licCall(code){let r;try{r=await fetch(LIC.URL+'/rest/v1/rpc/check_license',{method:'POST',headers:{apikey:LIC.KEY,'Content-Type':'application/json'},body:JSON.stringify({p_code:code})})}
+  catch(e){throw new Error(t('licNet'))}const j=await r.json().catch(()=>null);if(!r.ok||!j)throw new Error(t('licFail'));return j}
+async function licApply(code){const j=await licCall(code);if(!j.ok)throw new Error(j.reason||t('licFail'));
+  if(j.app&&j.app!=='all'&&j.app!=='hero')throw new Error(t('licSt_app'));
+  if(j.mode==='online'&&!onlineHome())throw new Error(t('licSt_place'));
+  lic={code:j.code,kind:j.kind,holder:j.holder,starts:j.starts,ends:j.ends,mode:j.mode||'file',grace:j.grace_days??3,app:j.app||'all',checked:j.today||kst()};LIVE=true;licSave();}
+async function licRecheck(show){if(!lic||!lic.code)return;LICS.busy=!!show;if(show){LICS.err='';licDraw()}
+  try{const j=await licCall(lic.code);if(j.ok){lic={...lic,kind:j.kind,holder:j.holder,starts:j.starts,ends:j.ends,mode:j.mode||lic.mode,grace:j.grace_days??lic.grace,app:j.app||lic.app,checked:j.today||kst()};LIVE=true}
+    else{LIVE=false;if(/없는|중지/.test(j.reason||'')){lic=null}else lic={...lic,ends:j.ends||lic.ends};LICS.err=j.reason||''}licSave()}
+  catch(e){LIVE=false;if(show)LICS.err=e.message}
+  LICS.busy=false;if(ROLE==='ctrl'){render();send({t:'sync',S,R,L:licOk()})}licDraw()}
+let LICBOX=null;
+function licOpen(){if(!LICBOX){LICBOX=document.createElement('div');LICBOX.className='licov';LICBOX.setAttribute('role','dialog');LICBOX.setAttribute('aria-modal','true');document.body.appendChild(LICBOX)}licDraw()}
+function licClose(){if(LICBOX){LICBOX.remove();LICBOX=null}}
+function licDraw(){if(!LICBOX)return;const st=licStatus();
+  LICBOX.innerHTML=`<div class="licbox"><div class="row" style="justify-content:space-between"><b class="lt">🔑 ${esc(t('licTitle'))}</b><button class="btn" data-act="licClose" aria-label="close">✕</button></div>
+   <div class="licst ${st==='ok'?'ok':''}">${esc(licLabel())}</div>
+   ${lic&&lic.code?`<p class="note">${esc(lic.code)} · ${esc(lic.holder||'')} · ${esc(lic.mode==='online'?t('licOnline'):t('licFile',{n:lic.grace??3}))}${lic.checked?` · ${esc(t('licChecked'))} ${esc(lic.checked)}`:''}</p>`:''}
+   <p class="note">${esc(t('licHelp',{n:LIC.LIMIT}))}</p>
+   ${LICS.err?`<div class="licerr" role="alert">${esc(LICS.err)}</div>`:''}
+   <form id="licForm" class="row"><input type="text" id="licCode" autocomplete="off" spellcheck="false" placeholder="KS-XXXX-XXXX-XXXX-XXXX" style="flex:1"><button class="btn gold" type="submit" ${LICS.busy?'disabled':''}>${esc(LICS.busy?t('licBusy'):t('licGo'))}</button></form>
+   ${lic&&lic.code?`<div class="row"><button class="btn" data-act="licRe" ${LICS.busy?'disabled':''}>${esc(t('licRe'))}</button><button class="btn ghost" data-act="licDel">${esc(t('licDel'))}</button></div>`:''}</div>`;
+  const i=LICBOX.querySelector('#licCode');if(i&&!lic)setTimeout(()=>i.focus(),0)}
+document.addEventListener('submit',async e=>{if(!e.target||e.target.id!=='licForm')return;e.preventDefault();const code=(document.getElementById('licCode')||{}).value||'';
+  if(!code.trim()){LICS.err=t('licNeed');licDraw();return}LICS.busy=true;LICS.err='';licDraw();
+  try{await licApply(code.trim());LICS.busy=false;licClose();toast(t('licDone',{h:lic.holder||''}));render();send({t:'sync',S,R,L:licOk()})}
+  catch(err){LICS.busy=false;LICS.err=err.message;licDraw()}},true);
 
 /* ================= sound ================= */
 let AC=null;
@@ -729,10 +835,10 @@ let BC=null;try{BC=new BroadcastChannel('tkhero-board')}catch(e){}
 function send(m){try{BC&&BC.postMessage(JSON.parse(JSON.stringify(m)))}catch(e){}}
 if(BC)BC.onmessage=ev=>{const m=ev.data||{};
   if(ROLE==='ctrl'){
-    if(m.t==='hello'){boardSeen=Date.now();send({t:'sync',S,R})}
+    if(m.t==='hello'){boardSeen=Date.now();send({t:'sync',S,R,L:licOk()})}
     if(m.t==='key')handleKey(m.key);
   }else{
-    if(m.t==='sync'){const prev=S.board;S=m.S;R=m.R;linked=true;renderBoard();}
+    if(m.t==='sync'){const prev=S.board;S=m.S;R=m.R;BOARD_LIC=!!m.L;linked=true;renderBoard();}
     if(m.t==='fx')runFx(m.name,m.arg);
     if(m.t==='sfx')playLocal(m.name,m.arg);
   }};
@@ -852,6 +958,10 @@ function animRigs(){
 }
 function emSvg(i,size=24){return`<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${emblem(HEROES[i].em,'#fff')}</svg>`}
 function stIcon(ic){return`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${STICON[ic]||STICON.flag}" fill="none" stroke="var(--paper)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
+const KSMARK=`<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ksg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#ksg)" stroke-width="2.6" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksg)" d="M19 16h7.5v32H19z"/><path fill="url(#ksg)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksg)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksg)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg>`;
+const KSLOGO=`<span class="ks">${KSMARK}<span class="ksw">KICKSTART<b>UP</b></span></span>`;
+/* 반짝이는 태권 히어로 로고 (운영 화면 가운데 · 전광판 시간 위) */
+const heroLogo=(cls='')=>`<div class="hlogo ${cls}">${LOGO}<div><b class="shine" data-txt="${esc(t('app'))}">${esc(t('app'))}</b><small>${esc(t('sub'))}</small></div></div>`;
 const LOGO=`<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 37 9v11c0 9-7 16-17 18C10 36 3 29 3 20V9z" fill="var(--red)" stroke="var(--ink)" stroke-width="3"/><path d="M22 7 12 22h7l-3 11 12-16h-7z" fill="var(--gold)" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/></svg>`;
 
 /* ================= render: top + tabs ================= */
@@ -859,11 +969,12 @@ function fmt(ms){if(ms==null)return'—';if(!isFinite(ms))return t('dnf');const 
 function boardHref(){try{return location.href.split('#')[0]+'#board'}catch(e){return'#board'}}
 function renderTop(){
   document.getElementById('top').innerHTML=`
-  <div class="logo">${LOGO}<div><b>${esc(t('app'))}</b><small>${esc(t('sub'))}</small></div></div>
-  <nav class="tabs" aria-label="views">
+  <div class="logo">${KSLOGO}</div>
+  <nav class="tabs" aria-label="views" style="margin-left:auto">
     ${['setup','run','board'].map(k=>`<button data-act="tab" data-v="${k}" aria-pressed="${tab===k}">${esc(t(k==='setup'?'tSetup':k==='run'?'tRun':'tBoard'))}</button>`).join('')}
   </nav>
-  <div class="topright">
+  <div class="topright" style="margin-left:0">
+    <button class="licchip ${licOk()?'ok':''}" data-act="licOpen">${esc(licLabel())}</button>
     <div id="focusInd" class="focus"><i></i><span></span></div>
     <a class="link" data-act="openBoard" href="${esc(boardHref())}" target="_blank" rel="noopener">${esc(t('openBoard'))} ↗</a>
     <div class="lang" role="group" aria-label="language">
@@ -999,6 +1110,7 @@ function viewRun(){
   ${banner}
   <section class="card runbar">
     <div class="lbl"><select id="divSel" class="divsel" aria-label="${esc(t('division'))}" ${R.phase==='running'||R.phase==='countdown'?'disabled':''}>${divKeys().map(k=>`<option value="${esc(k)}" ${k===S.dkey?'selected':''}>${divDone(S.divs[k])?'✓ ':''}${esc(divLabel(k))} (${S.divs[k].players.length}${esc(t('ppl'))})</option>`).join('')}</select> ${esc(roundLabel(S.cur.r))} · ${esc(heatLabel(S.cur.h))}<small>${esc(t('heatOf',{h:S.cur.h+1,n:r.heats.length}))}${h.done?' · '+esc(t('confirm'))+' ✓':''}</small></div>
+    ${heroLogo('mid')}
     <div class="flowpill" ${flowInfo?'':'hidden'}><span data-flow>${flowInfo?esc(t('flow_'+flowInfo.label,{s:Math.max(0,Math.ceil((flowInfo.until-Date.now())/1000))})):''}</span><button class="btn" data-act="stopFlow">${esc(t('stop'))}</button></div>
     <div class="clock" data-clock>${R.phase==='countdown'?R.count:fmt(h.time.some(x=>x!=null)?Math.max(...h.time.filter(x=>x!=null)):0)}</div>
     <button class="go" data-act="start" ${R.phase!=='idle'||h.done?'disabled':''}>${esc(t('start'))} <kbd>${esc(keyLabel(S.cfg.startKey))}</kbd></button>
@@ -1010,7 +1122,7 @@ function viewRun(){
     ${confirmBtn('redo',t('redo'))}
     <button class="btn" data-act="nextHeat" ${live||r.heats.every((x,ix)=>x.done||ix===S.cur.h)?'disabled':''}>${esc(t('nextHeat'))} →</button>
     ${!complete&&!h.done&&R.phase!=='idle'?`<span class="note">${esc(t('waitAll'))}</span>`:''}
-    <span class="sp"></span>
+    <div class="sp">${nextPreview(r)}</div>
     <span class="note">${esc(t('boardScreen'))}</span>
     <div class="screens">${[['intro','sIntro'],['live','sLive'],['standings','sStand'],['bracket','sBracket'],['champion','sChamp']].map(([v,k])=>`<button data-act="screen" data-v="${v}" aria-pressed="${S.board===v}">${esc(t(k))}</button>`).join('')}</div>
     <button class="btn ghost" data-act="tab" data-v="board">⛶ ${esc(t('tBoard'))}</button>
@@ -1021,6 +1133,9 @@ function viewRun(){
    </div>
   </section></div>`;
 }
+function nextPreview(r){const i=r.heats.findIndex((x,ix)=>!x.done&&ix!==S.cur.h);
+  if(i<0)return`<div class="nxt deco">${[0,1,2,3].map(k=>emSvg(k,18)).join('')}</div>`;
+  const h=r.heats[i];return`<div class="nxt"><span class="nl">${esc(t('nextUp'))} · ${esc(heatLabel(i))}</span>${[0,1,2,3].filter(k=>h.lanes[k]!=null).map(k=>`<span class="nc" style="--c:var(${HEROES[k].v})">${emSvg(k,14)}${esc(pn(P(h.lanes[k])))}</span>`).join('')}</div>`}
 function laneCard(h,i){
   const pid=h.lanes[i],H=HEROES[i];
   if(pid==null)return`<div class="lane emptyl" style="--c:var(${H.v})"><div class="lane-top">${emSvg(i)}${i+1}${S.lang==='en'?' ':''}${esc(t('lane'))}</div><div class="lane-body"><span class="note">${esc(t('empty'))}</span></div></div>`;
@@ -1049,7 +1164,7 @@ function renderBoard(){
   if(!boardVisible()){host.innerHTML='';return}
   if(ROLE==='board'){document.getElementById('top').hidden=true;document.getElementById('app').hidden=true}
   const r=curRound(),h=curHeat();
-  const head=`<div class="bhead"><div class="blogo">TAEKWON<br>HEROES</div><div class="bev"><b>${esc(evName())}</b><span>${esc(curDivLabel())}</span></div>
+  const head=`<div class="bhead"><div class="bks">${KSLOGO}</div><div class="bev"><b>${esc(evName())}</b><span>${esc(curDivLabel())}</span></div>
     <div class="bround">${r?esc(roundLabel(S.cur.r))+(S.board==='live'||S.board==='intro'||S.board==='heatres'?' · '+esc(heatLabel(S.cur.h)):''):'—'}</div></div>`;
   let body='';
   if(!linked)body=`<div class="empty">${esc(t('waitCtrl'))}</div>`;
@@ -1067,7 +1182,7 @@ function renderBoard(){
      <button class="btn" data-act="full">⛶</button></div>`;
   }
   const gate=ROLE==='board'&&gateOpen?`<div class="gate" data-act="gate"><div><b>TAEKWON HEROES</b>${esc(t('clickStart'))}</div></div>`:'';
-  host.innerHTML=`<div class="board ${S.board==='live'&&h?'live':''}" id="board">${head}<div class="bmain">${body}</div></div>${dock}${gate}`;
+  host.innerHTML=`<div class="board ${S.board==='live'&&h?'live':''}" id="board">${head}<div class="bmain">${body}</div></div>${!(ROLE==='board'?BOARD_LIC:licOk())?`<div class="wm" aria-hidden="true"><span>연습용 · PRACTICE</span></div>`:''}${dock}${gate}`;
   tickClocks();
 }
 function boardLive(h){
@@ -1089,7 +1204,7 @@ function boardLive(h){
   }).join('');
   const cd=R.phase==='countdown'?`<div class="cd"><b>${R.count}</b></div>`:(R.phase==='running'&&Date.now()-R.go<900?`<div class="cd"><b class="gotxt">${esc(t('go'))}</b></div>`:'');
   const last=Math.max(0,...h.time.filter(x=>x!=null));
-  return`<div class="blive"><div class="bevbig">${esc(evName())}</div><div class="bclock" data-clock>${R.phase==='countdown'?'0.00':fmt(R.phase==='running'?0:last)}</div><div class="blanes">${lanes}</div>${cd}</div>`;
+  return`<div class="blive"><div class="bevbig">${heroLogo('big')}</div><div class="bclock" data-clock>${R.phase==='countdown'?'0.00':fmt(R.phase==='running'?0:last)}</div><div class="blanes">${lanes}</div>${cd}</div>`;
 }
 function boardIntro(){
   const r=curRound(),h=curHeat();
@@ -1238,6 +1353,10 @@ document.addEventListener('click',e=>{
   if(a!=='arm'&&armed){armed=null}
   switch(a){
     case'tab':setTab(v);break;
+    case'licOpen':licOpen();break;
+    case'licClose':licClose();break;
+    case'licRe':licRecheck(true);break;
+    case'licDel':lic=null;licSave();LICS.err='';licClose();render();send({t:'sync',S,R,L:licOk()});break;
     case'tpl':downloadTemplate();break;
     case'impReplace':addRoster(ui.importRows,true);ui.importRows=null;commit();toast(t('impDone'));break;
     case'impAppend':addRoster(ui.importRows,false);ui.importRows=null;commit();toast(t('impDone'));break;
@@ -1294,9 +1413,10 @@ document.addEventListener('change',e=>{
   commit();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&['addName','addTeam','addCoach'].includes(e.target.id)){e.preventDefault();const b=document.querySelector('[data-act=addP]');if(b)b.click()}},true);
-document.addEventListener('input',e=>{const el=e.target;if(/^ev\./.test(el.dataset.in||'')){const p=el.dataset.in.split('.');S.ev[p[1]]=el.value;save();send({t:'sync',S,R})}});
+document.addEventListener('input',e=>{const el=e.target;if(/^ev\./.test(el.dataset.in||'')){const p=el.dataset.in.split('.');S.ev[p[1]]=el.value;save();send({t:'sync',S,R,L:licOk()})}});
 
 /* ================= boot ================= */
+if(ROLE==='ctrl'&&lic&&lic.code)setTimeout(()=>licRecheck(false),300);
 if(ROLE==='ctrl'&&!S.dkey) buildDraw(); // open with sample draw ready
 if(ROLE==='board'){send({t:'hello'});renderBoard();setTimeout(()=>{if(!linked){linked=true;renderBoard()}},2500)}
 else render();
