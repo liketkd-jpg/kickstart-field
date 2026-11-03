@@ -30,7 +30,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.13" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.14" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -354,7 +354,7 @@ func serveLanding(w http.ResponseWriter, r *http.Request) {
 	b, _ := assets.ReadFile("assets/landing.html")
 	list, _ := json.Marshal(apps)
 	s := strings.Replace(string(b), "__APPS__", string(list), 1)
-	s = strings.Replace(s, "__VERSION__", version, 1)
+	s = strings.ReplaceAll(s, "__VERSION__", version)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Write([]byte(s))

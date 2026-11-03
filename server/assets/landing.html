@@ -37,11 +37,15 @@ main{max-width:1100px;margin:0 auto;padding:22px 16px 40px;display:flex;flex-dir
 .lk{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;font-size:14px}
 ol{margin:6px 0 0;padding-left:20px}li{margin:3px 0}
 a.lnk{color:inherit}
-</style></head><body>
-<header><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#g)" d="M19 16h7.5v32H19z"/><path fill="url(#g)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#g)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#g)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="w">KICKSTART<b>UP</b></span><span class="t">현장 모드</span><small>v__VERSION__</small></header>
+</style><link rel="stylesheet" href="/vendor/ks-lux.css"></head><body>
+<header><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#g)" d="M19 16h7.5v32H19z"/><path fill="url(#g)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#g)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#g)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="w">KICKSTART<b>UP</b></span><span class="t">현장 모드 · 중앙 통제</span><small>v__VERSION__</small></header>
 <main>
+  <section class="lux-hero"><div class="lux-eyebrow">Taekwondo Competition Systems</div>
+    <h1 class="lux-title">KICKSTART <i>UP</i></h1>
+    <p class="lux-sub">품새 · 격파 · 겨루기 경기장과 대회 본부를 한 대의 노트북에서 정밀하게 다스립니다.</p>
+    <div class="lux-stat" id="luxstat"></div><div class="lux-line"></div></section>
   <div class="big" id="big"></div>
-  <div class="card" id="viewc"><div class="row" style="justify-content:space-between"><div><b style="font-size:17px">📡 관람객 실시간 결과</b><div class="muted" style="font-size:14px">학부모·선수가 휴대폰으로 코트 진행 상황과 입상 결과를 봅니다. 본부 노트북에서 열면 모든 코트가 한 화면에 나옵니다.</div></div>
+  <div class="card" id="viewc"><div class="row" style="justify-content:space-between"><div><b style="font-size:17px">관람객 실시간 결과</b><div class="muted" style="font-size:14px">학부모·선수가 휴대폰으로 코트 진행 상황과 입상 결과를 봅니다. 본부 노트북에서 열면 모든 코트가 한 화면에 나옵니다.</div></div>
     <div class="row"><a class="pill" href="/view" target="_blank" rel="noopener" style="text-decoration:none">관람객 화면 열기</a><a class="pill warn" href="/view#send" target="_blank" rel="noopener" style="text-decoration:none">인터넷으로 보내기</a></div></div></div>
   <div class="card" id="role"><span class="pill">확인 중…</span></div>
   <div class="card" id="net"><span class="pill">확인 중…</span></div>
@@ -54,6 +58,7 @@ a.lnk{color:inherit}
     </ol>
     <p class="muted" style="margin:10px 0 0;font-size:14px"><a class="lnk" href="/guide">사용 설명서</a> · 검은 창(현장 모드 프로그램)을 닫으면 멈춥니다.</p>
   </div>
+  <div class="lux-foot"><span>KICKSTART UP · Field Edition</span><span>v__VERSION__</span></div>
 </main>
 <div id="dlg"></div>
 <script>
@@ -66,10 +71,19 @@ async function setRole(role,court){
   const r=await fetch('/api/node',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role,court:court||''})});
   const j=await r.json();if(j.error){alert(j.error);return false;}NODE=j;return true;
 }
+const GLYPH={
+ poomsae:'<circle cx="32" cy="12" r="5"/><path d="M32 18v18M32 24l-13 6M32 24l14-8M32 36l-11 18M32 36l12 18M16 58h32"/>',
+ gyeokpa:'<path d="M10 22h44v7H10zM10 33h18l3 4-3 3H10zM36 33h18v7H36l-2-3zM10 44h44v7H10z"/><path d="M31 10v6M24 12l3 5M38 12l-3 5"/>',
+ kyorugi:'<path d="M8 20l14 12-14 12M56 20L42 32l14 12"/><path d="M26 32h12M32 10v8M32 46v8"/>',
+ hq:'<path d="M32 6l22 12.7v26.6L32 58 10 45.3V18.7z"/><circle cx="32" cy="32" r="5"/><path d="M32 13v14M32 37v14M15.5 22.5l12 7M36.5 34.5l12 7M48.5 22.5l-12 7M27.5 34.5l-12 7"/>'};
+const EN={poomsae:'Poomsae',gyeokpa:'Gyeokpa',kyorugi:'Kyorugi'};
+const glyph=k=>`<svg class="glyph" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPH[k]||GLYPH.hq}</svg>`;
 function drawBig(){
   const court=NODE&&NODE.role==='court'?NODE.court:'';
-  document.getElementById('big').innerHTML=APPS.map(a=>`<button class="bt" data-app="${a.key}">${court?`<span class="tag">${esc(court)}코트</span>`:''}<span class="ic">${ICON[a.key]||'🏆'}</span><span><b>${esc(a.title.replace(' 대회',''))}</b><span>${DESC[a.key]||'운영석'}</span></span><span class="go">새 창으로 열기 ↗</span></button>`).join('')
-    +`<button class="bt hq" data-hq>${NODE&&NODE.role==='hq'?'<span class="tag">이 노트북</span>':''}<span class="ic">🏆</span><span><b>본부</b><span>여러 코트 모아 보기 · 호출 · 공지 · 통합 결과</span></span><span class="go">새 창으로 열기 ↗</span></button>`;
+  document.getElementById('big').innerHTML=APPS.map((a,i)=>`<button class="bt" data-app="${a.key}">${court?`<span class="tag">${esc(court)}코트</span>`:''}<span class="no">0${i+1}</span>${glyph(a.key)}<span class="nm"><em>${EN[a.key]||'Court'}</em><b>${esc(a.title.replace(' 대회',''))}</b><span>${DESC[a.key]||'운영석'}</span></span><span class="go">열기 →</span></button>`).join('')
+    +`<button class="bt hq" data-hq>${NODE&&NODE.role==='hq'?'<span class="tag">이 노트북</span>':''}<span class="no">0${APPS.length+1}</span>${glyph('hq')}<span class="nm"><em>Headquarters</em><b>본부</b><span>여러 코트 모아 보기 · 호출 · 공지 · 통합 결과</span></span><span class="go">열기 →</span></button>`;
+  const st=document.getElementById('luxstat');
+  if(st)st.innerHTML=`<div><small>Station</small><b class="${NODE?'':'warn'}">${!NODE?'연결 안 됨':NODE.role==='hq'?'대회 본부':NODE.role==='court'?esc(NODE.court)+'코트':'미지정'}</b></div><div><small>Disciplines</small><b>${APPS.length}종목</b></div><div><small>Edition</small><b>현장판 v__VERSION__</b></div>`;
 }
 function draw(){
   drawBig();
