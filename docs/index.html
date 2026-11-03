@@ -403,7 +403,7 @@ const SPORTS={poomsae:{n:'품새',c:'ps'},kyorugi:{n:'겨루기',c:'ky'},gyeokpa
 const PS_DIV=['초등부','중등부','고등부','대학부','일반부','성인부','금강1부','금강2부','태백1부','태백2부','지태1부','지태2부','천권부','한수부','장년1부','장년2부'];
 const PS_TYPES=['공인','자유','태권체조','팀대항 종합경연'];
 /* 접수 탭: 태권체조·팀 경연은 품새 종목(sport=poomsae) 안의 단체 종목이지만 따로 보여 줍니다 */
-const TABS={poomsae:{n:'품새',c:'ps',sp:'poomsae'},gym:{n:'태권체조',c:'tg',sp:'poomsae',type:'태권체조'},team100:{n:'팀 경연',c:'tc',sp:'poomsae',type:'팀대항 종합경연'},kyorugi:{n:'겨루기',c:'ky',sp:'kyorugi'},gyeokpa:{n:'격파',c:'gp',sp:'gyeokpa'}};
+const TABS={poomsae:{n:'품새',c:'ps',sp:'poomsae'},kyorugi:{n:'겨루기',c:'ky',sp:'kyorugi'},gyeokpa:{n:'격파',c:'gp',sp:'gyeokpa'},gym:{n:'태권체조',c:'tg',sp:'poomsae',type:'태권체조'},team100:{n:'팀 경연',c:'tc',sp:'poomsae',type:'팀대항 종합경연'}};
 const offers=(c,k)=>k==='gym'||k==='team100'?c.sports.includes('poomsae')&&(c.fee||{})[k]!==false:c.sports.includes(k);
 const tabsOf=c=>Object.keys(TABS).filter(k=>offers(c,k));
 const tabOfEntry=e=>e.sport==='poomsae'?(e.f.type==='태권체조'?'gym':e.f.type==='팀대항 종합경연'?'team100':'poomsae'):e.sport;
@@ -817,8 +817,8 @@ function bulkParse(wb,c){
     const col=(...ks)=>{for(const k of ks){const i=H.findIndex(h=>h===k);if(i>=0)return i;}for(const k of ks){const i=H.findIndex(h=>h.startsWith(k));if(i>=0)return i;}return -1;};
     const ix={name:col('이름'),gender:col('성별'),birth:col('생년월일'),org:col('소속'),kind:col('종목'),div:col('부별'),grade:col('학년'),team:col('팀 이름','팀이름','팀명'),weight:col('체급'),kg:col('체중'),height:col('신장')};
     if(ix.name<0){errs.push([sh,1,'「이름」 칸을 찾지 못했습니다']);continue;}
-    if(!c.sports.includes(meta.sp)){if(A.slice(1).some(r=>String(r[ix.name]||'').trim()&&!/예시/.test(r[ix.name])))errs.push([sh,'',`이 대회에는 ${SPORTS[meta.sp].n} 종목이 없습니다. 이 시트는 접수하지 않습니다`]);continue;}
-    for(let i=1;i<A.length;i++){const R=A[i],g=k=>ix[k]>=0?R[ix[k]]:'';const nm=String(g('name')||'').trim();if(!nm||/예시/.test(nm))continue;rowsN++;
+    if(!c.sports.includes(meta.sp)){if(A.slice(1).some(r=>String(r[ix.name]||'').trim()&&!/\(예시\)/.test(r[ix.name])))errs.push([sh,'',`이 대회에는 ${SPORTS[meta.sp].n} 종목이 없습니다. 이 시트는 접수하지 않습니다`]);continue;}
+    for(let i=1;i<A.length;i++){const R=A[i],g=k=>ix[k]>=0?R[ix[k]]:'';const nm=String(g('name')||'').trim();if(!nm||/\(예시\)/.test(nm))continue;rowsN++;
       const ri=i+1,r={name:nm,gender:g('gender'),birth:g('birth'),org:g('org'),weight:meta.sp==='kyorugi'||meta.sp==='gyeokpa'?g('kg'):'',height:g('height')};
       const div=String(g('div')||'').trim(),grade=String(g('grade')||'').trim(),team=String(g('team')||'').trim();
       if(!div){errs.push([sh,ri,`${nm}: 부별을 골라 주세요`]);continue;}
@@ -878,9 +878,23 @@ async function bulkAdd(){const B=UI.bulk,c=D().comps.find(x=>x.id===route().slic
 
 /* ---------- 내 접수 내역 ---------- */
 const STS={wait:['wait','입금 확인 전'],paid:['paid','입금 확인'],cancel:['cancel','취소함']};
+/* 접수를 마치면: 이 도장의 이 대회 총 참가비 · 입금 계좌를 크게 */
+function payCard(u,E){const P=UI.payDone;if(!P)return '';const c=D().comps.find(x=>x.id===P.comp);if(!c)return '';
+  const live=E.filter(e=>e.compId===c.id&&e.status!=='cancel'),due=live.filter(e=>e.status!=='paid'),total=live.reduce((s,e)=>s+(Number(e.fee)||0),0),dueSum=due.reduce((s,e)=>s+(Number(e.fee)||0),0);
+  const byT={};live.forEach(e=>{const k=TABS[tabOfEntry(e)].n;byT[k]=(byT[k]||0)+1;});
+  return `<section class="card stack" style="border:2px solid var(--gold);background:linear-gradient(180deg,#1E1A10,#121419)">
+    <div class="row between"><div><span class="eyebrow">Entry Complete</span><h2 style="margin-top:4px">✅ ${P.n}건 접수를 마쳤습니다</h2><span class="small mute">${esc(c.name)} · ${esc(u.org||'')} · 지금까지 모두 ${live.length}건 (${Object.entries(byT).map(([k,n])=>`${k} ${n}`).join(' · ')})</span></div>
+      <button class="btn sm ghost" type="button" data-a="payClose">닫기</button></div>
+    <div class="grid2" style="align-items:stretch">
+      <div class="acct" style="display:flex;flex-direction:column;gap:4px"><span class="mute small">입금할 참가비 (${esc(u.org||'우리 도장')} 전체)</span><b class="num" style="font-size:44px;line-height:1.05;color:var(--gold2)">${won(dueSum)}</b>${dueSum!==total?`<span class="small mute">총 ${won(total)} 중 입금 확인된 ${won(total-dueSum)} 제외</span>`:''}</div>
+      <div class="acct" style="display:flex;flex-direction:column;gap:6px"><span class="mute small">입금 계좌</span><b style="font-size:22px;line-height:1.3">${esc(c.account)}</b>
+        <span class="small">입금자명: <b>${esc(u.org||u.name||'')}</b></span>
+        <div class="row"><button class="btn sm gold" type="button" data-a="payCopy" data-t="${esc(c.account)}">계좌 복사</button><button class="btn sm" type="button" data-a="payCopy" data-t="${esc(`${c.name} 참가비 ${won(dueSum)} · ${c.account} · 입금자명 ${u.org||u.name||''}`)}">안내 문구 복사</button></div></div></div>
+    <span class="small mute">대회 본부가 입금을 확인하면 아래 접수 내역에 「입금 확인」이 표시됩니다.</span></section>`;}
 function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id);
   const byComp=D().comps.filter(c=>E.some(e=>e.compId===c.id));
   return `<div class="stack"><div><span class="eyebrow">My Entries</span><h1>내 접수 내역</h1></div>
+    ${payCard(u,E)}
     ${byComp.length?byComp.map(c=>{const L=E.filter(e=>e.compId===c.id),live=L.filter(e=>e.status!=='cancel'),open=compState(c)[0]!=='closed';
       return `<section class="card stack"><div class="row between"><div><h3>${esc(c.name)}</h3><span class="small mute">${fmtDate(c.date)} · 마감 ${fmtDate(c.deadline)}</span></div>
         <div class="row">${open?`<a class="btn sm" href="#enter-${c.id}">선수 더 접수</a>`:''}<span class="num" style="font-size:20px;color:var(--gold2)">${won(live.reduce((s,e)=>s+e.fee,0))}</span></div></div>
@@ -1655,12 +1669,14 @@ document.addEventListener('click',e=>{
     UI.cart=[...(UI.cart||[]),{id:uid('e'),compId:c.id,sport:sp,athleteIds:ids,f:clean,fee:c.fee[sp]}];
     UI.pick=null;UI.form=null;UI.err='';render();toast(`${ath.name} 선수를 접수 목록에 넣었습니다`);}
   else if(a==='bulkTpl'){bulkTpl();}
+  else if(a==='payClose'){UI.payDone=null;render();}
+  else if(a==='payCopy'){copyText(b.dataset.t,'복사했습니다');}
   else if(a==='bulkClose'){UI.bulk=null;render();}
   else if(a==='bulkAdd'){bulkAdd();}
   else if(a==='cartDel'){const c=route().slice(6);const L=(UI.cart||[]).filter(x=>x.compId===c);const x=L[Number(b.dataset.i)];UI.cart=UI.cart.filter(y=>y!==x);render();}
   else if(a==='submit'){const c=b.dataset.c;const L=(UI.cart||[]).filter(x=>x.compId===c);if(!L.length)return;
     run(async()=>{await q(sb.from('entries').insert(L.map(x=>({comp_id:x.compId,sport:x.sport,athlete_ids:x.athleteIds,f:x.f,fee:x.fee}))));
-      UI.cart=UI.cart.filter(x=>x.compId!==c);await reload();go('entries');toast(`${L.length}건을 접수했습니다. 참가비를 입금해 주세요`);});}
+      UI.cart=UI.cart.filter(x=>x.compId!==c);UI.payDone={comp:c,n:L.length};await reload();go('entries');window.scrollTo(0,0);});}
   else if(a==='cancelEntry'){const id=b.dataset.id;if(UI.cArm!==id){UI.cArm=id;render();setTimeout(()=>{UI.cArm=null;},4000);return;}
     run(async()=>{await q(sb.from('entries').update({status:'cancel'}).eq('id',id));UI.cArm=null;await reload();toast('접수를 취소했습니다');});}
   else if(a==='newComp'){UI.newComp=true;UI.err='';render();}
