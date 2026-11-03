@@ -923,11 +923,20 @@ function vAdmin(){const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.admin
     ${c&&tab!=='members'&&tab!=='lic'?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
     <div class="atabs" role="tablist">${ATABS.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''}" data-a="atab" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}</div>`;}
+/* 경기 앱 주소: 주소 끝 #ksreg-대회번호 로 열면 경기 앱이 그 대회 명단 가져오기 창을 바로 엽니다 */
+const ONLINE_APP={poomsae:'https://claude.ai/artifact/TbUqJKtGBM1q1ajaB8hWs7',kyorugi:'https://claude.ai/artifact/TCdKuuGP1Sv9VxkbJhR2CL',gyeokpa:'https://claude.ai/artifact/KN8kCvYqhsvj5GbBeVP95k'};
+function fieldBase(){try{return localStorage.getItem('ks_field_base')||'http://localhost:8080';}catch(e){return 'http://localhost:8080';}}
+function sendApp(c,s,where){const url=where==='online'?`${ONLINE_APP[s]}#ksreg-${c.id}`:`${fieldBase().replace(/\/+$/,'')}/${s}/#ksreg-${c.id}`;
+  const w=window.open(url,'_blank');if(!w)location.href=url;toast(`${SPORTS[s].n} 경기 앱을 열었습니다. 그 창에서 「가져오기」를 눌러 주세요`);}
 function vStatus(c,E){const sp=c.sports.includes(UI.adminSport)?UI.adminSport:c.sports[0];const ES=E.filter(e=>e.sport===sp);
-  return `<h2>대회 앱으로 보내기</h2>
-    <p class="small mute" style="margin:0" data-trh="stat1">방법 1 · 대회 앱 「선수 등록」의 <b>🌐 접수 홈페이지에서 가져오기</b>를 누르고 이 관리자 계정으로 로그인하면 바로 불러옵니다.<br>방법 2 · 아래 엑셀을 내려받아 대회 앱의 「📂 파일 고르기」에 올립니다. 부별·종목·체급대로 부문이 자동으로 만들어집니다.</p>
-    <div class="exp">${c.sports.map(s=>{const n=E.filter(e=>e.sport===s).length;return `<div class="card"><span class="chip ${SPORTS[s].c}" style="align-self:flex-start">${SPORTS[s].n} 대회 앱</span><span class="n num">${n}<span class="small mute"> 건</span></span>
-      <button class="btn gold" type="button" data-a="export" data-s="${s}" ${n?'':'disabled'}>${SPORTS[s].n} 명단 엑셀 내려받기</button></div>`;}).join('')}</div>
+  return `<h2>경기 앱으로 보내기</h2>
+    <p class="small mute" style="margin:0">「경기 앱으로 보내기」를 누르면 그 경기 앱이 새 창으로 열리고 <b>이 대회 명단이 바로 뜹니다</b>. 경기 앱에서 처음 한 번만 이 관리자 계정으로 로그인하고, 「가져오기」를 누르면 부별·종목·체급대로 부문이 자동으로 만들어집니다. 태권체조·팀 경연은 품새 앱으로 함께 갑니다.</p>
+    <div class="row" style="gap:8px"><span class="small mute">현장 노트북에서 보낼 때 현장 프로그램 주소</span><input type="text" id="fieldBase" value="${esc(fieldBase())}" style="width:240px" data-on="fieldBase"><span class="small mute">(현장 프로그램 첫 화면 주소창에 보이는 주소)</span></div>
+    <div class="exp">${c.sports.map(s=>{const n=E.filter(e=>e.sport===s).length,sub=s==='poomsae'?E.filter(e=>e.sport===s).reduce((m,e)=>{const k=TABS[tabOfEntry(e)].n;m[k]=(m[k]||0)+1;return m;},{}):null;return `<div class="card"><span class="chip ${SPORTS[s].c}" style="align-self:flex-start">${SPORTS[s].n} 경기 앱</span><span class="n num">${n}<span class="small mute"> 건</span></span>
+      ${sub&&Object.keys(sub).length>1?`<span class="small mute">${Object.entries(sub).map(([k,v])=>`${k} ${v}`).join(' · ')}</span>`:''}
+      <button class="btn gold" type="button" data-a="sendApp" data-s="${s}" data-w="field" ${n?'':'disabled'}>🖥 현장 노트북 ${SPORTS[s].n} 앱으로 보내기</button>
+      <button class="btn" type="button" data-a="sendApp" data-s="${s}" data-w="online" ${n?'':'disabled'}>🌐 온라인 ${SPORTS[s].n} 앱으로 보내기</button>
+      <button class="btn ghost sm" type="button" data-a="export" data-s="${s}" ${n?'':'disabled'}>엑셀로 내려받기</button></div>`;}).join('')}</div>
     <div class="row between" style="margin-top:8px"><h2>접수 현황</h2><div class="tabs">${c.sports.map(s=>`<button type="button" class="${s===sp?'on':''}" data-a="adTab" data-s="${s}">${SPORTS[s].n}</button>`).join('')}</div></div>
     ${ES.length?`<div class="tablewrap"><table><tr><th>접수일</th><th>지도자 · 소속</th><th>선수</th><th>부문</th><th>참가비</th><th>입금</th></tr>
       ${ES.map(e=>{const l=entryLabel(e),co=coachOf(e.coachId);return `<tr><td class="num small">${e.at.slice(0,10)}</td><td>${esc(co.name||'')}<div class="small mute">${esc(co.org||'')} · ${esc(co.phone||'')}</div></td><td><b>${esc(l.who)}</b>${M.hasNat?' '+entryNats(e):''}</td><td class="small">${esc(l.what)}</td><td class="num">${won(e.fee)}</td>
@@ -1670,6 +1679,7 @@ document.addEventListener('click',e=>{
     UI.pick=null;UI.form=null;UI.err='';render();toast(`${ath.name} 선수를 접수 목록에 넣었습니다`);}
   else if(a==='bulkTpl'){bulkTpl();}
   else if(a==='payClose'){UI.payDone=null;render();}
+  else if(a==='sendApp'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)sendApp(c,b.dataset.s,b.dataset.w);}
   else if(a==='payCopy'){copyText(b.dataset.t,'복사했습니다');}
   else if(a==='bulkClose'){UI.bulk=null;render();}
   else if(a==='bulkAdd'){bulkAdd();}
@@ -1726,6 +1736,7 @@ document.addEventListener('change',e=>{
   else if(on==='mate'){const s=new Set(UI.form.mates||[]);t.checked?s.add(t.value):s.delete(t.value);const tm=(document.getElementById('eTeam')||{}).value;UI.form={...UI.form,mates:[...s],...(tm!=null?{team:tm}:{})};if(isTeamT(UI.form.type))render();}
   else if(on==='bulk'){const F=t.files&&t.files[0];t.value='';if(F)bulkRead(F);}
   else if(on==='bulkGuard'){UI.bulkOk=t.checked;}
+  else if(on==='fieldBase'){let v=t.value.trim();if(v&&!/^https?:\/\//.test(v))v='http://'+v;try{localStorage.setItem('ks_field_base',v||'http://localhost:8080');}catch(e){}t.value=v||'http://localhost:8080';}
   else if(on==='adComp'){UI.adminComp=t.value;render();}
   else if(on==='ceOrient'){document.querySelectorAll('.seg2 label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));certPreview();}
   else if(on==='ceBg'){const F=t.files&&t.files[0];if(!F)return;run(async()=>{UI.certBg=await uploadCertBg(F);toast('배경 사진을 올렸습니다. 「상장 설정 저장」을 눌러 주세요');certPreview();});}

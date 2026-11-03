@@ -5509,7 +5509,7 @@ async function feed(file){const f=typeof window.readExcel==='function'?window.re
 const S={step:'list',L:[],comp:null,E:null,paidOnly:false,err:'',busy:false};
 let BOX=null;
 function open_(mode){S.mode=mode||'import';if(!BOX){BOX=document.createElement('div');BOX.className='rgov';BOX.setAttribute('role','dialog');BOX.setAttribute('aria-modal','true');BOX.setAttribute('aria-label','접수 홈페이지에서 명단 가져오기');document.body.appendChild(BOX);}
-  S.err='';S.E=null;S.comp=null;S.sent=null;S.step=A?'list':'login';draw();if(A)loadList();}
+  S.err='';S.E=null;S.comp=null;S.sent=null;S.step=A?'list':'login';draw();if(A)loadList();else if(S.deep)S.err='';}
 function close_(){if(BOX){BOX.remove();BOX=null;}}
 function draw(){if(!BOX)return;const sp=sport();let b='';
   if(S.step==='login')b=`<p class="small muted">접수 홈페이지의 <b>대회 본부(관리자)</b> 이메일과 비밀번호를 넣어 주세요. 이 기기에서는 한 번만 넣으면 됩니다.</p>
@@ -5538,7 +5538,14 @@ function draw(){if(!BOX)return;const sp=sport();let b='';
     ${S.err?`<div class="rgerr" role="alert">${esc(S.err)}</div>`:''}${b}
     <div class="rgft small muted">${A?`${esc(A.email)} 로그인 · <button type="button" class="rglink" data-rgact="logout">로그아웃</button> · `:''}<a href="${SITE}" target="_blank" rel="noopener">접수 홈페이지 열기</a></div></div>`;
   const e=BOX.querySelector('#rgE');if(e&&!e.value)e.focus();else{const p=BOX.querySelector('#rgP');if(p)p.focus();}}
-async function loadList(){S.busy=true;S.err='';draw();try{S.L=await comps();S.step='list';}catch(e){S.err=e.message;}S.busy=false;draw();}
+async function loadList(){S.busy=true;S.err='';draw();try{S.L=await comps();S.step='list';}catch(e){S.err=e.message;}S.busy=false;draw();if(S.deep&&S.L.length)pickDeep();}
+/* 접수 홈페이지 「경기 앱으로 보내기」: 주소 #ksreg-대회번호 로 열리면 그 대회 명단을 바로 보여 줍니다 */
+async function pickDeep(){const id=S.deep;S.deep=null;const c=S.L.find(x=>x.id===id);if(!c){S.err='접수 홈페이지에서 보낸 대회를 이 종목 목록에서 찾지 못했습니다';draw();return;}
+  S.comp=c;S.busy=true;S.err='';draw();try{S.E=await roster(c.id);S.step='preview';}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 명단을 가져올 수 있습니다. 관리자 계정으로 다시 로그인해 주세요.':err.message;if(!A)S.step='login';}
+  S.busy=false;draw();}
+function deepCheck(first){const m=(location.hash||'').match(/^#ksreg-([0-9A-Za-z_-]+)/);if(!m)return;S.deep=m[1];
+  setTimeout(()=>{try{location.hash='admin-players';}catch(e){}setTimeout(()=>open_(),first?600:200);},first?700:50);}
+deepCheck(true);addEventListener('hashchange',()=>deepCheck(false));
 document.addEventListener('submit',async e=>{if(!e.target||e.target.id!=='rgLogin')return;e.preventDefault();e.stopPropagation();
   S.email=document.getElementById('rgE').value.trim();const pw=document.getElementById('rgP').value;S.busy=true;S.err='';draw();try{await login(S.email,pw);S.busy=false;S.step='list';await loadList();}
   catch(err){S.busy=false;S.err=err.message;draw();}},true);
