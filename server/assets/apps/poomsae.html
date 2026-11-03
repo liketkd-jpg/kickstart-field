@@ -931,6 +931,9 @@ body.disp .board .vs .side.blue{background:linear-gradient(165deg,#173A9E 0%,#0B
 body.disp .board .vs .side.red{background:linear-gradient(195deg,#A0121C 0%,#4A070D 55%,#1E0306 100%)!important;border:1px solid rgba(255,255,255,.08)}
 body.disp .chip.ok{background:linear-gradient(180deg,#EBD5A3,#B8904E);color:#1A1306}
 .pjc{background:linear-gradient(180deg,#EBD5A3,#B8904E)!important;color:#1A1306!important;font-stretch:108%}
+.cbname.nl1,.vname.nl1,body.disp .board.ksb-solo .cbname.nl1,body.disp .board.ksb-solo .vname.nl1{font-size:min(4.4vw,8vh)!important}
+.cbname.nl2,.vname.nl2,body.disp .board.ksb-solo .cbname.nl2,body.disp .board.ksb-solo .vname.nl2{font-size:min(3.2vw,6vh)!important;line-height:1.15}
+.cbname.nl3,.vname.nl3,body.disp .board.ksb-solo .cbname.nl3,body.disp .board.ksb-solo .vname.nl3{font-size:min(2.4vw,4.6vh)!important;line-height:1.2}
 
 /* ===== KICKSTART UP 브랜드 ===== */
 svg.logo.ks{width:34px;height:34px;box-shadow:none!important;border-radius:0;flex:none;filter:drop-shadow(0 2px 10px rgba(201,162,98,.25))}
@@ -1166,6 +1169,8 @@ function typeOf(v){const x=String(v||'');if(/종합|팀\s*대항/.test(x))return
 function timeDedV(type,t){const sh=SHEETS[type]||{};if(!sh.timePer10||!t)return 0.3;const e=elapsed(t);if(e<=0)return sh.timePer10;let diff=0;
   if(t.max&&e>t.max)diff=e-t.max;else if(t.min&&e<t.min)diff=t.min-e;return r1(Math.max(1,Math.ceil((diff-1e-6)/10))*sh.timePer10);}
 const optTxt=o=>o%1?fmt1(o):String(o);
+/* 팀 이름·팀원처럼 긴 이름은 전광판에서 글자를 줄여 한두 줄에 맞춥니다 */
+const nmLen=n=>{const L=String(n||'').length;return L>30?'nl3':L>18?'nl2':L>11?'nl1':'';};
 /* 제6조 부별 구분. 국내 학교부는 출생연도 기준 나이(올해−출생연도)로 계산 */
 const AGE_SCHEMES={
   kta:{label:'국내 부별 (협회)',
@@ -2474,7 +2479,7 @@ function cbRanking(d,st,cur,revAt){
 function cutBoard(cur,st,ctl,head,clock){
   const e=cur.entries[0],sh=SHEETS[cur.type],N=cur.judgeCount,revealed=st.status==='revealed',res=revealed?S.results[e.perfId]:null;
   const d=S.divs.find(x=>x.id===cur.divId);const stg=d&&cur.stage?stagesOf(d).find(x=>x.key===cur.stage):null;
-  const who=`<div class="cbwho"><div class="cbname">${esc(e.name)}</div><div class="cbteam">${esc(e.team||'')}${e.members?' · '+esc(e.members):''}</div></div>`;
+  const who=`<div class="cbwho"><div class="cbname ${nmLen(e.name)}">${esc(e.name)}</div><div class="cbteam">${esc(e.team||'')}${e.members?' · '+esc(e.members):''}</div></div>`;
   const labA=sh.A.label,labB=sh.B.label;
   if(!res){
     const cs=curScores().filter(x=>x.perfId===e.perfId);
@@ -2518,7 +2523,7 @@ function vDisplay(){
     return `<div class="board two">${ctl}<div class="colorband none"></div>${head}<div class="mid2">${pbanHtml(cur)}${revealed?(win==='tie'?'<div class="tie">완전 동점 · 재경기</div>':why?`<div class="tie">${esc(why)}</div>`:two&&mv.stage===1?'<div class="tie" style="color:var(--muted)">1품새 점수</div>':two&&mv.aggs?'<div class="tie" style="color:var(--green)">최종 · 두 품새 평균</div>':'<div></div>'):clock}</div>
       <div class="vs">${cur.entries.map((e,i)=>{const res=i===0?rb:rr,f=win===e.side?winFlash(st):{c:'',s:''};return `<div class="side ${e.side} ${win===e.side?'win':''} ${f.c}" style="${f.s}">
         <div class="vtop"><span class="chip ${e.side}">${sideName(e.side)}</span>${win===e.side?`<span class="chip ok">${why?'우세승':'승'}</span>`:''}</div>
-        <div class="vname">${esc(e.name)}</div><div class="vteam">${esc(e.team||'')}${e.members?' · '+esc(e.members):''}</div>
+        <div class="vname ${nmLen(e.name)}">${esc(e.name)}</div><div class="vteam">${esc(e.team||'')}${e.members?' · '+esc(e.members):''}</div>
         ${res?(mv.aggs&&mv.aggs[e.side]?`<div class="vfinal">${fmt3(mv.aggs[e.side].final)}</div><div class="vparts">1품새 <b>${fmt3(mv.per[e.side][0].final)}</b> · 2품새 <b>${fmt3(mv.per[e.side][1].final)}</b> · 평균</div>${jrow(res)}`
           :`<div class="vfinal">${fmt3(res.final)}</div><div class="vparts">${sh.A.label} <b>${fmt3(res.a)}</b> · ${sh.B.label} <b>${fmt3(res.b)}</b>${res.deduction?` · 감점 −${fmt1(res.deduction)}`:''}</div>${jrow(res)}`)
           :`${two&&(cur.k||1)>1&&p1(e)?`<div class="vparts" style="color:var(--muted)">1품새 <b>${fmt3(p1(e).final)}</b></div>`:''}<div class="vgap"></div>${dots(e)}`}
@@ -2630,6 +2635,11 @@ function maybeAutoNext(){
 }
 /* 1·2·3심 점수가 모두 도착하면 운영석이 1.5초 뒤 자동으로 공개합니다 */
 let AUTO_KEY='',AUTO_T=null;
+/* 운영석 창이 다른 창 뒤에 가려지면 브라우저가 타이머를 늦춥니다. 그래서 점수가 다 모이고 4초가 지나도 공개가 안 되면 전광판이 대신 공개합니다 */
+let DAUTO_KEY='';
+setInterval(()=>{try{if(KIOSK||routeNow()!=='display'||SET().autoReveal===false)return;const st=ST(),cur=curOf();if(!cur||st.status!=='open'||!cur.entries.every(e=>entryReady(cur,e))){DAUTO_KEY='';return;}
+  const key=cur.callId+'#'+st.epoch;if(!DAUTO_KEY.startsWith(key)){DAUTO_KEY=key+'@'+Date.now();return;}
+  if(Date.now()-Number(DAUTO_KEY.split('@')[1])>4000&&!DAUTO_KEY.endsWith('!')){DAUTO_KEY+='!';doReveal(true).catch(()=>{});}}catch(e){}},700);
 function maybeAutoReveal(){
   if(KIOSK||!(routeNow().startsWith('admin')||SOLO())||SET().autoReveal===false)return;
   const st=ST(),cur=curOf();if(!cur||st.status!=='open')return;
