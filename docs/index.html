@@ -427,6 +427,69 @@ const kyGuess=(L,kg)=>{const w=Number(kg);if(!w||!L.length)return '';return (L.f
 /* 팀 종목 (세계태권도한마당 제41조 · 제43조) */
 const TEAM_T={'태권체조':{min:7,max:9,w:0},'팀대항 종합경연':{min:9,max:13,w:1}};
 const isTeamT=t=>!!TEAM_T[t];
+/* ---------- 음원 제출 (자유 품새 · 태권체조 · 팀 대항 종합경연) ---------- */
+const MUSIC_T=['자유','태권체조','팀대항 종합경연'],MUSIC_MAX=10*1024*1024,MUSIC_BUCKET='comp-music',MUSIC_ACCEPT='audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac';
+const needMusic=e=>!!e&&e.sport==='poomsae'&&MUSIC_T.includes((e.f||{}).type);
+const kstDay=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+const addDays=(d,n)=>{const [y,m,dd]=String(d).split('-').map(Number);return new Date(Date.UTC(y,m-1,dd+n)).toISOString().slice(0,10);};
+const musicDue=c=>c.musicDue||addDays(c.date,-7);
+const musicOpen=c=>kstDay()<=musicDue(c);
+const musicGone=c=>kstDay()>addDays(c.date,7);
+const musOf=id=>(M.music||[]).find(m=>m.entryId===id);
+const mb=b=>(b/1048576).toFixed(1)+'MB';
+const dLeft=d=>{const n=Math.round((Date.parse(d)-Date.parse(kstDay()))/864e5);return n>0?`D-${n}`:n===0?'오늘 마감':'마감';};
+const MUS_EXT={'.mp3':'audio/mpeg','.m4a':'audio/mp4','.aac':'audio/aac','.wav':'audio/wav','.ogg':'audio/ogg','.flac':'audio/flac'};
+function musicCheck(F){const ext=((F.name||'').match(/\.[A-Za-z0-9]{2,4}$/)||[''])[0].toLowerCase();
+  if(!/^audio\//.test(F.type||'')&&!MUS_EXT[ext])return '음악 파일(mp3 · m4a · wav · aac · ogg)만 올릴 수 있습니다';
+  if(F.size>MUSIC_MAX)return `음원은 한 곡에 10MB까지입니다 (이 파일 ${mb(F.size)}). mp3로 바꾸면 보통 3~5MB입니다`;
+  if(!F.size)return '빈 파일입니다';return '';}
+async function uploadMusic(e,F){const bad=musicCheck(F);if(bad)throw new Error(bad);
+  const ext=((F.name||'').match(/\.[A-Za-z0-9]{2,4}$/)||['.mp3'])[0].toLowerCase(),path=`${e.compId}/${e.id}/${Date.now()}${ext}`,ct=(/^audio\//.test(F.type||'')?F.type:MUS_EXT[ext])||'audio/mpeg';
+  const {error}=await sb.storage.from(MUSIC_BUCKET).upload(path,F,{upsert:true,contentType:ct});if(error)throw error;
+  const old=musOf(e.id),row={entry_id:e.id,comp_id:e.compId,coach_id:e.coachId,path,name:F.name,size:F.size,mime:ct,updated_at:new Date().toISOString()};
+  const r=old?await sb.from('entry_music').update(row).eq('entry_id',e.id):await sb.from('entry_music').insert(row);if(r.error)throw r.error;
+  if(old&&old.path!==path){try{await sb.storage.from(MUSIC_BUCKET).remove([old.path]);}catch(x){}}}
+let MUS_AUDIO=null,MUS_NOW=null;
+async function musPlay(id){const m=musOf(id);if(!m)return;if(MUS_AUDIO){MUS_AUDIO.pause();MUS_AUDIO=null;const was=MUS_NOW;MUS_NOW=null;render();if(was===id)return;}
+  try{const {data,error}=await sb.storage.from(MUSIC_BUCKET).createSignedUrl(m.path,900);if(error)throw error;const a=new Audio(data.signedUrl);MUS_AUDIO=a;MUS_NOW=id;a.onended=()=>{MUS_AUDIO=null;MUS_NOW=null;render();};render();await a.play();}
+  catch(x){MUS_AUDIO=null;MUS_NOW=null;render();toast('음원을 재생하지 못했습니다: '+msgOf(x));}}
+/* 음원 칸 (내 접수 내역 · 관리자 명단) */
+function musCell(e,c,admin){if(!needMusic(e))return '';if(!M.musicOk)return '<span class="small mute">—</span>';if(musicGone(c))return '<span class="small mute">대회가 끝나 지움</span>';const m=musOf(e.id),open=admin||musicOpen(c);
+  const up=lab=>`<label class="btn sm ${m?'ghost':'gold'} musup">${lab}<input type="file" accept="${MUSIC_ACCEPT}" data-musup="${e.id}" hidden></label>`;
+  if(UI.musBusy===e.id)return '<span class="small">올리는 중…</span>';
+  return m?`<div class="mus ok"><span class="chip open">🎵 제출</span> <span class="small" title="${esc(m.name)}">${esc(m.name.length>22?m.name.slice(0,20)+'…':m.name)} · ${mb(m.size)}</span>
+      <span class="row" style="gap:4px;margin-top:4px"><button class="btn sm ghost" type="button" data-a="musPlay" data-id="${e.id}">${MUS_NOW===e.id?'■ 정지':'▶ 듣기'}</button>${open?up('바꾸기'):''}</span></div>`
+    :`<div class="mus no"><span class="chip warn">미제출</span>${open?' '+up('🎵 음원 올리기'):' <span class="small mute">마감</span>'}</div>`;}
+function musSummary(c,L){const need=L.filter(e=>e.status!=='cancel'&&needMusic(e));if(!need.length||!M.musicOk||musicGone(c))return '';const done=need.filter(e=>musOf(e.id)).length,due=musicDue(c);
+  return `<div class="notice musn ${done<need.length&&musicOpen(c)?'warn':''}"><b>🎵 음원 제출 ${done}/${need.length}</b><div>자유 품새 · 태권체조 · 팀 경연은 경기 음원을 올려 주세요. <span style="font-weight:800">${fmtDate(due)}까지 (${dLeft(due)})</span> · 한 곡 10MB까지 · mp3 권장. 대회가 끝나고 7일 뒤에 음원은 자동으로 지워집니다.</div></div>`;}
+/* 관리자: 끝난 지 7일 지난 대회 음원 지우기 */
+let PURGED=false;
+async function purgeMusic(){if(PURGED||!M.musicOk||!M.profile||M.profile.role!=='admin')return 0;PURGED=true;
+  const gone=new Set(M.comps.filter(musicGone).map(c=>c.id)),rows=(M.music||[]).filter(m=>gone.has(m.compId));if(!rows.length)return 0;
+  try{for(let i=0;i<rows.length;i+=100){const {error}=await sb.storage.from(MUSIC_BUCKET).remove(rows.slice(i,i+100).map(m=>m.path));if(error)throw error;}
+    for(const id of gone)await sb.from('entry_music').delete().eq('comp_id',id);
+    M.music=(M.music||[]).filter(m=>!gone.has(m.compId));toast(`끝난 지 7일이 지난 대회 음원 ${rows.length}곡을 자동으로 지웠습니다`);render();return rows.length;}
+  catch(x){console.warn('음원 자동 삭제',x);return 0;}}
+/* 관리자: 음원 전체 내려받기 (zip · 파일 이름 = 팀명(이름)_소속 → 경기 앱 「음악 폴더 고르기」에서 자동 연결) */
+let JSZIPP=null;
+function loadZip(){if(window.JSZip)return Promise.resolve(window.JSZip);if(JSZIPP)return JSZIPP;JSZIPP=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';s.onload=()=>res(window.JSZip);s.onerror=()=>{JSZIPP=null;rej(new Error('압축 도구를 불러오지 못했습니다'));};document.head.appendChild(s);});return JSZIPP;}
+const musFileName=(e,m)=>{const l=entryLabel(e),co=coachOf(e.coachId),f=e.f||{},nm=f.team||l.who.replace(/\s*\(\d+명\)$/,''),org=co.org||'';
+  const ext=((m.name||'').match(/\.[A-Za-z0-9]{2,4}$/)||['.mp3'])[0].toLowerCase();return `[${f.type}] ${nm}${org?'_'+org:''}${ext}`.replace(/[\\/:*?"<>|]/g,'_');};
+async function musicZip(c){const E=D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'&&needMusic(e)&&musOf(e.id));if(!E.length){toast('올라온 음원이 없습니다');return;}
+  UI.zipBusy=`음원 ${E.length}곡을 모으는 중…`;render();
+  try{const Z=await loadZip(),z=new Z(),used=new Set();let n=0;
+    for(const e of E){const m=musOf(e.id);const {data,error}=await sb.storage.from(MUSIC_BUCKET).download(m.path);if(error)throw error;
+      let fn=musFileName(e,m);while(used.has(fn))fn=fn.replace(/(\.[a-z0-9]+)$/,'_2$1');used.add(fn);z.file(fn,data);n++;UI.zipBusy=`음원 ${n}/${E.length}곡 받는 중…`;render();}
+    const blob=await z.generateAsync({type:'blob'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${c.name}_음원_${n}곡.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+    toast(`음원 ${n}곡을 내려받았습니다`);}
+  catch(x){toast('음원을 내려받지 못했습니다: '+msgOf(x));}
+  UI.zipBusy='';render();}
+function musAdmin(c,E){if(!M.musicOk){return c.sports.includes('poomsae')?'<div class="notice"><b>🎵 음원 제출 기능</b><div>Supabase에서 9단계 SQL(schema9.sql)을 실행하면 지도자가 음원을 올릴 수 있습니다.</div></div>':'';}
+  const need=E.filter(needMusic);if(!need.length)return '';const done=need.filter(e=>musOf(e.id)),miss=need.filter(e=>!musOf(e.id)),due=musicDue(c),size=done.reduce((s,e)=>s+(musOf(e.id).size||0),0);
+  return `<section class="card stack musadm"><div class="row between"><div><h2>🎵 음원 제출 ${done.length}/${need.length}</h2><span class="small mute">마감 ${fmtDate(due)} (${dLeft(due)}) · 모두 ${mb(size)} · 대회 7일 뒤(${fmtDate(addDays(c.date,7))}) 자동 삭제</span></div>
+    <button class="btn gold" type="button" data-a="musZip" ${done.length&&!UI.zipBusy?'':'disabled'}>${UI.zipBusy?esc(UI.zipBusy):`⬇ 음원 ${done.length}곡 한꺼번에 내려받기 (zip)`}</button></div>
+    <span class="small mute">경기 앱이 접수 홈페이지에서 명단을 가져올 때 음원도 함께 받습니다. 인터넷이 없는 코트 노트북은 이 zip을 풀어 경기 앱의 「📁 음악 폴더 고르기」로 넣으면 파일 이름으로 팀(선수)에 자동 연결됩니다.</span>
+    ${miss.length?`<details><summary class="small"><b>아직 안 낸 ${miss.length}건</b> (지도자 연락처)</summary><div class="tablewrap"><table>${miss.map(e=>{const l=entryLabel(e),co=coachOf(e.coachId);return `<tr><td><b>${esc(l.who)}</b><div class="small mute">${esc(l.what)}</div></td><td>${esc(co.org||'')} ${esc(co.name||'')}<div class="small mute">${esc(co.phone||'')}</div></td></tr>`;}).join('')}</table></div></details>`:'<span class="small" style="color:var(--green,#3fb37f)">모든 팀이 음원을 냈습니다 ✓</span>'}</section>`;}
 const PS_GRADE=['','1학년','2학년','3학년','4학년','5학년','6학년','저학년','중학년','고학년'];
 const KY_DIV=['초등부','중등부','고등부','대학부','일반부'];
 const KY_NAMED=['핀급','플라이급','밴텀급','페더급','라이트급','웰터급','라이트미들급','미들급','라이트헤비급','헤비급'];
@@ -446,12 +509,19 @@ const M={comps:[],athletes:[],entries:[],users:[],results:[],licenses:[],profile
 const D=()=>M;
 const me=()=>M.profile;
 const uid=p=>p+Math.random().toString(36).slice(2,9);
-const mapComp=c=>({id:c.id,name:c.name,date:c.date,place:c.place,deadline:c.deadline,sports:c.sports||[],fee:c.fee||{},account:c.account,host:c.host,note:c.note,notice:c.notice||'',docUrl:c.doc_url||'',docName:c.doc_name||'',contact:c.contact||'',resultsOpen:!!c.results_open,cert:c.cert||{}});
+const mapComp=c=>({id:c.id,name:c.name,date:c.date,place:c.place,deadline:c.deadline,sports:c.sports||[],fee:c.fee||{},account:c.account,host:c.host,note:c.note,notice:c.notice||'',docUrl:c.doc_url||'',docName:c.doc_name||'',contact:c.contact||'',resultsOpen:!!c.results_open,cert:c.cert||{},musicDue:c.music_due||''});
 const mapAth=a=>({id:a.id,coachId:a.coach_id,name:a.name,gender:a.gender,birth:a.birth||'',org:a.org,weight:a.weight??'',height:a.height??'',guardian:a.guardian,country:a.country||'',nameEn:a.name_en||''});
 const mapEnt=e=>({id:e.id,compId:e.comp_id,coachId:e.coach_id,sport:e.sport,athleteIds:e.athlete_ids||[],f:e.f||{},fee:e.fee,status:e.status,at:String(e.created_at||'').slice(0,19)});
 const mapRes=r=>({id:r.id,compId:r.comp_id,sport:r.sport,kind:r.kind,div:r.div,rank:r.rank,name:r.name,team:r.team,coach:r.coach,members:r.members,coachId:r.coach_id,nat:r.nat||'',nameEn:r.name_en||''});
 const mapUser=p=>({id:p.id,role:p.role,name:p.name,org:p.org,phone:p.phone,email:p.email,license:p.license||'',country:p.country||'KOR',at:String(p.created_at||'').slice(0,10)});
 async function q(p){const {data,error}=await p;if(error)throw error;return data;}
+document.addEventListener('change',ev=>{const t=ev.target;if(!t||!t.dataset)return;
+  if(t.dataset.cartmus!=null){const F=t.files&&t.files[0];if(!F)return;const bad=musicCheck(F);if(bad){toast(bad);t.value='';return;}
+    const c=route().slice(6),L=(UI.cart||[]).filter(x=>x.compId===c),x=L[Number(t.dataset.cartmus)];if(x){x.music=F;render();toast('음원을 첨부했습니다. 「접수하기」를 누르면 함께 올라갑니다');}return;}
+  if(t.dataset.musup){const F=t.files&&t.files[0];if(!F)return;const bad=musicCheck(F);if(bad){toast(bad);t.value='';return;}
+    const e=D().entries.find(x=>x.id===t.dataset.musup);if(!e)return;UI.musBusy=e.id;render();
+    (async()=>{try{await uploadMusic(e,F);UI.musBusy=null;await reload();toast(`음원을 올렸습니다 · ${F.name}`);}catch(err){UI.musBusy=null;render();toast('음원을 올리지 못했습니다: '+(/row-level|policy/i.test(msgOf(err))?'음원 제출 기간이 지났거나 올릴 수 없는 접수입니다':msgOf(err)));}})();}
+},true);
 async function reload(){
   try{
     const {data:{session}}=await sb.auth.getSession();
@@ -464,13 +534,15 @@ async function reload(){
       M.athletes=(await q(sb.from('athletes').select('*').order('created_at',{ascending:true}))).map(mapAth);
       try{const t=await sb.from('athletes').select('country,name_en').limit(1);M.hasNat=!t.error;}catch(e){M.hasNat=false;}
       M.entries=(await q(sb.from('entries').select('*').order('created_at',{ascending:true}))).map(mapEnt);
+      try{const {data,error}=await sb.from('entry_music').select('*');M.musicOk=!error;M.music=error?[]:(data||[]).map(m=>({entryId:m.entry_id,compId:m.comp_id,coachId:m.coach_id,path:m.path,name:m.name||'',size:m.size||0,at:m.updated_at}));}catch(e){M.musicOk=false;M.music=[];}
       M.users=M.profile.role==='admin'?(await q(sb.from('profiles').select('*'))).map(mapUser):[M.profile];
       try{M.results=(await q(sb.from('results').select('*').order('rank',{ascending:true}))).map(mapRes);}catch(e){M.results=[];}
       M.licenses=[];M.licErr='';M.plans=[];if(M.profile.role==='admin'){try{M.licenses=await q(sb.from('licenses').select('*').order('created_at',{ascending:false}));}catch(e){M.licErr=msgOf(e);}try{M.plans=await q(sb.from('license_plans').select('*'))||[];}catch(e){M.plans=null;}}
-    }else{M.profile=null;M.athletes=[];M.entries=[];M.users=[];M.results=[];}
+    }else{M.profile=null;M.athletes=[];M.entries=[];M.users=[];M.results=[];M.music=[];}
     M.loadErr='';
   }catch(e){M.loadErr=msgOf(e);}
   M.ready=true;render();
+  if(M.profile&&M.profile.role==='admin')setTimeout(purgeMusic,800);
 }
 /* 메일 링크(가입 확인·비밀번호 재설정)로 들어오면 주소 뒤에 붙은 긴 글을 정리 */
 const H0=location.hash;let HDONE=false;
@@ -789,8 +861,9 @@ function vEnter(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div clas
         ${UI.pick===a.id?entryForm(c,sport,a):''}`;}).join(''):'<div class="empty">먼저 「내 선수」에서 선수를 등록해 주세요. <a href="#athletes">선수 등록하러 가기</a></div>'}
     </div>
     <aside class="card cart stack"><h3>접수 목록</h3>
-      ${cart.length?cart.map((e,i)=>{const l=entryLabel(e),T=TABS[tabOfEntry(e)];return `<div class="line"><div><span class="chip ${T.c}">${T.n}</span> <b>${esc(l.who)}</b><div class="small mute">${esc(l.what)}</div></div>
+      ${cart.length?cart.map((e,i)=>{const l=entryLabel(e),T=TABS[tabOfEntry(e)];return `<div class="line"><div><span class="chip ${T.c}">${T.n}</span> <b>${esc(l.who)}</b><div class="small mute">${esc(l.what)}</div>${needMusic(e)&&M.musicOk?`<label class="btn sm ${e.music?'ghost':''} musup" style="margin-top:6px">🎵 ${e.music?esc(e.music.name.length>18?e.music.name.slice(0,16)+'…':e.music.name)+' · '+mb(e.music.size):'음원 첨부 (나중에 내도 됨)'}<input type="file" accept="${MUSIC_ACCEPT}" data-cartmus="${i}" hidden></label>`:''}</div>
         <div style="text-align:right"><span class="num">${won(e.fee)}</span><br><button class="btn sm ghost" type="button" data-a="cartDel" data-i="${i}">빼기</button></div></div>`;}).join(''):'<span class="small mute">아직 넣은 선수가 없습니다.</span>'}
+      ${M.musicOk&&cart.some(needMusic)?`<span class="small mute">🎵 자유 품새 · 태권체조 · 팀 경연 음원은 지금 첨부하거나, 접수 뒤 「내 접수 내역」에서 <b>${fmtDate(musicDue(c))}까지</b> 올리면 됩니다 (한 곡 10MB까지).</span>`:''}
       <div class="sum"><span class="mute">참가비 합계</span><b>${won(total)}</b></div>
       <div class="acct small"><b>입금 계좌</b><br>${esc(c.account)}<br><span class="mute">입금자명은 「소속명」으로 해 주세요. 대회 본부가 입금을 확인하면 접수 내역에 「입금 확인」이 표시됩니다.</span></div>
       <button class="btn gold" type="button" data-a="submit" data-c="${c.id}" ${cart.length?'':'disabled'}>${cart.length}건 접수하기</button>
@@ -902,7 +975,7 @@ function payCard(u,E){const P=UI.payDone;if(!P)return '';const c=D().comps.find(
   const live=E.filter(e=>e.compId===c.id&&e.status!=='cancel'),due=live.filter(e=>e.status!=='paid'),total=live.reduce((s,e)=>s+(Number(e.fee)||0),0),dueSum=due.reduce((s,e)=>s+(Number(e.fee)||0),0);
   const byT={};live.forEach(e=>{const k=TABS[tabOfEntry(e)].n;byT[k]=(byT[k]||0)+1;});
   return `<section class="card stack" style="border:2px solid var(--gold);background:linear-gradient(180deg,#1E1A10,#121419)">
-    <div class="row between"><div><span class="eyebrow">Entry Complete</span><h2 style="margin-top:4px">✅ ${P.n}건 접수를 마쳤습니다</h2><span class="small mute">${esc(c.name)} · ${esc(u.org||'')} · 지금까지 모두 ${live.length}건 (${Object.entries(byT).map(([k,n])=>`${k} ${n}`).join(' · ')})</span></div>
+    <div class="row between"><div><span class="eyebrow">Entry Complete</span><h2 style="margin-top:4px">✅ ${P.n}건 접수를 마쳤습니다</h2><span class="small mute">${esc(c.name)} · ${esc(u.org||'')} · 지금까지 모두 ${live.length}건 (${Object.entries(byT).map(([k,n])=>`${k} ${n}`).join(' · ')})</span>${(()=>{const nm=live.filter(e=>needMusic(e)&&!musOf(e.id)).length;return M.musicOk&&(nm||P.mus)?`<span class="small" style="display:block;margin-top:4px">🎵 ${P.mus?`음원 ${P.mus}곡을 올렸습니다. `:''}${nm?`<b>음원을 아직 안 낸 ${nm}건</b>은 아래 표에서 ${fmtDate(musicDue(c))}까지 올려 주세요.`:''}</span>`:'';})()}</div>
       <button class="btn sm ghost" type="button" data-a="payClose">닫기</button></div>
     <div class="grid2" style="align-items:stretch">
       <div class="acct" style="display:flex;flex-direction:column;gap:4px"><span class="mute small">입금할 참가비 (${esc(u.org||'우리 도장')} 전체)</span><b class="num" style="font-size:44px;line-height:1.05;color:var(--gold2)">${won(dueSum)}</b>${dueSum!==total?`<span class="small mute">총 ${won(total)} 중 입금 확인된 ${won(total-dueSum)} 제외</span>`:''}</div>
@@ -917,8 +990,8 @@ function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id)
     ${byComp.length?byComp.map(c=>{const L=E.filter(e=>e.compId===c.id),live=L.filter(e=>e.status!=='cancel'),open=compState(c)[0]!=='closed';
       return `<section class="card stack"><div class="row between"><div><h3>${esc(c.name)}</h3><span class="small mute">${fmtDate(c.date)} · 마감 ${fmtDate(c.deadline)}</span></div>
         <div class="row">${open?`<a class="btn sm" href="#enter-${c.id}">선수 더 접수</a>`:''}<span class="num" style="font-size:20px;color:var(--gold2)">${won(live.reduce((s,e)=>s+e.fee,0))}</span></div></div>
-        <div class="tablewrap"><table><tr><th>종목</th><th>선수</th><th>부문</th><th>참가비</th><th>상태</th><th></th></tr>
-        ${L.map(e=>{const l=entryLabel(e),[k,t]=STS[e.status];return `<tr><td><span class="chip ${SPORTS[e.sport].c}">${SPORTS[e.sport].n}</span></td><td><b>${esc(l.who)}</b>${M.hasNat?' '+entryNats(e):''}</td><td class="small">${esc(l.what)}</td><td class="num">${won(e.fee)}</td><td><span class="st ${k}">${t}</span></td>
+        ${musSummary(c,L)}<div class="tablewrap"><table><tr><th>종목</th><th>선수</th><th>부문</th>${L.some(needMusic)&&M.musicOk?'<th>음원</th>':''}<th>참가비</th><th>상태</th><th></th></tr>
+        ${L.map(e=>{const l=entryLabel(e),[k,t]=STS[e.status];return `<tr><td><span class="chip ${SPORTS[e.sport].c}">${SPORTS[e.sport].n}</span></td><td><b>${esc(l.who)}</b>${M.hasNat?' '+entryNats(e):''}</td><td class="small">${esc(l.what)}</td>${L.some(needMusic)&&M.musicOk?`<td>${e.status!=='cancel'?musCell(e,c):''}</td>`:''}<td class="num">${won(e.fee)}</td><td><span class="st ${k}">${t}</span></td>
           <td>${open&&e.status==='wait'?`<button class="btn sm danger" type="button" data-a="cancelEntry" data-id="${e.id}">${UI.cArm===e.id?'한 번 더 누르면 취소':'접수 취소'}</button>`:''}</td></tr>`;}).join('')}</table></div>
         ${c.notice?`<div class="notice"><b>대회 본부 공지</b><div>${esc(c.notice)}</div></div>`:''}<span class="small mute">입금 계좌: ${esc(c.account)}${c.contact?' · 문의 '+esc(c.contact):''}</span></section>`;}).join(''):'<div class="empty" data-trh="entries0">아직 접수한 대회가 없습니다. <a href="#home">대회 일정</a>에서 대회를 골라 주세요.</div>'}</div>`;}
 
@@ -957,8 +1030,9 @@ function vStatus(c,E){const sp=c.sports.includes(UI.adminSport)?UI.adminSport:c.
       <button class="btn" type="button" data-a="sendApp" data-s="${s}" data-w="online" ${n?'':'disabled'}>🌐 온라인 ${SPORTS[s].n} 앱으로 보내기</button>
       <button class="btn ghost sm" type="button" data-a="export" data-s="${s}" ${n?'':'disabled'}>엑셀로 내려받기</button></div>`;}).join('')}</div>
     <div class="row between" style="margin-top:8px"><h2>접수 현황</h2><div class="tabs">${c.sports.map(s=>`<button type="button" class="${s===sp?'on':''}" data-a="adTab" data-s="${s}">${SPORTS[s].n}</button>`).join('')}</div></div>
-    ${ES.length?`<div class="tablewrap"><table><tr><th>접수일</th><th>지도자 · 소속</th><th>선수</th><th>부문</th><th>참가비</th><th>입금</th></tr>
-      ${ES.map(e=>{const l=entryLabel(e),co=coachOf(e.coachId);return `<tr><td class="num small">${e.at.slice(0,10)}</td><td>${esc(co.name||'')}<div class="small mute">${esc(co.org||'')} · ${esc(co.phone||'')}</div></td><td><b>${esc(l.who)}</b>${M.hasNat?' '+entryNats(e):''}</td><td class="small">${esc(l.what)}</td><td class="num">${won(e.fee)}</td>
+    ${sp==='poomsae'?musAdmin(c,ES):''}
+    ${ES.length?`<div class="tablewrap"><table><tr><th>접수일</th><th>지도자 · 소속</th><th>선수</th><th>부문</th>${ES.some(needMusic)&&M.musicOk?'<th>음원</th>':''}<th>참가비</th><th>입금</th></tr>
+      ${ES.map(e=>{const l=entryLabel(e),co=coachOf(e.coachId);return `<tr><td class="num small">${e.at.slice(0,10)}</td><td>${esc(co.name||'')}<div class="small mute">${esc(co.org||'')} · ${esc(co.phone||'')}</div></td><td><b>${esc(l.who)}</b>${M.hasNat?' '+entryNats(e):''}</td><td class="small">${esc(l.what)}</td>${ES.some(needMusic)&&M.musicOk?`<td>${musCell(e,c,true)}</td>`:''}<td class="num">${won(e.fee)}</td>
         <td><button class="btn sm ${e.status==='paid'?'':'gold'}" type="button" data-a="paid" data-id="${e.id}">${e.status==='paid'?'입금 확인됨 ✓':'입금 확인'}</button></td></tr>`;}).join('')}</table></div>`:`<div class="empty">아직 ${SPORTS[sp].n} 접수가 없습니다.</div>`}`;}
 const coachOf=id=>D().users.find(u=>u.id===id)||{};
 function entryNats(e){const set=[...new Set(e.athleteIds.map(id=>(D().athletes.find(a=>a.id===id)||{}).country||coachOf(e.coachId).country||'').filter(Boolean))];return set.map(flagChip).join(' ');}
@@ -1034,6 +1108,7 @@ function compForm(c){const E=!!c;c=c||{sports:Object.keys(SPORTS),fee:{poomsae:3
   return `<form class="form" id="fComp" data-id="${E?c.id:''}"><div class="row between"><h3>${E?'대회 고치기':'새 대회 만들기'}</h3>${E?'':'<button class="btn sm ghost" type="button" data-a="newCompClose">닫기</button>'}</div>
   <div class="grid2"><label class="f"><span>대회 이름 <i>*</i></span><input type="text" id="cName" required value="${f('name')}"></label><label class="f"><span>장소 <i>*</i></span><input type="text" id="cPlace" required value="${f('place')}"></label>
     <label class="f"><span>대회일 <i>*</i></span><input type="date" id="cDate" required value="${f('date')}"></label><label class="f"><span>접수 마감일 <i>*</i></span><input type="date" id="cDead" required value="${f('deadline')}"></label></div>
+  ${M.musicOk?`<div class="grid2"><label class="f"><span>음원 제출 마감일 (자유 품새 · 태권체조 · 팀 경연)</span><input type="date" id="cMusDue" value="${esc(c.musicDue||'')}"></label><span class="small mute" style="align-self:end;padding-bottom:10px">비워 두면 대회 7일 전까지 받습니다. 대회가 끝나고 7일 뒤 음원은 자동으로 지워집니다.</span></div>`:''}
   <div class="grid3">${Object.entries(SPORTS).map(([k,s])=>`<label class="f"><span><input type="checkbox" id="cS_${k}" ${c.sports.includes(k)?'checked':''} style="accent-color:var(--gold)"> ${s.n} 참가비</span><input type="number" id="cF_${k}" value="${c.fee[k]??(k==='kyorugi'?40000:30000)}" step="1000"></label>`).join('')}</div>
   <div class="row" style="gap:18px"><span class="small mute">품새 안의 단체 종목 (참가비는 품새와 같게 1팀당):</span><label class="check"><input type="checkbox" id="cO_gym" ${(c.fee||{}).gym!==false?'checked':''}><span>태권체조 접수 받기</span></label><label class="check"><input type="checkbox" id="cO_team100" ${(c.fee||{}).team100!==false?'checked':''}><span>팀 대항 종합경연 접수 받기</span></label></div>
   <div class="grid2"><label class="f"><span>입금 계좌</span><input type="text" id="cAcct" placeholder="은행 계좌번호 (예금주)" value="${E&&/관리자 화면에서|적어 주세요/.test(c.account)?'':f('account')}"></label>
@@ -1714,12 +1789,17 @@ document.addEventListener('click',e=>{
   else if(a==='payClose'){UI.payDone=null;render();}
   else if(a==='sendApp'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)sendApp(c,b.dataset.s,b.dataset.w);}
   else if(a==='payCopy'){copyText(b.dataset.t,'복사했습니다');}
+  else if(a==='musPlay'){musPlay(b.dataset.id);}
+  else if(a==='musZip'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)musicZip(c);}
   else if(a==='bulkClose'){UI.bulk=null;render();}
   else if(a==='bulkAdd'){bulkAdd();}
   else if(a==='cartDel'){const c=route().slice(6);const L=(UI.cart||[]).filter(x=>x.compId===c);const x=L[Number(b.dataset.i)];UI.cart=UI.cart.filter(y=>y!==x);render();}
   else if(a==='submit'){const c=b.dataset.c;const L=(UI.cart||[]).filter(x=>x.compId===c);if(!L.length)return;
-    run(async()=>{await q(sb.from('entries').insert(L.map(x=>({comp_id:x.compId,sport:x.sport,athlete_ids:x.athleteIds,f:x.f,fee:x.fee}))));
-      UI.cart=UI.cart.filter(x=>x.compId!==c);UI.payDone={comp:c,n:L.length};await reload();go('entries');window.scrollTo(0,0);});}
+    run(async()=>{const ins=await q(sb.from('entries').insert(L.map(x=>({comp_id:x.compId,sport:x.sport,athlete_ids:x.athleteIds,f:x.f,fee:x.fee}))).select());
+      let up=0,fail=0;const withM=L.map((x,i)=>[x,(ins||[])[i]]).filter(([x,r])=>x.music&&r);
+      for(const [x,r] of withM){try{await uploadMusic(mapEnt(r),x.music);up++;}catch(err){fail++;console.warn(err);}}
+      UI.cart=UI.cart.filter(x=>x.compId!==c);UI.payDone={comp:c,n:L.length,mus:up,musFail:fail};await reload();go('entries');window.scrollTo(0,0);
+      if(fail)toast(`음원 ${fail}곡을 올리지 못했습니다. 「내 접수 내역」에서 다시 올려 주세요`);});}
   else if(a==='cancelEntry'){const id=b.dataset.id;if(UI.cArm!==id){UI.cArm=id;render();setTimeout(()=>{UI.cArm=null;},4000);return;}
     run(async()=>{await q(sb.from('entries').update({status:'cancel'}).eq('id',id));UI.cArm=null;await reload();toast('접수를 취소했습니다');});}
   else if(a==='newComp'){UI.newComp=true;UI.err='';render();}
@@ -1816,6 +1896,7 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
     if(file&&file[0]&&file[0].size>20*1024*1024){formErr(f,'요강 파일은 20MB까지 올릴 수 있습니다');return;}
     const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:{...Object.fromEntries(sports.map(k=>[k,Number(v('cF_'+k))||0])),gym:!!(document.getElementById('cO_gym')||{}).checked,team100:!!(document.getElementById('cO_team100')||{}).checked},account:v('cAcct').trim()||'입금 계좌를 적어 주세요',note:v('cNote').trim(),notice:v('cNotice').trim(),contact:v('cContact').trim()};
     if(!editId)c.host='KICKSTART UP';
+    if(M.musicOk&&document.getElementById('cMusDue')){const md=v('cMusDue');if(md&&md>v('cDate')){formErr(f,'음원 제출 마감일은 대회일보다 앞이어야 합니다');return;}c.music_due=md||null;}
     run(async()=>{let doc=null;
       if(file&&file[0]){const F=file[0],ext=(F.name.match(/\.[A-Za-z0-9]{1,5}$/)||['.pdf'])[0].toLowerCase(),path=`${editId||'new'}/${Date.now()}${ext}`;
         const {error}=await sb.storage.from('comp-docs').upload(path,F,{upsert:true,contentType:F.type||undefined});if(error){formErr(f,msgOf(error));return;}

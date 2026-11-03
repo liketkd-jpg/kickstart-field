@@ -3509,7 +3509,7 @@ function panel(entries,opt){
   const has=entries.filter(en=>fileOf(en.id)).length;
   return `<div class="panel mu-panel lm"><div class="row between"><h2>${opt.title||'음악 (노트북 폴더)'}</h2><span class="chip ${has===entries.length&&entries.length?'ok':'warn'}">${has}/${entries.length} 연결</span></div>
     <span class="small muted">운영석 노트북의 음악 폴더를 고르면, <b>파일 이름에 들어 있는 팀명(이름)</b>으로 자동 연결됩니다. 예: "경민대A팀.mp3". 음악은 서버에 올리지 않고 <b>이 컴퓨터에만</b> 담아 두므로 용량 걱정이 없고, 새로고침해도 남아 있습니다. 대회 당일에는 음악을 담은 이 노트북으로 운영해 주세요.</span>
-    <div class="row" style="gap:6px">${pickBtn('📁 음악 폴더 고르기',true,true)}${pickBtn('＋ 파일 더 넣기',false,false)}${FILES.length||(window.KS_MUSIC_UPLOADS&&KS_MUSIC_UPLOADS())?`<button class="btn danger" data-lm="clear">🗑 대회 음악 전체 삭제</button>`:''}</div>
+    <div class="row" style="gap:6px">${pickBtn('📁 음악 폴더 고르기',true,true)}${pickBtn('＋ 파일 더 넣기',false,false)}${window.KS_REGIMPORT&&KS_REGIMPORT.openMusic&&KS_REGIMPORT.sport()==='poomsae'?`<button class="btn" data-lm="web" title="지도자가 접수 홈페이지에 올린 음원을 이 노트북에 받습니다 (인터넷 필요)">🌐 접수 홈페이지 음원 받기</button>`:''}${FILES.length||(window.KS_MUSIC_UPLOADS&&KS_MUSIC_UPLOADS())?`<button class="btn danger" data-lm="clear">🗑 대회 음악 전체 삭제</button>`:''}</div>
     ${BUSY?`<div class="banner warn">${BUSY}</div>`:''}
     <span class="small muted">${!LOADED?'이 컴퓨터에 담긴 음악을 확인하는 중…':FILES.length?`이 컴퓨터에 담긴 음악 ${FILES.length}곡 · ${fmtMB(total)}`:'아직 이 컴퓨터에 담긴 음악이 없습니다.'}</span>
     ${FILES.length?`<span class="small muted">대회가 끝나면 「🗑 대회 음악 전체 삭제」로 이 앱에 담아 둔 음악을 한 번에 지울 수 있습니다. 지워지는 것은 앱에 담은 <b>사본</b>뿐이고, 컴퓨터 폴더에 있는 <b>원본 음악 파일은 그대로</b> 남습니다.</span>`:''}
@@ -3519,7 +3519,7 @@ function panel(entries,opt){
 function runCtl(id){const f=fileOf(id),playing=NOW&&NOW.id===id;
   return `<div class="lmrun"><span class="small">🎵 ${f?e(f.name):'연결된 음악 없음'}</span>${f?`<button class="btn ${playing?'stopb':'primary'}" data-lm="${playing?'stop':'play'}" data-id="${e(id)}">${playing?'■ 음악 정지':'▶ 음악 재생'}</button>`:''}</div>`;}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-lm]');if(!b)return;const k=b.dataset.lm;
-  if(k==='play')play(b.dataset.id);else if(k==='stop')stop();
+  if(k==='play')play(b.dataset.id);else if(k==='stop')stop();else if(k==='web'){if(window.KS_REGIMPORT&&KS_REGIMPORT.openMusic)KS_REGIMPORT.openMusic();}
   else if(k==='clear'){if(b.dataset.armed){(async()=>{stop();const n=FILES.length;const old=await tx('readonly',os=>os.index('app').getAllKeys(APPK));await tx('readwrite',os=>{(old||[]).forEach(x=>os.delete(x));});URLS.forEach(u=>URL.revokeObjectURL(u));URLS.clear();
       MAP={};saveMap();let up=0;try{if(window.KS_MUSIC_CLEAR)up=await KS_MUSIC_CLEAR();}catch(err){}
       try{addLog('대회 음악 전체 삭제','음악',`앱에 담은 음악 ${n+up}곡 삭제 (컴퓨터 원본 파일은 그대로)`);}catch(err){}
@@ -5133,6 +5133,16 @@ function toFile(R,name){if(!window.XLSX)throw new Error('엑셀 도구를 불러
   return new File([XLSX.write(wb,{bookType:'xlsx',type:'array'})],name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});}
 async function publish(comp,res){const t=await token();if(!t)throw new Error('로그인이 필요합니다');
   return await call('/rest/v1/rpc/publish_results',{method:'POST',headers:H(t),body:JSON.stringify({p_comp:comp,p_sport:sport(),p_rows:res.rows,p_meta:res.meta})});}
+/* 음원 (자유 품새 · 태권체조 · 팀 경연): 접수 홈페이지에 지도자가 올린 음원을 이 노트북 음악 폴더(LMUS)에 담기.
+   파일 이름 = [종목] 팀명(이름)_소속 → 경기 앱이 이름으로 자동 연결 */
+const musName=e=>{const A=e.athletes||[],team=A.length>1,nm=team?(e.f.team||A.map(a=>a.name).join(',')):(A[0]&&A[0].name)||'',org=(A[0]&&A[0].org)||(e.coach&&e.coach.org)||'';
+  const ext=(((e.music&&e.music.name)||'').match(/\.[A-Za-z0-9]{2,4}$/)||['.mp3'])[0].toLowerCase();return `[${(e.f&&e.f.type)||''}] ${nm}${org?'_'+org:''}${ext}`.replace(/[\\/:*?"<>|]/g,'_');};
+async function fetchMusic(E,prog){const L=(E||[]).filter(e=>e.music&&e.music.path);if(!L.length)return {n:0,fail:0};if(!window.LMUS||!LMUS.addFiles)throw new Error('이 앱에는 음악 기능이 없습니다');
+  const t=await token();if(!t)throw new Error('로그인이 필요합니다');const files=[];let fail=0;
+  for(const e of L){try{const r=await fetch(URL_+'/storage/v1/object/authenticated/comp-music/'+e.music.path.split('/').map(encodeURIComponent).join('/'),{headers:{apikey:KEY,Authorization:'Bearer '+t}});
+      if(!r.ok)throw new Error('HTTP '+r.status);const b=await r.blob();files.push(new File([b],musName(e),{type:b.type||'audio/mpeg'}));}catch(err){fail++;}
+    if(prog)prog(files.length+fail,L.length);}
+  if(files.length)await LMUS.addFiles(files,false);return {n:files.length,fail};}
 async function feed(file){const f=typeof window.readExcel==='function'?window.readExcel:(0,eval)('typeof readExcel==="function"?readExcel:null');
   if(!f)throw new Error('이 화면에서는 명단을 불러올 수 없습니다');await f(file);}
 
@@ -5162,10 +5172,13 @@ function draw(){if(!BOX)return;const sp=sport();let b='';
     b=`<p><b>${esc(S.comp.name)}</b><br><span class="small muted">${esc(S.comp.date)}</span></p>
       ${E.length?`<div class="rgk"><div><b>${E.length}</b><span>${SP[sp]} 접수</span></div><div><b>${paid}</b><span>입금 확인</span></div><div><b>${E.length-paid}</b><span>입금 전</span></div></div>
       <label class="rgchk"><input type="checkbox" data-rgact="paidOnly" ${S.paidOnly?'checked':''}> 입금 확인된 접수만 가져오기</label>
-      <p class="small muted">「가져오기」를 누르면 엑셀 파일을 올린 것과 똑같이 ${use.length}건(선수 ${n}명)을 읽어 부문을 만듭니다.</p>
-      <div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button><button type="button" class="btn primary" data-rgact="go" ${use.length&&!S.busy?'':'disabled'}>${S.busy?'가져오는 중…':`${use.length}건 가져오기`}</button></div>`
+      ${(()=>{const need=use.filter(e=>/^(자유|태권체조|팀대항 종합경연)$/.test((e.f&&e.f.type)||'')),got=use.filter(e=>e.music&&e.music.path);return sp==='poomsae'&&(need.length||got.length)?`<p class="small">🎵 음원 <b>${got.length}/${need.length}곡</b> 제출됨 · ${S.mode==='music'?'「음원 받기」를 누르면':'가져올 때'} 이 노트북 음악 폴더에 함께 담아 팀(선수) 순서에 바로 틀 수 있습니다.</p>`:'';})()}
+      ${S.prog?`<p class="small"><b>${esc(S.prog)}</b></p>`:''}
+      ${S.mode==='music'?`<div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button><button type="button" class="btn primary" data-rgact="music" ${use.some(e=>e.music)&&!S.busy?'':'disabled'}>${S.busy?'받는 중…':`🎵 음원 ${use.filter(e=>e.music).length}곡 받기`}</button></div>`
+      :`<p class="small muted">「가져오기」를 누르면 엑셀 파일을 올린 것과 똑같이 ${use.length}건(선수 ${n}명)을 읽어 부문을 만듭니다.</p>
+      <div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button><button type="button" class="btn primary" data-rgact="go" ${use.length&&!S.busy?'':'disabled'}>${S.busy?'가져오는 중…':`${use.length}건 가져오기`}</button></div>`}`
       :`<p class="muted">아직 ${SP[sp]} 접수가 없습니다.</p><div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button></div>`}`;}
-  BOX.innerHTML=`<div class="rgbox"><div class="rghd"><b>${S.mode==='send'?'🌐 결과를 접수 홈페이지로 보내기':'🌐 접수 홈페이지에서 가져오기'}</b><button type="button" class="btn" data-rgact="x" aria-label="닫기">✕</button></div>
+  BOX.innerHTML=`<div class="rgbox"><div class="rghd"><b>${S.mode==='send'?'🌐 결과를 접수 홈페이지로 보내기':S.mode==='music'?'🎵 접수 홈페이지에서 음원 받기':'🌐 접수 홈페이지에서 가져오기'}</b><button type="button" class="btn" data-rgact="x" aria-label="닫기">✕</button></div>
     ${S.err?`<div class="rgerr" role="alert">${esc(S.err)}</div>`:''}${b}
     <div class="rgft small muted">${A?`${esc(A.email)} 로그인 · <button type="button" class="rglink" data-rgact="logout">로그아웃</button> · `:''}<a href="${SITE}" target="_blank" rel="noopener">접수 홈페이지 열기</a></div></div>`;
   const e=BOX.querySelector('#rgE');if(e&&!e.value)e.focus();else{const p=BOX.querySelector('#rgP');if(p)p.focus();}}
@@ -5197,8 +5210,13 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
     try{S.E=await roster(S.comp.id);S.step='preview';}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 명단을 가져올 수 있습니다. 관리자 계정으로 다시 로그인해 주세요.':err.message;if(!A)S.step='login';}
     S.busy=false;draw();}
   else if(a==='go'){const E=S.paidOnly?S.E.filter(x=>x.status==='paid'):S.E;S.busy=true;draw();
-    try{const f=toFile(rows(sport(),E),`${S.comp.name}_${SP[sport()]}_접수명단.xlsx`);close_();await feed(f);say(`접수 홈페이지에서 ${E.length}건을 가져왔습니다`);}
+    try{const f=toFile(rows(sport(),E),`${S.comp.name}_${SP[sport()]}_접수명단.xlsx`);close_();await feed(f);say(`접수 홈페이지에서 ${E.length}건을 가져왔습니다`);
+      const nm=E.filter(e=>e.music&&e.music.path).length;
+      if(sport()==='poomsae'&&nm&&window.LMUS)setTimeout(()=>{say(`음원 ${nm}곡을 이 노트북에 받는 중…`);fetchMusic(E).then(r=>say(`음원 ${r.n}곡을 이 노트북 음악 폴더에 담았습니다${r.fail?` (${r.fail}곡은 받지 못함)`:''}`)).catch(err=>say('음원을 받지 못했습니다: '+netErr(err)));},1500);}
     catch(err){S.busy=false;S.err=err.message;draw();}}
+  else if(a==='music'){const E=(S.paidOnly?S.E.filter(x=>x.status==='paid'):S.E);S.busy=true;S.prog='음원을 받는 중…';draw();
+    try{const r=await fetchMusic(E,(k,n)=>{S.prog=`음원 ${k}/${n}곡 받는 중…`;draw();});S.busy=false;S.prog='';close_();say(`음원 ${r.n}곡을 이 노트북 음악 폴더에 담았습니다${r.fail?` (${r.fail}곡은 받지 못함)`:''}`);}
+    catch(err){S.busy=false;S.prog='';S.err=netErr(err);draw();}}
 },true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&BOX)close_();});
 /* 파일 고르기 칸마다 단추 붙이기 */
@@ -5223,7 +5241,7 @@ const css=document.createElement('style');css.textContent=`.rgline{display:flex;
 .rgerr{background:#FDECEC;color:#B3261E;border:1px solid #F3B8B8;border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px}
 .rgft{border-top:1px solid var(--line,#eee);padding-top:10px}.rglink{background:none;border:none;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}`;
 (document.head||document.documentElement).appendChild(css);
-window.KS_REGIMPORT={open:open_,rows,sport,state:S,toFile,feed};
+window.KS_REGIMPORT={open:open_,openMusic:()=>open_('music'),fetchMusic,musName,rows,sport,state:S,toFile,feed};
 })();
 /* ===== 코트 나누기 · 본부 → 코트 노트북 명단 보내기 (현장 모드, 품새·겨루기·격파 공통) =====
    - 본부 노트북: 「코트 나누기」에서 코트를 정한 뒤 「📡 A코트로 보내기」 → 와이파이로 A코트 노트북에 그 코트 명단이 갑니다.
