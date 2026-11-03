@@ -180,6 +180,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);bo
 .chip.ky{color:#9DBBFF;border-color:#25407A}
 .chip.gp{color:#FFB3A6;border-color:#6A2C25}
 .chip.hr{color:#FFD93B;border-color:#6B5A12}
+.lvtabs{flex-wrap:wrap}.lvtabs button{font-size:14px}
 .chip.tg{color:#C8F0A0;border-color:#3D5A22}
 .chip.tc{color:#E2B8FF;border-color:#53306E}
 .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--gold3);border-radius:16px;padding:22px 16px;text-align:center;cursor:pointer;background:rgba(216,180,110,.05);transition:background .2s,border-color .2s}
@@ -506,6 +507,12 @@ function compState(c){const n=dday(c.deadline);if(dday(c.date)<0)return ['closed
 function age(b){if(!b)return null;const d=new Date(b+'T00:00:00'),t=new Date();let a=t.getFullYear()-d.getFullYear();if(t.getMonth()<d.getMonth()||(t.getMonth()===d.getMonth()&&t.getDate()<d.getDate()))a--;return a;}
 /* 학년: 2026년 기준 출생 연도로 (초1 = 2019년생) */
 function schoolOf(b){if(!b)return null;const y=Number(b.slice(0,4)),g=YEAR-y-6;if(g>=1&&g<=6)return {lv:'초',g};if(g>=7&&g<=9)return {lv:'중',g:g-6};if(g>=10&&g<=12)return {lv:'고',g:g-9};if(g>=13&&g<=16)return {lv:'대',g:g-12};if(g>=13)return {lv:'일',g:0};return null;}
+/* 접수 화면 선수 목록 나누기: 유치부·초등부·중등부·고등부·대학·일반 */
+const LVG=[['all','전체'],['kid','유치부'],['el','초등부'],['mid','중등부'],['hi','고등부'],['ad','대학·일반']];
+function lvGroup(b){const s=schoolOf(b);if(!s)return b&&Number(b.slice(0,4))>YEAR-7?'kid':'ad';return {초:'el',중:'mid',고:'hi',대:'ad',일:'ad'}[s.lv]||'ad';}
+function lvFilter(L,sport){const f=UI.lvF||(sport==='hero'?'kid':'all');const n={};L.forEach(a=>{const g=lvGroup(a.birth);n[g]=(n[g]||0)+1;});
+  const cur=f!=='all'&&!n[f]?'all':f;
+  return {list:cur==='all'?L:L.filter(a=>lvGroup(a.birth)===cur),bar:`<div class="tabs lvtabs">${LVG.filter(([k])=>k==='all'||n[k]).map(([k,l])=>`<button type="button" class="${k===cur?'on':''}" data-a="lvF" data-v="${k}">${l} <span class="small mute">${k==='all'?L.length:n[k]}</span></button>`).join('')}</div>`};}
 function schoolTxt(b){const s=schoolOf(b);if(!s)return '';return s.lv==='일'?'일반':s.lv==='대'?`대학 ${s.g}학년(추정)`:`${{초:'초등',중:'중등',고:'고등'}[s.lv]} ${s.g}학년`;}
 function defaults(sport,a){
   const s=schoolOf(a.birth)||{lv:'일',g:0};
@@ -765,7 +772,7 @@ function entryForm(c,tab,a){const f=UI.form||defaults(tab,a);UI.form=f;const L=m
 function vEnter(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class="empty">대회를 찾지 못했습니다.</div>';
   if(compState(c)[0]==='closed')return `<div class="empty">접수가 끝난 대회입니다. <a href="#home">대회 일정</a></div>`;
   if(!offers(c,UI.tab))UI.tab=tabsOf(c)[0];
-  const u=me(),L=myAth(),sport=UI.tab;
+  const u=me(),L=myAth(),sport=UI.tab,LF=lvFilter(L,sport);
   const mine=D().entries.filter(e=>e.compId===c.id&&e.coachId===u.id&&e.status!=='cancel');
   const cart=(UI.cart||[]).filter(e=>e.compId===c.id);
   const inSport=new Set([...mine,...cart].filter(e=>tabOfEntry(e)===sport).flatMap(e=>e.athleteIds));
@@ -776,7 +783,8 @@ function vEnter(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div clas
     <div class="desk"><div class="stack">
       <div class="tabs">${tabsOf(c).map(s=>`<button type="button" class="${s===sport?'on':''}" data-a="tab" data-s="${s}">${TABS[s].n}</button>`).join('')}</div>
       <p class="small mute" style="margin:0">${TABS[sport].type?`팀 대표 선수 한 명을 누르고, 팀 이름과 팀원을 고르세요. ${sport==='gym'?'태권체조는 7~9명':'팀 대항 종합경연은 9~13명(여자 1~2명 이상)'}입니다.`:`선수를 누르면 ${TABS[sport].n} 접수 칸이 열립니다. 부별·학년은 생년월일로 미리 맞춰 두었으니 확인만 해 주세요.`}</p>
-      ${L.length?L.map(a=>{const done=inSport.has(a.id);return `<div class="ath ${UI.pick===a.id?'picked':''}"><div><span class="nm">${esc(a.name)}</span> <span class="small mute">${a.gender} · ${schoolTxt(a.birth)}${a.weight?' · '+a.weight+'kg':''}</span></div>
+      ${L.length?LF.bar:''}
+      ${L.length?LF.list.map(a=>{const done=inSport.has(a.id);return `<div class="ath ${UI.pick===a.id?'picked':''}"><div><span class="nm">${esc(a.name)}</span> <span class="small mute">${a.gender} · ${schoolTxt(a.birth)}${a.weight?' · '+a.weight+'kg':''}</span></div>
         ${done?'<span class="chip open">접수함</span>':`<button class="btn sm ${UI.pick===a.id?'':'gold'}" type="button" data-a="pick" data-id="${a.id}">${UI.pick===a.id?'작성 중':TABS[sport].type?'이 선수로 팀 만들기':'접수'}</button>`}</div>
         ${UI.pick===a.id?entryForm(c,sport,a):''}`;}).join(''):'<div class="empty">먼저 「내 선수」에서 선수를 등록해 주세요. <a href="#athletes">선수 등록하러 가기</a></div>'}
     </div>
@@ -1691,6 +1699,7 @@ document.addEventListener('click',e=>{
     UI.cart=[...(UI.cart||[]),{id:uid('e'),compId:c.id,sport:sp,athleteIds:ids,f:clean,fee:c.fee[sp]}];
     UI.pick=null;UI.form=null;UI.err='';render();toast(`${ath.name} 선수를 접수 목록에 넣었습니다`);}
   else if(a==='bulkTpl'){bulkTpl();}
+  else if(a==='lvF'){UI.lvF=b.dataset.v;UI.pick=null;UI.form=null;UI.err='';render();}
   else if(a==='payClose'){UI.payDone=null;render();}
   else if(a==='sendApp'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)sendApp(c,b.dataset.s,b.dataset.w);}
   else if(a==='payCopy'){copyText(b.dataset.t,'복사했습니다');}
