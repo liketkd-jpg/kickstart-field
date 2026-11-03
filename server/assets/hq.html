@@ -145,7 +145,7 @@ body.mon #mon>*:not(.mwm){position:relative;z-index:1}
 
 .chip.livec{background:#C8102E;color:#fff;border-color:#E2334F}
 .chip.livec .dot{background:#fff}
-</style><link rel="stylesheet" href="/vendor/ks-lux.css">
+</style><link rel="stylesheet" href="/vendor/ks-lux.css"><link rel="stylesheet" href="/vendor/fonts/themes.css"><link rel="stylesheet" href="/vendor/hq-themes.css">
 
 <svg id="hqdefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ksGoldH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs></svg><header class="bar"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="ksword">KICKSTART<b>UP</b></span><span class="brand">대회 본부</span></header>
 <div class="tabwrap" id="hqtabs"><nav class="tabs"><a href="#admin" data-r="admin">본부 운영</a><a href="#results" data-r="results">통합 결과</a><a href="#board" data-r="board" target="_blank">본부 모니터 ↗</a></nav></div>
@@ -168,6 +168,12 @@ const CFGDEF={autoCall:true,voice:true,notice:{text:'',mode:'off'},manual:[],poi
 const CFG=()=>({...CFGDEF,...(S.cfg||{})});
 const saveCfg=p=>DB.doc('hqcfg/main').set({...CFG(),...p}).catch(()=>toast('저장하지 못했습니다'));
 const NOW=()=>Date.now();
+/* 전광판 디자인: 「따라가기」면 품새 코트 노트북의 전광판 디자인을 그대로 씁니다 */
+const THEMES=[['follow','코트 전광판 따라가기'],['gold','기본 금빛'],['ed','매거진'],['ch','시계'],['tm','데이터'],['ink','한지와 먹'],['st','스트리트']];
+function hqTheme(list){const t=CFG().theme||'follow';if(t!=='follow')return t==='classic'?'gold':t;
+  const cs=(list||[]).filter(c=>c.app&&c.app.board&&c.app.board.theme);const c=cs.find(c=>c.app.board.app==='poomsae')||cs[0];const v=c?c.app.board.theme:'gold';return v==='classic'?'gold':v;}
+const themePick=cls=>`<select class="${cls}" data-hqtheme title="본부 화면 디자인">${THEMES.map(([k,l])=>`<option value="${k}" ${(CFG().theme||'follow')===k?'selected':''}>🎨 ${l}</option>`).join('')}</select>`;
+document.addEventListener('change',e=>{const s=e.target.closest&&e.target.closest('[data-hqtheme]');if(s)saveCfg({theme:s.value});});
 
 /* ---------- 코트 정리 ---------- */
 /* 코트별 유튜브 생중계 표시 */
@@ -246,6 +252,7 @@ function vAdmin(){
     <div class="row"><button class="btn primary" data-a="notice" data-m="banner">아래 띠로 띄우기</button><button class="btn primary" data-a="notice" data-m="full">전체 화면으로 띄우기</button><button class="btn" data-a="notice" data-m="off">공지 내리기</button><button class="btn" data-a="noticeSay">🔊 소리로 읽기</button></div></div>
   </div>
   <div class="panel"><div class="row between"><h2>본부 모니터</h2><span class="row"><a class="btn primary" href="#board" target="_blank" style="text-decoration:none">본부 모니터 열기 ↗</a><button class="btn" data-a="qr">📱 QR (다른 TV·태블릿)</button></span></div>
+    <div class="row"><span class="small muted">화면 디자인</span>${themePick('hqpick')}<span class="small muted">지금: <b>${esc((THEMES.find(x=>x[0]===hqTheme(courtList()))||['','기본 금빛'])[1])}</b> · 「따라가기」는 품새 코트 노트북에서 고른 전광판 디자인을 따릅니다</span></div>
     <span class="small muted">선수 대기실 TV나 큰 모니터에 띄우세요. 새 창을 TV 쪽으로 옮긴 뒤 「전체 화면」을 누르면 됩니다. 소리를 내려면 그 화면을 한 번 눌러 주세요.</span></div>`;
 }
 
@@ -283,6 +290,7 @@ function exportXlsx(){
 /* ---------- 본부 모니터 ---------- */
 function vMon(){
   const list=courtList(),cf=CFG(),n=cf.notice||{};
+  const th=hqTheme(list);THEMES.forEach(([k])=>document.body.classList.toggle('hqt-'+k,k===th));
   const comp=(list.find(c=>c.app&&c.app.board.comp)||{app:{board:{}}}).app.board.comp||'태권도 대회';
   const col=c=>{const b=c.app&&c.app.board;
     const head=`<div class="ch"><span class="lt">${esc(c.court)}</span><span class="cn"><b>${esc(c.court)}코트</b><span>${esc(b?b.appName:'')}${b&&b.curDiv?' · '+esc(b.curDiv):''}</span></span>
@@ -302,7 +310,7 @@ function vMon(){
   const nCols=Math.max(1,Math.min(list.length||1,4));
   const tk=n.mode==='banner'&&n.text?`<div class="ticker ${n.text.length<60?'fit':''}" style="--d:${Math.max(14,n.text.length*0.35)}s"><span>📢 ${esc(n.text)}</span></div>`:'<span style="flex:1"></span>';
   $('#mon').innerHTML=`<div class="mwm" aria-hidden="true"><svg class="ksw" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg></div><div class="mh"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><b>${esc(comp)}</b><span class="sp"></span>
-      <span class="ctl"><button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span><span class="clock" data-clock></span></div>
+      <span class="ctl">${themePick('hqpick mon')}<button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span><span class="clock" data-clock></span></div>
     <div class="cols" style="grid-template-columns:repeat(${nCols},minmax(0,1fr))">${cols}</div>
     <div class="mf">${tk}<span class="ks"><svg class="ksm" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span>KICKSTART<b>UP</b></span><small>대회 본부</small></span></div>`;
   tick();

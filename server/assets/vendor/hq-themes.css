@@ -1,0 +1,104 @@
+/* 본부 모니터 디자인 테마 — 품새 전광판과 같은 5가지 (매거진 · 시계 · 데이터 · 한지 · 스트리트) */
+.hqpick{font:inherit;font-size:13px;border-radius:999px;padding:5px 10px;border:1px solid rgba(128,128,128,.45);background:rgba(0,0,0,.06);color:inherit;cursor:pointer}
+.hqpick.mon{background:rgba(255,255,255,.08);color:#F6F2E9;font-weight:700}
+body.mon[class*="hqt-"]:not(.hqt-gold):not(.hqt-follow) .mwm{display:none}
+body.mon[class*="hqt-"] .col{border-radius:0}
+
+/* ---------- 매거진 ---------- */
+html:has(body.mon.hqt-ed),body.mon.hqt-ed{background:#EEE9DF!important;color:#141210!important}
+body.mon.hqt-ed{font-family:Archivo,"Noto Sans KR","Malgun Gothic",sans-serif}
+body.hqt-ed .mh::after{height:7px;background:none;border-top:2px solid #141210;border-bottom:1px solid #141210;opacity:1}
+body.hqt-ed .mh b{font-family:"Nanum Myeongjo","Batang",serif;font-weight:800;color:#141210}
+body.hqt-ed .mh .clock{font-family:"Playfair Display",Georgia,serif;font-weight:900;color:#141210}
+body.hqt-ed .mh .ctl button{color:#141210;border-color:#141210;background:transparent}
+body.hqt-ed .col{background:transparent!important;border:none!important;border-top:3px solid #141210!important;padding-top:1.4vh}
+body.hqt-ed .ch .lt{background:none;border:2px solid #141210;color:#141210;font-family:"Playfair Display",Georgia,serif;border-radius:0}
+body.hqt-ed .ch .cn b{font-family:"Nanum Myeongjo","Batang",serif;font-weight:800}.hqt-ed .ch .cn span,.hqt-ed .now .lb,.hqt-ed .pl,.hqt-ed .nx .lb2,.hqt-ed .nm .p small{color:#5C564E!important}
+body.hqt-ed .st{background:none!important;border:1px solid currentColor}.hqt-ed .st.live{color:#1E7A4A}.hqt-ed .st.off{color:#C8261C}.hqt-ed .st.idle{color:#A0621B}
+body.hqt-ed .now{background:none;border:none;border-top:1px solid #141210;border-bottom:1px solid #141210;border-radius:0}
+body.hqt-ed .now .k{color:#C8261C;letter-spacing:.24em}.hqt-ed .now .dv{color:#141210}
+body.hqt-ed .nm .p{font-family:"Nanum Myeongjo","Batang",serif;font-weight:800;color:#141210}.hqt-ed .p.blue{color:#1F4FC8}.hqt-ed .p.red{color:#C8261C}
+body.hqt-ed .prog{background:rgba(20,18,16,.12);border-radius:0}.hqt-ed .prog i{background:#C8261C}
+body.hqt-ed .sec{color:#C8261C;letter-spacing:.2em}
+body.hqt-ed .nx div{background:none;border-bottom:1px solid rgba(20,18,16,.25);border-radius:0}.hqt-ed .nx .nn{font-family:"Nanum Myeongjo","Batang",serif;color:#141210}
+body.hqt-ed .wt span{background:none;border:1px solid #141210;color:#141210;border-radius:0}
+body.hqt-ed .nd{color:#C8261C}.hqt-ed .nd b{color:#141210}
+body.hqt-ed .ticker{background:#141210;border:none;border-radius:0;color:#EEE9DF}
+body.hqt-ed .mf .ks{color:#141210}
+
+/* ---------- 시계 ---------- */
+html:has(body.mon.hqt-ch),body.mon.hqt-ch{background:#07090D radial-gradient(1400px 900px at 50% 40%,#141A26,#07090D 70%) no-repeat fixed!important;color:#EDE6D6!important}
+body.mon.hqt-ch{font-family:Jost,"Noto Sans KR","Malgun Gothic",sans-serif}
+body.hqt-ch .mh::after{background:linear-gradient(90deg,transparent,#B8925A 30%,#B8925A 70%,transparent);height:1px}
+body.hqt-ch .mh b{font-family:"Nanum Myeongjo","Batang",serif;font-weight:800;color:#F4E3BA}
+body.hqt-ch .mh .clock{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;font-size:min(3.6vw,6vh);background:linear-gradient(180deg,#FFF6DD,#C9A160);-webkit-background-clip:text;background-clip:text;color:transparent}
+body.hqt-ch .col{background:radial-gradient(120% 80% at 50% 0%,rgba(28,34,48,.9),rgba(7,9,13,.92))!important;border:1px solid rgba(184,146,90,.4)!important;border-radius:min(2vw,3.4vh)!important}
+body.hqt-ch .ch .lt{background:none;border:2px solid #E9D9B4;color:#F4E3BA;border-radius:50%;font-family:"Cormorant Garamond",Georgia,serif;font-weight:700}
+body.hqt-ch .ch .cn b{font-family:"Nanum Myeongjo","Batang",serif;font-weight:800}.hqt-ch .ch .cn span{color:#8D8676}
+body.hqt-ch .now{background:none;border:1px solid rgba(184,146,90,.3);border-radius:min(1.6vw,2.6vh)}.hqt-ch .now .k{color:#B8925A;letter-spacing:.3em}
+body.hqt-ch .nm .p{font-family:"Nanum Myeongjo","Batang",serif;font-weight:800;color:#F4E3BA}.hqt-ch .p.blue{color:#6E9BFF}.hqt-ch .p.red{color:#F0566B}
+body.hqt-ch .prog i{background:linear-gradient(90deg,#8E6A30,#F3DFAE)}
+body.hqt-ch .sec{color:#B8925A;letter-spacing:.3em;font-weight:500}
+body.hqt-ch .nx div{background:none;border-bottom:1px solid rgba(184,146,90,.18);border-radius:0}
+body.hqt-ch .wt span{background:none;border:1px solid rgba(184,146,90,.4);color:#E9D9B4}
+body.hqt-ch .ticker{background:rgba(184,146,90,.1);border-color:rgba(184,146,90,.5);color:#F4E3BA}
+
+/* ---------- 데이터 ---------- */
+html:has(body.mon.hqt-tm),body.mon.hqt-tm{background:#0A0D10 linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/48px 48px!important;color:#E8EDF2!important}
+body.mon.hqt-tm{font-family:"JetBrains Mono",Consolas,monospace}
+body.hqt-tm .mh::after{background:rgba(255,255,255,.12);height:1px}
+body.hqt-tm .mh b{font-family:"Noto Sans KR","Malgun Gothic",sans-serif;font-weight:900}
+body.hqt-tm .mh .clock{font-family:"JetBrains Mono",Consolas,monospace;color:#FF5A1F}
+body.hqt-tm .col{background:rgba(10,13,16,.9)!important;border:1px solid rgba(255,255,255,.14)!important;border-top:4px solid #50E3FF!important}
+body.hqt-tm .ch .lt{background:none;border:1px solid #50E3FF;color:#50E3FF;border-radius:0;font-family:"Space Grotesk",Archivo,sans-serif}
+body.hqt-tm .ch .cn span{color:#9AA3AD}.hqt-tm .st{border-radius:0}
+body.hqt-tm .now{background:none;border:1px solid rgba(255,90,31,.6);border-radius:0}.hqt-tm .now .k{color:#FF5A1F;text-transform:uppercase}
+body.hqt-tm .nm .p{font-family:"Noto Sans KR","Malgun Gothic",sans-serif}.hqt-tm .p.blue{color:#3BA0FF}.hqt-tm .p.red{color:#FF4D5E}
+body.hqt-tm .prog{border-radius:0}.hqt-tm .prog i{background:#50E3FF}
+body.hqt-tm .sec{color:#50E3FF;letter-spacing:.16em}
+body.hqt-tm .nx div{background:none;border:1px solid rgba(255,255,255,.08);border-radius:0}.hqt-tm .nx .nn{font-family:"Noto Sans KR","Malgun Gothic",sans-serif}
+body.hqt-tm .wt span{background:none;border:1px solid #3A4652;border-radius:0}
+body.hqt-tm .nd{color:#FFB020}
+body.hqt-tm .ticker{background:rgba(255,90,31,.1);border:1px solid #FF5A1F;border-radius:0;color:#FF8A5B}
+
+/* ---------- 한지와 먹 ---------- */
+html:has(body.mon.hqt-ink),body.mon.hqt-ink{background:#F1EBDD!important;color:#1A1714!important}
+body.mon.hqt-ink{font-family:"Nanum Myeongjo","Batang",serif}
+body.hqt-ink #mon::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.45;background:repeating-linear-gradient(0deg,rgba(140,122,97,.08) 0 2px,transparent 2px 7px),repeating-linear-gradient(90deg,rgba(140,122,97,.05) 0 1px,transparent 1px 13px)}
+body.hqt-ink .mh::after{height:4px;border-radius:4px;background:#14110E;opacity:.85}
+body.hqt-ink .mh b{font-weight:800;letter-spacing:.06em}
+body.hqt-ink .mh .clock{font-family:"Nanum Myeongjo","Batang",serif;color:#1A1714}
+body.hqt-ink .mh .ctl button{color:#1A1714;border-color:#1A1714;background:transparent}
+body.hqt-ink .col{background:rgba(255,255,255,.25)!important;border:none!important;border-left:6px solid #1A1714!important}
+body.hqt-ink .ch .lt{background:none;border:4px solid #B5321F;color:#B5321F;border-radius:8px;font-family:"Nanum Myeongjo","Batang",serif;box-shadow:inset 0 0 0 3px #F1EBDD,inset 0 0 0 5px #B5321F}
+body.hqt-ink .ch .cn b{font-weight:800}.hqt-ink .ch .cn span,.hqt-ink .now .lb,.hqt-ink .pl,.hqt-ink .nx .lb2,.hqt-ink .nm .p small{color:#5C544A!important}
+body.hqt-ink .st{background:none!important;border:1px solid currentColor}.hqt-ink .st.live{color:#2E6B3E}.hqt-ink .st.off{color:#B5321F}.hqt-ink .st.idle{color:#8A6020}
+body.hqt-ink .now{background:none;border:none;border-bottom:1px solid rgba(26,23,20,.3);border-radius:0}.hqt-ink .now .k{color:#B5321F;letter-spacing:.3em}.hqt-ink .now .dv{color:#1A1714}
+body.hqt-ink .nm .p{font-weight:800;color:#1A1714}.hqt-ink .p.blue{color:#24365E}.hqt-ink .p.red{color:#B5321F}
+body.hqt-ink .prog{background:rgba(26,23,20,.12)}.hqt-ink .prog i{background:#14110E}
+body.hqt-ink .sec{color:#5C544A;letter-spacing:.4em}
+body.hqt-ink .nx div{background:none;border-bottom:1px solid rgba(26,23,20,.2);border-radius:0}.hqt-ink .nx .nn{color:#1A1714}
+body.hqt-ink .wt span{background:none;border:1px solid rgba(26,23,20,.4);color:#1A1714}
+body.hqt-ink .nd{color:#B5321F}.hqt-ink .nd b{color:#1A1714}
+body.hqt-ink .ticker{background:#1A1714;border:none;color:#F1EBDD}
+body.hqt-ink .mf .ks{color:#5C544A}
+
+/* ---------- 스트리트 ---------- */
+html:has(body.mon.hqt-st),body.mon.hqt-st{background:#0B0B0B!important;color:#F4F4F0!important}
+body.mon.hqt-st{font-family:"Space Mono",Consolas,monospace}
+body.hqt-st .mh::after{height:3px;background:#F4F4F0;opacity:1}
+body.hqt-st .mh b{font-family:"Black Han Sans","Malgun Gothic",sans-serif;font-weight:400}
+body.hqt-st .mh .clock{font-family:Anton,Impact,sans-serif;font-weight:400;color:#0B0B0B;background:#D6FF3B;padding:0 .4em}
+body.hqt-st .col{background:#0B0B0B!important;border:3px solid #F4F4F0!important}
+body.hqt-st .ch .lt{background:#D6FF3B;color:#0B0B0B;border-radius:0;font-family:Anton,Impact,sans-serif;font-weight:400}
+body.hqt-st .ch .cn b{font-family:"Black Han Sans","Malgun Gothic",sans-serif;font-weight:400}
+body.hqt-st .st{border-radius:0}.hqt-st .st.live{background:#D6FF3B;color:#0B0B0B}
+body.hqt-st .now{background:#F4F4F0;border:none;border-radius:0;color:#0B0B0B;transform:rotate(-.6deg)}
+body.hqt-st .now .k{color:#0B0B0B}.hqt-st .now .dv{color:#0B0B0B}.hqt-st .now .lb,.hqt-st .now .pl,.hqt-st .nm .p small{color:#444!important}
+body.hqt-st .nm .p{font-family:"Black Han Sans","Malgun Gothic",sans-serif;font-weight:400;color:#0B0B0B}.hqt-st .p.blue{color:#2F5BFF}.hqt-st .p.red{color:#FF2E3A}
+body.hqt-st .prog{background:#ccc;border-radius:0}.hqt-st .prog i{background:#0B0B0B}
+body.hqt-st .sec{color:#D6FF3B}
+body.hqt-st .nx div{background:none;border:2px solid #333;border-radius:0}
+body.hqt-st .wt span{background:none;border:2px dashed #555;border-radius:0}
+body.hqt-st .nd{color:#D6FF3B}
+body.hqt-st .ticker{background:#D6FF3B;border:none;border-radius:0;color:#0B0B0B;font-family:Anton,"Black Han Sans",Impact,sans-serif;font-weight:400}
