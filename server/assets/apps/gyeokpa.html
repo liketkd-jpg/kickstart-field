@@ -5446,7 +5446,7 @@ new MutationObserver(()=>{if(document.querySelector('.ksb .kg i[data-w]'))animat
 function wrapSolo(html){
   const cur=(()=>{try{return g('curOf')();}catch(e){return null;}})();
   const div=cur?(cur.divName||''):'',label=cur?(cur.label||''):'';
-  const free=APP()==='poomsae'&&cur&&cur.type==='freestyle';
+  const free=APP()==='poomsae'&&cur&&/^(freestyle|gym|team100)$/.test(cur.type);
   const chrome=`<div class="ksb-chrome${free?' ksb-free':''}">${free?'<i class="ksb-spot a"></i><i class="ksb-spot b"></i><i class="ksb-spot c"></i>':''}${WM}${topBar(div,label)}${nextBar()}</div>`;
   return String(html).replace(/^(\s*<div class="board)([^"]*)"/,(m0,a,b)=>`${a}${b} ksb-solo"`).replace(/(<div class="dctl">)/,'$1'+swBtn()).replace(/(<div class="board[^"]*"[^>]*>)/,'$1'+chrome);}
 

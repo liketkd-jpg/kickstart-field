@@ -2152,8 +2152,9 @@ function groups(){const s=new Set();medalists().forEach(x=>x.group&&s.add(x.grou
 function resultsPanel(){
   const cf=CFG(),gs=groups();if(AWUI.scope!=='all'&&!gs.includes(AWUI.grp))AWUI.grp=gs[0]||'';
   const ts=teamStandings(true),mb=mvpByBucket(),ca=coachAwards();
-  const hasFree=!KY&&S.divs.some(d=>d.type==='freestyle')&&S.divs.some(d=>(d.type||'recognized')==='recognized');
-  const evSel=hasFree?`<div class="seg">${[['all','공인+자유'],['recognized','공인 품새'],['freestyle','자유 품새']].map(([k,l])=>`<button class="${AWUI.ev===k?'on':''}" data-aw="ev" data-v="${k}">${l}</button>`).join('')}</div>`:'';
+  const TL=typeof TYPE_LIST!=='undefined'?TYPE_LIST:[['recognized','공인 품새'],['freestyle','자유 품새']];
+  const tHave=TL.filter(([k])=>S.divs.some(d=>(d.type||'recognized')===k)),hasFree=!KY&&tHave.length>1;
+  const evSel=hasFree?`<div class="seg">${[['all','전체'],...tHave].map(([k,l])=>`<button class="${AWUI.ev===k?'on':''}" data-aw="ev" data-v="${k}">${l}</button>`).join('')}</div>`:'';
   const scopeSel=`<div class="row" style="gap:6px">${evSel}<div class="seg"><button class="${AWUI.scope==='all'?'on':''}" data-aw="scope" data-v="all">대회 전체</button><button class="${AWUI.scope==='grp'?'on':''}" data-aw="scope" data-v="grp">부별</button></div>
     ${AWUI.scope==='grp'?`<select data-awon="grp" aria-label="부별">${gs.map(g=>`<option ${g===AWUI.grp?'selected':''}>${e(g)}</option>`).join('')}</select>`:''}</div>`;
   const team=`<div class="tablewrap"><table class="awt"><tr><th class="num">순위</th><th>팀(소속)</th><th>지도자</th><th class="num">금</th><th class="num">은</th><th class="num">동</th>${cf.partOn?'<th class="num">출전</th>':''}<th class="num">점수</th><th></th></tr>
@@ -2837,7 +2838,8 @@ function hookSub(fn){try{if(typeof MODE!=='undefined'&&MODE!=='connecting'){fn()
 hookSub(()=>{store.watchDoc('comp/music',d=>{MST=d;});
   store.watchColl('music',null,null,list=>{for(const k in DOCS)delete DOCS[k];list.forEach(d=>DOCS[d._id]=d);schedule();});
   store.watchColl('voicefile',null,null,list=>{for(const k in VDOCS)delete VDOCS[k];list.forEach(d=>{VDOCS[d._id]=d;srcOf(d).catch(()=>{});});schedule();});});
-const isFree=a=>a&&a.type==='freestyle';
+const UMUS=(t=>typeof usesMusic==='function'?usesMusic(t):t==='freestyle');
+const isFree=a=>a&&UMUS(a.type);
 const docOf=id=>DOCS[id]||(window.LMUS&&LMUS.has(id)?{aid:'lm:'+id,kind:'local',name:(LMUS.fileOf(id)||{}).name||'',size:(LMUS.fileOf(id)||{}).size||0}:null);
 setTimeout(()=>{try{LMUS.setEntries(()=>S.roster.filter(isFree).map(a=>({id:a.id,name:a.name,team:a.team})));}catch(err){}},0);
 /* ---------- 파일 → 저장 ---------- */
@@ -2893,12 +2895,12 @@ setInterval(()=>{const m=MST;if(!m||!m.at||m.at<=SEEN)return;SEEN=m.at;
   if(Date.now()-m.at>15000&&m.play)return;
   if(m.play&&m.aid)playLocal({aid:m.aid,kind:m.kind,mime:m.mime},m.who);else stopLocal();},300);
 /* 전광판은 호출된 선수의 음악을 미리 받아 둠 */
-let PRE='';setInterval(()=>{let st;try{st=ST();}catch(err){return;}const c=st&&st.current;if(!c||c.type!=='freestyle')return;const k=c.callId+'#'+st.epoch;if(k===PRE)return;PRE=k;
+let PRE='';setInterval(()=>{let st;try{st=ST();}catch(err){return;}const c=st&&st.current;if(!c||!UMUS(c.type))return;const k=c.callId+'#'+st.epoch;if(k===PRE)return;PRE=k;
   (c.entries||[]).forEach(en=>{const d=docOf(en.athleteId);if(d)srcOf(d).catch(()=>{});});},1500);
 /* 경기 버튼과 연결: 시작하면 재생, 바로·리셋·다음 호출이면 정지 */
 const auto=()=>(SET()||{}).musicAuto!==false;
 try{const o=ACT.timerStart;ACT.timerStart=function(){const r=o.apply(this,arguments);try{const c=ST().current;
-  if(auto()&&c&&c.type==='freestyle'){const ens=(c.entries||[]).filter(en=>docOf(en.athleteId));if(ens.length===1||(c.entries||[]).length===1){if(ens[0])command(true,ens[0].athleteId);}}}catch(err){}return r;};}catch(err){}
+  if(auto()&&c&&UMUS(c.type)){const ens=(c.entries||[]).filter(en=>docOf(en.athleteId));if(ens.length===1||(c.entries||[]).length===1){if(ens[0])command(true,ens[0].athleteId);}}}catch(err){}return r;};}catch(err){}
 ['timerStop','timerReset'].forEach(k=>{try{const o=ACT[k];ACT[k]=function(){const r=o.apply(this,arguments);try{if(NOW||(MST&&MST.play))command(false);}catch(err){}return r;};}catch(err){}});
 try{const oc=callIt;callIt=async function(){if(NOW||(MST&&MST.play))command(false);return oc.apply(this,arguments);};}catch(err){}
 /* ---------- 화면 ---------- */
@@ -2911,13 +2913,13 @@ function rowCtl(id,compact){const d=docOf(id),playing=NOW&&d&&NOW.aid===d.aid;
   return `<span class="mu-ctl">${d?`<button class="btn sm ${playing?'stopb':'primary'}" data-mu="${playing?'stop':'play'}" data-id="${e(id)}">${playing?'■ 정지':'▶ 음악'}</button>`:'<span class="chip warn">음악 없음</span>'}
 
     ${d&&AS&&!compact?`<button class="btn sm danger" data-mu="del" data-id="${e(id)}">지우기</button>`:''}</span>`;}
-function runHtml(){let st;try{st=ST();}catch(err){return '';}const c=st&&st.current;if(!c||c.type!=='freestyle')return '';
-  return `<div class="mu-run"><div class="row between"><b>🎵 자유품새 음악</b><button class="btn sm ${auto()?'on':''}" data-mu="auto">${auto()?'시작과 함께 자동 재생: 켬':'시작과 함께 자동 재생: 끔'}</button></div>
+function runHtml(){let st;try{st=ST();}catch(err){return '';}const c=st&&st.current;if(!c||!UMUS(c.type))return '';
+  return `<div class="mu-run"><div class="row between"><b>🎵 ${c.type==='freestyle'||typeof SH!=='function'?'자유품새':SH(c.type).label} 음악</b><button class="btn sm ${auto()?'on':''}" data-mu="auto">${auto()?'시작과 함께 자동 재생: 켬':'시작과 함께 자동 재생: 끔'}</button></div>
     ${(c.entries||[]).map(en=>{const a=athlete(en.athleteId)||{},d=docOf(en.athleteId);return `<div class="mu-row ${en.side||''}"><span class="mu-who"><b>${e(a.name||en.name||'')}</b><span class="small muted">${d?e(d.name):''}</span></span>${rowCtl(en.athleteId,true)}</div>`;}).join('')}
     ${(c.entries||[]).length>1?'<span class="small muted">청·홍이 함께 나오는 경기는 연기 순서에 맞춰 음악 버튼을 눌러 주세요.</span>':''}</div>`;}
 function playersPanel(){
   const list=S.roster.filter(isFree);if(!list.length||!window.LMUS)return '';
-  return LMUS.panel(list.map(a=>({id:a.id,name:a.name,team:a.team})),{title:'자유품새 음악 (노트북 폴더)',who:'이름(팀)',note:'경기 진행에서 "준비 · 시작" 때 음악이 함께 나오고(자동 재생 켬일 때) "바로"를 누르면 멈춥니다. 음악은 음악을 담은 이 컴퓨터(운영석)에서 나옵니다.'});}
+  return LMUS.panel(list.map(a=>({id:a.id,name:a.name,team:a.team})),{title:(typeof TYPE_LIST!=='undefined'?'경연 음악 · 자유품새·태권체조·종합경연':'자유품새 음악')+' (노트북 폴더)',who:'이름(팀)',note:'경기 진행에서 "준비 · 시작" 때 음악이 함께 나오고(자동 재생 켬일 때) "바로"를 누르면 멈춥니다. 음악은 음악을 담은 이 컴퓨터(운영석)에서 나옵니다.'});}
 window.MUS={html:k=>{try{return k==='run'?runHtml():k==='players'?playersPanel():'';}catch(err){console.error(err);return '';}}};
 try{const ap=aPlayers;aPlayers=function(){const h=ap.apply(this,arguments);const m=playersPanel();return m?`<div class="stack">${h}${m}</div>`:h;};}catch(err){}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-mu]');if(!b||b.disabled)return;const k=b.dataset.mu;
@@ -3023,7 +3025,7 @@ function rowOf(a){
   if(GP)return [a.name||'',a.gender||'','',a.age==null?'':a.age,a.team||'',a.coach||'',a.level||'','',a.weight||'',a.height||'',(typeof EV!=='undefined'&&EV[a.ev])?EV[a.ev].label:'',a.members||''];
   const ev=a.event==='team'?'단체전':a.event==='pair'?'복식전':'개인전';
   return [a.name||'',a.gender||'',a.birth||'',a.age==null?'':a.age,a.team||'',a.coach||'',a.group||'',a.grade||'',a.weight||'',
-    KY?'':(a.type==='freestyle'?'자유':'공인'),KY?'':ev,a.members||''];
+    KY?'':((typeof TYPE_XLS!=='undefined'&&TYPE_XLS[a.type])||(a.type==='freestyle'?'자유':'공인')),KY?'':ev,a.members||''];
 }
 function exportRoster(){
   if(!window.XLSX)return toast('엑셀 도구를 불러오지 못했습니다');
@@ -4305,7 +4307,7 @@ new MutationObserver(()=>{if(document.querySelector('.ksb .kg i[data-w]'))animat
 function wrapSolo(html){
   const cur=(()=>{try{return g('curOf')();}catch(e){return null;}})();
   const div=cur?(cur.divName||''):'',label=cur?(cur.label||''):'';
-  const free=APP()==='poomsae'&&cur&&cur.type==='freestyle';
+  const free=APP()==='poomsae'&&cur&&/^(freestyle|gym|team100)$/.test(cur.type);
   const chrome=`<div class="ksb-chrome${free?' ksb-free':''}">${free?'<i class="ksb-spot a"></i><i class="ksb-spot b"></i><i class="ksb-spot c"></i>':''}${WM}${topBar(div,label)}${nextBar()}</div>`;
   return String(html).replace(/^(\s*<div class="board)([^"]*)"/,(m0,a,b)=>`${a}${b} ksb-solo"`).replace(/(<div class="dctl">)/,'$1'+swBtn()).replace(/(<div class="board[^"]*"[^>]*>)/,'$1'+chrome);}
 
