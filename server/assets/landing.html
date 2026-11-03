@@ -42,7 +42,7 @@ a.lnk{color:inherit}
 <main>
   <section class="lux-hero"><div class="lux-eyebrow">Taekwondo Competition Systems</div>
     <h1 class="lux-title">KICKSTART <i>UP</i></h1>
-    <p class="lux-sub">품새 · 격파 · 겨루기 경기장과 대회 본부를 한 대의 노트북에서 정밀하게 다스립니다.</p>
+    <p class="lux-sub">품새 · 격파 · 겨루기 · 태권 히어로 경기장과 대회 본부를 한 대의 노트북에서 정밀하게 다스립니다.</p>
     <div class="lux-stat" id="luxstat"></div><div class="lux-line"></div></section>
   <div class="big" id="big"></div>
   <div class="card" id="viewc"><div class="row" style="justify-content:space-between"><div><b style="font-size:17px">관람객 실시간 결과</b><div class="muted" style="font-size:14px">학부모·선수가 휴대폰으로 코트 진행 상황과 입상 결과를 봅니다. 본부 노트북에서 열면 모든 코트가 한 화면에 나옵니다.</div></div>
@@ -63,7 +63,7 @@ a.lnk{color:inherit}
 <div id="dlg"></div>
 <script>
 const APPS=__APPS__;
-const ICON={poomsae:'🥋',gyeokpa:'🪵',kyorugi:'🥊'},DESC={poomsae:'공인·자유 품새 · 태권체조 · 팀 대항 종합경연',gyeokpa:'격파 경기 운영석',kyorugi:'겨루기 경기 운영석'};
+const ICON={poomsae:'🥋',gyeokpa:'🪵',kyorugi:'🥊',hero:'⚡'},DESC={poomsae:'공인·자유 품새 · 태권체조 · 팀 대항 종합경연',gyeokpa:'격파 경기 운영석',kyorugi:'겨루기 경기 운영석',hero:'유아 장애물 스피드 경기 · 히어로 전광판'};
 let NODE=null;
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LOCAL=['localhost','127.0.0.1'].includes(location.hostname);
@@ -75,8 +75,9 @@ const GLYPH={
  poomsae:'<circle cx="32" cy="12" r="5"/><path d="M32 18v18M32 24l-13 6M32 24l14-8M32 36l-11 18M32 36l12 18M16 58h32"/>',
  gyeokpa:'<path d="M10 22h44v7H10zM10 33h18l3 4-3 3H10zM36 33h18v7H36l-2-3zM10 44h44v7H10z"/><path d="M31 10v6M24 12l3 5M38 12l-3 5"/>',
  kyorugi:'<path d="M8 20l14 12-14 12M56 20L42 32l14 12"/><path d="M26 32h12M32 10v8M32 46v8"/>',
+ hero:'<path d="M32 6 54 14v14c0 14-9 24-22 30C19 52 10 42 10 28V14z"/><path d="M35 16 24 34h9l-4 14 13-19h-9z"/>',
  hq:'<path d="M32 6l22 12.7v26.6L32 58 10 45.3V18.7z"/><circle cx="32" cy="32" r="5"/><path d="M32 13v14M32 37v14M15.5 22.5l12 7M36.5 34.5l12 7M48.5 22.5l-12 7M27.5 34.5l-12 7"/>'};
-const EN={poomsae:'Poomsae',gyeokpa:'Gyeokpa',kyorugi:'Kyorugi'};
+const EN={poomsae:'Poomsae',gyeokpa:'Gyeokpa',kyorugi:'Kyorugi',hero:'Heroes'};
 const glyph=k=>`<svg class="glyph" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPH[k]||GLYPH.hq}</svg>`;
 function drawBig(){
   const court=NODE&&NODE.role==='court'?NODE.court:'';

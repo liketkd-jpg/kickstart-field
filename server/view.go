@@ -95,7 +95,7 @@ func courtApps(feed json.RawMessage, comp *string) []viewApp {
 			*comp = c
 		}
 		if name == "" {
-			name = map[string]string{"poomsae": "품새", "kyorugi": "겨루기", "gyeokpa": "격파"}[a.Key]
+			name = map[string]string{"poomsae": "품새", "kyorugi": "겨루기", "gyeokpa": "격파", "hero": "태권 히어로"}[a.Key]
 		}
 		out = append(out, viewApp{App: a.Key, AppName: name, Board: b, Results: r})
 	}

@@ -42,6 +42,7 @@ var apps = []appInfo{
 	{"poomsae", "품새 대회", "assets/apps/poomsae.html"},
 	{"gyeokpa", "격파 대회", "assets/apps/gyeokpa.html"},
 	{"kyorugi", "겨루기 대회", "assets/apps/kyorugi.html"},
+	{"hero", "태권 히어로", "assets/apps/hero.html"},
 }
 
 var (
