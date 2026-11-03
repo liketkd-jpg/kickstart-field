@@ -1981,10 +1981,56 @@ function advanceBox(d){
   return `<div class="row"><span class="small"><b>${STAGES[p.next]} 진출 ${p.winners.length}${d.event&&d.event!=='ind'?'팀':'명'}</b>: ${p.winners.map(aName).map(esc).join(', ')}${p.tieAll?` <span class="chip warn">경계 동점 ${p.tieAll.length}명 모두 진출</span>`:''}</span>
     <button class="btn primary" data-act="armed" data-do="advance" data-id="${d.id}">${STAGES[p.next]} 진출 확정</button></div>`;
 }
+
+/* ===================== 코트 나누기 =====================
+   부문마다 예상 경기 수 × 한 경기 시간으로 걸리는 시간을 셈하고, 긴 부문부터 가장 한가한 코트에 넣어 시간이 고르게 나눕니다.
+   코트별 명단 파일(엑셀)을 각 코트 노트북의 「선수 등록 → 엑셀 불러오기」로 넣으면 같은 부문 이름으로 편성됩니다 */
+const COURT_L='ABCDEFGH';
+const PERF_MIN={recognized:2,freestyle:2.5,gym:3,team100:7.5};
+function estPerf(d){const n=(d.order||[]).length;if(!n)return 0;if(d.format==='tournament')return Math.max(1,n-1)*2*pCount(d);
+  const m=cutMode(d);let k=n;if(m==='two')k=n>cutAdv(d)?n+cutAdv(d):n;else if(m!=='final'){k=n<=11?n:n<=21?n+8:n+Math.ceil(n/2)+8;}
+  return k*pCount(d);}
+const estMin=d=>estPerf(d)*(PERF_MIN[d.type]||2);
+const hm=min=>{const h=Math.floor(min/60),m=Math.round(min%60);return h?`${h}시간 ${m}분`:`${m}분`;};
+const clockAt=(start,min)=>{const [h,m]=String(start||'09:30').split(':').map(Number),t=h*60+m+Math.round(min);return `${String(Math.floor(t/60)%24).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;};
+function courtAuto(N){const C=Array.from({length:N},()=>0),out={};
+  const L=S.divs.slice().sort((a,b)=>estMin(b)-estMin(a));
+  for(const d of L){let k=0;for(let i=1;i<N;i++)if(C[i]<C[k])k=i;C[k]+=estMin(d);out[d.id]=COURT_L[k];}
+  return saveDivs(S.divs.map(d=>({...d,court:out[d.id]}))).then(()=>toast(`부문 ${S.divs.length}개를 ${N}개 코트에 나눴습니다`));}
+function courtPanel(){
+  const N=SET().courts||4,st=SET().courtStart||'09:30',L=COURT_L.slice(0,N).split('');
+  const has=S.divs.some(d=>d.court);
+  const tot=L.map(c=>{const ds=S.divs.filter(d=>d.court===c);return {c,ds,min:ds.reduce((s,d)=>s+estMin(d),0),perf:ds.reduce((s,d)=>s+estPerf(d),0),ppl:ds.reduce((s,d)=>s+(d.order||[]).length,0)};});
+  const none=S.divs.filter(d=>!d.court||!L.includes(d.court));
+  return `<details class="panel" style="margin-bottom:14px" ${ui.courtOpen?'open':''}><summary style="cursor:pointer;list-style:none" class="row between"><h3 style="margin:0">🏟 코트 나누기 · 예상 시간</h3>
+      <span class="small muted">${has?tot.map(t=>`${t.c}코트 ${hm(t.min)}`).join(' · '):`부문 ${S.divs.length}개 · 전체 ${hm(S.divs.reduce((s,d)=>s+estMin(d),0))} (코트 1개 기준)`}</span></summary>
+    <div class="stack" style="margin-top:12px">
+      <div class="row" style="gap:10px;align-items:flex-end">
+        <div class="field"><span class="label">코트 수</span><div class="seg">${[2,3,4,5,6].map(n=>`<button class="${N===n?'on':''}" data-act="courtN" data-n="${n}">${n}코트</button>`).join('')}</div></div>
+        <label class="field"><span class="label">시작 시각</span><input type="time" value="${esc(st)}" data-on="courtStart" style="width:120px"></label>
+        <button class="btn primary" data-act="${has?'armed':'courtAutoB'}" data-do="courtAutoB">${has?'다시 자동으로 나누기':'자동으로 나누기'}</button></div>
+      <span class="small muted">한 경기 예상: 공인 품새 ${PERF_MIN.recognized}분 · 자유 품새 ${PERF_MIN.freestyle}분 · 태권체조 ${PERF_MIN.gym}분 · 팀 대항 종합경연 ${PERF_MIN.team100}분 (입장·채점·공개 포함). 컷오프는 인원에 따라 예선·본선·결선 경기 수를 셈합니다. 점심·개회식 시간은 빠져 있습니다.</span>
+      ${has?`<div class="grid2" style="grid-template-columns:repeat(${Math.min(N,4)},minmax(0,1fr))">${tot.map(t=>`<div class="panel" style="background:var(--sunk);gap:6px">
+          <div class="row between"><b style="font-size:20px">${t.c}코트</b><span class="chip ${t.min>Math.min(...tot.map(x=>x.min))*1.25?'warn':'ok'}">끝 약 ${clockAt(st,t.min)}</span></div>
+          <span class="small">${t.ds.length}부문 · ${t.ppl}명(팀) · 약 ${t.perf}경기 · ${hm(t.min)}</span>
+          <button class="btn sm" data-act="courtFile" data-c="${t.c}" ${t.ds.length?'':'disabled'}>📥 ${t.c}코트 명단 엑셀</button>
+          <div class="small" style="max-height:220px;overflow:auto;display:flex;flex-direction:column;gap:2px">${t.ds.map(d=>`<div class="row between" style="gap:6px;flex-wrap:nowrap"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)}</span>
+            <select data-on="courtSet" data-id="${d.id}" style="width:auto;padding:2px 4px">${L.map(c=>`<option ${c===d.court?'selected':''}>${c}</option>`).join('')}</select></div>`).join('')}</div></div>`).join('')}</div>
+        ${none.length?`<span class="chip warn">코트가 안 정해진 부문 ${none.length}개 · 「다시 자동으로 나누기」를 눌러 주세요</span>`:''}
+        <span class="small muted">각 코트 노트북에서 「선수 등록 → 엑셀 불러오기」로 그 코트 명단 파일을 넣으면 같은 부문으로 편성됩니다. 코트를 바꾸려면 부문 옆 글자를 고르세요.</span>`:''}
+    </div></details>`;}
+async function courtFile(c){
+  const ds=S.divs.filter(d=>d.court===c);if(!ds.length)return;
+  const H=['번호','이름','소속','지도자','부별','학년','성별','공인/자유','종목','팀원','부문'],rows=[H];let i=0;
+  for(const d of ds)for(const id of d.order||[]){const a=athlete(id);if(!a)continue;
+    rows.push([++i,a.name||'',a.team||'',a.coach||'',a.group||'',a.grade||'',a.gender||'',TYPE_XLS[a.type]||'공인',a.event==='team'?'단체':a.event==='pair'?'복식':'개인',a.members||'',d.name]);}
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=H.map(h=>({wch:h==='팀원'||h==='부문'?30:12}));XLSX.utils.book_append_sheet(wb,ws,'선수명단');
+  if(await saveFile(`${SET().name||'품새대회'}_${c}코트_명단.xlsx`,XLSX.write(wb,{bookType:'xlsx',type:'array'})))toast(`${c}코트 명단 ${i}명(팀)을 내려받았습니다`);}
 function aDraw(){
   if(!S.divs.length)return `<div class="empty">편성된 부문이 없습니다. 선수 등록 화면에서 "부문 자동 편성"을 눌러 주세요.<div style="margin-top:12px"><button class="btn primary" data-act="regen" ${S.roster.length?'':'disabled'}>부문 자동 편성</button></div></div>`;
   return `<div class="row between" style="margin-bottom:14px"><span class="muted">부문 ${S.divs.length}개 · 종목·구분·성별·부별로 나뉩니다</span>
   <div class="row"><button class="btn" data-act="template">📥 빈 양식 내려받기</button><button class="btn" data-act="pdfAll">📄 전체 대진표 PDF</button><button class="btn" data-act="armed" data-do="pdrawAll">전체 부문 지정품새 추첨</button><button class="btn" data-act="regen">명단 변경 반영</button><button class="btn primary" data-act="armed" data-do="drawAll">전체 랜덤 추첨</button></div></div>
+  ${courtPanel()}
   ${(()=>{if(!ui.drawDiv||!S.divs.find(x=>x.id===ui.drawDiv))ui.drawDiv=S.divs[0].id;return `<label class="field" style="margin-bottom:14px"><span class="label">부문 선택</span>${ptypeSeg()}<select id="drawDiv" data-on="drawDiv">${divOptions(ui.drawDiv)}</select></label>`;})()}
   <div class="stack">${S.divs.filter(d=>d.id===ui.drawDiv).map(d=>{
     const has=divHasResults(d)||!!d.matchNo,n=(d.order||[]).length,act=x=>has?'armed':x;
@@ -2886,6 +2932,9 @@ const ACT={
       ui.editAth=null;toast(k0!==k1?'저장했습니다 · 부문을 다시 편성합니다':'저장했습니다');if(k0!==k1)await regenAfterRoster([k0]);render();}catch(e){b.disabled=false;}
   },
   regen:()=>regenerateDivs(),
+  courtN:b=>{ui.courtOpen=true;saveSettings({...SET(),courts:Number(b.dataset.n)});},
+  courtAutoB:()=>{ui.courtOpen=true;return courtAuto(SET().courts||4);},
+  courtFile:b=>courtFile(b.dataset.c),
   divFormat:async b=>{const id=b.dataset.id,v=b.dataset.v;await saveDivs(S.divs.map(d=>d.id===id?{...d,format:v,stages:null}:d));
     const cur=curOf();if(cur&&cur.divId===id)await saveState({...ST(),status:'idle',current:null,epoch:(ST().epoch||0)+1,timer:null});toast(v==='cutoff'?'컷오프로 바꿨습니다. 이제 한 명씩 호출됩니다':'토너먼트로 바꿨습니다');},
   setPdraw:b=>saveSettings({...SET(),pdraw:b.dataset.v}),
@@ -3089,9 +3138,11 @@ const ON={
   resDiv:el=>{ui.resDiv=el.value;ui.editPerf=null;render();},
   drawDiv:el=>{ui.drawDiv=el.value;render();},
   xlsFile:el=>readExcel(el.files&&el.files[0]),
+  courtSet:el=>{ui.courtOpen=true;saveDivs(S.divs.map(d=>d.id===el.dataset.id?{...d,court:el.value}:d));},
+  courtStart:el=>{ui.courtOpen=true;saveSettings({...SET(),courtStart:el.value||'09:30'});},
   restoreFile:el=>readBackup(el.files&&el.files[0])
 };
-const ON_CHANGE=new Set(['pcat','setNumIn','runDiv','resDiv','drawDiv','xlsFile','restoreFile']);
+const ON_CHANGE=new Set(['courtSet','courtStart','pcat','setNumIn','runDiv','resDiv','drawDiv','xlsFile','restoreFile']);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=ACT[b.dataset.act];if(f)f(b,e);});
 document.addEventListener('input',e=>{const el=e.target.closest('[data-on]');if(!el||ON_CHANGE.has(el.dataset.on))return;ON[el.dataset.on]?.(el);});
 document.addEventListener('change',e=>{const el=e.target.closest('[data-on]');if(!el||!ON_CHANGE.has(el.dataset.on))return;ON[el.dataset.on]?.(el);});
@@ -5441,7 +5492,7 @@ function rows(sp,E){const R=rows0(sp,E);const nat=e=>[...new Set(e.athletes.map(
 function rows0(sp,E){
   const org=e=>(e.athletes[0]&&e.athletes[0].org)||e.coach.org||'',names=e=>e.athletes.map(a=>a.name).join(',');
   if(sp==='poomsae')return [['번호','이름','소속','지도자','부별','학년','성별','공인/자유','종목','팀원'],...E.map((e,i)=>{const A=e.athletes,g=new Set(A.map(a=>a.gender)),team=A.length>1;
-    return [i+1,team?names(e):A[0].name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',g.size>1?'혼성':A[0].gender,e.f.type||'공인',e.f.kind||'개인',team?names(e):''];})];
+    return [i+1,team?(e.f.team||names(e)):A[0].name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',g.size>1?'혼성':A[0].gender,e.f.type||'공인',/체조|종합/.test(e.f.type||'')?'단체':(e.f.kind||'개인'),team?names(e):''];})];
   if(sp==='kyorugi')return [['번호','이름','소속','지도자','부별','학년','성별','체급'],...E.map((e,i)=>{const a=e.athletes[0];return [i+1,a.name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',a.gender,e.f.weight||''];})];
   return [['이름','종목','성별','부별','소속','지도자','체중(kg)','신장(cm)','팀원','부문'],...E.map(e=>{const team=e.f.ev==='기술격파 단체전';
     return [team?`${org(e)} 팀`:e.athletes[0].name,e.f.ev||'',team?'':e.athletes[0].gender,e.f.div||'',org(e),e.coach.name||'',e.f.weight||'',e.f.height||'',team?names(e):'',''];})];
