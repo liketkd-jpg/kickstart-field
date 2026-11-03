@@ -420,7 +420,7 @@ const STICON={
   punch:'M5 10h9a3 3 0 0 1 0 6H8a3 3 0 0 1-3-3zM9 10V7M12 10V7M15 11V8M16 6l4-2M17 9h4',
   flag:'M5 21V3M5 4h12l-3 4 3 4H5'};
 const T={
- ko:{app:'태권 히어로',sub:'유아 장애물 스피드 챌린지',tSetup:'설정',tRun:'경기 진행',tBoard:'전광판',openBoard:'전광판 새 창',
+ ko:{app:'태권 히어로',sub:'유아·초등 장애물 스피드 챌린지',tSetup:'설정',tRun:'경기 진행',tBoard:'전광판',openBoard:'전광판 새 창',
   focusOk:'버튼 입력 준비됨',focusNo:'화면을 한 번 클릭하세요',
   evInfo:'대회 정보',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
   mode:'경기 방식',mCut:'컷오프만',mTour:'토너먼트만',mBoth:'컷오프 후 토너먼트',
@@ -461,7 +461,7 @@ const T={
   clickStart:'Click to start the scoreboard',autoTitle:'Auto flow',autoOn:'When every runner is in: confirm results → medals → standings → next heat, automatically. You only press Start.',confirmSec:'Auto-confirm after (s)',medalSec:'Medal screen (s)',standSec:'Standings screen (s)',flow_confirm:'Auto-confirm in {s}s',flow_stand:'Standings in {s}s',flow_next:'Next heat in {s}s',stop:'Stop',placeW:'#{n}',noWin:'The new window did not open, so the scoreboard is shown here',heatRes:'{h} results',waitCtrl:'Connecting to the operator screen…',back:'Operator',noChamp:'The champion appears here when decided',
   heatOf:'Heat {h} of {n}',full:'Full screen',waiting:'Waiting',lanes:'Lanes',course0:'Course'}};
 
-const HR_DIV=['4세부','5세부','6세부','7세부','초등 1학년부','초등 2학년부'];
+const HR_DIV=['3세부','4세부','5세부','6세부','7세부','초등 1학년부','초등 2학년부','초등 3학년부','초등 4학년부','초등 5학년부','초등 6학년부'];
 const SAMPLE_ROWS=[
  ['김하준','예시도장 A','김관장','남','6세부','Hajun Kim'],['박도윤','예시도장 B','이사범','남','6세부','Doyun Park'],['정시우','예시도장 C','박관장','남','6세부','Siwoo Jung'],['조은우','예시도장 A','김관장','남','6세부','Eunwoo Cho'],
  ['장이준','예시도장 B','이사범','남','6세부','Ijun Jang'],['한유준','예시도장 C','박관장','남','6세부','Yujun Han'],['서준호','예시도장 A','김관장','남','6세부','Junho Seo'],['윤시후','예시도장 B','이사범','남','6세부','Sihu Yoon'],
@@ -518,10 +518,10 @@ const keyLabel=k=>k===' '?'Space':(k&&k.length===1?k.toUpperCase():k||'—');
 const YEAR=new Date().getFullYear();
 function normDiv(txt,birth,age){const s=String(txt||'').replace(/\s/g,'');
   let m=s.match(/(\d)\s*세/);if(m)return m[1]+'세부';
-  m=s.match(/초등?(\d)/)||s.match(/(\d)학년/);if(m&&+m[1]<=2)return `초등 ${m[1]}학년부`;
+  m=s.match(/초등?(\d)/)||s.match(/(\d)학년/);if(m&&+m[1]>=1&&+m[1]<=6)return `초등 ${m[1]}학년부`;
   let k=null;const b=birth instanceof Date?birth.getFullYear():(String(birth||'').match(/(\d{4})/)||[])[1];
   if(b)k=YEAR-Number(b)+1;else if(age!=null&&!isNaN(age))k=Number(age)+1;
-  if(k!=null){if(k<=4)return '4세부';if(k<=7)return k+'세부';if(k<=9)return `초등 ${k-7}학년부`;}
+  if(k!=null){if(k<=3)return '3세부';if(k<=7)return k+'세부';if(k<=13)return `초등 ${k-7}학년부`;}
   return /유치/.test(s)?'유치부':(s?String(txt).trim():'부별 미정');}
 const divName=(div,g)=>`${String(div||'부별 미정').replace(/부$/,'')} ${g==='여'?'여자부':'남자부'}`;
 const divOf=a=>divName(a.div,a.gender);
