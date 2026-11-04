@@ -1215,14 +1215,15 @@ document.addEventListener('change',ev=>{const t=ev.target;if(!t||!t.dataset||!t.
 function confirmRole(u,v){if(v==='admin')return window.confirm(`${u.name} 님을 「대표」로 바꾸면 회계·허가 코드·권한까지 모두 할 수 있습니다. 바꿀까요?`);return true;}
 /* 허가 코드: 대회 앱(품새·겨루기·격파)을 파는 단위 */
 const LKIND={event:'대회 1회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'};
-const LDAYS={week:7,month:30,year:365};const LAPP={all:'모든 경기 앱',hero:'태권 히어로'};const LMODE={online:'인터넷 주소에서만',file:'파일·현장 모드에서도'};
-const HERO_URL=()=>location.origin+location.pathname.replace(/[^/]*$/,'')+'hero/';
+const LDAYS={week:7,month:30,year:365};const LAPP={all:'모든 경기 앱',hero:'태권 히어로 (1·2 모두)',hero2:'태권 히어로 2만'};const LMODE={online:'인터넷 주소에서만',file:'파일·현장 모드에서도'};
+const HERO_URL=a=>location.origin+location.pathname.replace(/[^/]*$/,'')+(a==='hero2'?'hero2/':'hero/');
+const HNAME=a=>a==='hero2'?'태권 히어로 2':'태권 히어로';
 const won$=(p)=>p&&p.price!=null?`${Number(p.price).toLocaleString()} ${p.currency||''}`.trim():'';
 function newCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=new Uint8Array(16);crypto.getRandomValues(b);let s='';for(let i=0;i<16;i++){s+=A[b[i]%A.length];if(i%4===3&&i<15)s+='-';}return 'KS-'+s;}
 function addD(s,n){const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
 function licState(l){const t=today();if(l.revoked)return ['cancel','중지됨'];if(l.kind==='life'&&t>=l.starts)return ['paid','사용 중 (평생)'];if(t>l.ends)return ['closed','기간 끝남'];if(t<l.starts)return ['soon','시작 전'];return ['paid','사용 중'];}
-function licMsg(l){return msgL(`[KICKSTART UP] 대회 운영 프로그램 허가 코드\n${l.holder?l.holder+' 님, ':''}${LKIND[l.kind]} 허가 코드를 보내 드립니다.\n\n코드: ${l.code}\n사용 기간: ${l.starts} ~ ${l.kind==='life'?'평생':l.ends}${l.app==='hero'?`\n앱: 태권 히어로${l.mode==='online'?` (인터넷 주소에서만)\n주소: ${HERO_URL()}`:''}`:''}\n\n넣는 곳: 품새·겨루기·격파 앱 관리자 화면 왼쪽 아래 「🔒 연습 모드 · 허가 코드 넣기」 → 코드 붙여넣기 → 「코드 확인하고 풀기」\n(처음 한 번은 인터넷이 필요하고, 그 뒤에는 현장 모드에서도 기간 안에 그대로 쓰입니다)`);}
-function heroMsg(l){return `[KICKSTART UP] Taekwon Heroes app / 태권 히어로 앱\n${l&&l.holder?l.holder+' 님, ':''}태권 히어로 앱 주소와 허가 코드를 보내 드립니다.\n\n① 앱 주소 (App): ${HERO_URL()}\n② 화면 위쪽 「🔒 연습 모드 · 허가 코드 넣기」(Practice mode · enter code)를 누르세요\n③ 코드 (Code): ${l?l.code:''}\n④ 「코드 확인하고 풀기」(Check & unlock)\n\n사용 기간 (Period): ${l?l.starts:''} ~ ${l&&l.kind==='life'?'평생 (lifetime)':l?l.ends:''}\n※ 크롬(Chrome)에서 여시고, 오른쪽 위 EN 버튼으로 영어 화면을 쓸 수 있습니다.`;}
+function licMsg(l){return msgL(`[KICKSTART UP] 대회 운영 프로그램 허가 코드\n${l.holder?l.holder+' 님, ':''}${LKIND[l.kind]} 허가 코드를 보내 드립니다.\n\n코드: ${l.code}\n사용 기간: ${l.starts} ~ ${l.kind==='life'?'평생':l.ends}${l.app==='hero'||l.app==='hero2'?`\n앱: ${HNAME(l.app)}${l.mode==='online'?` (인터넷 주소에서만)\n주소: ${HERO_URL(l.app)}${l.app==='hero'?'\n히어로 2 주소: '+HERO_URL('hero2'):''}`:''}`:''}\n\n넣는 곳: 품새·겨루기·격파 앱 관리자 화면 왼쪽 아래 「🔒 연습 모드 · 허가 코드 넣기」 → 코드 붙여넣기 → 「코드 확인하고 풀기」\n(처음 한 번은 인터넷이 필요하고, 그 뒤에는 현장 모드에서도 기간 안에 그대로 쓰입니다)`);}
+function heroMsg(l){const two=l&&l.app==='hero2';return `[KICKSTART UP] ${two?'Taekwon Heroes 2':'Taekwon Heroes'} app / ${two?'태권 히어로 2':'태권 히어로'} 앱\n${l&&l.holder?l.holder+' 님, ':''}${two?'태권 히어로 2':'태권 히어로'} 앱 주소와 허가 코드를 보내 드립니다.\n\n① 앱 주소 (App): ${HERO_URL(l&&l.app)}${!two?`\n   히어로 2 (Heroes 2): ${HERO_URL('hero2')}`:''}\n② 화면 위쪽 「🔒 연습 모드 · 허가 코드 넣기」(Practice mode · enter code)를 누르세요\n③ 코드 (Code): ${l?l.code:''}\n④ 「코드 확인하고 풀기」(Check & unlock)\n\n사용 기간 (Period): ${l?l.starts:''} ~ ${l&&l.kind==='life'?'평생 (lifetime)':l?l.ends:''}\n※ 크롬(Chrome)에서 여시고, 오른쪽 위 EN 버튼으로 영어 화면을 쓸 수 있습니다.`;}
 function licEditForm(l){
   return `<form class="form" id="fLicEdit" data-c="${esc(l.code)}"><h3>허가 내용 고치기 · ${esc(l.code)}</h3>
     <div class="grid3"><label class="f"><span>종류</span>${sel('leKind',Object.entries(LKIND).map(([v,t])=>({v,l:t})),l.kind)}</label>
@@ -1241,14 +1242,14 @@ function vLic(){const L=M.licenses,f=UI.licForm||{kind:'event',date:'',starts:''
   if(M.licErr&&/licenses|relation|schema cache/i.test(M.licErr))return `<div class="note">허가 코드 표가 아직 데이터베이스에 없습니다. Supabase SQL 편집기에서 4단계 SQL을 실행해 주세요.</div>`;
   const ev=f.kind==='event',st=f.starts||(ev?(f.date?addD(f.date,-3):''):today()),en=f.ends||(ev?(f.date?addD(f.date,1):''):f.kind==='life'?'9999-12-31':addD(st||today(),(LDAYS[f.kind]||365)-1));
   const PL=M.plans,plan=k=>(PL||[]).find(x=>x.kind===k);
-  return `<div class="card stack" style="gap:6px"><b>🌐 태권 히어로 인터넷 앱 주소</b><div class="row" style="gap:8px"><code class="num" style="user-select:all">${esc(HERO_URL())}</code><button class="btn sm" type="button" data-a="heroUrl">주소 복사</button><a class="btn sm" href="${esc(HERO_URL())}" target="_blank" rel="noopener">열어 보기</a></div><span class="small mute">「인터넷 주소에서만」 코드는 이 주소에서만 열립니다. 코드마다 「🌐 히어로 주소 보내기」를 누르면 주소와 코드가 함께 든 안내문(한국어·영어)이 복사됩니다.</span></div>
+  return `<div class="card stack" style="gap:6px"><b>🌐 태권 히어로 인터넷 앱 주소</b>${['hero','hero2'].map(a=>`<div class="row" style="gap:8px"><b class="small">${HNAME(a)}</b><code class="num" style="user-select:all">${esc(HERO_URL(a))}</code><button class="btn sm" type="button" data-a="heroUrl" data-c="${a}">주소 복사</button><a class="btn sm" href="${esc(HERO_URL(a))}" target="_blank" rel="noopener">열어 보기</a></div>`).join('')}<span class="small mute">「인터넷 주소에서만」 코드는 이 주소에서만 열립니다. 코드마다 「🌐 히어로 주소 보내기」를 누르면 주소와 코드가 함께 든 안내문(한국어·영어)이 복사됩니다.</span></div>
     <div><h2>허가 코드</h2><p class="small mute" style="margin:4px 0 0" data-trh="lic1">대회 앱은 코드가 없으면 <b>연습 모드</b>(선수 20명까지, 전광판·상장에 「연습용」)로 열립니다. 여기서 만든 코드를 넣으면 기간 동안 모두 풀립니다. 우리 대회에 쓸 코드도 여기서 만드세요.</p></div>
     <form class="form" id="fLic"><h3>새 허가 코드 만들기</h3>
       <div class="tabs">${Object.entries(LKIND).map(([k,l])=>`<button type="button" class="${f.kind===k?'on':''}" data-a="licKind" data-k="${k}">${l}${plan(k)?` <span class="small mute">${esc(won$(plan(k)))}</span>`:''}</button>`).join('')}</div>
       <div class="grid3"><label class="f"><span>쓸 수 있는 앱</span>${sel('lcApp',Object.entries(LAPP).map(([v,l])=>({v,l})),f.app||'all')}</label>
         <label class="f"><span>사용 방식</span>${sel('lcMode',Object.entries(LMODE).map(([v,l])=>({v,l})),f.mode||'file')}</label>
         <label class="f"><span>인터넷 없이 쓸 수 있는 날 (파일 사용)</span><input type="number" id="lcGrace" min="0" max="60" value="${esc(f.grace??3)}"></label></div>
-      <span class="small mute">「인터넷 주소에서만」은 홈페이지에 올린 앱 주소(${esc(HERO_URL())})에서만 열리고, 켤 때마다 인터넷으로 확인합니다. 파일로 복사해도 열리지 않습니다. 「파일·현장 모드에서도」는 한 번 확인한 뒤 정한 날 수만큼 인터넷 없이 쓸 수 있습니다. 중지하면 다음 확인 때 바로 막힙니다.</span>
+      <span class="small mute">「인터넷 주소에서만」은 홈페이지에 올린 앱 주소(${esc(HERO_URL())}, ${esc(HERO_URL('hero2'))})에서만 열리고, 켤 때마다 인터넷으로 확인합니다. 파일로 복사해도 열리지 않습니다. 「파일·현장 모드에서도」는 한 번 확인한 뒤 정한 날 수만큼 인터넷 없이 쓸 수 있습니다. 중지하면 다음 확인 때 바로 막힙니다.</span>
       <div class="grid2"><label class="f"><span>받는 곳 (단체·도장 이름) <i>*</i></span><input type="text" id="lcHolder" required value="${esc(f.holder||'')}" placeholder="○○시 태권도협회"></label>
         <label class="f"><span>연락처</span><input type="text" id="lcContact" value="${esc(f.contact||'')}" placeholder="010-0000-0000"></label>
         ${ev?`<label class="f"><span>대회 날짜 <i>*</i> (3일 전부터 다음 날까지 쓰임)</span><input type="date" id="lcDate" value="${esc(f.date||'')}" data-on="licDate"></label><span></span>`:''}
@@ -1264,7 +1265,7 @@ function vLic(){const L=M.licenses,f=UI.licForm||{kind:'event',date:'',starts:''
     ${L.length?`<div class="tablewrap"><table><tr><th>코드</th><th>종류</th><th>받는 곳</th><th>기간</th><th>상태</th><th>사용</th><th></th></tr>
       ${L.map(l=>{const [k,t]=licState(l);return `<tr><td class="num" style="white-space:nowrap"><b>${esc(l.code)}</b></td><td>${LKIND[l.kind]||l.kind}${l.app&&l.app!=='all'?`<div class="small mute">${esc(LAPP[l.app]||l.app)}</div>`:''}${l.mode?`<div class="small mute">${l.mode==='online'?'🌐 인터넷만':'💾 파일 '+(l.grace_days??3)+'일'}</div>`:''}</td><td>${esc(l.holder)}<div class="small mute">${esc(l.contact)}${l.note?' · '+esc(l.note):''}</div></td>
         <td class="small num" style="white-space:nowrap">${esc(l.starts)}<br>~ ${l.kind==='life'?'평생':esc(l.ends)}</td><td><span class="st ${k}">${t}</span></td><td class="small">${l.seen_count||0}회${l.last_seen?`<div class="mute">${esc(String(l.last_seen).slice(0,10))}</div>`:''}</td>
-        <td><div class="licact"><button class="btn sm" type="button" data-a="licCode" data-c="${esc(l.code)}">코드 복사</button><button class="btn sm" type="button" data-a="licMsgEd" data-c="${esc(l.code)}">${UI.licMsg===l.code?'안내문 닫기':'안내문 보기·고치기'}</button>${l.app==='hero'||l.app==='all'?`<button class="btn sm" type="button" data-a="licHero" data-c="${esc(l.code)}">🌐 히어로 주소 보내기</button>`:''}
+        <td><div class="licact"><button class="btn sm" type="button" data-a="licCode" data-c="${esc(l.code)}">코드 복사</button><button class="btn sm" type="button" data-a="licMsgEd" data-c="${esc(l.code)}">${UI.licMsg===l.code?'안내문 닫기':'안내문 보기·고치기'}</button>${l.app==='hero'||l.app==='hero2'||l.app==='all'?`<button class="btn sm" type="button" data-a="licHero" data-c="${esc(l.code)}">🌐 히어로 주소 보내기</button>`:''}
           <button class="btn sm" type="button" data-a="licEdit" data-c="${esc(l.code)}">${UI.licEdit===l.code?'고치기 닫기':'고치기'}</button><button class="btn sm ${l.revoked?'':'danger'}" type="button" data-a="licRevoke" data-c="${esc(l.code)}">${l.revoked?'다시 쓰게':UI.licArm===l.code?'한 번 더 누르면 중지':'중지'}</button><button class="btn sm danger" type="button" data-a="licDel" data-c="${esc(l.code)}">${UI.licDelArm===l.code?'한 번 더 누르면 삭제':'삭제'}</button></div></td></tr>
         ${UI.licEdit===l.code?`<tr><td colspan="7">${licEditForm(l)}</td></tr>`:''}
         ${UI.licMsg===l.code?`<tr><td colspan="7"><div class="form"><h3>안내문 · ${esc(l.code)}</h3><span class="small mute">글을 고친 뒤 「복사」를 누르면 카카오톡·문자·이메일에 붙여 넣을 수 있습니다.</span>
@@ -1996,7 +1997,7 @@ document.addEventListener('click',e=>{
   else if(a==='licKind'){const gv=id=>(document.getElementById(id)||{}).value;UI.licForm={...(UI.licForm||{}),kind:b.dataset.k,starts:'',ends:'',app:gv('lcApp')||(UI.licForm||{}).app,mode:gv('lcMode')||(UI.licForm||{}).mode,grace:gv('lcGrace')??(UI.licForm||{}).grace,holder:(document.getElementById('lcHolder')||{}).value||'',contact:(document.getElementById('lcContact')||{}).value||''};UI.err='';render();}
   else if(a==='licCopy'){const l=S.licenses.find(x=>x.code===b.dataset.c);if(l)copyText(licMsg(l),'허가 코드 안내문을 복사했습니다. 카카오톡·문자에 붙여 넣으세요');}
   else if(a==='licCode'){copyText(b.dataset.c,'코드를 복사했습니다');}
-  else if(a==='heroUrl'){copyText(HERO_URL(),'태권 히어로 앱 주소를 복사했습니다');}
+  else if(a==='heroUrl'){copyText(HERO_URL(b.dataset.c),HNAME(b.dataset.c)+' 앱 주소를 복사했습니다');}
   else if(a==='licHero'){const l=S.licenses.find(x=>x.code===b.dataset.c);copyText(heroMsg(l),'히어로 앱 주소와 코드 안내문을 복사했습니다. 카카오톡·문자·이메일에 붙여 넣으세요');}
   else if(a==='licEdit'){UI.licEdit=UI.licEdit===b.dataset.c?null:b.dataset.c;UI.licMsg=null;render();}
   else if(a==='licMsgEd'){UI.licMsg=UI.licMsg===b.dataset.c?null:b.dataset.c;UI.licMsgText=null;UI.licEdit=null;render();}
