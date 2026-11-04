@@ -414,7 +414,7 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .nxt.deco{gap:14px;opacity:.6;border-style:solid}.nxt.deco svg{animation:twk 1.4s ease-in-out infinite alternate}.nxt.deco svg:nth-child(2n){animation-delay:.7s}
 /* ---- scoreboard: bigger names, heroes and text ---- */
 .bks .ks svg{width:4.2vw;height:4.2vw}.bks .ksw{font-size:1.5vw}
-.bev b{font-size:2.6vw!important}.bev span{font-size:1.9vw!important;color:var(--paper)!important;font-family:var(--f-disp)}
+.bev b{font-size:var(--bnfs,2.6vw)!important}.bev span{font-size:1.9vw!important;color:var(--paper)!important;font-family:var(--f-disp)}
 .bround{font-size:2.1vw!important}
 .bevbig{margin-top:-.4vh}
 .bevbig .hlogo svg{width:5.6vw;height:5.6vw}
@@ -431,7 +431,7 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .bl .bpen span{font-size:1.5vw!important}
 .srow{font-size:var(--fs,2.2vw)}
 .nextup b{font-size:3.8vw!important}.nextup span{font-size:1.8vw!important}.nextup i{font-size:2vw!important}
-.squad b{font-size:2.6vw!important}.squad span{font-size:2.1vw!important}
+.squad b{font-size:var(--bnfs,2.6vw)!important}.squad span{font-size:2.1vw!important}
 .stitle{font-size:3.6vw!important}
 .podium b{font-size:3.2vw!important}.podium.p1 b{font-size:4.8vw!important}.podium small{font-size:1.7vw!important}.podium .tm{font-size:2.2vw!important}
 .bheat{font-size:calc(var(--bfs,1.3vw)*1.15)!important}
@@ -521,6 +521,76 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .rtag{position:absolute;top:3vh;left:3vw;font-family:var(--f-hero);font-size:3vw;color:#fff;background:var(--red);border:.3vw solid var(--ink);padding:.2vh 1.4vw;border-radius:1vw;letter-spacing:.06em;animation:pulse .6s infinite alternate}
 .rname{position:absolute;bottom:4vh;left:50%;transform:translateX(-50%);font-family:var(--f-disp);font-size:4vw;background:var(--c);color:var(--ink);border:.35vw solid var(--ink);border-radius:1.4vw;padding:.4vh 2vw;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ===== KICKSTART UP 프로 스킨 (히어로 1·2 공통): 유리 · 입체 · 무대 조명 ===== */
+:root{--gl:linear-gradient(160deg,rgba(255,255,255,.10),rgba(255,255,255,.025) 38%,rgba(0,0,0,.16));--hl:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.35);--sh1:0 2px 4px rgba(0,0,0,.35),0 12px 26px -6px rgba(0,0,0,.5);--shine:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.06) 52%,rgba(0,0,0,.14))}
+/* 카드·레인 판 */
+.card{background:var(--gl),var(--panel);border:1px solid rgba(255,255,255,.09);box-shadow:var(--hl),var(--sh1);border-radius:18px}
+.lane{background:var(--gl),var(--panel);border:1px solid color-mix(in srgb,var(--c) 45%,rgba(255,255,255,.08));border-radius:18px;box-shadow:var(--hl),var(--sh1),0 14px 34px -18px var(--c)}
+.lane.emptyl{opacity:.55;box-shadow:var(--hl)}
+.lane-top{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 72%,#fff),var(--c) 46%,color-mix(in srgb,var(--c) 78%,#000));box-shadow:inset 0 -1px 0 rgba(0,0,0,.35),0 4px 10px -6px rgba(0,0,0,.6);text-shadow:0 1px 0 rgba(255,255,255,.3);letter-spacing:.01em}
+.lane-top kbd{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.22);border-radius:7px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+.lhero{border:1px solid color-mix(in srgb,var(--c) 55%,transparent)!important;border-radius:14px;background:radial-gradient(ellipse 70% 26% at 50% 88%,color-mix(in srgb,var(--c) 60%,transparent),transparent 70%),linear-gradient(180deg,color-mix(in srgb,var(--c) 20%,var(--night)),var(--night))!important;box-shadow:inset 0 2px 10px rgba(0,0,0,.55),0 0 14px -6px var(--c)}
+.pname{letter-spacing:-.01em}
+/* 기록 칸: 안으로 들어간 LED 표시창 */
+.ltime{background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.28));border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:2px 12px;box-shadow:inset 0 2px 8px rgba(0,0,0,.65);text-shadow:0 0 14px color-mix(in srgb,var(--c) 55%,transparent);min-height:2.4rem;align-items:center}
+.ltime input{background:rgba(0,0,0,.35);border:1px solid color-mix(in srgb,var(--c) 60%,transparent);border-radius:8px;color:var(--paper)}
+/* 버튼: 위쪽 빛 + 아래 두께 + 누르면 쑥 */
+.btn{background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,0) 55%),var(--panel2);border:1px solid rgba(255,255,255,.14);box-shadow:var(--hl),0 2px 0 rgba(0,0,0,.55),0 5px 12px -4px rgba(0,0,0,.5);border-radius:12px;transition:transform .08s,box-shadow .08s,filter .15s}
+.btn:hover:not(:disabled){filter:brightness(1.12)}
+.btn:active:not(:disabled){transform:translateY(2px);box-shadow:var(--hl),0 0 0 rgba(0,0,0,.55)}
+.btn.gold{background:var(--shine),var(--gold);color:var(--ink);border-color:rgba(0,0,0,.45);text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.btn.red,.banner .btn.red{background:var(--shine),var(--red);border-color:rgba(0,0,0,.45)}
+.btn.ghost{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.14);box-shadow:none}
+.finish,.go{background:var(--shine),var(--c,var(--red));border:1px solid rgba(0,0,0,.55);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 5px 0 color-mix(in srgb,var(--c,var(--red)) 42%,#000),0 12px 20px -6px rgba(0,0,0,.6);text-shadow:0 1px 0 rgba(255,255,255,.35);transition:transform .07s,box-shadow .07s}
+.go{--c:var(--red);color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.finish:active:not(:disabled),.go:active:not(:disabled){transform:translateY(4px);box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 1px 0 color-mix(in srgb,var(--c,var(--red)) 42%,#000),0 4px 8px -4px rgba(0,0,0,.6)}
+.finish:disabled,.go:disabled{opacity:.32;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 2px 0 rgba(0,0,0,.5)}
+.go:not(:disabled){animation:goglow 1.6s ease-in-out infinite alternate}
+@keyframes goglow{to{box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 5px 0 color-mix(in srgb,var(--red) 42%,#000),0 0 26px -2px var(--red)}}
+/* 페널티 칩 */
+.pen{background:linear-gradient(180deg,rgba(0,0,0,.42),rgba(0,0,0,.22));border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 1px 3px rgba(0,0,0,.55)}
+.pen button{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 60%),var(--panel2);border:1px solid rgba(255,255,255,.14);box-shadow:0 2px 0 rgba(0,0,0,.55);color:var(--paper)}
+.pen button:active:not(:disabled){transform:translateY(2px);box-shadow:none}
+.pen button.plus{background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 60%),var(--bad);border-color:rgba(0,0,0,.5);color:var(--ink)}
+.pen.has{border-color:color-mix(in srgb,var(--bad) 70%,transparent);box-shadow:inset 0 1px 3px rgba(0,0,0,.55),0 0 12px -3px var(--bad)}
+/* 운영 위쪽 줄: 시계는 계기판처럼 */
+.runbar .clock{background:linear-gradient(180deg,rgba(0,0,0,.62),rgba(0,0,0,.32));border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:0 16px;box-shadow:inset 0 2px 12px rgba(0,0,0,.75),0 0 22px -10px var(--gold);text-shadow:0 0 14px color-mix(in srgb,var(--gold) 55%,transparent)}
+.divsel{border-radius:10px;box-shadow:var(--hl),0 2px 0 rgba(0,0,0,.5)}
+.screens button,.heatchip{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0)),var(--night);border:1px solid rgba(255,255,255,.13);box-shadow:0 2px 0 rgba(0,0,0,.45)}
+.heatchip{border-radius:12px}
+.heatchip.cur{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 14px -4px var(--gold)}
+.runfoot .row{flex-wrap:wrap}
+.runfoot .sp{flex:1 1 320px!important;min-width:0}
+.nxt{background:rgba(0,0,0,.25);border:1px dashed rgba(255,255,255,.18)}
+.nxt .nc{white-space:nowrap}
+/* ===== 전광판: 레인마다 빛나는 유리 무대 ===== */
+.board .bl{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 36%,transparent) 0%,color-mix(in srgb,var(--c) 10%,rgba(8,6,30,.45)) 46%,rgba(0,0,0,.6) 100%);border:1px solid color-mix(in srgb,var(--c) 60%,rgba(255,255,255,.2));border-radius:1.8vw;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 0 3.4vw -1.2vw color-mix(in srgb,var(--c) 80%,transparent),0 2vh 3.6vh -1vh rgba(0,0,0,.7),0 0 3.4vw -1.4vw var(--c);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.board .bl::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(118deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.06) 24%,transparent 40%);pointer-events:none}
+.board .bl::after{content:"";position:absolute;left:8%;right:8%;bottom:0;height:.5vh;border-radius:1vh;background:var(--c);box-shadow:0 0 2vw .4vw var(--c);opacity:.85;pointer-events:none}
+.board .bl .hero{position:relative}
+.board .bl .hero::after{content:"";position:absolute;left:14%;right:14%;bottom:1%;height:13%;border-radius:50%;background:radial-gradient(ellipse at center,color-mix(in srgb,var(--c) 70%,#fff) 0%,color-mix(in srgb,var(--c) 45%,transparent) 38%,transparent 70%);z-index:-1;animation:stagelt 2.4s ease-in-out infinite alternate}
+@keyframes stagelt{to{opacity:.6;transform:scaleX(.9)}}
+.board .bl .hero svg{filter:drop-shadow(.25vw .25vw 0 var(--ink)) drop-shadow(0 1.4vh 1.4vh rgba(0,0,0,.55))}
+.board .bl .btime{background:linear-gradient(180deg,rgba(0,0,0,.6),rgba(0,0,0,.32));border:1px solid rgba(255,255,255,.1);border-radius:1vw;padding:0 1.6vw;margin-top:.4vh;box-shadow:inset 0 .4vh 1vh rgba(0,0,0,.75);text-shadow:0 0 1.4vw color-mix(in srgb,var(--c) 60%,transparent)}
+.board .bl.fin{border-color:var(--c)}
+.board .bl .bn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:var(--bnfs,2.6vw)!important}
+.board .bl.win{animation:camzoom .8s cubic-bezier(.2,1.4,.4,1) both;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 4vw -1vw var(--c),0 2.4vh 4vh -1vh rgba(0,0,0,.75),0 0 5vw -.6vw var(--c)}
+@keyframes camzoom{0%{transform:none}45%{transform:translateY(-2.2vh) scale(1.07)}100%{transform:translateY(-1vh) scale(1.03)}}
+.board .bl.dnf{filter:grayscale(.7) brightness(.7)}
+.board .bclock{background:linear-gradient(180deg,rgba(0,0,0,.66),rgba(0,0,0,.34));border:1px solid rgba(255,255,255,.12);border-radius:1.4vw;padding:0 2.6vw;box-shadow:inset 0 .4vh 1.4vh rgba(0,0,0,.8),0 0 3vw -1.4vw var(--gold)}
+.board .bhead .bround{box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 .8vh 1.6vh -.6vh rgba(0,0,0,.6)}
+/* 순위표: 유리 줄 + 입체 순위 배지 */
+.board .srow:not(.head){background:linear-gradient(90deg,rgba(255,255,255,.075),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.07);border-bottom-color:rgba(0,0,0,.3);border-radius:1vw;margin-bottom:.55vh;box-shadow:0 .5vh 1vh -.4vh rgba(0,0,0,.5)}
+.board .srow .r{justify-self:center;display:grid;place-items:center;width:1.75em;height:1.75em;border-radius:50%;font-size:1em;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.28),rgba(255,255,255,.05) 60%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 -.2vh .4vh rgba(0,0,0,.4)}
+.board .srow.top1{background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 26%,transparent),rgba(255,255,255,.02))}
+.board .srow.top1 .r{background:radial-gradient(circle at 35% 30%,#fff6c9,var(--gold) 45%,#a8770a);color:var(--ink);border-color:rgba(0,0,0,.4)}
+.board .srow.top2 .r{background:radial-gradient(circle at 35% 30%,#fff,#cfd6ea 45%,#7d859e);color:var(--ink);border-color:rgba(0,0,0,.4)}
+.board .srow.top3 .r{background:radial-gradient(circle at 35% 30%,#ffd9b8,#e0894a 45%,#8a4a1c);color:var(--ink);border-color:rgba(0,0,0,.4)}
+/* 시상대: 빛 받는 입체 블록 + 무대 조명 */
+.podium .fig{position:relative}
+.podium .fig::after{content:"";position:absolute;left:10%;right:10%;bottom:0;height:12%;border-radius:50%;background:radial-gradient(ellipse at center,color-mix(in srgb,var(--c) 70%,#fff),transparent 70%);z-index:-1;opacity:.9}
+.podium .blk{border:1px solid rgba(0,0,0,.45)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,.04) 30%,rgba(0,0,0,.22))!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 2vh 3.6vh -1vh rgba(0,0,0,.65)!important}
+.podium.p1 .blk{box-shadow:inset 0 2px 0 rgba(255,255,255,.7),0 2vh 3.6vh -1vh rgba(0,0,0,.65),0 0 4vw -1vw var(--gold)!important}
 </style>
 
 <header class="top" id="top"></header>
@@ -1487,9 +1557,10 @@ function renderBoard(){
      <button class="btn" data-act="full">⛶</button></div>`;
   }
   const gate=ROLE==='board'&&gateOpen?`<div class="gate" data-act="gate"><div><b>TAEKWON HEROES</b>${esc(t('clickStart'))}</div></div>`:'';
-  host.innerHTML=`<div class="board ${S.board==='live'&&h?'live':''}" id="board">${head}<div class="bmain">${body}</div></div>${!(ROLE==='board'?BOARD_LIC:licOk())?`<div class="wm" aria-hidden="true"><span>연습용 · PRACTICE</span></div>`:''}${dock}${gate}`;
+  host.innerHTML=`<div class="board ${S.board==='live'&&h?'live':''}" id="board">${head}<div class="bmain">${body}</div></div>${!(ROLE==='board'?BOARD_LIC:licOk())?`<div class="wm" aria-hidden="true"><span>${S.lang==='en'?'PRACTICE':'연습용 · PRACTICE'}</span></div>`:''}${dock}${gate}`;
   tickClocks();
 }
+function bnFs(n){const L=[...String(n||'')].reduce((s,c)=>s+(/[\u3131-\uD79D]/.test(c)?1.9:1),0);return L<=6?4.6:L<=8?4:L<=11?3.2:L<=14?2.6:2.2}
 function boardLive(h){
   const occ=[0,1,2,3];
   const o=heatOrder(h);
@@ -1503,7 +1574,7 @@ function boardLive(h){
     return`<div class="bl ${tm!=null?'fin':''} ${dnf?'dnf':''} ${win?'win':''}" style="--c:var(${H.v})">
       ${pl&&!dnf?`<div class="bplace ${pl===1?'p1':''}">${medalSvg(pl)}</div>`:''}
       <div class="hero">${heroFig(i,'',mode)}</div><div class="htag">${esc(heroName(i))}</div>
-      <div class="bn">${esc(pn(p))}</div><div class="bt">${esc(p.team)}</div>
+      <div class="bn" style="--bnfs:${bnFs(pn(p))}vw">${esc(pn(p))}</div><div class="bt">${esc(p.team)}</div>
       <div class="btime" data-lt="${i}">${dnf?esc(t('dnf')):(tm!=null?fmt(h.pen[i]&&penSec(h,i)?total(h,i):tm):fmt(0))}</div>
       <div class="bpen">${pens}</div></div>`;
   }).join('');
