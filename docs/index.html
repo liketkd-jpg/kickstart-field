@@ -519,7 +519,7 @@ const me=()=>M.profile;
 const uid=p=>p+Math.random().toString(36).slice(2,9);
 const mapComp=c=>({id:c.id,name:c.name,date:c.date,place:c.place,deadline:c.deadline,sports:c.sports||[],fee:c.fee||{},account:c.account,host:c.host,note:c.note,notice:c.notice||'',docUrl:c.doc_url||'',docName:c.doc_name||'',contact:c.contact||'',resultsOpen:!!c.results_open,cert:c.cert||{},musicDue:c.music_due||''});
 const mapAth=a=>({id:a.id,coachId:a.coach_id,name:a.name,gender:a.gender,birth:a.birth||'',org:a.org,weight:a.weight??'',height:a.height??'',guardian:a.guardian,country:a.country||'',nameEn:a.name_en||''});
-const mapEnt=e=>({id:e.id,compId:e.comp_id,coachId:e.coach_id,sport:e.sport,athleteIds:e.athlete_ids||[],f:e.f||{},fee:e.fee,status:e.status,at:String(e.created_at||'').slice(0,19)});
+const mapEnt=e=>({id:e.id,compId:e.comp_id,coachId:e.coach_id,sport:e.sport,athleteIds:e.athlete_ids||[],f:e.f||{},fee:e.fee,status:e.status,at:String(e.created_at||'').slice(0,19),paidAt:e.paid_at?String(e.paid_at).slice(0,10):''});
 const mapRes=r=>({id:r.id,compId:r.comp_id,sport:r.sport,kind:r.kind,div:r.div,rank:r.rank,name:r.name,team:r.team,coach:r.coach,members:r.members,coachId:r.coach_id,nat:r.nat||'',nameEn:r.name_en||''});
 const mapUser=p=>({id:p.id,role:p.role,name:p.name,org:p.org,phone:p.phone,email:p.email,license:p.license||'',country:p.country||'KOR',at:String(p.created_at||'').slice(0,10)});
 async function q(p){const {data,error}=await p;if(error)throw error;return data;}
@@ -544,9 +544,10 @@ async function reload(){
       try{const t=await sb.from('athletes').select('country,name_en').limit(1);M.hasNat=!t.error;}catch(e){M.hasNat=false;}
       M.entries=(await q(sb.from('entries').select('*').order('created_at',{ascending:true}))).map(mapEnt);
       try{const {data,error}=await sb.from('entry_music').select('*');M.musicOk=!error;M.music=error?[]:(data||[]).map(m=>({entryId:m.entry_id,compId:m.comp_id,coachId:m.coach_id,path:m.path,name:m.name||'',size:m.size||0,at:m.updated_at}));}catch(e){M.musicOk=false;M.music=[];}
-      M.users=M.profile.role==='admin'?(await q(sb.from('profiles').select('*'))).map(mapUser):[M.profile];
+      M.users=isOps(M.profile)?(await q(sb.from('profiles').select('*'))).map(mapUser):[M.profile];
       try{M.results=(await q(sb.from('results').select('*').order('rank',{ascending:true}))).map(mapRes);}catch(e){M.results=[];}
-      M.licenses=[];M.licErr='';M.plans=[];if(M.profile.role==='admin'){try{M.licenses=await q(sb.from('licenses').select('*').order('created_at',{ascending:false}));}catch(e){M.licErr=msgOf(e);}try{M.plans=await q(sb.from('license_plans').select('*'))||[];}catch(e){M.plans=null;}}
+      M.ledger=[];M.ledgerOk=false;if(isOwner(M.profile)){try{const {data,error}=await sb.from('ledger').select('*').order('day',{ascending:false});M.ledgerOk=!error;M.ledger=error?[]:(data||[]);}catch(e){}}
+      M.licenses=[];M.licErr='';M.plans=[];if(isOwner(M.profile)){try{M.licenses=await q(sb.from('licenses').select('*').order('created_at',{ascending:false}));}catch(e){M.licErr=msgOf(e);}try{M.plans=await q(sb.from('license_plans').select('*'))||[];}catch(e){M.plans=null;}}
     }else{M.profile=null;M.athletes=[];M.entries=[];M.users=[];M.results=[];M.music=[];}
     M.loadErr='';
   }catch(e){M.loadErr=msgOf(e);}
@@ -619,11 +620,11 @@ function render(){
   const r=route(),u=me();
   const links=[['home','대회 일정']];
   if(u&&u.role==='coach')links.push(['athletes','내 선수'],['entries','내 접수 내역'],['awards','결과 · 상장']);
-  if(u&&u.role==='admin')links.push(['admin','대회 관리 · 명단 내보내기']);
+  if(isOps(u))links.push(['admin','대회 관리 · 명단 내보내기']);
   if(u)links.push(['me','내 정보']);
   const base=r.split('-')[0];
   document.getElementById('nav').innerHTML=links.map(([h,l])=>`<a href="#${h}" class="${base===h||(h==='home'&&base==='comp')?'on':''}">${l}</a>`).join('');
-  document.getElementById('who').innerHTML=langSel()+(u?`<a class="nm" href="#me" style="color:inherit;text-decoration:none">${esc(u.name)}</a><span class="small mute">${u.role==='admin'?'관리자':esc(u.org)}</span><button class="btn sm ghost" data-a="logout" type="button">로그아웃</button>`
+  document.getElementById('who').innerHTML=langSel()+(u?`<a class="nm" href="#me" style="color:inherit;text-decoration:none">${esc(u.name)}</a><span class="small mute">${isOps(u)?ROLE_N[u.role]:esc(u.org)}</span><button class="btn sm ghost" data-a="logout" type="button">로그아웃</button>`
     :`<a class="btn sm ghost" href="#login">로그인</a><a class="btn sm gold" href="#signup">지도자 회원가입</a>`);
   let h='';
   if(!M.ready){document.getElementById('view').innerHTML='<div class="empty">불러오는 중…</div>';return;}
@@ -654,8 +655,12 @@ function render(){
   if(r==='admin'&&UI.atab==='results')setTimeout(liveQr,0);
   const ta=document.getElementById('ctText');if(ta&&UI.contact&&UI.contact.focus){UI.contact.focus=false;ta.focus();}
 }
+/* 권한: 대표(admin) · 직원(staff) · 지도자(coach) */
+const isOps=u=>!!u&&(u.role==='admin'||u.role==='staff');
+const isOwner=u=>!!u&&u.role==='admin';
+const ROLE_N={admin:'대표',staff:'직원',coach:'지도자'};
 function need(role,fn){const u=me();if(!u)return `<div class="auth"><div class="card"><h2>로그인이 필요합니다</h2><p class="mute">선수 등록과 대회 접수는 지도자 계정으로 로그인한 뒤 할 수 있습니다.</p><div class="row"><a class="btn gold" href="#login">로그인</a><a class="btn" href="#signup">지도자 회원가입</a></div></div></div>`;
-  if(u.role!==role)return `<div class="empty">${role==='admin'?'대회 본부(관리자) 계정만 볼 수 있는 화면입니다.':'지도자 계정으로 로그인해 주세요.'}</div>`;return fn();}
+  if(role==='admin'?!isOps(u):u.role!==role)return `<div class="empty">${role==='admin'?'대회 본부(대표·직원) 계정만 볼 수 있는 화면입니다.':'지도자 계정으로 로그인해 주세요.'}</div>`;return fn();}
 
 /* ---------- 관람객 실시간 결과 (로그인 없이 봄) ---------- */
 const LIVE={id:null,snap:null,at:'',v:null,st:{q:'',tab:'courts'},busy:false,lastFetch:0,none:false};
@@ -1036,23 +1041,26 @@ function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id)
         ${c.notice?`<div class="notice"><b>대회 본부 공지</b><div>${esc(c.notice)}</div></div>`:''}<span class="small mute">입금 계좌: ${esc(c.account)}${c.contact?' · 문의 '+esc(c.contact):''}</span></section>`;}).join(''):'<div class="empty" data-trh="entries0">아직 접수한 대회가 없습니다. <a href="#home">대회 일정</a>에서 대회를 골라 주세요.</div>'}</div>`;}
 
 /* ---------- 관리자 ---------- */
-const ATABS=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['results','결과 · 상장'],['setup','대회 고치기 · 공지 · 요강'],['lic','허가 코드']];
-function vAdmin(){const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.adminComp))UI.adminComp=C[0]&&C[0].id;
+const ATABS_ALL=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['results','결과 · 상장'],['setup','대회 고치기 · 공지 · 요강'],['lic','허가 코드'],['acct','💰 회계']];
+const OWNER_TABS=['setup','lic','acct'];
+let ATABS=ATABS_ALL;
+function vAdmin(){ATABS=ATABS_ALL.filter(([k])=>isOwner(me())||!OWNER_TABS.includes(k));if(!ATABS.some(([k])=>k===UI.atab))UI.atab='status';const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.adminComp))UI.adminComp=C[0]&&C[0].id;
   const c=C.find(x=>x.id===UI.adminComp),tab=UI.atab||'status';
   const E=c?D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'):[];
   const coaches=new Set(E.map(e=>e.coachId)).size,paid=E.filter(e=>e.status==='paid');
   let body='';
   if(tab==='members')body=vMembers();
+  else if(tab==='acct')body=vAcct();
   else if(tab==='lic')body=vLic();
   else if(!c)body='<div class="empty">대회가 없습니다. 「새 대회 만들기」를 눌러 주세요.</div>';
   else if(tab==='dojang')body=vDojang(c,E);
   else if(tab==='setup')body=vSetup(c);
   else if(tab==='results')body=vAdminResults(c);
   else body=vStatus(c,E);
-  return `<div class="stack"><div class="row between"><div><span class="eyebrow">Admin</span><h1>대회 관리 · 명단 내보내기</h1></div><button class="btn" type="button" data-a="newComp">+ 새 대회 만들기</button></div>
+  return `<div class="stack"><div class="row between"><div><span class="eyebrow">Admin</span><h1>대회 관리 · 명단 내보내기</h1>${me().role==='staff'?'<span class="small mute">직원 계정 · 접수·입금·명단·대진 일을 합니다 (대회 만들기·허가 코드·회계·권한은 대표만)</span>':''}</div>${isOwner(me())?'<button class="btn" type="button" data-a="newComp">+ 새 대회 만들기</button>':''}</div>
     ${UI.newComp?compForm(null):''}
-    <div class="row">${tab!=='members'&&tab!=='lic'?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
-    ${c&&tab!=='members'&&tab!=='lic'?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
+    <div class="row">${tab!=='members'&&tab!=='lic'&&tab!=='acct'?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
+    ${c&&tab!=='members'&&tab!=='lic'&&tab!=='acct'?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
     <div class="atabs" role="tablist">${ATABS.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''}" data-a="atab" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}</div>`;}
 /* 경기 앱 주소: 주소 끝 #ksreg-대회번호 로 열면 경기 앱이 그 대회 명단 가져오기 창을 바로 엽니다 */
@@ -1145,27 +1153,77 @@ function vDojang(c,E){const L=dojangRows(c,E),T=L.reduce((s,r)=>({cnt:s.cnt+r.cn
       <td class="num">${won(r.total)}</td><td class="num">${won(r.paid)}</td><td class="num" style="color:${r.due?'var(--warn)':'var(--ok)'};font-weight:800">${r.due?won(r.due):'완료 ✓'}</td>
       <td style="white-space:nowrap">${r.due?`<button class="btn sm gold" type="button" data-a="payAll" data-id="${r.id}">${UI.payArm===r.id?'한 번 더 누르면 확인':'모두 입금 확인'}</button> <button class="btn sm" type="button" data-a="contact" data-id="${r.id}" data-t="pay">💬 연락</button>`:`<button class="btn sm ghost" type="button" data-a="contact" data-id="${r.id}" data-t="free">💬 연락</button>`}</td></tr>`).join('')}
     <tr class="tot"><td colspan="2"><b>합계 ${L.length}곳</b></td>${c.sports.map(s=>`<td class="num">${L.reduce((n,r)=>n+(r.n[s]||0),0)}</td>`).join('')}<td class="num"><b>${won(T.total)}</b></td><td class="num">${won(T.paid)}</td><td class="num"><b>${won(T.total-T.paid)}</b></td><td></td></tr></table></div>`;}
+/* ---------- 회계 (대표만): 참가비·허가 코드는 자동 수입, 지출·기타 수입은 장부에 ---------- */
+const AC_OUT=['심판비','대관료','인건비','상장·메달·트로피','식비·다과','교통·숙박','장비·소모품','인쇄·홍보','음향·영상','보험','수수료','세금·공과금','기타 지출'];
+const AC_IN=['후원·협찬','기타 수입'];
+const mapLed=x=>({id:x.id,kind:x.kind,cat:x.category||'',amt:Number(x.amount)||0,day:String(x.day||'').slice(0,10),compId:x.comp_id||'',memo:x.memo||'',receipt:x.receipt||'',rname:x.receipt_name||''});
+function acRows(){const R=[],cn=id=>{const c=D().comps.find(x=>x.id===id);return c?c.name:'';};
+  D().entries.filter(e=>e.status==='paid'&&e.fee>0).forEach(e=>{const co=coachOf(e.coachId);R.push({auto:'fee',kind:'in',cat:'대회 참가비',amt:Number(e.fee)||0,day:String(e.paidAt||e.at||'').slice(0,10),compId:e.compId,memo:`${co.org||co.name||''} · ${SPORTS[e.sport]?SPORTS[e.sport].n:e.sport}`});});
+  (M.licenses||[]).filter(l=>Number(l.price)>0).forEach(l=>R.push({auto:'lic',kind:'in',cat:'허가 코드 판매',amt:Number(l.price)||0,day:String(l.created_at||l.starts||'').slice(0,10),compId:'',memo:`${l.holder||''} · ${LKIND[l.kind]||l.kind}`}));
+  (M.ledger||[]).map(mapLed).forEach(x=>R.push(x));
+  return R.map(x=>({...x,comp:cn(x.compId)})).sort((a,b)=>b.day.localeCompare(a.day));}
+function acSum(L){const s={fee:0,lic:0,etc:0,out:0};L.forEach(x=>{if(x.kind==='out')s.out+=x.amt;else if(x.auto==='fee')s.fee+=x.amt;else if(x.auto==='lic')s.lic+=x.amt;else s.etc+=x.amt;});s.inn=s.fee+s.lic+s.etc;s.net=s.inn-s.out;return s;}
+function vAcct(){if(!isOwner(me()))return '<div class="empty">회계는 대표만 볼 수 있습니다.</div>';
+  if(!M.ledgerOk)return '<div class="notice"><b>💰 회계</b><div>Supabase에서 11단계 SQL(schema11.sql)을 실행하면 회계 장부를 쓸 수 있습니다. 실행 전에도 입금 확인된 참가비는 「도장별 참가비」에서 볼 수 있습니다.</div></div>';
+  const all=acRows(),years=[...new Set(all.map(x=>x.day.slice(0,4)).filter(Boolean).concat([String(new Date().getFullYear())]))].sort().reverse(),y=UI.acY||years[0],cf=UI.acComp||'';
+  const L=all.filter(x=>(y==='all'||x.day.startsWith(y))&&(!cf||x.compId===cf)),S0=acSum(L),f=UI.acForm||{kind:'out'};
+  const months=Array.from({length:12},(_,i)=>`${y}-${String(i+1).padStart(2,'0')}`);
+  const byComp=[...new Set(L.map(x=>x.compId))].map(id=>({id,name:id?(D().comps.find(c=>c.id===id)||{}).name||'(지워진 대회)':'대회와 상관없음',s:acSum(L.filter(x=>x.compId===id))})).sort((a,b)=>b.s.inn-a.s.inn);
+  const tr=(lab,s)=>`<td>${lab}</td><td class="num">${won(s.fee)}</td><td class="num">${won(s.lic)}</td><td class="num">${won(s.etc)}</td><td class="num"><b>${won(s.inn)}</b></td><td class="num" style="color:var(--warn)">${won(s.out)}</td><td class="num" style="font-weight:800;color:${s.net<0?'var(--warn)':'var(--ok)'}">${won(s.net)}</td>`;
+  const head='<tr><th></th><th>참가비</th><th>허가 코드</th><th>기타 수입</th><th>수입 합계</th><th>지출</th><th>남은 돈</th></tr>';
+  return `<div class="row between"><div><h2>💰 회계 장부</h2><p class="small mute" style="margin:4px 0 0">입금 확인된 대회 참가비와 판매 금액을 넣은 허가 코드는 자동으로 수입에 들어갑니다. 지출과 기타 수입은 아래에서 영수증과 함께 적어 주세요. 세금 신고는 엑셀로 내려받아 세무사와 확인하시기 바랍니다.</p></div>
+      <button class="btn gold" type="button" data-a="acX">⬇ 회계 엑셀 내려받기</button></div>
+    <div class="row"><label class="f" style="width:140px"><span>연도</span>${sel('acY',[...years.map(v=>({v,l:v+'년'})),{v:'all',l:'전체'}],y,'data-on="acY"')}</label>
+      <label class="f" style="flex:1;max-width:420px"><span>대회</span>${sel('acComp',[{v:'',l:'모든 대회 · 회사 전체'},...D().comps.map(c=>({v:c.id,l:`${c.name} (${c.date})`}))],cf,'data-on="acComp"')}</label></div>
+    <div class="kpis"><div><b class="num">${won(S0.inn)}</b><span>수입 (참가비 ${won(S0.fee)} · 허가 코드 ${won(S0.lic)} · 기타 ${won(S0.etc)})</span></div><div><b class="num" style="color:var(--warn)">${won(S0.out)}</b><span>지출</span></div><div><b class="num" style="color:${S0.net<0?'var(--warn)':'var(--ok)'}">${won(S0.net)}</b><span>남은 돈 (수입 − 지출)</span></div></div>
+    <form class="form card" id="fLedger"><div class="row between"><h3>장부에 적기</h3><div class="seg"><button type="button" class="${f.kind==='out'?'on':''}" data-a="acKind" data-k="out">지출</button><button type="button" class="${f.kind==='in'?'on':''}" data-a="acKind" data-k="in">기타 수입</button></div></div>
+      <div class="grid3"><label class="f"><span>날짜 <i>*</i></span><input type="date" id="acDay" value="${esc(f.day||kstDay())}" required></label>
+        <label class="f"><span>금액 (원) <i>*</i></span><input type="number" id="acAmt" min="0" step="100" required placeholder="0"></label>
+        <label class="f"><span>항목</span>${sel('acCat',(f.kind==='in'?AC_IN:AC_OUT).map(v=>({v,l:v})),'')}</label>
+        <label class="f"><span>대회 (선택)</span>${sel('acCompF',[{v:'',l:'대회와 상관없음'},...D().comps.map(c=>({v:c.id,l:c.name}))],cf)}</label>
+        <label class="f"><span>내용 · 거래처</span><input type="text" id="acMemo" placeholder="예: 경민대 체육관 대관 (11/28)"></label>
+        <label class="f"><span>영수증 (사진·PDF, 10MB까지)</span><input type="file" id="acRcpt" accept="image/*,.pdf"></label></div>
+      ${UI.err&&UI.acForm?`<span class="err">${esc(UI.err)}</span>`:''}<div class="row"><button class="btn gold" type="submit">${f.kind==='in'?'수입 적기':'지출 적기'}</button></div></form>
+    <h3>${y==='all'?'연도':'월'}별</h3><div class="tablewrap"><table>${head}${(y==='all'?years.filter(v=>v!=='all'):months).map(m=>{const s=acSum(L.filter(x=>x.day.startsWith(m)));return s.inn||s.out?`<tr>${tr(y==='all'?m+'년':Number(m.slice(5))+'월',s)}</tr>`:'';}).join('')}<tr class="tot">${tr('<b>합계</b>',S0)}</tr></table></div>
+    <h3>대회별</h3><div class="tablewrap"><table>${head}${byComp.map(r=>`<tr>${tr(esc(r.name),r.s)}</tr>`).join('')}</table></div>
+    <h3>장부 <span class="small mute">${L.length}건</span></h3><div class="tablewrap"><table><tr><th>날짜</th><th>구분</th><th>항목</th><th>대회</th><th>내용</th><th>금액</th><th></th></tr>
+    ${L.slice(0,UI.acMore?5000:200).map(x=>`<tr><td class="num small">${esc(x.day)}</td><td>${x.kind==='out'?'<span class="chip warn">지출</span>':'<span class="chip open">수입</span>'}${x.auto?' <span class="small mute">자동</span>':''}</td><td>${esc(x.cat)}</td><td class="small">${esc(x.comp||'')}</td><td class="small">${esc(x.memo)}</td>
+      <td class="num" style="${x.kind==='out'?'color:var(--warn)':''}">${x.kind==='out'?'−':''}${won(x.amt)}</td><td style="white-space:nowrap">${x.id?`${x.receipt?`<button class="btn sm ghost" type="button" data-a="acRc" data-id="${x.id}">🧾 영수증</button> `:''}<button class="btn sm ghost" type="button" data-a="acDel" data-id="${x.id}">${UI.acArm===x.id?'한 번 더 누르면 지움':'지우기'}</button>`:''}</td></tr>`).join('')}</table></div>
+    ${L.length>200&&!UI.acMore?'<button class="btn sm" type="button" data-a="acMore">모두 보기</button>':''}`;}
+async function acExport(){const all=acRows(),y=UI.acY||'all',cf=UI.acComp||'';const L=all.filter(x=>(y==='all'||x.day.startsWith(y))&&(!cf||x.compId===cf));
+  if(!window.XLSX){toast('엑셀 도구를 불러오지 못했습니다');return;}const wb=XLSX.utils.book_new();
+  const led=[['날짜','구분','항목','대회','내용','수입','지출','자동/직접','영수증']].concat(L.slice().reverse().map(x=>[x.day,x.kind==='out'?'지출':'수입',x.cat,x.comp||'',x.memo,x.kind==='in'?x.amt:'',x.kind==='out'?x.amt:'',x.auto?'자동':'직접',x.rname||'']));
+  const sum=s=>[s.fee,s.lic,s.etc,s.inn,s.out,s.net],H=['참가비','허가 코드','기타 수입','수입 합계','지출','남은 돈'];
+  const ms=[...new Set(L.map(x=>x.day.slice(0,7)))].sort();const mon=[['월',...H],...ms.map(m=>[m,...sum(acSum(L.filter(x=>x.day.startsWith(m))))]),['합계',...sum(acSum(L))]];
+  const cs=[...new Set(L.map(x=>x.compId))];const cmp=[['대회',...H],...cs.map(id=>[id?(D().comps.find(c=>c.id===id)||{}).name||'':'대회와 상관없음',...sum(acSum(L.filter(x=>x.compId===id)))])];
+  [[led,'장부'],[mon,'월별'],[cmp,'대회별']].forEach(([r,n])=>{const ws=XLSX.utils.aoa_to_sheet(r);ws['!cols']=r[0].map((h,i)=>({wch:i===4?36:14}));XLSX.utils.book_append_sheet(wb,ws,n);});
+  saveBytes(new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'})),`KICKSTART UP 회계_${y==='all'?'전체':y+'년'}.xlsx`,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','회계 엑셀을 저장했습니다');}
 /* 회원 관리 */
-function vMembers(){const U=D().users.slice().sort((a,b)=>(a.role==='admin'?0:1)-(b.role==='admin'?0:1)||String(a.org).localeCompare(String(b.org),'ko'));
+function vMembers(){const RO={admin:0,staff:1,coach:2},own=isOwner(me());const U=D().users.slice().sort((a,b)=>(RO[a.role]??2)-(RO[b.role]??2)||String(a.org).localeCompare(String(b.org),'ko'));
   const nA=id=>D().athletes.filter(a=>a.coachId===id).length,nE=id=>D().entries.filter(e=>e.coachId===id&&e.status!=='cancel').length;
   return `<div class="row between"><div><h2>회원 관리</h2><p class="small mute" style="margin:4px 0 0">지도자가 비밀번호를 잊으면 「임시 비밀번호」를 눌러 새 비밀번호를 만들고 전화·문자로 알려 주세요.</p></div>
     <label class="f" style="min-width:220px"><span>찾기 (이름·소속·전화)</span><input type="text" id="memQ" data-on="memQ" placeholder="예: 경민"></label></div>
     ${UI.tempPw?`<div class="flash" role="status"><span><b>${esc(UI.tempPw.who)}</b> 임시 비밀번호: <b class="num" style="font-size:22px;letter-spacing:.06em">${esc(UI.tempPw.pw)}</b><br><span class="small">지도자에게 알려 주세요. 로그인한 뒤 「내 정보」에서 바꿀 수 있습니다.</span></span><button class="btn sm" type="button" data-a="copyPw">복사</button></div>`:''}
     <div class="tablewrap"><table id="memT"><tr><th>이름</th><th>소속</th><th>휴대폰 · 이메일</th><th>선수</th><th>접수</th><th>가입일</th><th></th></tr>
-    ${U.map(u=>`<tr data-q="${esc([u.name,u.org,u.phone,u.email].join(' ').toLowerCase())}"><td><b>${esc(u.name)}</b>${u.role==='admin'?' <span class="chip ps">관리자</span>':''}</td><td>${esc(u.org)}${M.hasNat&&u.country&&u.country!=='KOR'?' '+flagChip(u.country):''}</td><td class="small">${esc(u.phone)}<div class="mute">${esc(u.email)}</div></td>
+    ${U.map(u=>`<tr data-q="${esc([u.name,u.org,u.phone,u.email].join(' ').toLowerCase())}"><td><b>${esc(u.name)}</b>${u.role!=='coach'?` <span class="chip ${u.role==='admin'?'ps':'open'}">${ROLE_N[u.role]||u.role}</span>`:''}${own&&u.id!==me().id?`<div style="margin-top:4px">${sel('role_'+u.id,[{v:'coach',l:'지도자'},{v:'staff',l:'직원'},{v:'admin',l:'대표'}],u.role,`data-role="${u.id}" style="width:auto;padding:2px 6px;font-size:12px"`)}</div>`:''}</td><td>${esc(u.org)}${M.hasNat&&u.country&&u.country!=='KOR'?' '+flagChip(u.country):''}</td><td class="small">${esc(u.phone)}<div class="mute">${esc(u.email)}</div></td>
       <td class="num">${nA(u.id)}</td><td class="num">${nE(u.id)}</td><td class="small num">${esc(u.at||'')}</td>
-      <td style="white-space:nowrap">${u.id!==me().id?`<button class="btn sm" type="button" data-a="contact" data-id="${u.id}" data-t="free">💬 연락</button> <button class="btn sm ghost" type="button" data-a="tempPw" data-id="${u.id}">${UI.pwArm===u.id?'한 번 더 누르면 만들기':'임시 비밀번호'}</button>`:''}</td></tr>`).join('')}</table></div>
-    <span class="small mute">회원 ${U.length}명 (관리자 ${U.filter(u=>u.role==='admin').length}명)</span>`;}
+      <td style="white-space:nowrap">${u.id!==me().id?`<button class="btn sm" type="button" data-a="contact" data-id="${u.id}" data-t="free">💬 연락</button>${own||u.role==='coach'?` <button class="btn sm ghost" type="button" data-a="tempPw" data-id="${u.id}">${UI.pwArm===u.id?'한 번 더 누르면 만들기':'임시 비밀번호'}</button>`:''}`:''}</td></tr>`).join('')}</table></div>
+    <span class="small mute">회원 ${U.length}명 (대표 ${U.filter(u=>u.role==='admin').length} · 직원 ${U.filter(u=>u.role==='staff').length} · 지도자 ${U.filter(u=>u.role==='coach').length})${own?' · 직원은 홈페이지에 지도자로 가입한 뒤, 여기서 권한을 「직원」으로 바꿔 주세요. 직원은 접수 현황·선수·접수 내역 고치기·입금 확인·명단 가져오기·대진표 올리기를 하고, 대회 만들기·허가 코드·회계·권한 바꾸기는 대표만 합니다.':''}</span>`;}
+document.addEventListener('change',ev=>{const t=ev.target;if(!t||!t.dataset||!t.dataset.role)return;const id=t.dataset.role,v=t.value,u=D().users.find(x=>x.id===id);if(!u||!isOwner(me()))return;
+  if(!confirmRole(u,v)){t.value=u.role;return;}
+  run(async()=>{const {error}=await sb.from('profiles').update({role:v}).eq('id',id);if(error){toast('권한을 바꾸지 못했습니다: '+(/role_check|check constraint/i.test(msgOf(error))?'Supabase에서 11단계 SQL을 먼저 실행해 주세요':msgOf(error)));await reload();return;}await reload();toast(`${u.name} → ${ROLE_N[v]}`);});},true);
+function confirmRole(u,v){if(v==='admin')return window.confirm(`${u.name} 님을 「대표」로 바꾸면 회계·허가 코드·권한까지 모두 할 수 있습니다. 바꿀까요?`);return true;}
 /* 허가 코드: 대회 앱(품새·겨루기·격파)을 파는 단위 */
 const LKIND={event:'대회 1회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'};
-const LDAYS={week:7,month:30,year:365};const LAPP={all:'모든 경기 앱',hero:'태권 히어로'};const LMODE={online:'인터넷 주소에서만',file:'파일·현장 모드에서도'};
-const HERO_URL=()=>location.origin+location.pathname.replace(/[^/]*$/,'')+'hero/';
+const LDAYS={week:7,month:30,year:365};const LAPP={all:'모든 경기 앱',hero:'태권 히어로 (1·2 모두)',hero2:'태권 히어로 2만'};const LMODE={online:'인터넷 주소에서만',file:'파일·현장 모드에서도'};
+const HERO_URL=a=>location.origin+location.pathname.replace(/[^/]*$/,'')+(a==='hero2'?'hero2/':'hero/');
+const HNAME=a=>a==='hero2'?'태권 히어로 2':'태권 히어로';
 const won$=(p)=>p&&p.price!=null?`${Number(p.price).toLocaleString()} ${p.currency||''}`.trim():'';
 function newCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=new Uint8Array(16);crypto.getRandomValues(b);let s='';for(let i=0;i<16;i++){s+=A[b[i]%A.length];if(i%4===3&&i<15)s+='-';}return 'KS-'+s;}
 function addD(s,n){const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
 function licState(l){const t=today();if(l.revoked)return ['cancel','중지됨'];if(l.kind==='life'&&t>=l.starts)return ['paid','사용 중 (평생)'];if(t>l.ends)return ['closed','기간 끝남'];if(t<l.starts)return ['soon','시작 전'];return ['paid','사용 중'];}
-function licMsg(l){return msgL(`[KICKSTART UP] 대회 운영 프로그램 허가 코드\n${l.holder?l.holder+' 님, ':''}${LKIND[l.kind]} 허가 코드를 보내 드립니다.\n\n코드: ${l.code}\n사용 기간: ${l.starts} ~ ${l.kind==='life'?'평생':l.ends}${l.app==='hero'?`\n앱: 태권 히어로${l.mode==='online'?` (인터넷 주소에서만)\n주소: ${HERO_URL()}`:''}`:''}\n\n넣는 곳: 품새·겨루기·격파 앱 관리자 화면 왼쪽 아래 「🔒 연습 모드 · 허가 코드 넣기」 → 코드 붙여넣기 → 「코드 확인하고 풀기」\n(처음 한 번은 인터넷이 필요하고, 그 뒤에는 현장 모드에서도 기간 안에 그대로 쓰입니다)`);}
-function heroMsg(l){return `[KICKSTART UP] Taekwon Heroes app / 태권 히어로 앱\n${l&&l.holder?l.holder+' 님, ':''}태권 히어로 앱 주소와 허가 코드를 보내 드립니다.\n\n① 앱 주소 (App): ${HERO_URL()}\n② 화면 위쪽 「🔒 연습 모드 · 허가 코드 넣기」(Practice mode · enter code)를 누르세요\n③ 코드 (Code): ${l?l.code:''}\n④ 「코드 확인하고 풀기」(Check & unlock)\n\n사용 기간 (Period): ${l?l.starts:''} ~ ${l&&l.kind==='life'?'평생 (lifetime)':l?l.ends:''}\n※ 크롬(Chrome)에서 여시고, 오른쪽 위 EN 버튼으로 영어 화면을 쓸 수 있습니다.`;}
+function licMsg(l){return msgL(`[KICKSTART UP] 대회 운영 프로그램 허가 코드\n${l.holder?l.holder+' 님, ':''}${LKIND[l.kind]} 허가 코드를 보내 드립니다.\n\n코드: ${l.code}\n사용 기간: ${l.starts} ~ ${l.kind==='life'?'평생':l.ends}${l.app==='hero'||l.app==='hero2'?`\n앱: ${HNAME(l.app)}${l.mode==='online'?` (인터넷 주소에서만)\n주소: ${HERO_URL(l.app)}${l.app==='hero'?'\n히어로 2 주소: '+HERO_URL('hero2'):''}`:''}`:''}\n\n넣는 곳: 품새·겨루기·격파 앱 관리자 화면 왼쪽 아래 「🔒 연습 모드 · 허가 코드 넣기」 → 코드 붙여넣기 → 「코드 확인하고 풀기」\n(처음 한 번은 인터넷이 필요하고, 그 뒤에는 현장 모드에서도 기간 안에 그대로 쓰입니다)`);}
+function heroMsg(l){const two=l&&l.app==='hero2';return `[KICKSTART UP] ${two?'Taekwon Heroes 2':'Taekwon Heroes'} app / ${two?'태권 히어로 2':'태권 히어로'} 앱\n${l&&l.holder?l.holder+' 님, ':''}${two?'태권 히어로 2':'태권 히어로'} 앱 주소와 허가 코드를 보내 드립니다.\n\n① 앱 주소 (App): ${HERO_URL(l&&l.app)}${!two?`\n   히어로 2 (Heroes 2): ${HERO_URL('hero2')}`:''}\n② 화면 위쪽 「🔒 연습 모드 · 허가 코드 넣기」(Practice mode · enter code)를 누르세요\n③ 코드 (Code): ${l?l.code:''}\n④ 「코드 확인하고 풀기」(Check & unlock)\n\n사용 기간 (Period): ${l?l.starts:''} ~ ${l&&l.kind==='life'?'평생 (lifetime)':l?l.ends:''}\n※ 크롬(Chrome)에서 여시고, 오른쪽 위 EN 버튼으로 영어 화면을 쓸 수 있습니다.`;}
 function licEditForm(l){
   return `<form class="form" id="fLicEdit" data-c="${esc(l.code)}"><h3>허가 내용 고치기 · ${esc(l.code)}</h3>
     <div class="grid3"><label class="f"><span>종류</span>${sel('leKind',Object.entries(LKIND).map(([v,t])=>({v,l:t})),l.kind)}</label>
@@ -1174,6 +1232,7 @@ function licEditForm(l){
       <label class="f"><span>쓰기 시작하는 날</span><input type="date" id="leStarts" value="${esc(l.starts)}"></label>
       <label class="f"><span>끝나는 날 (평생권은 9999-12-31)</span><input type="date" id="leEnds" value="${esc(l.ends)}"></label>
       <label class="f"><span>메모 (금액·입금 등)</span><input type="text" id="leNote" value="${esc(l.note||'')}"></label>
+      ${M.ledgerOk?`<label class="f"><span>판매 금액 (원)</span><input type="number" id="lePrice" min="0" step="1000" value="${esc(l.price||0)}"></label>`:''}
       ${l.mode!=null?`<label class="f"><span>쓸 수 있는 앱</span>${sel('leApp',Object.entries(LAPP).map(([v,t])=>({v,l:t})),l.app||'all')}</label>
       <label class="f"><span>사용 방식</span>${sel('leMode',Object.entries(LMODE).map(([v,t])=>({v,l:t})),l.mode||'file')}</label>
       <label class="f"><span>인터넷 없이 쓸 수 있는 날</span><input type="number" id="leGrace" min="0" max="60" value="${esc(l.grace_days??3)}"></label>`:''}</div>
@@ -1183,20 +1242,21 @@ function vLic(){const L=M.licenses,f=UI.licForm||{kind:'event',date:'',starts:''
   if(M.licErr&&/licenses|relation|schema cache/i.test(M.licErr))return `<div class="note">허가 코드 표가 아직 데이터베이스에 없습니다. Supabase SQL 편집기에서 4단계 SQL을 실행해 주세요.</div>`;
   const ev=f.kind==='event',st=f.starts||(ev?(f.date?addD(f.date,-3):''):today()),en=f.ends||(ev?(f.date?addD(f.date,1):''):f.kind==='life'?'9999-12-31':addD(st||today(),(LDAYS[f.kind]||365)-1));
   const PL=M.plans,plan=k=>(PL||[]).find(x=>x.kind===k);
-  return `<div class="card stack" style="gap:6px"><b>🌐 태권 히어로 인터넷 앱 주소</b><div class="row" style="gap:8px"><code class="num" style="user-select:all">${esc(HERO_URL())}</code><button class="btn sm" type="button" data-a="heroUrl">주소 복사</button><a class="btn sm" href="${esc(HERO_URL())}" target="_blank" rel="noopener">열어 보기</a></div><span class="small mute">「인터넷 주소에서만」 코드는 이 주소에서만 열립니다. 코드마다 「🌐 히어로 주소 보내기」를 누르면 주소와 코드가 함께 든 안내문(한국어·영어)이 복사됩니다.</span></div>
+  return `<div class="card stack" style="gap:6px"><b>🌐 태권 히어로 인터넷 앱 주소</b>${['hero','hero2'].map(a=>`<div class="row" style="gap:8px"><b class="small">${HNAME(a)}</b><code class="num" style="user-select:all">${esc(HERO_URL(a))}</code><button class="btn sm" type="button" data-a="heroUrl" data-c="${a}">주소 복사</button><a class="btn sm" href="${esc(HERO_URL(a))}" target="_blank" rel="noopener">열어 보기</a></div>`).join('')}<span class="small mute">「인터넷 주소에서만」 코드는 이 주소에서만 열립니다. 코드마다 「🌐 히어로 주소 보내기」를 누르면 주소와 코드가 함께 든 안내문(한국어·영어)이 복사됩니다.</span></div>
     <div><h2>허가 코드</h2><p class="small mute" style="margin:4px 0 0" data-trh="lic1">대회 앱은 코드가 없으면 <b>연습 모드</b>(선수 20명까지, 전광판·상장에 「연습용」)로 열립니다. 여기서 만든 코드를 넣으면 기간 동안 모두 풀립니다. 우리 대회에 쓸 코드도 여기서 만드세요.</p></div>
     <form class="form" id="fLic"><h3>새 허가 코드 만들기</h3>
       <div class="tabs">${Object.entries(LKIND).map(([k,l])=>`<button type="button" class="${f.kind===k?'on':''}" data-a="licKind" data-k="${k}">${l}${plan(k)?` <span class="small mute">${esc(won$(plan(k)))}</span>`:''}</button>`).join('')}</div>
       <div class="grid3"><label class="f"><span>쓸 수 있는 앱</span>${sel('lcApp',Object.entries(LAPP).map(([v,l])=>({v,l})),f.app||'all')}</label>
         <label class="f"><span>사용 방식</span>${sel('lcMode',Object.entries(LMODE).map(([v,l])=>({v,l})),f.mode||'file')}</label>
         <label class="f"><span>인터넷 없이 쓸 수 있는 날 (파일 사용)</span><input type="number" id="lcGrace" min="0" max="60" value="${esc(f.grace??3)}"></label></div>
-      <span class="small mute">「인터넷 주소에서만」은 홈페이지에 올린 앱 주소(${esc(HERO_URL())})에서만 열리고, 켤 때마다 인터넷으로 확인합니다. 파일로 복사해도 열리지 않습니다. 「파일·현장 모드에서도」는 한 번 확인한 뒤 정한 날 수만큼 인터넷 없이 쓸 수 있습니다. 중지하면 다음 확인 때 바로 막힙니다.</span>
+      <span class="small mute">「인터넷 주소에서만」은 홈페이지에 올린 앱 주소(${esc(HERO_URL())}, ${esc(HERO_URL('hero2'))})에서만 열리고, 켤 때마다 인터넷으로 확인합니다. 파일로 복사해도 열리지 않습니다. 「파일·현장 모드에서도」는 한 번 확인한 뒤 정한 날 수만큼 인터넷 없이 쓸 수 있습니다. 중지하면 다음 확인 때 바로 막힙니다.</span>
       <div class="grid2"><label class="f"><span>받는 곳 (단체·도장 이름) <i>*</i></span><input type="text" id="lcHolder" required value="${esc(f.holder||'')}" placeholder="○○시 태권도협회"></label>
         <label class="f"><span>연락처</span><input type="text" id="lcContact" value="${esc(f.contact||'')}" placeholder="010-0000-0000"></label>
         ${ev?`<label class="f"><span>대회 날짜 <i>*</i> (3일 전부터 다음 날까지 쓰임)</span><input type="date" id="lcDate" value="${esc(f.date||'')}" data-on="licDate"></label><span></span>`:''}
         <label class="f"><span>쓰기 시작하는 날</span><input type="date" id="lcStarts" value="${esc(st)}"></label>
         <label class="f"><span>끝나는 날${f.kind==='life'?' (평생)':''}</span><input type="date" id="lcEnds" value="${esc(en)}"></label></div>
-      <label class="f"><span>메모 (금액·입금 등)</span><input type="text" id="lcNote" value="${esc(f.note||'')}"></label>
+      <div class="grid2"><label class="f"><span>판매 금액 (원 · 회계에 자동으로 수입)</span><input type="number" id="lcPrice" min="0" step="1000" value="${esc(f.price||'')}" placeholder="0"></label>
+      <label class="f"><span>메모 (입금 등)</span><input type="text" id="lcNote" value="${esc(f.note||'')}"></label></div>
       ${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}<div class="row"><button class="btn gold" type="submit">코드 만들기</button></div></form>
     ${PL===null?`<div class="note">금액표·사용 방식은 Supabase SQL 편집기에서 8단계 SQL(schema8.sql)을 실행하면 나타납니다.</div>`:`<section class="form"><h3>사용 권한 금액표</h3><span class="small mute">홈페이지와 안내문에 쓰는 금액입니다. 입금은 계좌로 받고, 확인되면 위에서 코드를 만들어 보내 주세요.</span>
       <div class="grid2">${['week','month','year','life'].map(k=>`<label class="f"><span>${LKIND[k]}</span><span class="row" style="gap:6px"><input type="number" id="pl_${k}" min="0" step="1" value="${esc(plan(k)?plan(k).price:'')}" style="flex:1"><input type="text" id="plc_${k}" value="${esc(plan(k)?plan(k).currency:'USD')}" style="width:5.5em"></span></label>`).join('')}</div>
@@ -1205,7 +1265,7 @@ function vLic(){const L=M.licenses,f=UI.licForm||{kind:'event',date:'',starts:''
     ${L.length?`<div class="tablewrap"><table><tr><th>코드</th><th>종류</th><th>받는 곳</th><th>기간</th><th>상태</th><th>사용</th><th></th></tr>
       ${L.map(l=>{const [k,t]=licState(l);return `<tr><td class="num" style="white-space:nowrap"><b>${esc(l.code)}</b></td><td>${LKIND[l.kind]||l.kind}${l.app&&l.app!=='all'?`<div class="small mute">${esc(LAPP[l.app]||l.app)}</div>`:''}${l.mode?`<div class="small mute">${l.mode==='online'?'🌐 인터넷만':'💾 파일 '+(l.grace_days??3)+'일'}</div>`:''}</td><td>${esc(l.holder)}<div class="small mute">${esc(l.contact)}${l.note?' · '+esc(l.note):''}</div></td>
         <td class="small num" style="white-space:nowrap">${esc(l.starts)}<br>~ ${l.kind==='life'?'평생':esc(l.ends)}</td><td><span class="st ${k}">${t}</span></td><td class="small">${l.seen_count||0}회${l.last_seen?`<div class="mute">${esc(String(l.last_seen).slice(0,10))}</div>`:''}</td>
-        <td><div class="licact"><button class="btn sm" type="button" data-a="licCode" data-c="${esc(l.code)}">코드 복사</button><button class="btn sm" type="button" data-a="licMsgEd" data-c="${esc(l.code)}">${UI.licMsg===l.code?'안내문 닫기':'안내문 보기·고치기'}</button>${l.app==='hero'||l.app==='all'?`<button class="btn sm" type="button" data-a="licHero" data-c="${esc(l.code)}">🌐 히어로 주소 보내기</button>`:''}
+        <td><div class="licact"><button class="btn sm" type="button" data-a="licCode" data-c="${esc(l.code)}">코드 복사</button><button class="btn sm" type="button" data-a="licMsgEd" data-c="${esc(l.code)}">${UI.licMsg===l.code?'안내문 닫기':'안내문 보기·고치기'}</button>${l.app==='hero'||l.app==='hero2'||l.app==='all'?`<button class="btn sm" type="button" data-a="licHero" data-c="${esc(l.code)}">🌐 히어로 주소 보내기</button>`:''}
           <button class="btn sm" type="button" data-a="licEdit" data-c="${esc(l.code)}">${UI.licEdit===l.code?'고치기 닫기':'고치기'}</button><button class="btn sm ${l.revoked?'':'danger'}" type="button" data-a="licRevoke" data-c="${esc(l.code)}">${l.revoked?'다시 쓰게':UI.licArm===l.code?'한 번 더 누르면 중지':'중지'}</button><button class="btn sm danger" type="button" data-a="licDel" data-c="${esc(l.code)}">${UI.licDelArm===l.code?'한 번 더 누르면 삭제':'삭제'}</button></div></td></tr>
         ${UI.licEdit===l.code?`<tr><td colspan="7">${licEditForm(l)}</td></tr>`:''}
         ${UI.licMsg===l.code?`<tr><td colspan="7"><div class="form"><h3>안내문 · ${esc(l.code)}</h3><span class="small mute">글을 고친 뒤 「복사」를 누르면 카카오톡·문자·이메일에 붙여 넣을 수 있습니다.</span>
@@ -1902,6 +1962,12 @@ document.addEventListener('click',e=>{
   else if(a==='payClose'){UI.payDone=null;render();}
   else if(a==='sendApp'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)sendApp(c,b.dataset.s,b.dataset.w);}
   else if(a==='payCopy'){copyText(b.dataset.t,'복사했습니다');}
+  else if(a==='acKind'){UI.acForm={...(UI.acForm||{}),kind:b.dataset.k};UI.err='';render();}
+  else if(a==='acX'){acExport();}
+  else if(a==='acMore'){UI.acMore=true;render();}
+  else if(a==='acDel'){const id=b.dataset.id;if(UI.acArm!==id){UI.acArm=id;render();setTimeout(()=>{UI.acArm=null;},4000);return;}
+    const x=(M.ledger||[]).find(r=>r.id===id);run(async()=>{await q(sb.from('ledger').delete().eq('id',id));if(x&&x.receipt){try{await sb.storage.from('receipts').remove([x.receipt]);}catch(e){}}UI.acArm=null;await reload();toast('장부에서 지웠습니다');});}
+  else if(a==='acRc'){const x=(M.ledger||[]).find(r=>r.id===b.dataset.id);if(x&&x.receipt)run(async()=>{const {data,error}=await sb.storage.from('receipts').createSignedUrl(x.receipt,600);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');});}
   else if(a==='drSp'){UI.drSp=b.dataset.s;render();}
   else if(a==='drMine'){UI.drMine=!UI.drMine;render();}
   else if(a==='drDel'){const c=UI.adminComp,sp=b.dataset.s;if(UI.drArm!==sp){UI.drArm=sp;render();setTimeout(()=>{UI.drArm=null;},4000);return;}
@@ -1931,7 +1997,7 @@ document.addEventListener('click',e=>{
   else if(a==='licKind'){const gv=id=>(document.getElementById(id)||{}).value;UI.licForm={...(UI.licForm||{}),kind:b.dataset.k,starts:'',ends:'',app:gv('lcApp')||(UI.licForm||{}).app,mode:gv('lcMode')||(UI.licForm||{}).mode,grace:gv('lcGrace')??(UI.licForm||{}).grace,holder:(document.getElementById('lcHolder')||{}).value||'',contact:(document.getElementById('lcContact')||{}).value||''};UI.err='';render();}
   else if(a==='licCopy'){const l=S.licenses.find(x=>x.code===b.dataset.c);if(l)copyText(licMsg(l),'허가 코드 안내문을 복사했습니다. 카카오톡·문자에 붙여 넣으세요');}
   else if(a==='licCode'){copyText(b.dataset.c,'코드를 복사했습니다');}
-  else if(a==='heroUrl'){copyText(HERO_URL(),'태권 히어로 앱 주소를 복사했습니다');}
+  else if(a==='heroUrl'){copyText(HERO_URL(b.dataset.c),HNAME(b.dataset.c)+' 앱 주소를 복사했습니다');}
   else if(a==='licHero'){const l=S.licenses.find(x=>x.code===b.dataset.c);copyText(heroMsg(l),'히어로 앱 주소와 코드 안내문을 복사했습니다. 카카오톡·문자·이메일에 붙여 넣으세요');}
   else if(a==='licEdit'){UI.licEdit=UI.licEdit===b.dataset.c?null:b.dataset.c;UI.licMsg=null;render();}
   else if(a==='licMsgEd'){UI.licMsg=UI.licMsg===b.dataset.c?null:b.dataset.c;UI.licMsgText=null;UI.licEdit=null;render();}
@@ -1981,6 +2047,8 @@ document.addEventListener('change',e=>{
   else if(on==='bulkGuard'){UI.bulkOk=t.checked;}
   else if(on==='fieldBase'){let v=t.value.trim();if(v&&!/^https?:\/\//.test(v))v='http://'+v;try{localStorage.setItem('ks_field_base',v||'http://localhost:8080');}catch(e){}t.value=v||'http://localhost:8080';}
   else if(on==='adComp'){UI.adminComp=t.value;render();}
+  else if(on==='acY'){UI.acY=t.value;render();}
+  else if(on==='acComp'){UI.acComp=t.value;render();}
   else if(on==='ceOrient'){document.querySelectorAll('.seg2 label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));certPreview();}
   else if(on==='ceBg'){const F=t.files&&t.files[0];if(!F)return;run(async()=>{UI.certBg=await uploadCertBg(F);toast('배경 사진을 올렸습니다. 「상장 설정 저장」을 눌러 주세요');certPreview();});}
   else if(on==='ceLang'){document.querySelectorAll('.seg2 label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const fx=document.getElementById('ceFx');if(fx)fx.hidden=t.value==='ko';certPreview();}
@@ -2003,7 +2071,7 @@ document.addEventListener('input',e=>{const t=e.target;
 function formErr(f,m){let el=f.querySelector('.err');if(!el){el=document.createElement('span');el.className='err';const btn=f.querySelector('button[type=submit]');(btn&&btn.closest('.row')||btn||f).before(el);}el.textContent=m;el.setAttribute('role','alert');}
 document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=>(document.getElementById(id)||{}).value||'';
   if(f.id==='fLogin')run(async()=>{const {data,error}=await sb.auth.signInWithPassword({email:v('lEmail').trim(),password:v('lPw')});
-    if(error){formErr(f,msgOf(error));return;}await reload();const u=me();go(u&&u.role==='admin'?'admin':'home');toast(`${u?u.name:''}님, 반갑습니다`);});
+    if(error){formErr(f,msgOf(error));return;}await reload();const u=me();go(isOps(u)?'admin':'home');toast(`${u?u.name:''}님, 반갑습니다`);});
   else if(f.id==='fSignup')run(async()=>{
     if(v('sPw').length<6){formErr(f,'비밀번호는 6자 이상으로 해 주세요');return;}
     const {data,error}=await sb.auth.signUp({email:v('sEmail').trim(),password:v('sPw'),options:{data:{name:v('sName').trim(),org:v('sOrg').trim(),phone:v('sPhone').trim(),license:v('sLic').trim(),country:v('sNat')||'KOR'},emailRedirectTo:location.origin+location.pathname}});
@@ -2039,11 +2107,20 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
     if(!starts||!ends){formErr(f,'기간을 정해 주세요');return;}if(ends<starts){formErr(f,'끝나는 날이 시작하는 날보다 앞입니다');return;}
     const row={kind,holder:v('leHolder').trim(),contact:v('leContact').trim(),starts,ends,note:v('leNote').trim()};
     if(l.mode!=null){row.app=v('leApp')||'all';row.mode=v('leMode')||'file';row.grace_days=Math.max(0,parseInt(v('leGrace'),10)||0);}
+    if(M.ledgerOk&&document.getElementById('lePrice'))row.price=Math.max(0,Number(v('lePrice'))||0);
     run(async()=>{await q(sb.from('licenses').update(row).eq('code',code));UI.licEdit=null;UI.err='';await reload();toast('허가 내용을 고쳤습니다');});}
+  else if(f.id==='fLedger'){const kind=(UI.acForm||{}).kind||'out',amt=Number(v('acAmt')),F=(document.getElementById('acRcpt')||{}).files;
+    UI.acForm={kind};if(!(amt>0)){formErr(f,'금액을 적어 주세요');return;}if(!v('acDay')){formErr(f,'날짜를 골라 주세요');return;}
+    if(F&&F[0]&&F[0].size>10*1024*1024){formErr(f,'영수증은 10MB까지 올릴 수 있습니다');return;}
+    run(async()=>{let rc='',rn='';if(F&&F[0]){const ext=(F[0].name.match(/\.[A-Za-z0-9]{2,5}$/)||['.jpg'])[0].toLowerCase();rc=`${v('acDay').slice(0,7)}/${Date.now()}${ext}`;rn=F[0].name;
+        const {error}=await sb.storage.from('receipts').upload(rc,F[0],{contentType:F[0].type||undefined});if(error){formErr(f,'영수증을 올리지 못했습니다: '+msgOf(error));return;}}
+      await q(sb.from('ledger').insert({kind,category:v('acCat'),amount:amt,day:v('acDay'),comp_id:v('acCompF')||null,memo:v('acMemo').trim(),receipt:rc,receipt_name:rn}));
+      UI.err='';await reload();toast(`${kind==='out'?'지출':'수입'} ${won(amt)}을 적었습니다`);});}
   else if(f.id==='fLic'){const fm=UI.licForm||{kind:'event'},holder=v('lcHolder').trim(),starts=v('lcStarts'),ends=v('lcEnds');
     if(!holder){formErr(f,'받는 곳을 적어 주세요');return;}if(!starts||!ends){formErr(f,fm.kind==='event'?'대회 날짜를 골라 주세요':'기간을 정해 주세요');return;}if(ends<starts){formErr(f,'끝나는 날이 시작하는 날보다 앞입니다');return;}
     const row={code:newCode(),kind:fm.kind||'event',holder,contact:v('lcContact').trim(),starts,ends,note:v('lcNote').trim()};
     if(M.plans!==null){row.app=v('lcApp')||'all';row.mode=v('lcMode')||'file';row.grace_days=Math.max(0,parseInt(v('lcGrace'),10)||0);}
+    if(M.ledgerOk&&Number(v('lcPrice'))>0)row.price=Number(v('lcPrice'));
     run(async()=>{await q(sb.from('licenses').insert(row));UI.licForm=null;UI.licNew=row.code;UI.err='';await reload();toast('허가 코드를 만들었습니다');});}
   else if(f.id==='fCert'){const c=D().comps.find(x=>x.id===UI.adminComp);if(!c)return;
     const cert=certForm(c);
