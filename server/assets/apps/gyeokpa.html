@@ -3473,9 +3473,27 @@ async function addFiles(list,replace){
     if(replace){const old=await tx('readonly',os=>os.index('app').getAllKeys(APPK));if(old&&old.length)await tx('readwrite',os=>{old.forEach(k=>os.delete(k));});URLS.forEach(u=>URL.revokeObjectURL(u));URLS.clear();}
     for(const f of fs){await tx('readwrite',os=>os.put({k:APPK+'|'+f.name,app:APPK,name:f.name,size:f.size,type:f.type||'',blob:f,at:Date.now()}));const u=URLS.get(APPK+'|'+f.name);if(u){URL.revokeObjectURL(u);URLS.delete(APPK+'|'+f.name);}}
     toast(`음악 ${fs.length}곡을 이 컴퓨터에 담았습니다`);
+    if(FLD())toFolder(fs).then(n=>{if(n)toast(`음원 폴더에도 ${n}곡을 저장했습니다`);});
   }catch(err){toast('음악을 담지 못했습니다. 브라우저 저장 공간을 확인해 주세요');console.warn(err);}
   BUSY='';await loadList();
 }
+/* ---------- 현장 모드: 노트북의 눈에 보이는 「음원」 폴더와 맞추기 ----------
+   - 앱에 음원을 담으면 프로그램 폴더의 「음원\품새」에도 같은 이름으로 저장 → 앱이 안 될 때 그 폴더에서 바로 틀 수 있음
+   - 그 폴더에 새 파일이 생기면(본부가 와이파이로 보냄, 직접 복사) 앱이 알아서 가져와 팀(선수)에 연결 */
+const FLD=()=>!!(window.KS_FIELD&&KS_FIELD.status);
+let FDIR='',FSYNC=false;
+async function toFolder(files){if(!FLD())return 0;let n=0;for(const f of files){try{const r=await fetch(`/api/music/save?app=${APPK}&name=${encodeURIComponent(f.name)}`,{method:'POST',body:f});if(r.ok){n++;const j=await r.json().catch(()=>({}));if(j.dir)FDIR=j.dir;}}catch(err){}}return n;}
+async function syncFolder(){if(!FLD()||FSYNC||BUSY)return;FSYNC=true;
+  try{const r=await fetch(`/api/music/list?app=${APPK}`,{cache:'no-store'});if(!r.ok)return;const j=await r.json();FDIR=j.dir||FDIR;
+    const have=new Map(FILES.map(f=>[f.name,f.size]));const nw=(j.files||[]).filter(f=>have.get(f.name)!==f.size);
+    if(nw.length){let n=0;for(const f of nw){try{const x=await fetch(`/api/music/file?app=${APPK}&name=${encodeURIComponent(f.name)}`,{cache:'no-store'});if(!x.ok)continue;const b=await x.blob();
+        await tx('readwrite',os=>os.put({k:APPK+'|'+f.name,app:APPK,name:f.name,size:b.size,type:b.type||'',blob:b,at:Date.now()}));const u=URLS.get(APPK+'|'+f.name);if(u){URL.revokeObjectURL(u);URLS.delete(APPK+'|'+f.name);}n++;}catch(err){}}
+      if(n){await loadList();toast(`음원 폴더에서 음악 ${n}곡을 가져왔습니다`);}}
+    /* 앱에만 있고 폴더에 없는 음원은 폴더에도 저장 (예전에 담은 음원) */
+    const inF=new Set((j.files||[]).map(f=>f.name)),miss=FILES.filter(f=>!inF.has(f.name));
+    for(const m of miss){try{const x=await tx('readonly',os=>os.get(m.k));if(x&&x.blob)await toFolder([new File([x.blob],m.name,{type:x.type||''})]);}catch(err){}}
+  }catch(err){}finally{FSYNC=false;}}
+setTimeout(()=>{syncFolder();setInterval(syncFolder,10000);},1500);
 window.__KSLM=function(el){const fs=el.files;const rep=el.dataset.rep==='1';if(fs&&fs.length)addFiles(fs,rep);};
 /* 파일 이름 ↔ 선수(팀) 자동 연결: 파일 이름에 팀명(이름)이 들어 있으면 연결, 없으면 소속 이름으로 (그 소속이 한 팀일 때) */
 const norm=s=>String(s||'').toLowerCase().replace(/\.[a-z0-9]{2,4}$/,'').replace(/[\s_\-()\[\]{}·.,'"]/g,'');
@@ -3509,9 +3527,10 @@ function panel(entries,opt){
   const has=entries.filter(en=>fileOf(en.id)).length;
   return `<div class="panel mu-panel lm"><div class="row between"><h2>${opt.title||'음악 (노트북 폴더)'}</h2><span class="chip ${has===entries.length&&entries.length?'ok':'warn'}">${has}/${entries.length} 연결</span></div>
     <span class="small muted">운영석 노트북의 음악 폴더를 고르면, <b>파일 이름에 들어 있는 팀명(이름)</b>으로 자동 연결됩니다. 예: "경민대A팀.mp3". 음악은 서버에 올리지 않고 <b>이 컴퓨터에만</b> 담아 두므로 용량 걱정이 없고, 새로고침해도 남아 있습니다. 대회 당일에는 음악을 담은 이 노트북으로 운영해 주세요.</span>
-    <div class="row" style="gap:6px">${pickBtn('📁 음악 폴더 고르기',true,true)}${pickBtn('＋ 파일 더 넣기',false,false)}${window.KS_REGIMPORT&&KS_REGIMPORT.openMusic&&KS_REGIMPORT.sport()==='poomsae'?`<button class="btn" data-lm="web" title="지도자가 접수 홈페이지에 올린 음원을 이 노트북에 받습니다 (인터넷 필요)">🌐 접수 홈페이지 음원 받기</button>`:''}${FILES.length||(window.KS_MUSIC_UPLOADS&&KS_MUSIC_UPLOADS())?`<button class="btn danger" data-lm="clear">🗑 대회 음악 전체 삭제</button>`:''}</div>
+    <div class="row" style="gap:6px">${pickBtn('📁 음악 폴더 고르기',true,true)}${pickBtn('＋ 파일 더 넣기',false,false)}${FLD()?`<button class="btn" data-lm="folder" title="${e(FDIR||'프로그램 폴더의 음원')}">📂 음원 폴더 열기</button>`:''}${window.KS_REGIMPORT&&KS_REGIMPORT.openMusic&&KS_REGIMPORT.sport()==='poomsae'?`<button class="btn" data-lm="web" title="지도자가 접수 홈페이지에 올린 음원을 이 노트북에 받습니다 (인터넷 필요)">🌐 접수 홈페이지 음원 받기</button>`:''}${FILES.length||(window.KS_MUSIC_UPLOADS&&KS_MUSIC_UPLOADS())?`<button class="btn danger" data-lm="clear">🗑 대회 음악 전체 삭제</button>`:''}</div>
     ${BUSY?`<div class="banner warn">${BUSY}</div>`:''}
     <span class="small muted">${!LOADED?'이 컴퓨터에 담긴 음악을 확인하는 중…':FILES.length?`이 컴퓨터에 담긴 음악 ${FILES.length}곡 · ${fmtMB(total)}`:'아직 이 컴퓨터에 담긴 음악이 없습니다.'}</span>
+    ${FLD()?`<span class="small muted">📂 음원은 이 노트북의 <b>${e(FDIR||'프로그램 폴더 → 음원')}</b> 폴더에도 팀명(이름) 파일로 저장됩니다. 앱이 안 되면 그 폴더에서 파일을 두 번 눌러 바로 틀 수 있습니다. 그 폴더에 음악을 넣으면 앱이 알아서 가져옵니다.</span>`:''}
     ${FILES.length?`<span class="small muted">대회가 끝나면 「🗑 대회 음악 전체 삭제」로 이 앱에 담아 둔 음악을 한 번에 지울 수 있습니다. 지워지는 것은 앱에 담은 <b>사본</b>뿐이고, 컴퓨터 폴더에 있는 <b>원본 음악 파일은 그대로</b> 남습니다.</span>`:''}
     ${entries.length?`<div class="tablewrap"><table class="mu-t"><tr><th>${opt.who||'선수(팀)'}</th><th>음악 파일</th><th></th><th></th></tr>${rows}</table></div>`:''}
     ${opt.note?`<span class="small muted">${opt.note}</span>`:''}</div>`;
@@ -3519,16 +3538,19 @@ function panel(entries,opt){
 function runCtl(id){const f=fileOf(id),playing=NOW&&NOW.id===id;
   return `<div class="lmrun"><span class="small">🎵 ${f?e(f.name):'연결된 음악 없음'}</span>${f?`<button class="btn ${playing?'stopb':'primary'}" data-lm="${playing?'stop':'play'}" data-id="${e(id)}">${playing?'■ 음악 정지':'▶ 음악 재생'}</button>`:''}</div>`;}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-lm]');if(!b)return;const k=b.dataset.lm;
-  if(k==='play')play(b.dataset.id);else if(k==='stop')stop();else if(k==='web'){if(window.KS_REGIMPORT&&KS_REGIMPORT.openMusic)KS_REGIMPORT.openMusic();}
+  if(k==='play')play(b.dataset.id);else if(k==='stop')stop();else if(k==='folder'){fetch(`/api/music/open?app=${APPK}`,{method:'POST'}).then(r=>r.json()).then(j=>toast(j.ok?`음원 폴더를 열었습니다 · ${j.dir}`:`폴더: ${j.dir||''}`)).catch(()=>toast('폴더를 열지 못했습니다'));}
+  else if(k==='web'){if(window.KS_REGIMPORT&&KS_REGIMPORT.openMusic)KS_REGIMPORT.openMusic();}
   else if(k==='clear'){if(b.dataset.armed){(async()=>{stop();const n=FILES.length;const old=await tx('readonly',os=>os.index('app').getAllKeys(APPK));await tx('readwrite',os=>{(old||[]).forEach(x=>os.delete(x));});URLS.forEach(u=>URL.revokeObjectURL(u));URLS.clear();
       MAP={};saveMap();let up=0;try{if(window.KS_MUSIC_CLEAR)up=await KS_MUSIC_CLEAR();}catch(err){}
+      if(FLD()){try{await fetch(`/api/music/del?app=${APPK}`,{method:'POST'});}catch(err){}}
       try{addLog('대회 음악 전체 삭제','음악',`앱에 담은 음악 ${n+up}곡 삭제 (컴퓨터 원본 파일은 그대로)`);}catch(err){}
       toast(`대회 음악 ${n+up}곡을 지웠습니다. 컴퓨터 폴더의 원본 파일은 그대로 있습니다`);loadList();})();}
     else{b.dataset.armed='1';b.textContent='한 번 더 누르면 모두 지웁니다 (원본 파일은 그대로)';setTimeout(()=>{delete b.dataset.armed;schedule();},3500);}}
 });
 document.addEventListener('change',ev=>{const el=ev.target.closest('[data-lmsel]');if(!el)return;const id=el.dataset.lmsel;if(el.value)MAP[id]=el.value;else delete MAP[id];saveMap();schedule();});
 window.LMUS={panel,runCtl,play,stop,has:id=>!!fileOf(id),fileOf,urlOfId:id=>{const f=fileOf(id);return f?urlOf(f.k):Promise.reject(new Error('none'));},
-  playing:()=>NOW,setEntries:fn=>{ENTRIES=fn;},files:()=>FILES,addFiles,reload:loadList};
+  playing:()=>NOW,setEntries:fn=>{ENTRIES=fn;},files:()=>FILES,addFiles,reload:loadList,syncFolder,
+  blobOf:async k=>{const x=await tx('readonly',os=>os.get(k));return x&&x.blob?new File([x.blob],x.name,{type:x.type||''}):null;}};
 })();
 </script><script>/* ===== PDF 명단 읽기: 표 형식(첫 줄에 이름·소속 등 제목) 또는 대진표 형식("이름(소속)")을 엑셀 행처럼 바꿔 줍니다 ===== */
 (function(){
@@ -5262,9 +5284,16 @@ async function push(court,divs){if(!FIELD())throw new Error('현장 모드(노�
   const rows=rowsFor(divs);if(!rows||rows.length<2)throw new Error(court+'코트에 보낼 명단이 없습니다');
   const S=g('S'),SET=g('SET');const name=((SET&&SET())||{}).name||'';
   let r;try{r=await fetch('/api/hq/push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({court,app:APPK,name,divs:divs.length,rows,from:'본부'})});}catch(e){throw new Error('현장 프로그램에 연결하지 못했습니다');}
-  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'보내지 못했습니다');return {n:rows.length-1,addr:j.addr};}
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'보내지 못했습니다');
+  /* 음원도 그 코트 노트북의 음원 폴더로 (그 코트 선수·팀에 연결된 음악만) */
+  let mus=0,musFail=0;const LM=window.LMUS;
+  if(LM&&LM.fileOf&&LM.blobOf){const seen=new Set();const ids=divs.flatMap(d=>d.order||[]);
+    for(const id of ids){const f=LM.fileOf(id);if(!f||seen.has(f.k))continue;seen.add(f.k);
+      try{const file=await LM.blobOf(f.k);if(!file)continue;say(`${court}코트로 음원 보내는 중… ${mus+1}곡`);
+        const rr=await fetch(`/api/hq/pushmusic?court=${encodeURIComponent(court)}&app=${APPK}&name=${encodeURIComponent(f.name)}`,{method:'POST',body:file});if(rr.ok)mus++;else musFail++;}catch(e){musFail++;}}}
+  return {n:rows.length-1,addr:j.addr,mus,musFail};}
 async function pushAll(courts){const S=g('S'),out=[];for(const c of courts){const ds=S.divs.filter(d=>d.court===c);if(!ds.length)continue;
-    try{const r=await push(c,ds);out.push(`${c}코트 ${r.n}건 ✓`);}catch(e){out.push(`${c}코트 ✕ ${e.message}`);}}
+    try{const r=await push(c,ds);out.push(`${c}코트 ${r.n}건${r.mus?` · 음원 ${r.mus}곡`:''} ✓${r.musFail?` (음원 ${r.musFail}곡 실패)`:''}`);}catch(e){out.push(`${c}코트 ✕ ${e.message}`);}}
   return out;}
 /* ---------- 겨루기·격파: 코트 나누기 칸 (품새는 앱 안에 있음) ---------- */
 const UIc={open:false};
@@ -5303,7 +5332,7 @@ if(APPK!=='poomsae'){
   document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-cs]');if(!b)return;const a=b.dataset.cs,S=g('S'),SET=g('SET'),ss=g('saveSettings'),rd=g('render');
     if(a==='n'){UIc.open=true;await ss({...SET(),courts:Number(b.dataset.n)});}
     else if(a==='auto'){UIc.open=true;await autoSplit(SET().courts||4);}
-    else if(a==='send'){UIc.open=true;b.disabled=true;try{const c=b.dataset.c,r=await push(c,S.divs.filter(d=>d.court===c));say(`${c}코트 노트북으로 ${r.n}건을 보냈습니다`);}catch(err){say(err.message);}b.disabled=false;}
+    else if(a==='send'){UIc.open=true;b.disabled=true;try{const c=b.dataset.c,r=await push(c,S.divs.filter(d=>d.court===c));say(`${c}코트 노트북으로 ${r.n}건${r.mus?` · 음원 ${r.mus}곡`:""}을 보냈습니다`);}catch(err){say(err.message);}b.disabled=false;}
     else if(a==='file'){UIc.open=true;const c=b.dataset.c,R=rowsFor(S.divs.filter(d=>d.court===c));if(R&&window.XLSX){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(R),'선수명단');
       const ok=await g('saveFile')(`${(SET().name||APPN+'대회')}_${c}코트_명단.xlsx`,XLSX.write(wb,{bookType:'xlsx',type:'array'}));if(ok)say(`${c}코트 명단 ${R.length-1}건을 내려받았습니다`);}}
     else if(a==='sendAll'){UIc.open=true;b.disabled=true;const out=await pushAll(L8.slice(0,SET().courts||4).split(''));say(out.join(' · '));b.disabled=false;}
@@ -5960,5 +5989,51 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 (function hookSettings(n){const f=window.aSettings;if(typeof f!=='function'||f.__ksfx){if(n<40&&typeof f!=='function')setTimeout(()=>hookSettings(n+1),250);return;}
   const w=function(){const h=f.apply(this,arguments);try{return fxPanel()+h;}catch(e){return h;}};w.__ksfx=true;window.aSettings=w;})(0);
 window.KS_BOARD={classic,setBoard,kyBoard,app:APP,fx:FX};
+})();
+</script><script>/* ===== 결과 자동 저장 (현장 모드, 품새·겨루기·격파 공통) =====
+   경기 결과가 바뀔 때마다 「결과 엑셀」을 노트북의 「대회결과\자동저장」 폴더에 덮어써 저장합니다.
+   본부 노트북은 코트들의 자동 저장 파일을 「대회결과\본부수집\A코트」로 자동으로 모읍니다. */
+(function(){
+if(window.KS_AUTOSAVE)return;
+const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
+const FLD=()=>!!(window.KS_FIELD&&window.KS_FIELD.status);
+const APPK=(()=>{const t=document.title||'';return /격파/.test(t)?'gyeokpa':/겨루기/.test(t)?'kyorugi':'poomsae';})();
+const APPN={poomsae:'품새',kyorugi:'겨루기',gyeokpa:'격파'}[APPK];
+const opRoute=()=>{const h=(location.hash||'').replace('#','');return h===''||/^admin/.test(h);};
+const two=n=>String(n).padStart(2,'0');
+const ST={sig:'',at:0,dir:'',err:'',busy:false,n:0};
+function capture(){const ex=g('exportResults');if(typeof ex!=='function'||!window.XLSX)return null;let cap=null,wb=null;
+  const os=window.saveFile,ow=XLSX.write;
+  window.saveFile=async(n,d)=>{cap={n,d};return true;};
+  XLSX.write=function(w){wb=w;return ow.apply(this,arguments);};
+  try{ex();}catch(e){console.warn('[자동 저장]',e);}finally{window.saveFile=os;XLSX.write=ow;}
+  if(!cap||!wb)return null;
+  const main=wb.SheetNames.filter(n=>n!=='변경 기록'),csv=main.map(n=>XLSX.utils.sheet_to_csv(wb.Sheets[n])).join('\n#\n');
+  const rows=main.reduce((s,n)=>s+XLSX.utils.sheet_to_csv(wb.Sheets[n]).split('\n').filter(l=>l.replace(/,/g,'').trim()).length-1,0);
+  return {data:cap.d,sig:csv,rows};}
+function fname(){const SET=g('SET'),s=(SET&&SET())||{},c=(window.KS_FIELD&&KS_FIELD.court)||'';
+  return `${(s.name||APPN+'대회').replace(/[\\/:*?"<>|]/g,'_')}_${c?c+'코트_':''}${APPN}_결과(자동저장).xlsx`;}
+async function tick(force){if(!FLD()||ST.busy||!opRoute())return;const S=g('S');if(!S||!S.divs)return;
+  let c;try{c=capture();}catch(e){return;}if(!c||(!c.rows&&!force))return;if(c.sig===ST.sig&&!force)return;
+  ST.busy=true;
+  try{const r=await fetch(`/api/results/auto?name=${encodeURIComponent(fname())}`,{method:'POST',body:new Blob([c.data])});const j=await r.json().catch(()=>({}));
+    if(r.ok){ST.sig=c.sig;ST.at=Date.now();ST.dir=j.dir||ST.dir;ST.err='';ST.n++;}else ST.err=j.error||('HTTP '+r.status);}
+  catch(e){ST.err='현장 프로그램에 연결하지 못했습니다';}
+  ST.busy=false;draw();}
+setInterval(()=>tick(false),6000);setTimeout(()=>tick(false),2500);
+/* 작은 표시: 💾 결과 자동 저장 14:32 */
+let EL=null;
+function draw(){const show=FLD()&&opRoute()&&(ST.at||ST.err);
+  if(!show){if(EL){EL.remove();EL=null;}return;}
+  if(!EL){EL=document.createElement('button');EL.type='button';EL.className='ksauto';document.body.appendChild(EL);
+    EL.addEventListener('click',()=>{fetch('/api/results/open',{method:'POST'}).then(r=>r.json()).then(j=>{try{g('toast')(`결과 자동 저장 폴더를 열었습니다 · ${j.dir||''}`);}catch(e){}}).catch(()=>{});});}
+  const d=new Date(ST.at);EL.classList.toggle('bad',!!ST.err);
+  EL.textContent=ST.err?`⚠ 결과 자동 저장 안 됨 · ${ST.err}`:`💾 결과 자동 저장 ${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
+  EL.title=ST.dir?`누르면 폴더 열기 · ${ST.dir}`:'누르면 폴더 열기';}
+window.addEventListener('hashchange',draw);
+const css=document.createElement('style');css.textContent=`.ksauto{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:60;border:1px solid rgba(0,160,80,.45);background:rgba(240,255,246,.95);color:#0B6B3A;border-radius:999px;padding:5px 12px;font:700 12px/1.2 "Noto Sans KR","Malgun Gothic",sans-serif;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.12);opacity:.85}
+.ksauto:hover{opacity:1}.ksauto.bad{border-color:rgba(200,40,40,.5);background:#FDECEC;color:#B3261E}
+body.disp .ksauto{display:none}`;(document.head||document.documentElement).appendChild(css);
+window.KS_AUTOSAVE={tick,state:ST,capture,fname};
 })();
 </script><!--@@END-->

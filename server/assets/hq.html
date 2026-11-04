@@ -251,6 +251,9 @@ function vAdmin(){
     <div class="row">${presets.map((p,i)=>`<button class="btn sm" data-a="preset" data-i="${i}">${esc(p.split('.')[0])}</button>`).join('')}</div>
     <div class="row"><button class="btn primary" data-a="notice" data-m="banner">아래 띠로 띄우기</button><button class="btn primary" data-a="notice" data-m="full">전체 화면으로 띄우기</button><button class="btn" data-a="notice" data-m="off">공지 내리기</button><button class="btn" data-a="noticeSay">🔊 소리로 읽기</button></div></div>
   </div>
+  <div class="panel"><div class="row between"><h2>💾 코트 결과 자동 모음</h2><button class="btn" data-a="openColl">📂 폴더 열기</button></div>
+    <span class="small muted">코트 노트북마다 경기 결과가 바뀔 때마다 결과 엑셀을 자동 저장하고, 본부가 2초마다 가져와 <b>${esc((S.coll&&S.coll.dir)||'대회결과\\본부수집')}</b> 폴더에 코트별로 모읍니다.</span>
+    <div class="row">${S.coll&&Object.keys(S.coll.courts||{}).length?Object.entries(S.coll.courts).sort().map(([k,fs])=>`<span class="chip ok">${esc(k)} · ${fs.length}개 · ${fs.length?ago(Math.max(...fs.map(f=>f.at))):''}</span>`).join(''):'<span class="small muted">아직 모은 결과가 없습니다. 코트에서 점수가 공개되면 자동으로 모입니다.</span>'}</div></div>
   <div class="panel"><div class="row between"><h2>본부 모니터</h2><span class="row"><a class="btn primary" href="#board" target="_blank" style="text-decoration:none">본부 모니터 열기 ↗</a><button class="btn" data-a="qr">📱 QR (다른 TV·태블릿)</button></span></div>
     <div class="row"><span class="small muted">화면 디자인</span>${themePick('hqpick')}<span class="small muted">지금: <b>${esc((THEMES.find(x=>x[0]===hqTheme(courtList()))||['','기본 금빛'])[1])}</b> · 「따라가기」는 품새 코트 노트북에서 고른 전광판 디자인을 따릅니다</span></div>
     <span class="small muted">선수 대기실 TV나 큰 모니터에 띄우세요. 새 창을 TV 쪽으로 옮긴 뒤 「전체 화면」을 누르면 됩니다. 소리를 내려면 그 화면을 한 번 눌러 주세요.</span></div>`;
@@ -356,6 +359,7 @@ setInterval(()=>{if(route()==='board'||route()==='admin')schedule();},3000);   /
 async function hqctl(op,addr){try{await fetch('/api/hqctl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op,addr})});}catch(e){}}
 async function announce(text,extra){const id='m'+NOW().toString(36);const doc={id,text,at:NOW(),auto:false,...(extra||{})};await DB.doc('hq/announce').set(doc);await DB.doc('calllog/'+id).set({text,at:doc.at,auto:false,court:doc.court||''});toast('본부 모니터에 띄웠습니다');}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
+  if(a==='openColl'){fetch('/api/results/open?hq=1',{method:'POST'}).then(r=>r.json()).then(j=>toast(j.ok?'폴더를 열었습니다 · '+j.dir:'폴더: '+(j.dir||''))).catch(()=>toast('폴더를 열지 못했습니다'));return;}
   if(a==='unlock'){try{speechSynthesis.speak(new SpeechSynthesisUtterance(' '));}catch(err){}render();}
   else if(a==='fs'){try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}catch(err){}}
   else if(a==='scan'){hqctl('scan');toast('같은 와이파이에서 코트 노트북을 찾는 중입니다…');}
@@ -382,6 +386,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   DB.doc('hq/announce').onSnapshot(s=>{onAnnounce(s.exists?s.data():null);schedule();});
   DB.collection('calllog').onSnapshot(s=>{S.log=s.docs.map(d=>d.data()).sort((a,b)=>b.at-a.at).slice(0,30);schedule();});
   if(window.KS_FIELD&&KS_FIELD.onStatus)KS_FIELD.onStatus(()=>schedule());
+  const coll=async()=>{try{const r=await fetch('/api/hq/collected',{cache:'no-store'});if(r.ok){S.coll=await r.json();if(route()==='admin')schedule();}}catch(e){}};coll();setInterval(coll,5000);
 })();
 })();
 </script>

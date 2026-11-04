@@ -39,3 +39,6 @@ func pause() {
 	var s string
 	fmt.Scanln(&s)
 }
+
+// 탐색기로 폴더 열기
+func openFolder(dir string) error { return exec.Command("explorer", dir).Start() }

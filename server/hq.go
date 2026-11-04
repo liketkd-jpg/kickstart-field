@@ -147,7 +147,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 			out[a.Key] = m
 		}
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "time": time.Now().UnixMilli()})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "time": time.Now().UnixMilli()})
 }
 
 // ---------------- 코트: 신호 보내기 ----------------
@@ -392,6 +392,7 @@ type feedMsg struct {
 	Role  string                     `json:"role"`
 	Court string                     `json:"court"`
 	Apps  map[string]json.RawMessage `json:"apps"`
+	Saves []fileInfo                 `json:"saves"`
 	Live  struct {
 		On    bool   `json:"on"`
 		State string `json:"state"`
@@ -486,6 +487,9 @@ func pollCourt(addr string) {
 	}
 	for _, cl := range calls {
 		autoCall(cl)
+	}
+	if ok && len(fm.Saves) > 0 {
+		collectSaves(addr, fm.Court, fm.Saves)
 	}
 }
 
