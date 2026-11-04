@@ -620,6 +620,14 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 @media print{body.printcards>*:not(#printArea){display:none!important}body.printcards{background:#fff!important}
  #printArea{display:grid!important;grid-template-columns:repeat(3,1fr);gap:6mm;padding:4mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
  #printArea .hcard{break-inside:avoid;background:#130b33!important;box-shadow:none}#printArea .hcfig svg{height:140px}}
+/* zemita bluetooth */
+.btbox{width:min(760px,100%)}
+.btlanes{display:grid;gap:8px}
+.btl{border:1px solid color-mix(in srgb,var(--c) 50%,transparent);border-radius:12px;padding:8px 10px;background:rgba(0,0,0,.25);display:grid;gap:6px}
+.btl.on{box-shadow:0 0 0 1px var(--c),0 0 14px -6px var(--c)}
+.bth{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bth .btst{font-style:normal;font-size:.85rem;margin-left:auto}.bth .btn{padding:3px 12px;font-size:.85rem}
+.btn2{display:flex;gap:16px}.btn2 b{font-family:var(--f-num);font-size:1.3rem;color:var(--c)}
+.btraw{margin:0;font-family:ui-monospace,Consolas,monospace;font-size:.75rem;background:#0008;border-radius:8px;padding:6px 8px;max-height:110px;overflow:auto;white-space:pre-wrap;color:#cfe}
 /* camera kick panel */
 .mpbox{position:fixed;right:14px;bottom:14px;z-index:80;width:min(600px,calc(100vw - 28px));grid-template-columns:220px minmax(0,1fr);align-items:start;background:var(--gl),var(--panel);border:1px solid rgba(56,242,255,.5);border-radius:16px;box-shadow:var(--hl),0 18px 40px rgba(0,0,0,.6),0 0 24px -8px #38f2ff;padding:10px;display:grid;gap:8px;font-size:.85rem}
 .mpbox .mph{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:6px}.mpbox .mph .btn{padding:2px 10px}
@@ -800,6 +808,8 @@ const T={
   mpT:'카메라 킥 인식 (시험판)',mpD:'구글 MediaPipe 동작 인식으로 웹캠이 아이의 발차기를 셉니다. 발이 정한 높이까지 올라가면 1회, 몸을 돌려 차면 「회전 킥」으로 더 많이 깎습니다. 처음 켤 때 인터넷이 필요합니다. 카메라는 아이 허리 높이, 비스듬한 옆에 두고 몸 전체가 화면에 들어오게 하세요 (1초 60장 카메라 추천).',
   mpPanel:'📷 카메라 킥 인식 · 시험판',mpStart:'카메라 켜기',mpStop:'끄기',mpLoading:'동작 인식 도구를 불러오는 중… (처음엔 10초쯤)',mpOff:'꺼져 있음',mpOnS:'인식 중',mpNoBody:'몸 전체가 화면에 들어오게 해 주세요',mpBad:'카메라 인식 도구를 불러오지 못했습니다. 인터넷 연결과 카메라 허용을 확인해 주세요.',
   mpLane:'이 카메라가 보는 레인',mpLv:'발 높이 기준',mpEasy:'쉬움 · 무릎 위 (유치부)',mpMid:'보통 · 허리',mpHard:'어려움 · 가슴',mpSpinP:'회전 킥 점수',mpTest:'연습 세기 (경기 전)',mpLive:'경기 중 · 바로 반영',mpKick:'발차기',mpSpinW:'회전 킥',mpReset:'연습 숫자 0으로',spinPop:'회전 킥!',
+  btBtn:'제미타 발차기 센서',btTitle:'🦶 제미타 발차기 센서 연결 (블루투스)',btHelp:'레인마다 「연결」을 누르고 목록에서 ZEMITA 센서를 고르세요. 센서를 차면 그 레인 발차기로 들어가고 악당 체력이 깎입니다. 경기 전에는 연습 숫자만 올라갑니다. 크롬(노트북·안드로이드)에서 인터넷 주소 또는 이 노트북(localhost)으로 연 화면에서만 됩니다. 제미타 회사 앱은 꺼 두세요.',
+  btConnect:'연결',btDisc:'끊기',btOff:'연결 안 됨',btCon:'연결 중…',btOn:'연결됨',btLost:'연결 끊김 · 다시 연결하세요',btBat:'배터리',btLive:'경기',btTest:'연습',btMode:'신호 읽는 방법',btEach:'신호 1번 = 발차기 1회',btCount:'신호 첫 숫자 = 누적 횟수',btGapL:'겹침 무시(ms)',btRaw:'받은 신호 (확인용)',btNo:'이 브라우저는 블루투스를 지원하지 않습니다. 노트북이나 안드로이드의 크롬에서 열어 주세요.',btFail:'센서 연결 실패:',btResetT:'연습 숫자 0으로',btInfo:'센서 정보',
   heatOf:'{h}조 / 전체 {n}조',full:'전체 화면',waiting:'대기',lanes:'레인 배정',course0:'코스'},
  en:{app:'Taekwon Heroes 2',sub:'Galaxy Challenge · Relay · Kick Battle',tSetup:'Setup',tRun:'Run Event',tBoard:'Scoreboard',openBoard:'Scoreboard window',
   focusOk:'Buttons ready',focusNo:'Click the screen once',
@@ -832,6 +842,8 @@ const T={
   mpT:'Camera kick detection (beta)',mpD:'Google MediaPipe pose detection lets a webcam count each child’s kicks. A foot reaching the set height counts 1; a spinning kick counts extra. Needs internet the first time. Place the camera at the child’s waist height, slightly to the side, with the whole body in view (60 fps camera recommended).',
   mpPanel:'📷 Camera kick detection · beta',mpStart:'Start camera',mpStop:'Stop',mpLoading:'Loading pose detection… (about 10 s the first time)',mpOff:'Off',mpOnS:'Detecting',mpNoBody:'Get the whole body in view',mpBad:'Could not load pose detection. Check the internet connection and camera permission.',
   mpLane:'Lane this camera watches',mpLv:'Kick height',mpEasy:'Easy · above knee (kindergarten)',mpMid:'Medium · waist',mpHard:'Hard · chest',mpSpinP:'Spin kick points',mpTest:'Practice count (before the battle)',mpLive:'Battle on · counting live',mpKick:'Kicks',mpSpinW:'Spin kicks',mpReset:'Reset practice count',spinPop:'SPIN KICK!',
+  btBtn:'Zemita kick sensors',btTitle:'🦶 Zemita kick sensors (Bluetooth)',btHelp:'Press “Connect” for a lane and pick a ZEMITA sensor from the list. Each kick on the sensor counts for that lane and drains the villain. Before the battle only the practice count goes up. Works in Chrome (laptop or Android) on the internet address or on this laptop (localhost). Close the Zemita app first.',
+  btConnect:'Connect',btDisc:'Disconnect',btOff:'Not connected',btCon:'Connecting…',btOn:'Connected',btLost:'Disconnected · connect again',btBat:'Battery',btLive:'Battle',btTest:'Practice',btMode:'How to read the signal',btEach:'1 signal = 1 kick',btCount:'First byte = running count',btGapL:'Ignore repeats within (ms)',btRaw:'Received signals (for checking)',btNo:'This browser has no Bluetooth. Open it in Chrome on a laptop or Android.',btFail:'Sensor connection failed:',btResetT:'Reset practice count',btInfo:'Sensor info',
   heatOf:'Heat {h} of {n}',full:'Full screen',waiting:'Waiting',lanes:'Lanes',course0:'Course'}};
 
 const HR_DIV=['3세부','4세부','5세부','6세부','7세부','초등 1학년부','초등 2학년부','초등 3학년부','초등 4학년부','초등 5학년부','초등 6학년부','아빠부','엄마부'];
@@ -873,7 +885,7 @@ let S=load()||defaults();
 /* 대회 연출 켜기·끄기 */
 const FXDEF={intro:true,record:true,cheer:false,cam:false,camRev:false,camZoom:true};
 S.ev=Object.assign({nameEn:'2026 Taekwon Heroes 2 Galaxy Challenge',divEn:'Kindergarten · Ages 5–7'},S.ev);
-S.cfg=Object.assign({fx:{},auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,xp:true,mpOn:false,mpLane:1,mpLv:'easy',mpSpin:3},S.cfg);S.game=S.game||'race';
+S.cfg=Object.assign({fx:{},auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,xp:true,mpOn:false,mpLane:1,mpLv:'easy',mpSpin:3,btMode:'each',btGap:150},S.cfg);S.game=S.game||'race';
 S.cfg.fx=Object.assign({},FXDEF,S.cfg.fx||{});
 let R={phase:'idle',count:0,start:0,go:0};
 let tab='run', learn=null, lastKey='', armed=null, slideIx=0, gateOpen=ROLE==='board';
@@ -1539,6 +1551,48 @@ function mpDraw(onlyNums){const want=ROLE==='ctrl'&&S.cfg.mpOn&&isBoss();
    <label class="f">${esc(t('mpLane'))}<select id="mpLane">${[1,2,3,4].map(n=>`<option value="${n}" ${+S.cfg.mpLane===n?'selected':''}>${n}${S.lang==='en'?' ':''}${esc(t('lane'))} · ${esc(heroName(n-1))}</option>`).join('')}</select></label>
    <div class="row"><label class="f" style="flex:2">${esc(t('mpLv'))}<select id="mpLv">${[['easy','mpEasy'],['mid','mpMid'],['hard','mpHard']].map(([v,k])=>`<option value="${v}" ${S.cfg.mpLv===v?'selected':''}>${esc(t(k))}</option>`).join('')}</select></label>
    <label class="f" style="flex:1">${esc(t('mpSpinP'))}<select id="mpSpin">${[2,3,4,5].map(n=>`<option ${+S.cfg.mpSpin===n?'selected':''}>${n}</option>`).join('')}</select></label></div>`}
+/* ================= 제미타 발차기 센서 (블루투스) =================
+   nRF Connect로 확인한 값: 서비스 0000185a-…-5a454d495465 ("ZEMITe"), 알림 5a10, 읽기 5a11·5a12·5a13, 배터리 0x180F.
+   기본은 「알림이 한 번 오면 발차기 1회」. 받은 신호를 그대로 보여 주므로, 실제 모양을 보고 읽는 방법을 맞출 수 있습니다. */
+const ZU=x=>'0000'+x+'-0000-1010-2013-5a454d495465',ZSV=ZU('185a'),ZNT=ZU('5a10'),ZRD=[ZU('5a11'),ZU('5a12'),ZU('5a13')];
+const BT={lanes:[null,null,null,null]};
+const bhex=v=>Array.from(new Uint8Array(v.buffer,v.byteOffset,v.byteLength)).map(x=>x.toString(16).padStart(2,'0')).join(' ');
+const btxt=v=>{try{const s=new TextDecoder().decode(v);return /^[\x20-\x7e]+$/.test(s)?' "'+s+'"':''}catch(e){return ''}};
+async function btConnect(k){if(!navigator.bluetooth){toast(t('btNo'));return}
+  let dev;try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'ZEMITA'}],optionalServices:[ZSV,'battery_service']})}catch(e){if(!/cancel/i.test(e.message||''))toast(t('btFail')+' '+(e.message||''));return}
+  const old=BT.lanes[k];if(old&&old.dev&&old.dev!==dev)try{old.dev.gatt.disconnect()}catch(e){}
+  const L=BT.lanes[k]={dev,name:dev.name||'ZEMITA',st:'con',n:0,test:0,raw:[],bat:null,prev:null,info:[],last:0};btDraw();
+  dev.addEventListener('gattserverdisconnected',()=>{if(BT.lanes[k]===L){L.st='lost';btDraw()}});
+  try{const srv=await dev.gatt.connect();const sv=await srv.getPrimaryService(ZSV);const ch=await sv.getCharacteristic(ZNT);
+    ch.addEventListener('characteristicvaluechanged',e=>btData(k,e.target.value));await ch.startNotifications();L.st='on';btDraw();
+    for(const u of ZRD){try{const v=await (await sv.getCharacteristic(u)).readValue();L.info.push(u.slice(4,8)+': '+bhex(v)+btxt(v))}catch(e){}}
+    try{L.bat=(await (await (await srv.getPrimaryService('battery_service')).getCharacteristic('battery_level')).readValue()).getUint8(0)}catch(e){}
+    btDraw()}catch(e){L.st='lost';toast(t('btFail')+' '+(e.message||''));btDraw()}}
+function btDisc(k){const L=BT.lanes[k];if(L&&L.dev)try{L.dev.gatt.disconnect()}catch(e){}BT.lanes[k]=null;btDraw()}
+function btData(k,v){const L=BT.lanes[k];if(!L)return;const now=performance.now();
+  L.raw.unshift(new Date().toTimeString().slice(0,8)+'  '+bhex(v)+btxt(v));L.raw.length=Math.min(L.raw.length,6);
+  let n=1;
+  if(S.cfg.btMode==='count'){const c=v.byteLength?v.getUint8(0):0;n=L.prev==null?0:((c-L.prev+256)%256);L.prev=c;if(n>20)n=0}
+  else if(now-L.last<(+S.cfg.btGap||0))n=0;
+  if(n>0){L.last=now;const h=curHeat(),live=ROLE==='ctrl'&&isBoss()&&R.phase==='running'&&h&&h.lanes[k]!=null&&h.time[k]==null&&!h.dnf[k];
+    if(live){L.n+=n;kick(k,n)}else{L.test+=n;playLocal('kick',k)}}
+  btDraw()}
+let BTBOX=null;
+function btOpen(){if(!BTBOX){BTBOX=document.createElement('div');BTBOX.className='licov';BTBOX.setAttribute('role','dialog');BTBOX.setAttribute('aria-modal','true');document.body.appendChild(BTBOX)}btDraw()}
+function btClose(){if(BTBOX){BTBOX.remove();BTBOX=null}}
+function btDraw(){if(!BTBOX)return;const h=curHeat();
+  const row=k=>{const L=BT.lanes[k],p=h&&h.lanes[k]!=null?P(h.lanes[k]):null,st=!L?'off':L.st;
+    return`<div class="btl ${st}" style="--c:var(${HEROES[k].v})"><div class="bth">${emSvg(k,16)} <b>${k+1}${S.lang==='en'?' ':''}${esc(t('lane'))}</b> <span class="note">${p?esc(pn(p)):''}</span>
+      <i class="btst">${st==='on'?'🟢 '+esc(t('btOn'))+' · '+esc(L.name):st==='con'?'⏳ '+esc(t('btCon')):st==='lost'?'🔴 '+esc(t('btLost')):'⚪ '+esc(t('btOff'))}${L&&L.bat!=null?` · 🔋${L.bat}%`:''}</i>
+      ${L&&st!=='off'?`<button class="btn" data-act="btDisc" data-v="${k}">${esc(t('btDisc'))}</button>`:''}<button class="btn gold" data-act="btConnect" data-v="${k}">${esc(t('btConnect'))}</button></div>
+      ${L?`<div class="btn2"><span>${esc(t('btLive'))} <b>${L.n}</b></span><span>${esc(t('btTest'))} <b>${L.test}</b></span></div>
+      <pre class="btraw">${L.raw.length?L.raw.map(esc).join('\n'):'—'}${L.info.length?'\n— '+esc(t('btInfo'))+' —\n'+L.info.map(esc).join('\n'):''}</pre>`:''}</div>`};
+  BTBOX.innerHTML=`<div class="licbox btbox"><div class="row" style="justify-content:space-between"><b class="lt">${esc(t('btTitle'))}</b><button class="btn" data-act="btClose" aria-label="close">✕</button></div>
+   <p class="note">${esc(t('btHelp'))}</p>
+   <div class="row" style="gap:8px"><label class="f" style="flex:2">${esc(t('btMode'))}<select id="btMode"><option value="each" ${S.cfg.btMode!=='count'?'selected':''}>${esc(t('btEach'))}</option><option value="count" ${S.cfg.btMode==='count'?'selected':''}>${esc(t('btCount'))}</option></select></label>
+    <label class="f" style="flex:1">${esc(t('btGapL'))}<input type="number" id="btGap" min="0" max="1000" step="10" value="${+S.cfg.btGap||0}"></label>
+    <button class="btn ghost" data-act="btReset">${esc(t('btResetT'))}</button></div>
+   <div class="btlanes">${[0,1,2,3].map(row).join('')}</div></div>`}
 /* ================= 악당: 다크 메테오 ================= */
 function villainSvg(stage){const st=stage||1,hot=st>=3;
   return`<svg class="villain" viewBox="-30 -40 260 250" role="img" aria-label="Dark Meteor"><defs>
@@ -1736,6 +1790,7 @@ function viewSetup(){
       <label class="f" style="width:9rem">${esc(t('bossHP'))}<input type="number" id="bossHP" min="5" max="999" data-in="cfg.bossHP" value="${S.cfg.bossHP}"></label>
       <div class="seg" role="group" aria-label="${esc(t('bossKind'))}"><button class="btn ${S.cfg.bossTeam?'':'gold'}" data-act="bossTeam" data-v="">${esc(t('bossSolo'))}</button><button class="btn ${S.cfg.bossTeam?'gold':''}" data-act="bossTeam" data-v="1">${esc(t('bossTeamL'))}</button></div></div>
       <p class="note">${esc(t('bossHelp'))}</p>
+      <div class="row" style="margin-top:6px"><button class="btn gold" data-act="btOpen">🦶 ${esc(t('btBtn'))}</button></div>
       <div class="fxrow" style="margin-top:6px"><button class="tgl ${S.cfg.mpOn?'on':''}" data-act="mpT" aria-pressed="${!!S.cfg.mpOn}"><i></i></button><div><b>📷 ${esc(t('mpT'))}</b><span class="note">${esc(t('mpD'))}</span></div></div>`:''}
     ${isFamily()?`<p class="note">${esc(t('familyHelp'))}</p>`:''}
     ${isTeamGame()?`<div class="gset">${isFamily()?'':`<label class="f" style="width:9rem">${esc(t('relayN'))}<select id="relayN" data-in="cfg.relayN">${[2,3,4,5,6].map(n=>`<option value="${n}" ${+S.cfg.relayN===n?'selected':''}>${n}${esc(t('ppl'))}</option>`).join('')}</select></label>`}
@@ -1881,6 +1936,7 @@ function viewRun(){
     <div class="screens">${[['intro','sIntro'],['live','sLive'],['standings','sStand'],['bracket','sBracket'],['champion','sChamp'],['cards','sCards']].map(([v,k])=>`<button data-act="screen" data-v="${v}" aria-pressed="${S.board===v}">${esc(t(k))}</button>`).join('')}</div>
     <button class="btn ghost" data-act="tab" data-v="board">⛶ ${esc(t('tBoard'))}</button>
     <button class="btn" data-act="linkOpen">📱 ${esc(t('lkBtn'))}</button>
+    ${isBoss()?`<button class="btn" data-act="btOpen">🦶 ${esc(t('btBtn'))}${BT.lanes.some(l=>l&&l.st==='on')?` <b style="color:#b6ff3b">${BT.lanes.filter(l=>l&&l.st==='on').length}</b>`:''}</button>`:''}
     ${S.cfg.fx.cheer?`<button class="btn" data-act="cheerOpen">📣 ${esc(t('cheerT'))}</button>`:''}
     ${r.kind==='tour'&&r.final?`<button class="btn gold" data-act="pwup">⚡ ${esc(t('pwBtn'))}</button>`:''}
    </div>
@@ -2148,6 +2204,9 @@ document.addEventListener('click',e=>{
     case'cheerLane':cheerLane(+v).then(cheerDraw);cheerDraw();break;case'cheerAuto':cheerAuto().then(cheerDraw);cheerDraw();break;case'cheerWin':cheerWin();break;
     case'xpT':S.cfg.xp=!S.cfg.xp;commit();break;
     case'mpT':S.cfg.mpOn=!S.cfg.mpOn;commit();break;
+    case'btOpen':btOpen();break;case'btClose':btClose();render();break;
+    case'btConnect':btConnect(+v);break;case'btDisc':btDisc(+v);break;
+    case'btReset':BT.lanes.forEach(l=>{if(l)l.test=0});btDraw();break;
     case'mpStart':mpStart();break;case'mpStop':mpStop();break;
     case'mpMin':MP.min=!MP.min;mpDraw();break;case'mpReset':MP.test={k:0,s:0};mpDraw();break;
     case'xpPrint':printCards();break;
@@ -2214,6 +2273,8 @@ document.addEventListener('change',e=>{
   if(el.dataset.in==='xpfile'){xpImport(el.files&&el.files[0]);el.value='';return}
   if(el.dataset.rdiv){const a=S.roster.find(x=>x.id===el.dataset.rdiv);if(a){a.div=el.value;S.sampleRoster=false;commit()}return}
   if(el.id==='divSel'){pickDiv(el.value);return}
+  if(el.id==='btMode'){S.cfg.btMode=el.value;BT.lanes.forEach(l=>{if(l)l.prev=null});save();btDraw();return}
+  if(el.id==='btGap'){S.cfg.btGap=Math.max(0,+el.value||0);save();return}
   if(el.id==='mpLane'||el.id==='mpLv'||el.id==='mpSpin'){S.cfg[el.id]=el.id==='mpLv'?el.value:+el.value;save();mpDraw();return}
   if(el.id==='camSel'){S.cfg.fx.camId=el.value;commit();if(CAM.stream)camStart();return}
   if(el.id==='camRev'){S.cfg.fx.camRev=el.checked;commit();return}
