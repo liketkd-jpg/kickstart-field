@@ -310,6 +310,13 @@ select option,select optgroup{background:#181B22;color:#F2EEE6}
 [dir=rtl] .cart{text-align:right}
 .flash{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#16200F;border:1px solid #2F5A2A;color:#D8F5C8;border-radius:12px;padding:12px 14px;margin-bottom:14px}
 .alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.drd summary{display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer;list-style:none;flex-wrap:wrap}.drd summary::-webkit-details-marker{display:none}
+.drt{display:flex;gap:14px;overflow-x:auto;padding:10px 2px 4px}.drr{display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:190px}.drr h4{margin:0;font-size:12px;letter-spacing:.08em;color:var(--mute)}
+.drm{display:flex;flex-direction:column;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;overflow:hidden}.drm.bye{border-style:dashed;padding:4px 0}
+.dp{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;font-size:14px;align-items:baseline}.dp small{color:var(--mute);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.dp.blue{border-left:4px solid #2F6BFF}.dp.red{border-left:4px solid #E5304A}.dp.blue+.dp.red{border-top:1px solid var(--line,rgba(255,255,255,.08))}.dp.w b::after{content:" ✓";color:var(--ok,#3fb37f)}.dp.l{opacity:.5}.dp.tbd{color:var(--mute)}
+.dp.hit,.drg li.hit{background:rgba(217,181,106,.22);outline:2px solid var(--gold,#D9B56A);outline-offset:-2px}
+.drg{display:flex;flex-wrap:wrap;gap:16px;padding-top:8px}.drgg{min-width:220px;flex:1}.drgg h4{margin:0 0 4px}.drg ol{margin:0;padding-left:26px;display:flex;flex-direction:column;gap:3px}.drg li{padding:3px 6px;border-radius:6px}.drg li small{color:var(--mute)}
 .al{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-left:4px solid var(--gold3);background:var(--panel);border-radius:12px;padding:12px 14px}
 .al.warn{border-left-color:var(--warn)} .al.hot{border-left-color:var(--bad);background:#1E1214} .al.info{border-left-color:var(--blue)}
 .al>div{min-width:0} .al .btn{flex:none}
@@ -529,6 +536,7 @@ async function reload(){
     fixAuthHash(session);
     M.comps=(await q(sb.from('comps').select('*').order('date',{ascending:true}))).map(mapComp);
     try{const {data,error}=await sb.from('live_view').select('comp_id,updated_at');M.live=error?[]:(data||[]);M.liveOk=!error;}catch(e){M.live=[];M.liveOk=false;}
+    try{const {data,error}=await sb.from('draws').select('comp_id,sport,updated_at');M.draws=error?[]:(data||[]);M.drawsOk=!error;}catch(e){M.draws=[];M.drawsOk=false;}
     if(session){
       const prof=await q(sb.from('profiles').select('*').eq('id',session.user.id));
       M.profile=prof&&prof[0]?mapUser(prof[0]):{id:session.user.id,role:'coach',name:session.user.email,org:'',phone:'',email:session.user.email};
@@ -624,6 +632,7 @@ function render(){
     if(r==='home')h=vHome();
     else if(r.startsWith('comp-'))h=vComp(r.slice(5));
     else if(r.startsWith('live-'))h=vLive(r.slice(5));
+    else if(r.startsWith('draw-'))h=vDraw(r.slice(5));
     else if(r.startsWith('enter-'))h=need('coach',()=>vEnter(r.slice(6)));
     else if(r==='login')h=vLogin();
     else if(r==='signup')h=vSignup();
@@ -685,6 +694,34 @@ function loadQr(){if(window.qrcode)return Promise.resolve();if(QRLIB)return QRLI
 async function liveQr(){const el=document.getElementById('liveQr');if(!el||el.dataset.done)return;try{await loadQr();const q=qrcode(0,'M');q.addData(el.dataset.url,'Byte');q.make();el.innerHTML=q.createSvgTag(4,6);el.dataset.done='1';}catch(e){el.remove();}}
 
 /* ---------- 대회 일정 ---------- */
+/* ---------- 대진표 · 출전 순서 (경기 앱이 올림 · 누구나 봄) ---------- */
+const drawsOf=cid=>(M.draws||[]).filter(d=>d.comp_id===cid);
+const fmtAt=t=>{const d=new Date(t);return `${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+const drawLast=cid=>drawsOf(cid).reduce((m,d)=>d.updated_at>m?d.updated_at:m,'');
+async function loadDraw(cid){M.drawData=M.drawData||{};if(M.drawData[cid]&&M.drawData[cid].at===drawLast(cid))return;
+  try{const {data,error}=await sb.from('draws').select('*').eq('comp_id',cid);if(error)throw error;M.drawData[cid]={at:drawLast(cid),rows:data||[]};}catch(e){M.drawData[cid]={at:drawLast(cid),rows:[],err:msgOf(e)};}
+  if(route()==='draw-'+cid)render();}
+const drN=s=>String(s||'').toLowerCase().replace(/\s+/g,'');
+function drHit(p,q,mine){if(!p)return false;if(mine&&mine.has(p.n))return true;return !!q&&(drN(p.n).includes(q)||drN(p.t).includes(q));}
+function drawDivHtml(d,q,mine){const hit=p=>drHit(p,q,mine),P=(p,cls)=>p?`<span class="dp ${cls||''} ${hit(p)?'hit':''}"><b>${esc(p.n)}</b>${p.t?`<small>${esc(p.t)}</small>`:''}</span>`:'<span class="dp tbd">—</span>';
+  if(d.kind==='t')return `<div class="drt">${d.rounds.map(r=>`<div class="drr"><h4>${esc(r.name)}</h4>${r.m.map(m=>m.bye&&!(m.b&&m.r)?`<div class="drm bye">${P(m.b||m.r,'w')}<span class="small mute">부전승</span></div>`
+      :`<div class="drm">${P(m.b,'blue '+(m.w==='b'?'w':m.w?'l':''))}${P(m.r,'red '+(m.w==='r'?'w':m.w?'l':''))}</div>`).join('')}</div>`).join('')}</div>`;
+  return `<div class="drg">${d.groups.map((g,gi)=>`<div class="drgg">${d.groups.length>1?`<h4>${gi+1}조</h4>`:''}<ol>${g.map(p=>`<li class="${hit(p)?'hit':''}"><b>${esc(p.n)}</b>${p.t?` <small>${esc(p.t)}</small>`:''}${p.m?`<div class="small mute">${esc(p.m)}</div>`:''}</li>`).join('')}</ol></div>`).join('')}</div>`;}
+function drawList(cid){const X=(M.drawData||{})[cid];if(!X)return '';const rows=X.rows.slice().sort((a,b)=>Object.keys(SPORTS).indexOf(a.sport)-Object.keys(SPORTS).indexOf(b.sport));
+  const sp=rows.find(r=>r.sport===UI.drSp)?UI.drSp:(rows[0]||{}).sport,row=rows.find(r=>r.sport===sp);if(!row)return '<div class="empty">아직 올라온 대진표가 없습니다.</div>';
+  const q=drN(UI.drQ),u=me(),mine=UI.drMine&&u&&u.role==='coach'?new Set(myAth().map(a=>a.name)):null;
+  const divs=(row.data.divs||[]).filter(d=>{if(!q&&!mine)return true;const all=d.kind==='t'?d.rounds.flatMap(r=>r.m.flatMap(m=>[m.b,m.r])):d.groups.flat();return all.some(p=>drHit(p,q,mine))||(!mine&&drN(d.name).includes(q));});
+  return `<div class="row between"><div class="tabs">${rows.map(r=>`<button type="button" class="${r.sport===sp?'on':''}" data-a="drSp" data-s="${r.sport}">${SPORTS[r.sport]?SPORTS[r.sport].n:r.sport}</button>`).join('')}</div>
+      <span class="small mute">${fmtAt(row.updated_at)} 올림 · 부문 ${(row.data.divs||[]).length}개${q||mine?` · 찾은 부문 ${divs.length}개`:''}</span></div>
+    ${divs.length?divs.map((d,i)=>`<details class="card drd" ${q||mine||divs.length<=3?'open':''}><summary><b>${esc(d.name)}</b><span class="row" style="gap:6px">${d.court?`<span class="chip open">${esc(d.court)}코트</span>`:''}<span class="small mute">${d.n}${/단체|팀|체조|종합/.test(d.name)?'팀':'명'} · ${d.kind==='t'?'토너먼트':`${d.stage?esc(d.stage)+' ':''}출전 순서`}</span></span></summary>${drawDivHtml(d,q,mine)}</details>`).join('')
+      :'<div class="empty">찾는 선수가 없습니다.</div>'}`;}
+function vDraw(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class="empty">대회를 찾지 못했습니다.</div>';
+  const X=(M.drawData||{})[id];if(!X||X.at!==drawLast(id)){loadDraw(id);}const u=me();
+  return `<div class="stack"><a class="small" href="#comp-${c.id}">← 대회 안내</a>
+    <div><span class="eyebrow">Draw · Order</span><h1>${esc(c.name)} 대진표 · 출전 순서</h1><p class="mute" style="margin:6px 0 0">${fmtDate(c.date)} · ${esc(c.place)} · 경기 진행에 따라 바뀔 수 있으니 대회장 안내를 함께 확인해 주세요.</p></div>
+    <div class="row"><input type="search" id="drSearch" placeholder="선수 이름이나 소속(도장)으로 찾기" value="${esc(UI.drQ||'')}" style="flex:1;min-width:220px" autocomplete="off">${u&&u.role==='coach'?`<label class="check"><input type="checkbox" data-a="drMine" ${UI.drMine?'checked':''}><span>내 선수만</span></label>`:''}</div>
+    <div id="drList" class="stack">${!X?'<div class="empty">대진표를 불러오는 중…</div>':X.err?`<div class="note">대진표를 불러오지 못했습니다: ${esc(X.err)}</div>`:drawList(id)}</div></div>`;}
+document.addEventListener('input',ev=>{if(ev.target&&ev.target.id==='drSearch'){UI.drQ=ev.target.value;const el=document.getElementById('drList'),id=route().slice(5);if(el)el.innerHTML=drawList(id);}});
 function compCard(c){const [k,l]=compState(c),d=new Date(c.date+'T00:00:00'),n=dday(c.deadline);
   return `<article class="comp ${k==='closed'?'closed':''}">
     <div class="row between"><span class="chip ${k}">${l}</span><span class="row" style="gap:6px">${sportChips(c)}</span></div>
@@ -692,7 +729,7 @@ function compCard(c){const [k,l]=compState(c),d=new Date(c.date+'T00:00:00'),n=d
     <h3>${esc(c.name)}</h3>
     <dl class="meta"><dt>장소</dt><dd>${esc(c.place)}</dd><dt>접수 마감</dt><dd>${fmtDate(c.deadline)} ${k!=='closed'?`<span class="dday">D-${n}</span>`:''}</dd>
       <dt>참가비</dt><dd>${c.sports.map(s=>`${SPORTS[s].n} ${won(c.fee[s])}`).join(' · ')}</dd></dl>
-    <div class="row" style="margin-top:auto"><a class="btn ${k==='closed'?'':'gold'}" href="#comp-${c.id}">${k==='closed'?'대회 안내 보기':'대회 안내 · 접수하기'}</a>${liveOn(c.id,24*60)?`<a class="btn live" href="#live-${c.id}"><span class="ldot ${liveOn(c.id,10)?'':'idle'}"></span> 실시간 결과</a>`:''}</div>
+    <div class="row" style="margin-top:auto"><a class="btn ${k==='closed'?'':'gold'}" href="#comp-${c.id}">${k==='closed'?'대회 안내 보기':'대회 안내 · 접수하기'}</a>${liveOn(c.id,24*60)?`<a class="btn live" href="#live-${c.id}"><span class="ldot ${liveOn(c.id,10)?'':'idle'}"></span> 실시간 결과</a>`:''}${drawsOf(c.id).length?`<a class="btn" href="#draw-${c.id}">📋 대진표</a>`:''}</div>
   </article>`;}
 function vHome(){
   const L=D().comps.slice().sort((a,b)=>(compState(a)[0]==='closed')-(compState(b)[0]==='closed')||a.date.localeCompare(b.date));
@@ -709,7 +746,8 @@ function alertsFor(u){const A=[];if(!u||u.role!=='coach')return A;
     if(k!=='closed'&&n<=7)A.push({lv:n<=2?'hot':'warn',t:`「${c.name}」 접수 마감 ${n===0?'오늘':'D-'+n} (${fmtDate(c.deadline)})`,s:mine.length?`이 대회에 ${mine.length}건 접수했습니다.`:'아직 접수하지 않았습니다.',a:`<a class="btn sm gold" href="#enter-${c.id}">${mine.length?'선수 더 접수':'접수하기'}</a>`});
     const wait=mine.filter(e=>e.status==='wait');
     if(wait.length)A.push({lv:'warn',t:`「${c.name}」 입금 확인 전 ${wait.length}건 · ${won(wait.reduce((s,e)=>s+e.fee,0))}`,s:`입금 계좌: ${c.account} · 입금자명은 「${u.org}」`,a:`<a class="btn sm" href="#entries">접수 내역</a>`});
-    if(mine.length&&c.notice)A.push({lv:'info',t:`「${c.name}」 공지`,s:c.notice,a:''});}
+    if(mine.length&&c.notice)A.push({lv:'info',t:`「${c.name}」 공지`,s:c.notice,a:''});
+    if(mine.length&&drawsOf(c.id).length)A.push({lv:'info',t:`「${c.name}」 대진표가 올라왔습니다`,s:`${drawsOf(c.id).map(d=>SPORTS[d.sport]?SPORTS[d.sport].n:d.sport).join(' · ')} · ${fmtAt(drawLast(c.id))} 올림 · 「내 선수만」으로 우리 선수 순서를 바로 볼 수 있습니다`,a:`<a class="btn sm gold" href="#draw-${c.id}">대진표 보기</a>`});}
   return A;}
 function vAlerts(){const A=alertsFor(me());if(!A.length)return '';
   return `<section class="alerts" aria-label="알림"><h2 class="small eyebrow" style="font-size:12px">알림 ${A.length}</h2>${A.map(x=>`<div class="al ${x.lv}"><div><b>${esc(x.t)}</b><div class="small mute">${esc(x.s)}</div></div>${x.a}</div>`).join('')}</section>`;}
@@ -724,6 +762,7 @@ function vComp(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class
       ${c.note?`<p class="note">${esc(c.note)}</p>`:''}
       ${c.notice?`<div class="notice"><b>대회 본부 공지</b><div>${esc(c.notice)}</div></div>`:''}
       ${liveOn(c.id,24*60)?`<a class="btn live" href="#live-${c.id}"><span class="ldot"></span> 실시간 결과 보기</a>`:''}
+      ${drawsOf(c.id).length?`<div class="notice drn"><b>📋 대진표 · 출전 순서가 올라왔습니다</b><div>${drawsOf(c.id).map(d=>SPORTS[d.sport]?SPORTS[d.sport].n:d.sport).join(' · ')} · ${fmtAt(drawLast(c.id))} 올림</div><a class="btn gold sm" href="#draw-${c.id}" style="margin-top:8px;align-self:flex-start">대진표 보기</a></div>`:''}
       ${c.docUrl||c.contact?`<div class="row">${c.docUrl?`<a class="btn" href="${esc(safeUrl(c.docUrl))}" target="_blank" rel="noopener">📄 대회 요강${c.docName?' · '+esc(c.docName):''} 내려받기</a>`:''}${c.contact?`<span class="small mute">문의 · <b>${esc(c.contact)}</b></span>`:''}</div>`:''}
       <div class="row">${k==='closed'?'<span class="mute">접수가 끝난 대회입니다.</span>'
         :u&&u.role==='coach'?`<a class="btn gold" href="#enter-${c.id}">이 대회에 선수 접수하기</a><a class="btn" href="#enter-${c.id}">📄 엑셀로 한꺼번에 접수</a>${mine?`<span class="small mute">이미 ${mine}건 접수했습니다</span>`:''}`
@@ -1030,6 +1069,10 @@ function vStatus(c,E){const sp=c.sports.includes(UI.adminSport)?UI.adminSport:c.
       <button class="btn gold" type="button" data-a="sendApp" data-s="${s}" data-w="field" ${n?'':'disabled'}>🖥 현장 노트북 ${SPORTS[s].n} 앱으로 보내기</button>
       <button class="btn" type="button" data-a="sendApp" data-s="${s}" data-w="online" ${n?'':'disabled'}>🌐 온라인 ${SPORTS[s].n} 앱으로 보내기</button>
       <button class="btn ghost sm" type="button" data-a="export" data-s="${s}" ${n?'':'disabled'}>엑셀로 내려받기</button></div>`;}).join('')}</div>
+    <div class="card stack" style="gap:6px"><div class="row between"><h3>📋 홈페이지 대진표 · 출전 순서</h3>${drawsOf(c.id).length?`<a class="btn sm" href="#draw-${c.id}">홈페이지에서 보기</a>`:''}</div>
+      ${!M.drawsOk?'<span class="small mute">Supabase에서 10단계 SQL(schema10.sql)을 실행하면 경기 앱에서 대진표를 홈페이지로 올릴 수 있습니다.</span>'
+        :drawsOf(c.id).length?`<div class="row">${drawsOf(c.id).map(d=>`<span class="chip open">${SPORTS[d.sport]?SPORTS[d.sport].n:d.sport} · ${fmtAt(d.updated_at)}</span><button class="btn sm ghost" type="button" data-a="drDel" data-s="${d.sport}">${UI.drArm===d.sport?'한 번 더 누르면 내림':'내리기'}</button>`).join('')}</div>`
+        :'<span class="small mute">아직 올린 대진표가 없습니다. 경기 앱에서 대진(출전 순서)을 만든 뒤 「📋 대진표 홈페이지로 보내기」를 누르면 여기와 대회 안내에 올라가고, 접수한 지도자에게 알림이 뜹니다.</span>'}</div>
     <div class="row between" style="margin-top:8px"><h2>접수 현황</h2><div class="tabs">${c.sports.map(s=>`<button type="button" class="${s===sp?'on':''}" data-a="adTab" data-s="${s}">${SPORTS[s].n}</button>`).join('')}</div></div>
     ${sp==='poomsae'?musAdmin(c,ES):''}
     ${ES.length?`<div class="tablewrap"><table><tr><th>접수일</th><th>지도자 · 소속</th><th>선수</th><th>부문</th>${ES.some(needMusic)&&M.musicOk?'<th>음원</th>':''}<th>참가비</th><th>입금</th></tr>
@@ -1044,9 +1087,58 @@ function dojangRows(c,E){const by=new Map();
   return [...by.entries()].map(([id,r])=>({id,...r,due:r.total-r.paid})).sort((a,b)=>(b.due>0)-(a.due>0)||String(a.co.org).localeCompare(String(b.co.org),'ko'));}
 function msgL(t){return LANG==='ko'?t:String(t).split('\n').map(l=>tr(l)||l).join('\n');}
 function payMsg(c,r){return msgL(`[KICKSTART UP] ${c.name} 참가비 안내\n${r.co.org||''} ${r.co.name||''} 지도자님, 접수 ${r.cnt}건 참가비 ${won(r.total)} 중 ${won(r.due)}이 아직 확인되지 않았습니다.\n입금 계좌: ${c.account}\n입금자명: ${r.co.org||r.co.name||''}\n접수 마감: ${fmtDate(c.deadline)}${c.contact?'\n문의: '+c.contact:''}`);}
+/* ---------- 은행 입금 내역 엑셀로 입금 확인 (국민은행 우선, 칸 이름으로 다른 은행도) ---------- */
+const bkNorm=s=>String(s||'').toLowerCase().replace(/\(주\)|주식회사|태권도장|태권도|체육관|도장|아카데미|학원|[\s()\[\]·.,_\-]/g,'');
+const bkAmt=v=>{if(typeof v==='number')return v;const n=Number(String(v||'').replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0;};
+function bankParse(rows){let hi=-1,ci={};
+  for(let i=0;i<Math.min(rows.length,40);i++){const r=rows[i].map(x=>String(x==null?'':x).replace(/\s/g,''));
+    const amt=r.findIndex(x=>/^(입금액|입금금액|맡기신금액|입금\(원\)|입금액\(원\)|입금|받은금액|입금금액\(원\))/.test(x)||(/입금/.test(x)&&!/입금자|출금|입금인|입금처/.test(x)));
+    if(amt<0)continue;const pick=re=>r.findIndex(x=>re.test(x));
+    ci={amt,name:[/보낸분|받는분/,/입금자|입금인|송금인|의뢰인/,/기재내용|거래기록|내용$/,/적요/,/거래내용|메모/].map(pick).find(k=>k>=0),memo:pick(/송금메모|메모|비고|통장표시/),date:pick(/거래일시|거래일자|일시|일자|날짜/)};
+    if(ci.name!=null&&ci.name>=0){hi=i;break;}}
+  if(hi<0)return {err:'입금액·입금자(보낸분) 칸을 찾지 못했습니다. 은행에서 「거래내역 엑셀 내려받기」로 받은 파일인지 확인해 주세요'};
+  const L=[];for(const r of rows.slice(hi+1)){const a=bkAmt(r[ci.amt]);if(!(a>0))continue;const n=String(r[ci.name]||'').trim(),m=ci.memo>=0?String(r[ci.memo]||'').trim():'';
+    L.push({amt:a,name:n,memo:m,date:ci.date>=0?String(r[ci.date]||'').trim():''});}
+  return {L};}
+function bankMatch(c,E,deps){const rows=dojangRows(c,E);const cand=dep=>{const ks=[dep.name,dep.memo].map(bkNorm).filter(k=>k.length>=2);
+    return rows.filter(r=>{const o=bkNorm(r.co.org),nm=bkNorm(r.co.name);return ks.some(k=>(o.length>=2&&(o.includes(k)||k.includes(o)))||(nm.length>=2&&k.includes(nm)));});};
+  const by=new Map(),unknown=[],multi=[];
+  deps.forEach(d=>{const cs=cand(d);if(cs.length===1){const id=cs[0].id;if(!by.has(id))by.set(id,{r:cs[0],deps:[]});by.get(id).deps.push(d);}else if(cs.length>1)multi.push({d,cs});else unknown.push(d);});
+  const auto=[],diff=[],already=[],guess=[];
+  for(const [id,x] of by){const sum=x.deps.reduce((s,d)=>s+d.amt,0);if(x.r.due<=0)already.push({...x,sum});else if(sum===x.r.due)auto.push({...x,sum});else diff.push({...x,sum});}
+  const used=new Set([...auto,...diff,...already].map(x=>x.r.id));
+  unknown.slice().forEach(d=>{const hits=rows.filter(r=>r.due>0&&r.due===d.amt&&!used.has(r.id));if(hits.length===1){guess.push({r:hits[0],deps:[d],sum:d.amt});used.add(hits[0].id);unknown.splice(unknown.indexOf(d),1);}});
+  return {auto,diff,already,guess,unknown,multi};}
+async function bankFile(F){const c=D().comps.find(x=>x.id===UI.adminComp);if(!c)return;
+  try{const wb=XLSX.read(await F.arrayBuffer(),{type:'array',cellDates:false});let res=null;
+    for(const n of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''});const p=bankParse(rows);if(p.L){res=p;break;}res=res||p;}
+    if(!res||res.err){UI.bank={file:F.name,err:(res&&res.err)||'읽을 수 있는 시트가 없습니다'};render();return;}
+    const E=D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'),m=bankMatch(c,E,res.L);
+    const done=[];for(const x of m.auto){const ids=E.filter(e=>e.coachId===x.r.id&&e.status==='wait').map(e=>e.id);for(const id of ids)await q(sb.from('entries').update({status:'paid'}).eq('id',id));done.push(...ids);}
+    UI.bank={file:F.name,comp:c.id,n:res.L.length,total:res.L.reduce((s,d)=>s+d.amt,0),...m,undo:done};await reload();
+    toast(m.auto.length?`${m.auto.length}개 도장을 자동으로 입금 확인했습니다`:'자동으로 확인할 수 있는 입금이 없습니다. 아래 표를 확인해 주세요');}
+  catch(e){UI.bank={file:F.name,err:'엑셀을 읽지 못했습니다: '+msgOf(e)};render();}}
+async function bankUndo(){const B=UI.bank;if(!B||!B.undo||!B.undo.length)return;run(async()=>{for(const id of B.undo)await q(sb.from('entries').update({status:'wait'}).eq('id',id));UI.bank={...B,undo:[],auto:[],undone:B.auto.length};await reload();toast('자동 입금 확인을 되돌렸습니다');});}
+function bankCard(c){const B=UI.bank;const up=`<label class="btn gold">🏦 은행 입금 내역 엑셀 올리기<input type="file" accept=".xlsx,.xls,.csv" data-bank hidden></label>`;
+  if(!B||B.comp&&B.comp!==c.id)return `<div class="card stack bankc"><div class="row between"><div><h3>🏦 은행 입금 내역으로 입금 확인</h3><span class="small mute">은행(국민은행 등) 인터넷뱅킹에서 「거래내역 조회 → 엑셀 내려받기」 한 파일을 올리면, 입금자 이름(소속명)과 금액이 도장별 남은 참가비와 딱 맞는 도장은 <b>자동으로 입금 확인</b>합니다. 이름이나 금액이 다른 건은 따로 보여 드립니다.</span></div>${up}</div></div>`;
+  if(B.err)return `<div class="card stack bankc"><div class="row between"><h3>🏦 은행 입금 내역</h3>${up}</div><div class="note">${esc(B.file)} · ${esc(B.err)}</div></div>`;
+  const dep=x=>x.deps.map(d=>`${esc(d.name||'(이름 없음)')} ${won(d.amt)}${d.date?` <span class="mute">${esc(d.date.slice(0,16))}</span>`:''}`).join('<br>');
+  const row=(x,btn)=>`<tr><td><b>${esc(x.r.co.org||'')}</b><div class="small mute">${esc(x.r.co.name||'')}</div></td><td class="small">${dep(x)}</td><td class="num">${won(x.sum)}</td><td class="num">${won(x.r.due)}</td><td>${btn||''}</td></tr>`;
+  const payB=x=>x.r.due>0?`<button class="btn sm gold" type="button" data-a="payAll" data-id="${x.r.id}">${UI.payArm===x.r.id?'한 번 더 누르면 확인':'입금 확인'}</button>`:'<span class="small" style="color:var(--ok)">완료 ✓</span>';
+  const sec=(t,L,btn,hint)=>L.length?`<h4 style="margin:10px 0 4px">${t} <span class="small mute">${L.length}건${hint?' · '+hint:''}</span></h4><div class="tablewrap"><table><tr><th>도장</th><th>입금 (보낸분 · 금액)</th><th>입금 합계</th><th>남은 참가비</th><th></th></tr>${L.map(x=>row(x,btn&&btn(x))).join('')}</table></div>`:'';
+  return `<div class="card stack bankc"><div class="row between"><div><h3>🏦 은행 입금 내역 · ${esc(B.file)}</h3><span class="small mute">입금 ${B.n}건 · ${won(B.total)} 읽음</span></div><div class="row">${B.undo&&B.undo.length?`<button class="btn sm ghost" type="button" data-a="bankUndo">자동 확인 되돌리기</button>`:''}${up}</div></div>
+    <div class="kpis"><div><b>${B.auto.length}</b><span>✅ 자동 입금 확인</span></div><div><b>${B.diff.length+B.guess.length+(B.multi||[]).length}</b><span>⚠ 확인 필요</span></div><div><b>${B.unknown.length}</b><span>누구 입금인지 모름</span></div><div><b>${B.already.length}</b><span>이미 확인된 도장</span></div></div>
+    ${B.undone?`<div class="note">자동 확인 ${B.undone}건을 되돌렸습니다.</div>`:''}
+    ${sec('✅ 자동으로 입금 확인했습니다',B.auto,null,'이름과 금액이 모두 맞음')}
+    ${sec('⚠ 이름은 맞는데 금액이 다릅니다',B.diff,payB,'덜 냈거나 더 냈을 수 있습니다. 확인 뒤 직접 눌러 주세요')}
+    ${sec('⚠ 금액만 맞습니다 (입금자 이름이 소속명과 다름)',B.guess,payB,'지도자 개인 이름 등으로 보냈을 수 있습니다')}
+    ${(B.multi||[]).length?`<h4 style="margin:10px 0 4px">⚠ 이름이 여러 도장과 비슷합니다 <span class="small mute">${B.multi.length}건</span></h4><div class="small">${B.multi.map(m=>`${esc(m.d.name)} ${won(m.d.amt)} → ${m.cs.map(r=>esc(r.co.org||r.co.name)).join(' / ')}`).join('<br>')}</div>`:''}
+    ${B.unknown.length?`<h4 style="margin:10px 0 4px">누구 입금인지 모름 <span class="small mute">${B.unknown.length}건 · 참가비가 아닌 입금일 수 있습니다</span></h4><div class="small">${B.unknown.map(d=>`${esc(d.name||'(이름 없음)')} · ${won(d.amt)}${d.memo?` · ${esc(d.memo)}`:''}${d.date?` · <span class="mute">${esc(d.date.slice(0,16))}</span>`:''}`).join('<br>')}</div>`:''}
+  </div>`;}
+document.addEventListener('change',ev=>{const t=ev.target;if(t&&t.dataset&&t.dataset.bank!=null){const F=t.files&&t.files[0];if(F){UI.bank={file:F.name,comp:UI.adminComp,busy:true,err:''};bankFile(F);}t.value='';}},true);
 function vDojang(c,E){const L=dojangRows(c,E),T=L.reduce((s,r)=>({cnt:s.cnt+r.cnt,total:s.total+r.total,paid:s.paid+r.paid}),{cnt:0,total:0,paid:0}),dueN=L.filter(r=>r.due>0).length;
   if(!L.length)return '<div class="empty">아직 접수한 도장이 없습니다.</div>';
-  return `<div class="row between"><div><h2>도장별 참가비 합계표</h2><p class="small mute" style="margin:4px 0 0">한 도장이 여러 선수 참가비를 한꺼번에 입금하면 「모두 입금 확인」을 누르세요. 미입금 도장에는 안내 문자를 보낼 수 있습니다.</p></div>
+  return `${bankCard(c)}<div class="row between"><div><h2>도장별 참가비 합계표</h2><p class="small mute" style="margin:4px 0 0">한 도장이 여러 선수 참가비를 한꺼번에 입금하면 「모두 입금 확인」을 누르세요. 미입금 도장에는 안내 문자를 보낼 수 있습니다.</p></div>
     <div class="row"><button class="btn" type="button" data-a="dojangX">합계표 엑셀</button>${dueN?`<button class="btn gold" type="button" data-a="copyAll">미입금 ${dueN}곳 안내문 복사</button>`:''}</div></div>
     <div class="tablewrap"><table><tr><th>소속 · 지도자</th><th>연락처</th>${c.sports.map(s=>`<th>${SPORTS[s].n}</th>`).join('')}<th>참가비</th><th>입금 확인</th><th>남은 금액</th><th></th></tr>
     ${L.map(r=>`<tr><td><b>${esc(r.co.org||'')}</b><div class="small mute">${esc(r.co.name||'')}</div></td><td class="small num">${esc(r.co.phone||'')}</td>${c.sports.map(s=>`<td class="num">${r.n[s]||''}</td>`).join('')}
@@ -1810,6 +1902,11 @@ document.addEventListener('click',e=>{
   else if(a==='payClose'){UI.payDone=null;render();}
   else if(a==='sendApp'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)sendApp(c,b.dataset.s,b.dataset.w);}
   else if(a==='payCopy'){copyText(b.dataset.t,'복사했습니다');}
+  else if(a==='drSp'){UI.drSp=b.dataset.s;render();}
+  else if(a==='drMine'){UI.drMine=!UI.drMine;render();}
+  else if(a==='drDel'){const c=UI.adminComp,sp=b.dataset.s;if(UI.drArm!==sp){UI.drArm=sp;render();setTimeout(()=>{UI.drArm=null;},4000);return;}
+    run(async()=>{await q(sb.from('draws').delete().eq('comp_id',c).eq('sport',sp));UI.drArm=null;await reload();toast('홈페이지 대진표를 내렸습니다');});}
+  else if(a==='bankUndo'){bankUndo();}
   else if(a==='musPlay'){musPlay(b.dataset.id);}
   else if(a==='musZip'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)musicZip(c);}
   else if(a==='bulkClose'){UI.bulk=null;render();}

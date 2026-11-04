@@ -22,3 +22,11 @@ func openBrowser(url string) {
 }
 
 func pause() {}
+
+func openFolder(dir string) error {
+	cmd := "xdg-open"
+	if runtime.GOOS == "darwin" {
+		cmd = "open"
+	}
+	return exec.Command(cmd, dir).Start()
+}
