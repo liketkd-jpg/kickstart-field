@@ -620,6 +620,18 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 @media print{body.printcards>*:not(#printArea){display:none!important}body.printcards{background:#fff!important}
  #printArea{display:grid!important;grid-template-columns:repeat(3,1fr);gap:6mm;padding:4mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
  #printArea .hcard{break-inside:avoid;background:#130b33!important;box-shadow:none}#printArea .hcfig svg{height:140px}}
+/* camera kick panel */
+.mpbox{position:fixed;right:14px;bottom:14px;z-index:80;width:min(600px,calc(100vw - 28px));grid-template-columns:220px minmax(0,1fr);align-items:start;background:var(--gl),var(--panel);border:1px solid rgba(56,242,255,.5);border-radius:16px;box-shadow:var(--hl),0 18px 40px rgba(0,0,0,.6),0 0 24px -8px #38f2ff;padding:10px;display:grid;gap:8px;font-size:.85rem}
+.mpbox .mph{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:6px}.mpbox .mph .btn{padding:2px 10px}
+.mpbox canvas{width:100%;aspect-ratio:4/3;border-radius:10px;background:#000;border:1px solid rgba(255,255,255,.12)}
+.mpbox.min canvas,.mpbox.min .mpb{display:none}.mpbox.min{width:300px}
+.mpb .f{font-size:.75rem;gap:2px}.mpb select{padding:3px 6px;font-size:.8rem}.mpn{padding:4px 8px}.mpn b{font-size:1.1rem}
+.mpb{display:grid;gap:6px}.mpb .row{gap:6px}.mpb .btn{padding:4px 10px;font-size:.85rem}.mpb select{width:100%}
+.mpn{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;background:rgba(0,0,0,.35);border-radius:10px;padding:6px 10px}
+.mpn span{color:var(--muted);flex-basis:100%;font-size:.75rem}.mpn b{font-family:var(--f-num);font-size:1.3rem}.mpn b.sp{color:var(--gold)}
+.mpn.live{box-shadow:0 0 0 1px #b6ff3b}.mpn.live span{color:#b6ff3b}
+.mpst{font-weight:700}
+.spinpop{font-size:6vw;color:var(--gold)!important;text-shadow:0 0 2.4vw #ffd23f}
 /* galaxy hero glow */
 .rig.g2 .ecape{filter:drop-shadow(0 0 4px currentColor)}
 .rig.g2 .nbelt{filter:drop-shadow(0 0 3px #fff)}
@@ -728,7 +740,7 @@ const STICON={
   punch:'M5 10h9a3 3 0 0 1 0 6H8a3 3 0 0 1-3-3zM9 10V7M12 10V7M15 11V8M16 6l4-2M17 9h4',
   flag:'M5 21V3M5 4h12l-3 4 3 4H5'};
 const T={
- ko:{app:'태권 히어로 2',sub:'갤럭시 챌린지 · 릴레이 · 보스전',tSetup:'설정',tRun:'경기 진행',tBoard:'전광판',openBoard:'전광판 새 창',
+ ko:{app:'태권 히어로 2',sub:'갤럭시 챌린지 · 릴레이 · 킥 배틀',tSetup:'설정',tRun:'경기 진행',tBoard:'전광판',openBoard:'전광판 새 창',
   focusOk:'버튼 입력 준비됨',focusNo:'화면을 한 번 클릭하세요',
   evInfo:'대회 정보',fxTitle:'대회 연출 (켜기·끄기)',fxIntro:'입장 소개',fxIntroD:'시작을 누르면 레인마다 히어로가 날아 들어와 아이 이름·도장을 소개하고, 네 명이 함께 선 뒤 출발합니다. 소개 중 시작 버튼을 다시 누르면 건너뜁니다.',fxRecord:'신기록 알림',fxRecordD:'이 부문 오늘 가장 빠른 기록(페널티 포함)이 깨지면 전광판에 NEW RECORD!가 터집니다. 전광판에 오늘 최고 기록도 보입니다.',fxCheer:'관중 응원 미터',fxCheerD:'노트북 마이크로 레인별 함성 크기를 재서 전광판 게이지로 보여 주고 응원 1등을 발표합니다. 기록·순위와는 상관없습니다.',fxCam:'결승선 카메라 다시 보기',fxCamD:'결승선 정면에 웹캠을 두면, 1등 도착 순간 앞뒤 3초를 결과 확정 때 슬로모션으로 다시 보여 주고 그 레인을 확대합니다. 이 노트북 화면과 전광판 창에서 나옵니다.',bestToday:'오늘 최고',newRec:'오늘 최고 기록을 새로 세웠어요!',oldRec:'이전 기록',readyGo:'준비! READY?',skipIntro:'소개 건너뛰고',cheerT:'응원 미터',cheerHelp:'레인 버튼을 누르면 「○레인 응원해 주세요!」 뒤 4초 동안 함성을 잽니다. 「자동」은 선수가 있는 레인을 차례로 재고 응원 1등을 발표합니다.',cheerCall:'{n}레인 응원해 주세요!',cheerWin:'응원 1등은 {n}레인!',cheerAuto:'자동으로 차례대로',cheerWinBtn:'응원 1등 발표',micNo:'마이크를 쓸 수 없습니다. 브라우저의 마이크 허용을 확인해 주세요',camOn:'카메라 켜기',camOff:'카메라 끄기',camDefault:'기본 카메라',camNo:'카메라를 켜지 못했습니다. 웹캠 연결과 브라우저 카메라 허용을 확인해 주세요. (현장 모드 프로그램이나 홈페이지 앱 주소에서 됩니다)',camHint:'카메라를 켜면 여기에 결승선 화면이 보입니다. 네 레인이 모두 보이게 맞춰 주세요.',camRev:'화면 오른쪽이 1레인 (카메라 방향이 반대일 때)',camZoom:'1등 레인 확대',slowmo:'슬로모션',flow_replay:'{s}초 다시 보기',pwBtn:'결승 파워업 연출',judge:'심판',lkBtn:'심판 폰 · 전광판 QR',lkTitle:'심판 폰 · 전광판 연결',lkHow:'연결 방식',lkModeField:'현장 모드 와이파이',lkModeOnline:'인터넷',lkField:'현장 모드 와이파이로 연결됨 · 심판 폰을 같은 공유기 와이파이에 연결한 뒤 QR을 찍으세요',lkOnline:'인터넷으로 연결됨 · 방 코드 {r} · 심판 폰은 인터넷(LTE·와이파이)만 되면 됩니다',lkNone:'아직 연결되지 않았습니다',lkWhyNone:'심판 폰 연결은 KICKSTART 현장 모드 프로그램이나 홈페이지 앱 주소(liketkd-jpg.github.io/kickstart-field/hero/)에서 열었을 때 됩니다. 인터넷 방식은 인터넷 연결이 필요합니다.',lkBoardHelp:'TV·태블릿 전광판',lkNoKid:'이번 조 선수 없음',lkCopy:'주소 복사',copiedLink:'주소를 복사했습니다',lkSteps:'레인마다 심판 한 명이 자기 레인 QR을 찍습니다. 선수가 있는 레인만 밝게 표시됩니다(2명 경기면 2명, 3명이면 3명). 심판은 감점(+초)을 누르고, 아이가 결승선을 지나면 「도착!」을 누릅니다. 초록 점은 연결된 심판입니다.',lkWaitOp:'운영석을 기다리는 중…',lkConnecting:'연결하는 중…',lkRest:'이번 조는 이 레인에 선수가 없습니다. 다음 조를 기다려 주세요.',licTitle:'사용 권한 (허가 코드)',licPractice:'연습 모드 · 허가 코드 넣기',licLife:'평생',licKinds:{event:'대회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'},licSt_expired:'사용 기간이 끝났습니다',licSt_early:'사용 기간 전입니다',licSt_place:'이 코드는 홈페이지 앱 주소에서만 쓸 수 있습니다',licSt_need:'인터넷에 연결해 권한을 다시 확인해 주세요',licSt_app:'태권 히어로용 코드가 아닙니다',licNet:'인터넷에 연결되어 있어야 코드를 확인할 수 있습니다',licFail:'코드를 확인하지 못했습니다',licHelp:'코드가 없으면 연습 모드로 모든 기능을 써 볼 수 있습니다. 다만 선수는 {n}명까지이고 전광판에 「연습용」이 표시됩니다. KICKSTART UP에서 받은 코드를 넣으면 풀립니다.',licGo:'코드 확인하고 풀기',licBusy:'확인 중…',licRe:'지금 다시 확인',licDel:'이 기기에서 코드 빼기',licNeed:'코드를 넣어 주세요',licDone:'허가되었습니다 · {h}',licCap:'연습 모드는 선수 {n}명까지입니다 ({c}명은 넣지 못했습니다). 허가 코드를 넣으면 모두 등록됩니다',licOnline:'인터넷 주소에서만',licFile:'인터넷 없이 {n}일',licChecked:'마지막 확인',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
   mode:'경기 방식',mCut:'컷오프만',mTour:'토너먼트만',mBoth:'컷오프 후 토너먼트',
@@ -747,17 +759,20 @@ const T={
   sec:'초',total:'최종',raw:'기록',rank:'순위',name:'이름',pen:'페널티',
   nextUp:'다음 경기',meet:'오늘의 태권 히어로',courseMap:'히어로 코스',champion:'CHAMPION!',go:'GO!',cutLine:'토너먼트 진출',
   clickStart:'화면을 클릭하면 전광판이 시작됩니다',autoTitle:'자동 진행',autoOn:'모두 도착하면 결과 확정 → 메달 화면 → 전체 순위 → 다음 조까지 자동으로 넘어갑니다. 시작 버튼만 직접 누르세요.',confirmSec:'결과 자동 확정까지 (초)',medalSec:'메달 화면 (초)',standSec:'전체 순위 화면 (초)',flow_confirm:'{s}초 뒤 결과 자동 확정',flow_stand:'{s}초 뒤 전체 순위',flow_next:'{s}초 뒤 다음 조',stop:'멈춤',placeW:'{n}등',noWin:'새 창이 열리지 않아 이 화면에 전광판을 띄웠습니다',heatRes:'{h} 결과',waitCtrl:'운영 화면과 연결 중…',back:'운영 화면',noChamp:'챔피언이 정해지면 여기에 나타납니다',
-  game:'경기 종류',gRace:'개인 히어로 런',gRaceD:'한 명씩 코스를 달려 기록을 겨룹니다 (히어로 1과 같은 방식).',gRelay:'팀 릴레이',gRelayD:'같은 도장 아이들이 한 팀이 되어 이어 달립니다. 주자가 들어와 다음 주자를 터치할 때 레인 버튼(또는 심판 폰)을 누르고, 마지막 주자가 도착하면 한 번 더 누릅니다.',gFamily:'가족 릴레이',gFamilyD:'아이가 먼저 코스를 뛰고 터치하면 엄마나 아빠가 이어 뜁니다. 아빠부·엄마부는 「개인 히어로 런」에서 부별로 따로 겨룹니다.',familyHelp:'명단의 「보호자」 칸에 함께 뛸 분 이름(예: 김하준 아빠)을 적으면 전광판에 나옵니다. 비워 두면 「아이 이름 엄마·아빠」로 나옵니다. 아빠부·엄마부 선수는 팀 경기에서 빠집니다. 부모님은 경험치가 쌓이지 않습니다.',gBoss:'보스전',gBossT:'보스전 팀전',gBossD:'정해진 시간 동안 미트를 찬 횟수만큼 악당 「다크 메테오」의 체력이 깎입니다. 많이 찬 순서로 순위를 정합니다.',
-  bossSec:'보스전 시간(초)',bossHP:'악당 체력',bossKind:'보스전 종류',bossSolo:'개인전',bossTeamL:'팀전 (도장 팀)',bossHelp:'발차기 1회 = 레인 버튼 1번 또는 심판 폰의 「발차기 +1」. 네 레인이 함께 악당 체력을 깎고, 체력이 0이 되면 더 강한 보스가 다시 나옵니다. 전자 미트는 연동 준비 중입니다.',
+  game:'경기 종류',gRace:'개인 히어로 런',gRaceD:'한 명씩 코스를 달려 기록을 겨룹니다 (히어로 1과 같은 방식).',gRelay:'팀 릴레이',gRelayD:'같은 도장 아이들이 한 팀이 되어 이어 달립니다. 주자가 들어와 다음 주자를 터치할 때 레인 버튼(또는 심판 폰)을 누르고, 마지막 주자가 도착하면 한 번 더 누릅니다.',gFamily:'가족 릴레이',gFamilyD:'아이가 먼저 코스를 뛰고 터치하면 엄마나 아빠가 이어 뜁니다. 아빠부·엄마부는 「개인 히어로 런」에서 부별로 따로 겨룹니다.',familyHelp:'명단의 「보호자」 칸에 함께 뛸 분 이름(예: 김하준 아빠)을 적으면 전광판에 나옵니다. 비워 두면 「아이 이름 엄마·아빠」로 나옵니다. 아빠부·엄마부 선수는 팀 경기에서 빠집니다. 부모님은 경험치가 쌓이지 않습니다.',gBoss:'히어로 킥 배틀',gBossT:'히어로 킥 배틀 팀전',gBossD:'정해진 시간 동안 미트를 찬 횟수만큼 악당 「다크 메테오」의 체력이 깎입니다. 많이 찬 순서로 순위를 정합니다.',
+  bossSec:'킥 배틀 시간(초)',bossHP:'악당 체력',bossKind:'킥 배틀 종류',bossSolo:'개인전',bossTeamL:'팀전 (도장 팀)',bossHelp:'발차기 1회 = 레인 버튼 1번 또는 심판 폰의 「발차기 +1」. 네 레인이 함께 악당 체력을 깎고, 체력이 0이 되면 더 강한 보스가 다시 나옵니다. 전자 미트는 연동 준비 중입니다.',
   relayN:'팀 인원',mixG:'남녀 함께 팀 만들기 (나이별 혼성부)',teamHelp:'출전 선수의 소속(도장)별로 팀을 만들고, 인원이 모자란 아이들은 「연합팀」으로 묶습니다.',ppl0:'명',
   gameNote:'이미 기록이 있어 대진은 그대로 두었습니다. 새 방식으로 하려면 「명단 적용」을 눌러 주세요.',gameRebuilt:'새 경기 종류로 부문 {n}개 대진을 만들었습니다',
   touch:'터치!',kickBtn:'발차기 +1',kicks:'회',timeLeft:'남은 시간',villain:'다크 메테오',bossStage:'{n}단계',bossNext:'더 강한 {n}단계 보스가 나타났다!',bossCall:'발차기로 악당을 물리쳐라!',timeUp:'시간 끝! 발차기 횟수를 세는 중',
   bossIntro:'오늘의 악당',bossIntroD:'{s}초 동안 힘껏 발차기! 모두의 발차기로 체력 {hp}을 깎아 다크 메테오를 물리쳐요.',
-  xpTitle:'히어로 레벨 · 히어로 카드',xpHelp:'대회에 나올 때마다 경험치가 쌓이고, 레벨이 오르면 히어로의 갑옷·망토·헬멧 장식이 바뀝니다. 참가 +10 · 1등 +30 · 2등 +20 · 3등 +10 · 신기록 +20 · 보스전 발차기 1회 +1(최대 40). 이 노트북에 이름+소속으로 저장되며, 내보내기 파일로 다른 노트북에 옮길 수 있습니다.',
+  xpTitle:'히어로 레벨 · 히어로 카드',xpHelp:'대회에 나올 때마다 경험치가 쌓이고, 레벨이 오르면 히어로의 갑옷·망토·헬멧 장식이 바뀝니다. 참가 +10 · 1등 +30 · 2등 +20 · 3등 +10 · 신기록 +20 · 킥 배틀 발차기 1회 +1(최대 40). 이 노트북에 이름+소속으로 저장되며, 내보내기 파일로 다른 노트북에 옮길 수 있습니다.',
   xpOn:'경험치·레벨업 켜기',xpPrint:'히어로 카드 인쇄',xpExp:'경험치 내보내기',xpImp:'경험치 불러오기',xpReset:'경험치 모두 지우기',xpImported:'{n}명의 경험치를 불러왔습니다',xpBad:'경험치 파일을 읽지 못했습니다',
   cards:'히어로 카드',sCards:'히어로 카드',maxLv:'최고 레벨!',nextLv:'다음 레벨까지 {n}',
+  mpT:'카메라 킥 인식 (시험판)',mpD:'구글 MediaPipe 동작 인식으로 웹캠이 아이의 발차기를 셉니다. 발이 정한 높이까지 올라가면 1회, 몸을 돌려 차면 「회전 킥」으로 더 많이 깎습니다. 처음 켤 때 인터넷이 필요합니다. 카메라는 아이 허리 높이, 비스듬한 옆에 두고 몸 전체가 화면에 들어오게 하세요 (1초 60장 카메라 추천).',
+  mpPanel:'📷 카메라 킥 인식 · 시험판',mpStart:'카메라 켜기',mpStop:'끄기',mpLoading:'동작 인식 도구를 불러오는 중… (처음엔 10초쯤)',mpOff:'꺼져 있음',mpOnS:'인식 중',mpNoBody:'몸 전체가 화면에 들어오게 해 주세요',mpBad:'카메라 인식 도구를 불러오지 못했습니다. 인터넷 연결과 카메라 허용을 확인해 주세요.',
+  mpLane:'이 카메라가 보는 레인',mpLv:'발 높이 기준',mpEasy:'쉬움 · 무릎 위 (유치부)',mpMid:'보통 · 허리',mpHard:'어려움 · 가슴',mpSpinP:'회전 킥 점수',mpTest:'연습 세기 (경기 전)',mpLive:'경기 중 · 바로 반영',mpKick:'발차기',mpSpinW:'회전 킥',mpReset:'연습 숫자 0으로',spinPop:'회전 킥!',
   heatOf:'{h}조 / 전체 {n}조',full:'전체 화면',waiting:'대기',lanes:'레인 배정',course0:'코스'},
- en:{app:'Taekwon Heroes 2',sub:'Galaxy Challenge · Relay · Boss Battle',tSetup:'Setup',tRun:'Run Event',tBoard:'Scoreboard',openBoard:'Scoreboard window',
+ en:{app:'Taekwon Heroes 2',sub:'Galaxy Challenge · Relay · Kick Battle',tSetup:'Setup',tRun:'Run Event',tBoard:'Scoreboard',openBoard:'Scoreboard window',
   focusOk:'Buttons ready',focusNo:'Click the screen once',
   evInfo:'Event',fxTitle:'Show effects (on/off)',fxIntro:'Runner intros',fxIntroD:'Press Start and each lane’s hero flies in with the child’s name and team, then all line up and the race starts. Press Start again to skip.',fxRecord:'New record alert',fxRecordD:'When today’s fastest time in this division (with penalties) is beaten, NEW RECORD! bursts on the board. Today’s best is also shown.',fxCheer:'Crowd cheer meter',fxCheerD:'Measures crowd noise per lane with the laptop mic, shows gauges and announces the loudest lane. Does not affect results.',fxCam:'Finish-line camera replay',fxCamD:'With a webcam facing the finish line, the 3 seconds before and after the winner crosses replay in slow motion when results are confirmed, zoomed to that lane.',bestToday:'Today’s best',newRec:'A new best time today!',oldRec:'Previous',readyGo:'READY?',skipIntro:'Skip intro &',cheerT:'Cheer meter',cheerHelp:'Tap a lane: after “Cheer for lane N!” the noise is measured for 4 seconds. Auto measures each lane with a runner, then announces the winner.',cheerCall:'Cheer for lane {n}!',cheerWin:'Loudest: lane {n}!',cheerAuto:'Auto, lane by lane',cheerWinBtn:'Announce winner',micNo:'Microphone not available. Allow mic access in the browser',camOn:'Turn camera on',camOff:'Turn camera off',camDefault:'Default camera',camNo:'Could not start the camera. Check the webcam and browser permission (works in field mode or at the online app address).',camHint:'Turn the camera on to see the finish line here. Make all four lanes visible.',camRev:'Lane 1 is on the right side of the picture',camZoom:'Zoom to the winner’s lane',slowmo:'slow motion',flow_replay:'Replay {s}s',pwBtn:'Final power-up',judge:'Judge',lkBtn:'Judge phones · board QR',lkTitle:'Connect judge phones & scoreboard',lkHow:'Connection',lkModeField:'Field-mode Wi-Fi',lkModeOnline:'Internet',lkField:'Connected over field-mode Wi-Fi · join the same router Wi-Fi, then scan',lkOnline:'Connected over the internet · room {r} · judge phones just need internet',lkNone:'Not connected yet',lkWhyNone:'Judge phones work when this app is opened in the KICKSTART field-mode program or at the online app address (liketkd-jpg.github.io/kickstart-field/hero/). Internet mode needs a connection.',lkBoardHelp:'TV / tablet scoreboard',lkNoKid:'No runner this heat',lkCopy:'Copy link',copiedLink:'Link copied',lkSteps:'One judge per lane scans that lane’s QR. Lanes with a runner are highlighted. Judges tap penalties (+s) and press FINISH when the child crosses the line. A green dot means the judge is connected.',lkWaitOp:'Waiting for the operator…',lkConnecting:'Connecting…',lkRest:'No runner in this lane this heat. Please wait for the next heat.',licTitle:'License code',licPractice:'Practice mode · enter code',licLife:'lifetime',licKinds:{event:'Event pass',week:'1 week',month:'1 month',year:'1 year',life:'Lifetime'},licSt_expired:'License period has ended',licSt_early:'License period has not started',licSt_place:'This code works only at the online app address',licSt_need:'Connect to the internet to re-check the license',licSt_app:'This code is not for Taekwon Heroes',licNet:'Internet is needed to check the code',licFail:'Could not check the code',licHelp:'Without a code you can try every feature in practice mode, with up to {n} runners and a “PRACTICE” mark on the scoreboard. Enter the code from KICKSTART UP to unlock.',licGo:'Check & unlock',licBusy:'Checking…',licRe:'Re-check now',licDel:'Remove code from this device',licNeed:'Enter a code',licDone:'Unlocked · {h}',licCap:'Practice mode allows {n} runners ({c} not added). Enter a license code to add everyone.',licOnline:'online only',licFile:'{n} days offline',licChecked:'last check',evNameEn:'Event name (English screens)',evDivEn:'Division (English screens)',evName:'Event name',evDiv:'Division',
   mode:'Format',mCut:'Cut-off only',mTour:'Tournament only',mBoth:'Cut-off, then tournament',
@@ -776,15 +791,18 @@ const T={
   sec:'s',total:'Total',raw:'Time',rank:'Rank',name:'Name',pen:'Penalty',
   nextUp:'Next up',meet:'Meet the Taekwon Heroes',courseMap:'Hero Course',champion:'CHAMPION!',go:'GO!',cutLine:'Tournament line',
   clickStart:'Click to start the scoreboard',autoTitle:'Auto flow',autoOn:'When every runner is in: confirm results → medals → standings → next heat, automatically. You only press Start.',confirmSec:'Auto-confirm after (s)',medalSec:'Medal screen (s)',standSec:'Standings screen (s)',flow_confirm:'Auto-confirm in {s}s',flow_stand:'Standings in {s}s',flow_next:'Next heat in {s}s',stop:'Stop',placeW:'#{n}',noWin:'The new window did not open, so the scoreboard is shown here',heatRes:'{h} results',waitCtrl:'Connecting to the operator screen…',back:'Operator',noChamp:'The champion appears here when decided',
-  game:'Game type',gRace:'Solo Hero Run',gRaceD:'One child per lane races the course for time (same as Heroes 1).',gRelay:'Team Relay',gRelayD:'Kids from the same dojang run as a team. Press the lane button (or judge phone) at each hand-off touch, and once more when the last runner finishes.',gFamily:'Family Relay',gFamilyD:'The child runs the course first, then tags Mom or Dad, who runs it next. Dads and Moms divisions race on their own in Solo Hero Run.',familyHelp:'Put the running parent’s name in the roster’s “Guardian” column (e.g. Hajun’s Dad) to show it on the board. Left blank, it shows “child’s Mom/Dad”. Dads/Moms division entries are left out of team games, and parents don’t earn XP.',gBoss:'Boss Battle',gBossT:'Boss Battle · Teams',gBossD:'Kick the mitt as many times as you can before time runs out. Every kick drains the villain Dark Meteor’s HP. Most kicks wins.',
+  game:'Game type',gRace:'Solo Hero Run',gRaceD:'One child per lane races the course for time (same as Heroes 1).',gRelay:'Team Relay',gRelayD:'Kids from the same dojang run as a team. Press the lane button (or judge phone) at each hand-off touch, and once more when the last runner finishes.',gFamily:'Family Relay',gFamilyD:'The child runs the course first, then tags Mom or Dad, who runs it next. Dads and Moms divisions race on their own in Solo Hero Run.',familyHelp:'Put the running parent’s name in the roster’s “Guardian” column (e.g. Hajun’s Dad) to show it on the board. Left blank, it shows “child’s Mom/Dad”. Dads/Moms division entries are left out of team games, and parents don’t earn XP.',gBoss:'Hero Kick Battle',gBossT:'Hero Kick Battle · Teams',gBossD:'Kick the mitt as many times as you can before time runs out. Every kick drains the villain Dark Meteor’s HP. Most kicks wins.',
   bossSec:'Battle time (s)',bossHP:'Villain HP',bossKind:'Battle type',bossSolo:'Solo',bossTeamL:'Teams (by dojang)',bossHelp:'One kick = one lane-button press or “Kick +1” on the judge phone. All four lanes drain the same villain; at 0 HP a stronger boss appears. Electronic mitt support is coming.',
   relayN:'Team size',mixG:'Mixed boys & girls teams (by age)',teamHelp:'Teams are built from each dojang; leftover kids join an All-Star team.',ppl0:'',
   gameNote:'Results already exist, so the draw was kept. Press “Apply roster” to rebuild for the new game type.',gameRebuilt:'Built {n} divisions for the new game type',
   touch:'TAG!',kickBtn:'KICK +1',kicks:'kicks',timeLeft:'Time left',villain:'Dark Meteor',bossStage:'Stage {n}',bossNext:'A stronger Stage {n} boss appears!',bossCall:'Kick the villain down!',timeUp:'Counting kicks…',
   bossIntro:'Today’s villain',bossIntroD:'Kick with all your power for {s} seconds! Together, drain all {hp} HP and defeat Dark Meteor.',
-  xpTitle:'Hero levels · Hero cards',xpHelp:'Every event earns XP. Level up and your hero’s armor, cape and helmet change. Join +10 · 1st +30 · 2nd +20 · 3rd +10 · New record +20 · Boss kicks +1 each (max 40). Saved on this laptop by name + team; export the file to move it to another laptop.',
+  xpTitle:'Hero levels · Hero cards',xpHelp:'Every event earns XP. Level up and your hero’s armor, cape and helmet change. Join +10 · 1st +30 · 2nd +20 · 3rd +10 · New record +20 · Kick Battle kicks +1 each (max 40). Saved on this laptop by name + team; export the file to move it to another laptop.',
   xpOn:'XP & level-ups on',xpPrint:'Print hero cards',xpExp:'Export XP',xpImp:'Import XP',xpReset:'Clear all XP',xpImported:'Imported XP for {n} kids',xpBad:'Could not read that XP file',
   cards:'Hero cards',sCards:'Hero cards',maxLv:'Max level!',nextLv:'{n} to next level',
+  mpT:'Camera kick detection (beta)',mpD:'Google MediaPipe pose detection lets a webcam count each child’s kicks. A foot reaching the set height counts 1; a spinning kick counts extra. Needs internet the first time. Place the camera at the child’s waist height, slightly to the side, with the whole body in view (60 fps camera recommended).',
+  mpPanel:'📷 Camera kick detection · beta',mpStart:'Start camera',mpStop:'Stop',mpLoading:'Loading pose detection… (about 10 s the first time)',mpOff:'Off',mpOnS:'Detecting',mpNoBody:'Get the whole body in view',mpBad:'Could not load pose detection. Check the internet connection and camera permission.',
+  mpLane:'Lane this camera watches',mpLv:'Kick height',mpEasy:'Easy · above knee (kindergarten)',mpMid:'Medium · waist',mpHard:'Hard · chest',mpSpinP:'Spin kick points',mpTest:'Practice count (before the battle)',mpLive:'Battle on · counting live',mpKick:'Kicks',mpSpinW:'Spin kicks',mpReset:'Reset practice count',spinPop:'SPIN KICK!',
   heatOf:'Heat {h} of {n}',full:'Full screen',waiting:'Waiting',lanes:'Lanes',course0:'Course'}};
 
 const HR_DIV=['3세부','4세부','5세부','6세부','7세부','초등 1학년부','초등 2학년부','초등 3학년부','초등 4학년부','초등 5학년부','초등 6학년부','아빠부','엄마부'];
@@ -826,7 +844,7 @@ let S=load()||defaults();
 /* 대회 연출 켜기·끄기 */
 const FXDEF={intro:true,record:true,cheer:false,cam:false,camRev:false,camZoom:true};
 S.ev=Object.assign({nameEn:'2026 Taekwon Heroes 2 Galaxy Challenge',divEn:'Kindergarten · Ages 5–7'},S.ev);
-S.cfg=Object.assign({fx:{},auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,xp:true},S.cfg);S.game=S.game||'race';
+S.cfg=Object.assign({fx:{},auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,xp:true,mpOn:false,mpLane:1,mpLv:'easy',mpSpin:3},S.cfg);S.game=S.game||'race';
 S.cfg.fx=Object.assign({},FXDEF,S.cfg.fx||{});
 let R={phase:'idle',count:0,start:0,go:0};
 let tab='run', learn=null, lastKey='', armed=null, slideIx=0, gateOpen=ROLE==='board';
@@ -976,7 +994,7 @@ function realStart(){
     setTimeout(tick,1000);setTimeout(tick,2000);setTimeout(tick,3000);
   }else goNow();
 }
-function goNow(){const now=Date.now();R={phase:'running',count:0,start:now,go:now,end:isBoss()?now+Math.max(5,+S.cfg.bossSec||20)*1000:0,stage:1,dmg:0,beep:0};commit();sfx('go')}
+function goNow(){MP.live={k:0,s:0};const now=Date.now();R={phase:'running',count:0,start:now,go:now,end:isBoss()?now+Math.max(5,+S.cfg.bossSec||20)*1000:0,stage:1,dmg:0,beep:0};commit();sfx('go')}
 function finishLane(i){laneHit(i,Date.now()-R.start)}
 const relayN=(h,i)=>{const p=h&&h.lanes[i]!=null?P(h.lanes[i]):null;return p&&p.members?p.members.length:1};
 const legOf=(h,i)=>{h.legs=h.legs||[[],[],[],[]];return h.legs[i]=h.legs[i]||[]};
@@ -1438,6 +1456,60 @@ function printCards(){const L=S.roster.filter(a=>!isParentDiv(a.div)).sort((a,b)
   let el=document.getElementById('printArea');if(!el){el=document.createElement('div');el.id='printArea';document.body.appendChild(el)}
   el.innerHTML=L.map(m=>heroCard(m,'pc')).join('');el.querySelectorAll('svg.rig').forEach(sv=>poseRig(sv,poseAt('ready',.5),.5));
   document.body.classList.add('printcards');setTimeout(()=>{window.print();setTimeout(()=>document.body.classList.remove('printcards'),400)},120)}
+/* ================= 카메라 킥 인식 (시험판 · 구글 MediaPipe 포즈) =================
+   웹캠 → 관절 33곳 위치 → 「발목이 기준선보다 올라가면 1회」, 차기 전 1.4초 안에 몸이 돌았으면 회전 킥.
+   경기(킥 배틀) 중이면 그 레인 발차기로 바로 들어가고, 경기 전에는 연습 숫자만 셉니다. */
+const MP={st:'off',err:'',lm:null,video:null,stream:null,raf:0,last:-1,arm:true,lastHit:0,face:[],maxW:0,test:{k:0,s:0},live:{k:0,s:0},pose:null,thr:null,flash:0,min:false};
+const MPV='0.10.14',MPU='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+MPV;
+async function mpStart(){if(MP.st==='on'||MP.st==='loading')return;MP.st='loading';MP.err='';mpDraw();
+  try{const v=await import(MPU+'/vision_bundle.mjs');const fs=await v.FilesetResolver.forVisionTasks(MPU+'/wasm');
+    MP.lm=await v.PoseLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:'GPU'},runningMode:'VIDEO',numPoses:1});
+    const id=S.cfg.mpCam;MP.stream=await navigator.mediaDevices.getUserMedia({video:{...(id?{deviceId:{exact:id}}:{}),width:{ideal:640},height:{ideal:480},frameRate:{ideal:60}},audio:false});
+    const vd=document.createElement('video');vd.muted=true;vd.playsInline=true;vd.srcObject=MP.stream;await vd.play();MP.video=vd;MP.st='on';mpDraw();mpLoop()}
+  catch(e){mpStop();MP.err=t('mpBad')+' ('+String(e&&e.message||e).slice(0,80)+')';mpDraw()}}
+function mpStop(){cancelAnimationFrame(MP.raf);if(MP.stream)MP.stream.getTracks().forEach(x=>x.stop());MP.stream=null;MP.video=null;try{MP.lm&&MP.lm.close()}catch(e){}MP.lm=null;MP.st='off';MP.pose=null;mpDraw()}
+function mpLoop(){if(MP.st!=='on')return;const v=MP.video;if(v&&v.readyState>=2&&v.currentTime!==MP.last){MP.last=v.currentTime;const now=performance.now();
+    try{const r=MP.lm.detectForVideo(v,now);const L=r&&r.landmarks&&r.landmarks[0];MP.pose=L||null;if(L)mpStep(L,now);mpPaint()}catch(e){}}
+  MP.raf=requestAnimationFrame(mpLoop)}
+/* 한 장면마다: 기준선(엉덩이·무릎·어깨 위치로 계산)보다 발목이 올라가면 발차기, 발이 무릎 아래로 내려와야 다음 발차기 */
+function mpStep(L,now){const vis=i=>L[i]&&(L[i].visibility==null||L[i].visibility>.35);
+  if(!vis(23)||!vis(24)||!vis(25)||!vis(26)){MP.thr=null;return}
+  const hipY=(L[23].y+L[24].y)/2,kneeY=(L[25].y+L[26].y)/2,shY=(L[11].y+L[12].y)/2,lv=S.cfg.mpLv||'easy';
+  const thr=lv==='easy'?hipY+(kneeY-hipY)*.45:lv==='mid'?hipY:hipY-(hipY-shY)*.4;MP.thr=thr;
+  const ank=Math.min(L[27]?L[27].y:1,L[28]?L[28].y:1);
+  const dx=L[11].x-L[12].x,w=Math.abs(dx);MP.maxW=Math.max(MP.maxW*.998,w);
+  MP.face.push({t:now,s:Math.sign(dx),w,nv:L[0]&&L[0].visibility!=null?L[0].visibility:1});while(MP.face.length&&now-MP.face[0].t>1400)MP.face.shift();
+  if(MP.arm){if(ank<thr&&now-MP.lastHit>250){MP.arm=false;MP.lastHit=now;mpHit(mpSpun())}}
+  else if(ank>kneeY)MP.arm=true}
+/* 회전: 1.4초 안에 어깨 좌우 순서가 뒤집혔거나(등을 보임) 얼굴이 안 보였다가 다시 보이면 */
+function mpSpun(){const F=MP.face.filter(f=>f.w>MP.maxW*.35);let ch=0;for(let i=1;i<F.length;i++)if(F[i].s!==F[i-1].s)ch++;
+  const back=MP.face.some(f=>f.nv<.3),front=MP.face.length&&MP.face[MP.face.length-1].nv>.5;return ch>=1||(back&&front)}
+function mpHit(spin){MP.face=[];const lane=Math.max(0,Math.min(3,(+S.cfg.mpLane||1)-1)),pts=spin?Math.max(1,+S.cfg.mpSpin||3):1;MP.flash=performance.now();
+  const h=curHeat();const live=ROLE==='ctrl'&&isBoss()&&R.phase==='running'&&h&&h.lanes[lane]!=null&&h.time[lane]==null&&!h.dnf[lane];
+  if(live){MP.live[spin?'s':'k']++;kick(lane,pts);if(spin)fx('spin',{lane,pts})}else{MP.test[spin?'s':'k']++;playLocal('kick',lane)}
+  mpDraw(true)}
+function mpPaint(){const cv=document.getElementById('mpCv');if(!cv||!MP.video)return;const g=cv.getContext('2d'),W=cv.width,H=cv.height;
+  g.save();g.translate(W,0);g.scale(-1,1);g.drawImage(MP.video,0,0,W,H);g.restore();
+  const L=MP.pose;if(L){const X=p=>(1-p.x)*W,Y=p=>p.y*H;g.lineWidth=3;g.strokeStyle='#38f2ff';g.lineCap='round';
+    [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]].forEach(([a,b])=>{if(L[a]&&L[b]){g.beginPath();g.moveTo(X(L[a]),Y(L[a]));g.lineTo(X(L[b]),Y(L[b]));g.stroke()}});
+    [27,28].forEach(i=>{if(L[i]){g.fillStyle='#ff3fd1';g.beginPath();g.arc(X(L[i]),Y(L[i]),6,0,7);g.fill()}})}
+  if(MP.thr!=null){g.strokeStyle='#ffd23f';g.setLineDash([8,6]);g.lineWidth=2;g.beginPath();g.moveTo(0,MP.thr*H);g.lineTo(W,MP.thr*H);g.stroke();g.setLineDash([])}
+  if(performance.now()-MP.flash<220){g.fillStyle='rgba(255,210,63,.35)';g.fillRect(0,0,W,H)}}
+let MPBOX=null;
+function mpDraw(onlyNums){const want=ROLE==='ctrl'&&S.cfg.mpOn&&isBoss();
+  if(!want){if(MPBOX){if(MP.st!=='off')mpStop();MPBOX.remove();MPBOX=null}return}
+  if(!MPBOX){MPBOX=document.createElement('div');MPBOX.className='mpbox';MPBOX.innerHTML='<div class="mph"></div><canvas id="mpCv" width="320" height="240"></canvas><div class="mpb"></div>';document.body.appendChild(MPBOX)}
+  MPBOX.classList.toggle('min',MP.min);
+  const live=R.phase==='running',C=live?MP.live:MP.test;
+  const st=MP.st==='on'?(MP.thr==null?t('mpNoBody'):t('mpOnS')):MP.st==='loading'?t('mpLoading'):t('mpOff');
+  MPBOX.querySelector('.mph').innerHTML=`<b>${esc(t('mpPanel'))}</b><button class="btn ghost" data-act="mpMin" aria-label="minimize">${MP.min?'▢':'—'}</button>`;
+  const nums=`<div class="mpn ${live?'live':''}"><span>${esc(live?t('mpLive'):t('mpTest'))}</span><b>${esc(t('mpKick'))} ${C.k}</b><b class="sp">${esc(t('mpSpinW'))} ${C.s}</b></div>`;
+  if(onlyNums){const n=MPBOX.querySelector('.mpn');if(n){n.outerHTML=nums;return}}
+  MPBOX.querySelector('.mpb').innerHTML=`<div class="mpst ${MP.st}">${MP.st==='on'?'🟢':MP.st==='loading'?'⏳':'⚪'} ${esc(st)}</div>${MP.err?`<p class="licerr">${esc(MP.err)}</p>`:''}${nums}
+   <div class="row">${MP.st==='off'?`<button class="btn gold" data-act="mpStart">📷 ${esc(t('mpStart'))}</button>`:`<button class="btn" data-act="mpStop">${esc(t('mpStop'))}</button>`}<button class="btn ghost" data-act="mpReset">${esc(t('mpReset'))}</button></div>
+   <label class="f">${esc(t('mpLane'))}<select id="mpLane">${[1,2,3,4].map(n=>`<option value="${n}" ${+S.cfg.mpLane===n?'selected':''}>${n}${S.lang==='en'?' ':''}${esc(t('lane'))} · ${esc(heroName(n-1))}</option>`).join('')}</select></label>
+   <div class="row"><label class="f" style="flex:2">${esc(t('mpLv'))}<select id="mpLv">${[['easy','mpEasy'],['mid','mpMid'],['hard','mpHard']].map(([v,k])=>`<option value="${v}" ${S.cfg.mpLv===v?'selected':''}>${esc(t(k))}</option>`).join('')}</select></label>
+   <label class="f" style="flex:1">${esc(t('mpSpinP'))}<select id="mpSpin">${[2,3,4,5].map(n=>`<option ${+S.cfg.mpSpin===n?'selected':''}>${n}</option>`).join('')}</select></label></div>`}
 /* ================= 악당: 다크 메테오 ================= */
 function villainSvg(stage){const st=stage||1,hot=st>=3;
   return`<svg class="villain" viewBox="-30 -40 260 250" role="img" aria-label="Dark Meteor"><defs>
@@ -1614,6 +1686,7 @@ function render(){
   else if(tab==='run')app.innerHTML=viewRun();
   else app.innerHTML='';
   renderBoard();
+  mpDraw();
 }
 
 /* ================= setup view ================= */
@@ -1633,7 +1706,8 @@ function viewSetup(){
     ${S.game==='boss'?`<div class="gset"><label class="f" style="width:9rem">${esc(t('bossSec'))}<input type="number" id="bossSec" min="5" max="120" data-in="cfg.bossSec" value="${S.cfg.bossSec}"></label>
       <label class="f" style="width:9rem">${esc(t('bossHP'))}<input type="number" id="bossHP" min="5" max="999" data-in="cfg.bossHP" value="${S.cfg.bossHP}"></label>
       <div class="seg" role="group" aria-label="${esc(t('bossKind'))}"><button class="btn ${S.cfg.bossTeam?'':'gold'}" data-act="bossTeam" data-v="">${esc(t('bossSolo'))}</button><button class="btn ${S.cfg.bossTeam?'gold':''}" data-act="bossTeam" data-v="1">${esc(t('bossTeamL'))}</button></div></div>
-      <p class="note">${esc(t('bossHelp'))}</p>`:''}
+      <p class="note">${esc(t('bossHelp'))}</p>
+      <div class="fxrow" style="margin-top:6px"><button class="tgl ${S.cfg.mpOn?'on':''}" data-act="mpT" aria-pressed="${!!S.cfg.mpOn}"><i></i></button><div><b>📷 ${esc(t('mpT'))}</b><span class="note">${esc(t('mpD'))}</span></div></div>`:''}
     ${isFamily()?`<p class="note">${esc(t('familyHelp'))}</p>`:''}
     ${isTeamGame()?`<div class="gset">${isFamily()?'':`<label class="f" style="width:9rem">${esc(t('relayN'))}<select id="relayN" data-in="cfg.relayN">${[2,3,4,5,6].map(n=>`<option value="${n}" ${+S.cfg.relayN===n?'selected':''}>${n}${esc(t('ppl'))}</option>`).join('')}</select></label>`}
       <label class="chk"><input type="checkbox" id="mixG" data-in="cfg.mixG" ${S.cfg.mixG?'checked':''}>${esc(t('mixG'))}</label></div>${isFamily()?'':`<p class="note">${esc(t('teamHelp'))}</p>`}`:''}
@@ -1976,6 +2050,7 @@ function showLevelUp(ups){if(!boardVisible()||!ups||!ups.length)return;const L=u
   document.body.appendChild(o);setTimeout(()=>o.remove(),4200);flash();confetti(120);if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}}
 function runFx(name,arg){
   if(name==='powerup'){powerUp();return}
+  if(name==='spin'){popAt('touchpop spinpop',`${esc(t('spinPop'))}<small>+${arg.pts}</small>`,arg.lane,.3);playLocal('bossdown');return}
   if(name==='touch'){popAt('touchpop',`${esc(t('touch'))}<small>${arg.leg}/${arg.n}</small>`,arg.lane);return}
   if(name==='hit'){if(!boardVisible())return;const v=document.querySelector('#board .villain');if(v){v.classList.remove('hit');void v.getBBox;v.classList.add('hit')}
     const bl=document.querySelector('#board .blanes .bl:nth-child('+(arg.lane+1)+')');if(bl){bl.classList.remove('kicked');void bl.offsetWidth;bl.classList.add('kicked')}
@@ -2043,6 +2118,9 @@ document.addEventListener('click',e=>{
     case'cheerOpen':cheerOpen();break;case'cheerClose':cheerClose();break;
     case'cheerLane':cheerLane(+v).then(cheerDraw);cheerDraw();break;case'cheerAuto':cheerAuto().then(cheerDraw);cheerDraw();break;case'cheerWin':cheerWin();break;
     case'xpT':S.cfg.xp=!S.cfg.xp;commit();break;
+    case'mpT':S.cfg.mpOn=!S.cfg.mpOn;commit();break;
+    case'mpStart':mpStart();break;case'mpStop':mpStop();break;
+    case'mpMin':MP.min=!MP.min;mpDraw();break;case'mpReset':MP.test={k:0,s:0};mpDraw();break;
     case'xpPrint':printCards();break;
     case'xpExp':xpExport();break;
     case'bossTeam':{const nv=v==='1';if(nv!==!!S.cfg.bossTeam){S.cfg.bossTeam=nv;gameChanged()}}break;
@@ -2107,6 +2185,7 @@ document.addEventListener('change',e=>{
   if(el.dataset.in==='xpfile'){xpImport(el.files&&el.files[0]);el.value='';return}
   if(el.dataset.rdiv){const a=S.roster.find(x=>x.id===el.dataset.rdiv);if(a){a.div=el.value;S.sampleRoster=false;commit()}return}
   if(el.id==='divSel'){pickDiv(el.value);return}
+  if(el.id==='mpLane'||el.id==='mpLv'||el.id==='mpSpin'){S.cfg[el.id]=el.id==='mpLv'?el.value:+el.value;save();mpDraw();return}
   if(el.id==='camSel'){S.cfg.fx.camId=el.value;commit();if(CAM.stream)camStart();return}
   if(el.id==='camRev'){S.cfg.fx.camRev=el.checked;commit();return}
   if(el.id==='camZoom'){S.cfg.fx.camZoom=el.checked;commit();return}
