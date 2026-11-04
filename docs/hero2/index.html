@@ -710,6 +710,35 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .podium .fig::after{content:"";position:absolute;left:10%;right:10%;bottom:0;height:12%;border-radius:50%;background:radial-gradient(ellipse at center,color-mix(in srgb,var(--c) 70%,#fff),transparent 70%);z-index:-1;opacity:.9}
 .podium .blk{border:1px solid rgba(0,0,0,.45)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,.04) 30%,rgba(0,0,0,.22))!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 2vh 3.6vh -1vh rgba(0,0,0,.65)!important}
 .podium.p1 .blk{box-shadow:inset 0 2px 0 rgba(255,255,255,.7),0 2vh 3.6vh -1vh rgba(0,0,0,.65),0 0 4vw -1vw var(--gold)!important}
+/* ===== 심판 폰: 한 화면 고정 (스크롤 없음 · 버튼을 눌러도 크기가 안 바뀜) ===== */
+.judge{box-sizing:border-box;height:100vh;height:100dvh;overflow:hidden;gap:1dvh;grid-template-rows:auto 11dvh 6.5dvh minmax(0,1fr) auto auto!important;padding:max(8px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))!important;align-content:stretch}
+.judge.rel{grid-template-rows:auto 11dvh 3dvh 6.5dvh minmax(0,1fr) auto auto!important}
+.judge.boss{grid-template-rows:auto 11dvh 9dvh minmax(0,1fr) auto!important}
+.judge:has(.jwait){grid-template-rows:auto minmax(0,1fr)!important}
+.judge>*{min-height:0;min-width:0}
+.jtop{flex-wrap:nowrap;overflow:hidden;padding:6px 10px;border-radius:12px}
+.jtop b{white-space:nowrap;font-size:1.05rem}.jsub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.75rem;min-width:0}
+.jkid{height:100%;gap:10px}
+.jfig{height:100%!important;width:auto!important;aspect-ratio:.87;flex:none}
+.jkid>div:last-child{min-width:0}
+.jkid b{font-size:clamp(1.3rem,4.2dvh,2rem)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jkid small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jtime{height:100%;white-space:nowrap;overflow:hidden;gap:8px;font-size:clamp(1.6rem,5dvh,2.4rem)}
+.jtime small{font-size:clamp(.8rem,2.2dvh,1rem)}
+.jtime .jpl{height:100%;width:auto;aspect-ratio:.8;flex:none}.jtime .jpl svg{height:100%;width:auto}
+.jtime.jk span{font-size:clamp(2.4rem,7dvh,4.4rem)}
+.jfin{min-height:0!important;height:100%;font-size:clamp(2rem,7dvh,3.4rem);border-radius:20px}
+.jpens{grid-template-columns:1fr 1fr!important;gap:6px!important;grid-auto-rows:clamp(44px,6.6dvh,62px)}
+.jpen{grid-template-columns:36px minmax(0,1fr) 36px!important;gap:4px!important;padding:4px!important;height:100%;border-width:2px!important}
+.jpen button{height:100%!important;min-height:0;font-size:1.3rem!important;border-width:2px!important;border-radius:10px!important;padding:0}
+.jpen span{flex-wrap:nowrap!important;flex-direction:column;gap:0!important;font-size:clamp(.72rem,1.9dvh,.9rem)!important;line-height:1.15;overflow:hidden;min-width:0}
+.jpen span>*{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jpen span em,.jpen span b{font-size:.95em}
+.jundo{height:clamp(38px,5.5dvh,52px);width:60%;padding:0 12px;justify-self:center}
+.judge.boss .jundo{width:60%;min-height:0!important;height:clamp(44px,7dvh,64px);font-size:1.5rem}
+.judge.boss .jkick{min-height:0!important}
+.judge .legs.big{margin:0;height:100%;align-items:center}
+.jpen span i{font-style:normal}.jpen .jn{font-family:var(--f-disp)}.jpen .jv{display:flex;gap:6px;justify-content:center}
 </style>
 
 <header class="top" id="top"></header>
@@ -1285,7 +1314,7 @@ function renderJudge(){const host=document.getElementById('boardHost');document.
     ${isRelay()?legDots(h,k,true):''}
     <div class="jtime"><span data-lt="${k}">${dnf?esc(t('dnf')):fmt(tm!=null?tm:(R.phase==='running'?0:0))}</span>${tm!=null&&penSec(h,k)?`<small>+${penSec(h,k)}${esc(t('sec'))} = ${fmt(total(h,k))}</small>`:''}${tm!=null&&!dnf?`<i class="jpl">${medalSvg(placeOf(h,k)||1)}</i>`:''}</div>
     <button class="jfin" data-act="jFin" ${R.phase!=='running'||tm!=null||dnf||done?'disabled':''}>${R.phase==='countdown'?R.count:esc(finLabel(h,k))}</button>
-    <div class="jpens">${S.st.map(st=>{const c=(h.pen[k]||{})[st.id]||0;return`<div class="jpen ${c?'has':''}"><button data-act="jPen" data-s="${st.id}" data-d="-1" ${!c||done?'disabled':''} aria-label="−">−</button><span>${esc(stName(st))}<em>+${st.pen}${esc(t('sec'))}</em>${c?`<b>×${c}</b>`:''}</span><button class="plus" data-act="jPen" data-s="${st.id}" data-d="1" ${done?'disabled':''} aria-label="+">+</button></div>`}).join('')}</div>
+    <div class="jpens">${S.st.map(st=>{const c=(h.pen[k]||{})[st.id]||0;return`<div class="jpen ${c?'has':''}"><button data-act="jPen" data-s="${st.id}" data-d="-1" ${!c||done?'disabled':''} aria-label="−">−</button><span><i class="jn">${esc(stName(st))}</i><i class="jv"><em>+${st.pen}${esc(t('sec'))}</em>${c?`<b>×${c}</b>`:''}</i></span><button class="plus" data-act="jPen" data-s="${st.id}" data-d="1" ${done?'disabled':''} aria-label="+">+</button></div>`}).join('')}</div>
     <button class="btn ghost jundo" data-act="jUndo" ${(tm==null&&!(isRelay()&&legOf(h,k).length))||done?'disabled':''}>${esc(t('undo'))}</button>`}`;
   host.innerHTML=`<div class="judge ${p&&linked?(isBoss()?'boss':isRelay()?'rel':''):''}" style="--c:var(${H.v})"><div class="jtop">${emSvg(k,22)}<b>${k+1}${S.lang==='en'?' ':''}${esc(t('lane'))} · ${esc(heroName(k))}</b><span class="jsub">${esc(t('judge'))}${S.dkey?' · '+esc(divLabel(S.dkey)):''}${S.rounds&&S.rounds.length?' · '+esc(roundLabel(S.cur.r))+' '+esc(heatLabel(S.cur.h)):''}</span><i class="dot ${conn?'on':''}"></i></div>${body}</div>`;
   tickClocks();}
