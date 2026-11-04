@@ -5118,7 +5118,8 @@ window.KS_LIVE={start:startLive,stop:stopLive,info,state:()=>({on,starting,st,au
 if(window.KS_REGIMPORT)return;
 const URL_='https://nwdptjumclgzbwbsaoxr.supabase.co',KEY='sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG',SITE='https://liketkd-jpg.github.io/kickstart-field/';
 const LS='ks_reg_auth',SP={poomsae:'품새',kyorugi:'겨루기',gyeokpa:'격파'};
-const sport=()=>{const t=document.title||'';return /격파/.test(t)?'gyeokpa':/겨루기/.test(t)?'kyorugi':'poomsae';};
+const sport=()=>(()=>{try{const F=window.KS_FIELD;if(F&&/^(poomsae|kyorugi|gyeokpa)$/.test(F.app||''))return F.app;}catch(e){}const t=document.title||'';if(/격파|gyeokpa|breaking/i.test(t))return 'gyeokpa';if(/겨루기|kyorugi|sparring/i.test(t))return 'kyorugi';if(/품새|poomsae/i.test(t))return 'poomsae';
+  const G=n=>{try{return typeof (0,eval)(n);}catch(e){return 'undefined';}};return G('SHEETS')!=='undefined'?'poomsae':G('matchesOf')!=='undefined'?'kyorugi':G('planOf')!=='undefined'?'gyeokpa':'poomsae';})();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const say=m=>{try{(window.toast||(0,eval)('toast'))(m);}catch(e){}};
 let A=null;try{A=JSON.parse(localStorage.getItem(LS)||'null');}catch(e){}
@@ -5165,6 +5166,20 @@ async function fetchMusic(E,prog){const L=(E||[]).filter(e=>e.music&&e.music.pat
       if(!r.ok)throw new Error('HTTP '+r.status);const b=await r.blob();files.push(new File([b],musName(e),{type:b.type||'audio/mpeg'}));}catch(err){fail++;}
     if(prog)prog(files.length+fail,L.length);}
   if(files.length)await LMUS.addFiles(files,false);return {n:files.length,fail};}
+/* ---------- 대진표 · 출전 순서를 홈페이지로 (토너먼트는 라운드별 청·홍, 컷오프·격파는 조별 순서) ---------- */
+function drawData(){const S=g0('S');if(!S||!S.divs)return {divs:[]};const sp=sport(),athF=g0('athlete');
+  const P=id=>{const a=(athF&&athF(id))||{};return {n:a.name||'',t:a.team||'',m:a.members||''};};
+  const RN=g0('roundName'),BR=g0('bracketRounds'),CS=g0('curStage'),STN=g0('STAGES')||g0('STAGE_NAME')||{};
+  const divs=[];for(const d of S.divs){const base={name:d.name||'',court:d.court||'',n:(d.order||[]).length};if(!base.n)continue;
+    const tour=typeof BR==='function'&&d.round1&&d.round1.length&&(sp==='kyorugi'||typeof g0('matchesOf')==='function'||d.format==='tournament');
+    if(tour){const rs=BR(d),R=rs.length;divs.push({...base,kind:'t',rounds:rs.map((ms,ri)=>({name:RN?RN(ri+1,R):`${ri+1}회전`,m:ms.map(m=>({b:m.blue?P(m.blue):null,r:m.red?P(m.red):null,bye:m.blue===null||m.red===null,
+      w:m.winner==null?null:m.winner===m.blue?'b':m.winner===m.red?'r':null}))}))});}
+    else{const st=typeof CS==='function'?CS(d):{order:d.order||[]};const groups=st.groups&&st.groups.length?st.groups:[st.order&&st.order.length?st.order:(d.order||[])];
+      divs.push({...base,kind:'o',stage:(st.key&&STN[st.key])||'',groups:groups.map(ids=>ids.map(P))});}}
+  const SET=g0('SET');return {v:1,app:sp,name:((SET&&SET())||{}).name||'',at:Date.now(),divs};}
+function g0(n){try{return (0,eval)(n);}catch(e){return undefined;}}
+async function publishDraws(comp,data){const t=await token();if(!t)throw new Error('로그인이 필요합니다');
+  return await call('/rest/v1/rpc/publish_draws',{method:'POST',headers:H(t),body:JSON.stringify({p_comp:comp,p_sport:sport(),p_data:data})});}
 async function feed(file){const f=typeof window.readExcel==='function'?window.readExcel:(0,eval)('typeof readExcel==="function"?readExcel:null');
   if(!f)throw new Error('이 화면에서는 명단을 불러올 수 없습니다');await f(file);}
 
@@ -5179,7 +5194,7 @@ function draw(){if(!BOX)return;const sp=sport();let b='';
     <form class="rgf" id="rgLogin"><label><span>이메일</span><input type="email" id="rgE" required autocomplete="username" value="${esc(S.email||(A&&A.email)||'')}"></label>
       <label><span>비밀번호</span><input type="password" id="rgP" required autocomplete="current-password"></label>
       <button class="btn primary" type="submit" ${S.busy?'disabled':''}>${S.busy?'로그인 중…':'로그인'}</button></form>`;
-  else if(S.step==='list')b=S.busy&&!S.L.length?'<p class="muted">대회 목록을 불러오는 중…</p>':S.L.length?`<p class="small muted">${SP[sp]} 종목이 있는 대회입니다. ${S.mode==='send'?'결과를 보낼':'명단을 가져올'} 대회를 누르세요.</p><div class="rgl">${S.L.map(c=>`<button type="button" class="rgc" data-rgact="pick" data-id="${esc(c.id)}"><b>${esc(c.name)}</b><span class="small muted">${esc(c.date)} · 접수 마감 ${esc(c.deadline)}</span></button>`).join('')}</div>`
+  else if(S.step==='list')b=S.busy&&!S.L.length?'<p class="muted">대회 목록을 불러오는 중…</p>':S.L.length?`<p class="small muted">${SP[sp]} 종목이 있는 대회입니다. ${S.mode==='send'?'결과를 보낼':S.mode==='draw'?'대진표를 올릴':'명단을 가져올'} 대회를 누르세요.</p><div class="rgl">${S.L.map(c=>`<button type="button" class="rgc" data-rgact="pick" data-id="${esc(c.id)}"><b>${esc(c.name)}</b><span class="small muted">${esc(c.date)} · 접수 마감 ${esc(c.deadline)}</span></button>`).join('')}</div>`
       :`<p class="muted">${SP[sp]} 종목이 있는 대회가 없습니다. 접수 홈페이지 「대회 관리」에서 대회를 만들어 주세요.</p>`;
   else if(S.step==='send'){const R0=S.res||{rows:[]},med=R0.rows.filter(r=>r.kind==='medal'),tm=R0.rows.filter(r=>r.kind==='team'),c=n=>med.filter(r=>r.rank===n).length;
     b=S.sent?`<p><b>${esc(S.comp.name)}</b></p><div class="rgk"><div><b>${S.sent.rows}</b><span>보낸 결과</span></div><div><b>${S.sent.matched}</b><span>지도자 연결</span></div><div><b>${S.sent.rows-S.sent.matched}</b><span>연결 안 됨</span></div></div>
@@ -5190,6 +5205,13 @@ function draw(){if(!BOX)return;const sp=sport();let b='';
       <p class="small muted">입상 ${med.length}건${tm.length?` + 팀 종합 ${tm.length}건`:''}을 보냅니다. 이 대회 ${SP[sp]} 결과를 전에 보냈다면 새 결과로 바뀝니다. 「시상」 설정의 주최·대표 이름도 상장에 함께 쓰입니다.</p>
       <div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button><button type="button" class="btn primary" data-rgact="send" ${S.busy?'disabled':''}>${S.busy?'보내는 중…':`${R0.rows.length}건 보내기`}</button></div>`
       :`<p class="muted">아직 입상 결과가 없습니다. 경기가 끝나 순위가 나온 뒤 보내 주세요.</p><div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button></div>`}`;}
+  else if(S.step==='draw'){const D=S.draw||{divs:[]},t=D.divs.filter(x=>x.kind==='t').length,o=D.divs.length-t,ppl=D.divs.reduce((a,x)=>a+x.n,0);
+    b=`<p><b>${esc(S.comp.name)}</b><br><span class="small muted">${esc(S.comp.date)}</span></p>
+      ${D.divs.length?`<div class="rgk"><div><b>${D.divs.length}</b><span>부문</span></div><div><b>${t}</b><span>토너먼트 대진</span></div><div><b>${o}</b><span>출전 순서</span></div></div>
+      <p class="small muted">선수 ${ppl}명의 대진표·출전 순서를 올립니다. 누구나 홈페이지 「대회 안내」에서 볼 수 있고, 접수한 지도자 첫 화면에 「대진표가 올라왔습니다」 알림이 뜹니다. 전에 올린 ${SP[sp]} 대진은 새것으로 바뀝니다. 경기가 진행된 뒤 다시 보내면 이긴 선수도 함께 보입니다.</p>
+      ${S.sent?`<p class="small"><b>✅ ${S.sent.divs}개 부문을 올렸습니다.</b> <a href="${SITE}#draw-${esc(S.comp.id)}" target="_blank" rel="noopener">홈페이지에서 보기 ↗</a></p>`:''}
+      <div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button><button type="button" class="btn primary" data-rgact="drawsend" ${S.busy?'disabled':''}>${S.busy?'보내는 중…':S.sent?'다시 보내기':`${D.divs.length}개 부문 보내기`}</button></div>`
+      :`<p class="muted">아직 부문이 없습니다. 명단을 넣고 대진(순서)을 만든 뒤 보내 주세요.</p><div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button></div>`}`;}
   else if(S.step==='preview'){const E=S.E||[],paid=E.filter(e=>e.status==='paid').length,use=S.paidOnly?E.filter(e=>e.status==='paid'):E,n=use.reduce((s,e)=>s+e.athletes.length,0);
     b=`<p><b>${esc(S.comp.name)}</b><br><span class="small muted">${esc(S.comp.date)}</span></p>
       ${E.length?`<div class="rgk"><div><b>${E.length}</b><span>${SP[sp]} 접수</span></div><div><b>${paid}</b><span>입금 확인</span></div><div><b>${E.length-paid}</b><span>입금 전</span></div></div>
@@ -5200,7 +5222,7 @@ function draw(){if(!BOX)return;const sp=sport();let b='';
       :`<p class="small muted">「가져오기」를 누르면 엑셀 파일을 올린 것과 똑같이 ${use.length}건(선수 ${n}명)을 읽어 부문을 만듭니다.</p>
       <div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button><button type="button" class="btn primary" data-rgact="go" ${use.length&&!S.busy?'':'disabled'}>${S.busy?'가져오는 중…':`${use.length}건 가져오기`}</button></div>`}`
       :`<p class="muted">아직 ${SP[sp]} 접수가 없습니다.</p><div class="rgrow"><button type="button" class="btn" data-rgact="back">← 다른 대회</button></div>`}`;}
-  BOX.innerHTML=`<div class="rgbox"><div class="rghd"><b>${S.mode==='send'?'🌐 결과를 접수 홈페이지로 보내기':S.mode==='music'?'🎵 접수 홈페이지에서 음원 받기':'🌐 접수 홈페이지에서 가져오기'}</b><button type="button" class="btn" data-rgact="x" aria-label="닫기">✕</button></div>
+  BOX.innerHTML=`<div class="rgbox"><div class="rghd"><b>${S.mode==='send'?'🌐 결과를 접수 홈페이지로 보내기':S.mode==='draw'?'📋 대진표를 접수 홈페이지로 보내기':S.mode==='music'?'🎵 접수 홈페이지에서 음원 받기':'🌐 접수 홈페이지에서 가져오기'}</b><button type="button" class="btn" data-rgact="x" aria-label="닫기">✕</button></div>
     ${S.err?`<div class="rgerr" role="alert">${esc(S.err)}</div>`:''}${b}
     <div class="rgft small muted">${A?`${esc(A.email)} 로그인 · <button type="button" class="rglink" data-rgact="logout">로그아웃</button> · `:''}<a href="${SITE}" target="_blank" rel="noopener">접수 홈페이지 열기</a></div></div>`;
   const e=BOX.querySelector('#rgE');if(e&&!e.value)e.focus();else{const p=BOX.querySelector('#rgP');if(p)p.focus();}}
@@ -5218,6 +5240,7 @@ document.addEventListener('submit',async e=>{if(!e.target||e.target.id!=='rgLogi
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-rgact]');if(!b)return;const a=b.dataset.rgact;
   if(a==='open'){e.preventDefault();open_();return;}
   if(a==='sendRes'){e.preventDefault();open_('send');return;}
+  if(a==='sendDraw'){e.preventDefault();open_('draw');return;}
   if(a!=='paidOnly'){e.preventDefault();e.stopPropagation();}
   if(a==='x')close_();
   else if(a==='logout'){A=null;saveA();S.step='login';S.err='';draw();}
@@ -5225,6 +5248,11 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
   else if(a==='paidOnly'){S.paidOnly=b.checked;draw();}
   else if(a==='pick'&&S.mode==='send'){S.comp=S.L.find(c=>c.id===b.dataset.id);S.sent=null;S.err='';
     try{S.res=window.AW&&AW.results?AW.results():{rows:[]};}catch(err){S.res={rows:[]};}S.step='send';draw();}
+  else if(a==='pick'&&S.mode==='draw'){S.comp=S.L.find(c=>c.id===b.dataset.id);S.sent=null;S.err='';try{S.draw=drawData();}catch(err){S.draw={divs:[]};S.err=err.message;}S.step='draw';draw();}
+  else if(a==='drawsend'){S.busy=true;S.err='';draw();
+    try{S.draw=drawData();S.sent=await publishDraws(S.comp.id,S.draw);say(`대진표 ${S.sent.divs}개 부문을 접수 홈페이지에 올렸습니다`);}
+    catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 대진표를 올릴 수 있습니다.':/publish_draws|function|schema cache/i.test(err.message)?'홈페이지 데이터베이스에 대진표 기능이 아직 없습니다. Supabase에서 10단계 SQL(schema10.sql)을 실행해 주세요.':netErr(err);}
+    S.busy=false;draw();}
   else if(a==='send'){S.busy=true;S.err='';draw();
     try{S.sent=await publish(S.comp.id,S.res);say(`결과 ${S.sent.rows}건을 접수 홈페이지로 보냈습니다`);}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 결과를 보낼 수 있습니다.':/publish_results|function/i.test(err.message)?'홈페이지 데이터베이스에 결과 기능이 아직 없습니다. Supabase에서 3단계 SQL을 실행해 주세요.':err.message;}
     S.busy=false;draw();}
@@ -5263,7 +5291,12 @@ const css=document.createElement('style');css.textContent=`.rgline{display:flex;
 .rgerr{background:#FDECEC;color:#B3261E;border:1px solid #F3B8B8;border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px}
 .rgft{border-top:1px solid var(--line,#eee);padding-top:10px}.rglink{background:none;border:none;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}`;
 (document.head||document.documentElement).appendChild(css);
-window.KS_REGIMPORT={open:open_,openMusic:()=>open_('music'),fetchMusic,musName,rows,sport,state:S,toFile,feed};
+/* 「📋 대진표 홈페이지로」 단추: 대진표 PDF 단추 옆(품새·겨루기), 코트 나누기 칸(격파) */
+function attachDraw(){const pdf=document.querySelector('[data-act="pdfAll"]');
+  if(pdf&&!pdf.parentNode.querySelector('[data-rgact="sendDraw"]'))pdf.insertAdjacentHTML('afterend',' <button class="btn" type="button" data-rgact="sendDraw" title="대진표·출전 순서를 접수 홈페이지에 올려 누구나 보게 합니다">📋 대진표 홈페이지로 보내기</button>');
+  const kc=document.querySelector('details.kscourt');if(kc&&!pdf&&!document.querySelector('.ksdrawrow'))kc.insertAdjacentHTML('beforebegin','<div class="row ksdrawrow" style="margin-bottom:10px;gap:8px"><button class="btn" type="button" data-rgact="sendDraw">📋 출전 순서 홈페이지로 보내기</button><span class="small muted">누구나 접수 홈페이지 「대회 안내」에서 볼 수 있습니다 (인터넷 필요)</span></div>');}
+new MutationObserver(()=>{try{attachDraw();}catch(e){}}).observe(document.documentElement,{subtree:true,childList:true});
+window.KS_REGIMPORT={drawData,publishDraws,open:open_,openMusic:()=>open_('music'),fetchMusic,musName,rows,sport,state:S,toFile,feed};
 })();
 /* ===== 코트 나누기 · 본부 → 코트 노트북 명단 보내기 (현장 모드, 품새·겨루기·격파 공통) =====
    - 본부 노트북: 「코트 나누기」에서 코트를 정한 뒤 「📡 A코트로 보내기」 → 와이파이로 A코트 노트북에 그 코트 명단이 갑니다.
@@ -5273,7 +5306,8 @@ if(window.KS_COURT)return;
 const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const say=m=>{try{(window.toast||g('toast'))(m);}catch(e){}};
-const APPK=(()=>{const t=document.title||'';return /격파/.test(t)?'gyeokpa':/겨루기/.test(t)?'kyorugi':'poomsae';})();
+const APPK=(()=>{try{const F=window.KS_FIELD;if(F&&/^(poomsae|kyorugi|gyeokpa)$/.test(F.app||''))return F.app;}catch(e){}const t=document.title||'';if(/격파|gyeokpa|breaking/i.test(t))return 'gyeokpa';if(/겨루기|kyorugi|sparring/i.test(t))return 'kyorugi';if(/품새|poomsae/i.test(t))return 'poomsae';
+  const G=n=>{try{return typeof (0,eval)(n);}catch(e){return 'undefined';}};return G('SHEETS')!=='undefined'?'poomsae':G('matchesOf')!=='undefined'?'kyorugi':G('planOf')!=='undefined'?'gyeokpa':'poomsae';})();
 const APPN={poomsae:'품새',kyorugi:'겨루기',gyeokpa:'격파'}[APPK];
 const FIELD=()=>!!(window.KS_FIELD&&window.KS_FIELD.status);
 const L8='ABCDEFGH';
@@ -5997,7 +6031,8 @@ window.KS_BOARD={classic,setBoard,kyBoard,app:APP,fx:FX};
 if(window.KS_AUTOSAVE)return;
 const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
 const FLD=()=>!!(window.KS_FIELD&&window.KS_FIELD.status);
-const APPK=(()=>{const t=document.title||'';return /격파/.test(t)?'gyeokpa':/겨루기/.test(t)?'kyorugi':'poomsae';})();
+const APPK=(()=>{try{const F=window.KS_FIELD;if(F&&/^(poomsae|kyorugi|gyeokpa)$/.test(F.app||''))return F.app;}catch(e){}const t=document.title||'';if(/격파|gyeokpa|breaking/i.test(t))return 'gyeokpa';if(/겨루기|kyorugi|sparring/i.test(t))return 'kyorugi';if(/품새|poomsae/i.test(t))return 'poomsae';
+  const G=n=>{try{return typeof (0,eval)(n);}catch(e){return 'undefined';}};return G('SHEETS')!=='undefined'?'poomsae':G('matchesOf')!=='undefined'?'kyorugi':G('planOf')!=='undefined'?'gyeokpa':'poomsae';})();
 const APPN={poomsae:'품새',kyorugi:'겨루기',gyeokpa:'격파'}[APPK];
 const opRoute=()=>{const h=(location.hash||'').replace('#','');return h===''||/^admin/.test(h);};
 const two=n=>String(n).padStart(2,'0');
