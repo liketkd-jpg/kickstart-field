@@ -474,6 +474,23 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .jpen span{text-align:center;font-family:var(--f-disp);font-size:1.05rem;display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap}.jpen em{font-style:normal;color:var(--bad);font-family:var(--f-num)}.jpen b{color:var(--gold);font-family:var(--f-num)}
 .jundo{justify-self:center}
 .jwait{display:grid;place-items:center;text-align:center;font-family:var(--f-disp);font-size:1.4rem;color:var(--muted);padding:40px 10px}
+/* final power-up */
+.rig.pw .aura{transform-box:fill-box;transform-origin:center;animation:aura 1.6s ease-in-out infinite alternate}
+@keyframes aura{from{opacity:.55;transform:scale(.92)}to{opacity:1;transform:scale(1.06)}}
+.rig.pw .arcs path{animation:arc .22s steps(2) infinite}.rig.pw .arcs path:nth-child(2n){animation-delay:.11s}
+@keyframes arc{50%{opacity:.1}}
+.rig.pw .gbelt{filter:drop-shadow(0 0 4px #ffc83d)}
+.rig.pw{filter:drop-shadow(0 0 1vw color-mix(in srgb,var(--gold) 60%,transparent)) drop-shadow(.4vw .4vw 0 var(--ink))!important}
+.board.pwup .bl .hero svg{animation:pwin 1.6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes pwin{0%{transform:scale(.2);filter:brightness(6) blur(6px)}50%{filter:brightness(3)}100%{transform:scale(1);filter:none}}
+.pwov{position:fixed;inset:0;z-index:145;pointer-events:none;display:grid;place-items:center;animation:pwov 3.2s ease-out forwards}
+@keyframes pwov{0%{opacity:0}8%{opacity:1}80%{opacity:1}100%{opacity:0}}
+.pwov .rays{position:absolute;inset:-30%;background:repeating-conic-gradient(from 0deg,rgba(255,200,61,.38) 0 8deg,transparent 8deg 18deg);animation:spin 3.2s linear}
+@keyframes spin{to{transform:rotate(60deg)}}
+.pwt{position:relative;text-align:center;animation:pwt .9s cubic-bezier(.2,1.8,.4,1) both}
+.pwt b{display:block;font-family:var(--f-hero);font-size:13vw;line-height:.9;color:var(--gold);-webkit-text-stroke:.4vw var(--ink);text-shadow:1vw 1vw 0 var(--red),0 0 4vw #fff3b0;letter-spacing:.04em}
+.pwt span{font-family:var(--f-disp);font-size:4vw;color:#fff;text-shadow:.3vw .3vw 0 var(--ink)}
+@keyframes pwt{from{transform:scale(3) rotate(-8deg);opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -505,7 +522,7 @@ const STICON={
 const T={
  ko:{app:'태권 히어로',sub:'유아·초등 장애물 스피드 챌린지',tSetup:'설정',tRun:'경기 진행',tBoard:'전광판',openBoard:'전광판 새 창',
   focusOk:'버튼 입력 준비됨',focusNo:'화면을 한 번 클릭하세요',
-  evInfo:'대회 정보',judge:'심판',lkBtn:'심판 폰 · 전광판 QR',lkTitle:'심판 폰 · 전광판 연결',lkHow:'연결 방식',lkModeField:'현장 모드 와이파이',lkModeOnline:'인터넷',lkField:'현장 모드 와이파이로 연결됨 · 심판 폰을 같은 공유기 와이파이에 연결한 뒤 QR을 찍으세요',lkOnline:'인터넷으로 연결됨 · 방 코드 {r} · 심판 폰은 인터넷(LTE·와이파이)만 되면 됩니다',lkNone:'아직 연결되지 않았습니다',lkWhyNone:'심판 폰 연결은 KICKSTART 현장 모드 프로그램이나 홈페이지 앱 주소(liketkd-jpg.github.io/kickstart-field/hero/)에서 열었을 때 됩니다. 인터넷 방식은 인터넷 연결이 필요합니다.',lkBoardHelp:'TV·태블릿 전광판',lkNoKid:'이번 조 선수 없음',lkCopy:'주소 복사',copiedLink:'주소를 복사했습니다',lkSteps:'레인마다 심판 한 명이 자기 레인 QR을 찍습니다. 선수가 있는 레인만 밝게 표시됩니다(2명 경기면 2명, 3명이면 3명). 심판은 감점(+초)을 누르고, 아이가 결승선을 지나면 「도착!」을 누릅니다. 초록 점은 연결된 심판입니다.',lkWaitOp:'운영석을 기다리는 중…',lkConnecting:'연결하는 중…',lkRest:'이번 조는 이 레인에 선수가 없습니다. 다음 조를 기다려 주세요.',licTitle:'사용 권한 (허가 코드)',licPractice:'연습 모드 · 허가 코드 넣기',licLife:'평생',licKinds:{event:'대회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'},licSt_expired:'사용 기간이 끝났습니다',licSt_early:'사용 기간 전입니다',licSt_place:'이 코드는 홈페이지 앱 주소에서만 쓸 수 있습니다',licSt_need:'인터넷에 연결해 권한을 다시 확인해 주세요',licSt_app:'태권 히어로용 코드가 아닙니다',licNet:'인터넷에 연결되어 있어야 코드를 확인할 수 있습니다',licFail:'코드를 확인하지 못했습니다',licHelp:'코드가 없으면 연습 모드로 모든 기능을 써 볼 수 있습니다. 다만 선수는 {n}명까지이고 전광판에 「연습용」이 표시됩니다. KICKSTART UP에서 받은 코드를 넣으면 풀립니다.',licGo:'코드 확인하고 풀기',licBusy:'확인 중…',licRe:'지금 다시 확인',licDel:'이 기기에서 코드 빼기',licNeed:'코드를 넣어 주세요',licDone:'허가되었습니다 · {h}',licCap:'연습 모드는 선수 {n}명까지입니다 ({c}명은 넣지 못했습니다). 허가 코드를 넣으면 모두 등록됩니다',licOnline:'인터넷 주소에서만',licFile:'인터넷 없이 {n}일',licChecked:'마지막 확인',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
+  evInfo:'대회 정보',pwBtn:'결승 파워업 연출',judge:'심판',lkBtn:'심판 폰 · 전광판 QR',lkTitle:'심판 폰 · 전광판 연결',lkHow:'연결 방식',lkModeField:'현장 모드 와이파이',lkModeOnline:'인터넷',lkField:'현장 모드 와이파이로 연결됨 · 심판 폰을 같은 공유기 와이파이에 연결한 뒤 QR을 찍으세요',lkOnline:'인터넷으로 연결됨 · 방 코드 {r} · 심판 폰은 인터넷(LTE·와이파이)만 되면 됩니다',lkNone:'아직 연결되지 않았습니다',lkWhyNone:'심판 폰 연결은 KICKSTART 현장 모드 프로그램이나 홈페이지 앱 주소(liketkd-jpg.github.io/kickstart-field/hero/)에서 열었을 때 됩니다. 인터넷 방식은 인터넷 연결이 필요합니다.',lkBoardHelp:'TV·태블릿 전광판',lkNoKid:'이번 조 선수 없음',lkCopy:'주소 복사',copiedLink:'주소를 복사했습니다',lkSteps:'레인마다 심판 한 명이 자기 레인 QR을 찍습니다. 선수가 있는 레인만 밝게 표시됩니다(2명 경기면 2명, 3명이면 3명). 심판은 감점(+초)을 누르고, 아이가 결승선을 지나면 「도착!」을 누릅니다. 초록 점은 연결된 심판입니다.',lkWaitOp:'운영석을 기다리는 중…',lkConnecting:'연결하는 중…',lkRest:'이번 조는 이 레인에 선수가 없습니다. 다음 조를 기다려 주세요.',licTitle:'사용 권한 (허가 코드)',licPractice:'연습 모드 · 허가 코드 넣기',licLife:'평생',licKinds:{event:'대회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'},licSt_expired:'사용 기간이 끝났습니다',licSt_early:'사용 기간 전입니다',licSt_place:'이 코드는 홈페이지 앱 주소에서만 쓸 수 있습니다',licSt_need:'인터넷에 연결해 권한을 다시 확인해 주세요',licSt_app:'태권 히어로용 코드가 아닙니다',licNet:'인터넷에 연결되어 있어야 코드를 확인할 수 있습니다',licFail:'코드를 확인하지 못했습니다',licHelp:'코드가 없으면 연습 모드로 모든 기능을 써 볼 수 있습니다. 다만 선수는 {n}명까지이고 전광판에 「연습용」이 표시됩니다. KICKSTART UP에서 받은 코드를 넣으면 풀립니다.',licGo:'코드 확인하고 풀기',licBusy:'확인 중…',licRe:'지금 다시 확인',licDel:'이 기기에서 코드 빼기',licNeed:'코드를 넣어 주세요',licDone:'허가되었습니다 · {h}',licCap:'연습 모드는 선수 {n}명까지입니다 ({c}명은 넣지 못했습니다). 허가 코드를 넣으면 모두 등록됩니다',licOnline:'인터넷 주소에서만',licFile:'인터넷 없이 {n}일',licChecked:'마지막 확인',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
   mode:'경기 방식',mCut:'컷오프만',mTour:'토너먼트만',mBoth:'컷오프 후 토너먼트',
   mCutD:'모든 선수가 한 번씩 뛰고 기록 순으로 최종 순위를 정합니다.',mTourD:'4명씩 한 조로 뛰고 조별 상위 선수가 다음 라운드로 올라갑니다.',mBothD:'컷오프 기록 상위 선수만 토너먼트에 진출합니다.',
   advN:'토너먼트 진출 인원',perHeat:'조별 진출 인원',
@@ -525,7 +542,7 @@ const T={
   heatOf:'{h}조 / 전체 {n}조',full:'전체 화면',waiting:'대기',lanes:'레인 배정',course0:'코스'},
  en:{app:'Taekwon Heroes',sub:'Kids Obstacle Speed Challenge',tSetup:'Setup',tRun:'Run Event',tBoard:'Scoreboard',openBoard:'Scoreboard window',
   focusOk:'Buttons ready',focusNo:'Click the screen once',
-  evInfo:'Event',judge:'Judge',lkBtn:'Judge phones · board QR',lkTitle:'Connect judge phones & scoreboard',lkHow:'Connection',lkModeField:'Field-mode Wi-Fi',lkModeOnline:'Internet',lkField:'Connected over field-mode Wi-Fi · join the same router Wi-Fi, then scan',lkOnline:'Connected over the internet · room {r} · judge phones just need internet',lkNone:'Not connected yet',lkWhyNone:'Judge phones work when this app is opened in the KICKSTART field-mode program or at the online app address (liketkd-jpg.github.io/kickstart-field/hero/). Internet mode needs a connection.',lkBoardHelp:'TV / tablet scoreboard',lkNoKid:'No runner this heat',lkCopy:'Copy link',copiedLink:'Link copied',lkSteps:'One judge per lane scans that lane’s QR. Lanes with a runner are highlighted. Judges tap penalties (+s) and press FINISH when the child crosses the line. A green dot means the judge is connected.',lkWaitOp:'Waiting for the operator…',lkConnecting:'Connecting…',lkRest:'No runner in this lane this heat. Please wait for the next heat.',licTitle:'License code',licPractice:'Practice mode · enter code',licLife:'lifetime',licKinds:{event:'Event pass',week:'1 week',month:'1 month',year:'1 year',life:'Lifetime'},licSt_expired:'License period has ended',licSt_early:'License period has not started',licSt_place:'This code works only at the online app address',licSt_need:'Connect to the internet to re-check the license',licSt_app:'This code is not for Taekwon Heroes',licNet:'Internet is needed to check the code',licFail:'Could not check the code',licHelp:'Without a code you can try every feature in practice mode, with up to {n} runners and a “PRACTICE” mark on the scoreboard. Enter the code from KICKSTART UP to unlock.',licGo:'Check & unlock',licBusy:'Checking…',licRe:'Re-check now',licDel:'Remove code from this device',licNeed:'Enter a code',licDone:'Unlocked · {h}',licCap:'Practice mode allows {n} runners ({c} not added). Enter a license code to add everyone.',licOnline:'online only',licFile:'{n} days offline',licChecked:'last check',evNameEn:'Event name (English screens)',evDivEn:'Division (English screens)',evName:'Event name',evDiv:'Division',
+  evInfo:'Event',pwBtn:'Final power-up',judge:'Judge',lkBtn:'Judge phones · board QR',lkTitle:'Connect judge phones & scoreboard',lkHow:'Connection',lkModeField:'Field-mode Wi-Fi',lkModeOnline:'Internet',lkField:'Connected over field-mode Wi-Fi · join the same router Wi-Fi, then scan',lkOnline:'Connected over the internet · room {r} · judge phones just need internet',lkNone:'Not connected yet',lkWhyNone:'Judge phones work when this app is opened in the KICKSTART field-mode program or at the online app address (liketkd-jpg.github.io/kickstart-field/hero/). Internet mode needs a connection.',lkBoardHelp:'TV / tablet scoreboard',lkNoKid:'No runner this heat',lkCopy:'Copy link',copiedLink:'Link copied',lkSteps:'One judge per lane scans that lane’s QR. Lanes with a runner are highlighted. Judges tap penalties (+s) and press FINISH when the child crosses the line. A green dot means the judge is connected.',lkWaitOp:'Waiting for the operator…',lkConnecting:'Connecting…',lkRest:'No runner in this lane this heat. Please wait for the next heat.',licTitle:'License code',licPractice:'Practice mode · enter code',licLife:'lifetime',licKinds:{event:'Event pass',week:'1 week',month:'1 month',year:'1 year',life:'Lifetime'},licSt_expired:'License period has ended',licSt_early:'License period has not started',licSt_place:'This code works only at the online app address',licSt_need:'Connect to the internet to re-check the license',licSt_app:'This code is not for Taekwon Heroes',licNet:'Internet is needed to check the code',licFail:'Could not check the code',licHelp:'Without a code you can try every feature in practice mode, with up to {n} runners and a “PRACTICE” mark on the scoreboard. Enter the code from KICKSTART UP to unlock.',licGo:'Check & unlock',licBusy:'Checking…',licRe:'Re-check now',licDel:'Remove code from this device',licNeed:'Enter a code',licDone:'Unlocked · {h}',licCap:'Practice mode allows {n} runners ({c} not added). Enter a license code to add everyone.',licOnline:'online only',licFile:'{n} days offline',licChecked:'last check',evNameEn:'Event name (English screens)',evDivEn:'Division (English screens)',evName:'Event name',evDiv:'Division',
   mode:'Format',mCut:'Cut-off only',mTour:'Tournament only',mBoth:'Cut-off, then tournament',
   mCutD:'Every child runs once; final ranking by time.',mTourD:'Heats of 4; the top runners of each heat move on.',mBothD:'Only the fastest cut-off runners enter the tournament.',
   advN:'Runners into tournament',perHeat:'Advance per heat',
@@ -751,7 +768,8 @@ function nextRound(){
   else{if(r.final)return;ids=advancers(r)}
   if(!ids.length)return;
   S.rounds.push({kind:'tour',final:ids.length<=4,heats:makeHeats(ids,true)});
-  S.cur={r:S.rounds.length-1,h:0};S.board='bracket';R={phase:'idle',count:0,start:0,go:0};commit();sfx('whoosh');
+  const fin=ids.length<=4;S.cur={r:S.rounds.length-1,h:0};S.board=fin?'live':'bracket';R={phase:'idle',count:0,start:0,go:0};commit();sfx('whoosh');
+  if(fin)setTimeout(()=>fx('powerup'),400);
 }
 
 /* ================= 엑셀 명단 (품새·격파 앱과 같은 열: 번호·이름·소속·지도자·부별·성별) ================= */
@@ -1014,33 +1032,44 @@ function heroMode(h,i){ // which motion a lane hero shows right now
   if(h.time[i]!=null){const pl=placeOf(h,i)||4;return'p'+Math.min(pl,4)}
   return R.phase==='running'?'run':'ready';
 }
-function heroFig(i,cls='',mode='ready'){
+const isPower=()=>{try{const r=curRound();return !!(r&&r.kind==='tour'&&r.final)}catch(e){return false}};
+function heroFig(i,cls='',mode='ready',power){
+  if(power==null)power=isPower();
+  if(power){mode={run:'runx',p1:'p1x',p2:'kiai',p3:'kiai',p4:'kiai'}[mode]||mode}
+  const pw=power,uid='h'+i+Math.random().toString(36).slice(2,7),G1='#fff3b0',G2='#ffc83d',G3='#b8860b';
   // original side-view taekwondo hero rig (faces right). Joints are posed every frame by animRigs().
   const H=HEROES[i],c=H.hex,ink='#04061a',skin='#ffd2a8',hair='#2b1a12',w='#ffffff',w2='#d9def2';
   const limb=(x1,y1,x2,y2,wo,wi,col)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ink}" stroke-width="${wo}" stroke-linecap="round"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${wi}" stroke-linecap="round"/>`;
   const leg=(k,col)=>`<g data-j="leg${k}">${limb(80,98,80,128,18,11,col)}<g data-j="shin${k}">${limb(80,128,80,153,16,9,col)}<path d="M73 150 h15 q8 0 8 6 v2 h-23 z" fill="${skin}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/></g></g>`;
-  const arm=(k,col)=>`<g data-j="arm${k}">${limb(80,64,80,86,16,9,col)}<g data-j="fore${k}">${limb(80,86,80,103,15,8,col)}<circle cx="80" cy="106" r="7" fill="${skin}" stroke="${ink}" stroke-width="3.5"/></g></g>`;
-  const spark=mode==='p1'?`<g class="spark" fill="${c}" stroke="${ink}" stroke-width="2"><path d="M14 -6l3 6 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1z"/><path d="M146 4l3 6 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1z"/><path d="M150 96l2 4 4 .6-3 3 .7 4-3.7-2-3.7 2 .7-4-3-3 4-.6z"/></g>`:'';
-  const spd=mode==='run'?`<g data-j="spd" stroke="${c}" stroke-width="4" stroke-linecap="round" opacity=".8"><line x1="0" y1="62" x2="26" y2="62"/><line x1="-8" y1="88" x2="22" y2="88"/><line x1="4" y1="114" x2="30" y2="114"/><line x1="40" y1="62" x2="56" y2="62"/><line x1="36" y1="114" x2="50" y2="114"/></g>`:'';
-  const mouth=mode==='p1'||mode==='p2'?`<path d="M91 46 Q97 55 103 45 Z" fill="${ink}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>`:mode==='run'?`<path d="M93 48 Q98 50 102 47" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`:`<path d="M92 47 Q97 52 102 46" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
-  return`<svg class="hf rig ${cls}" data-mode="${mode}" data-seed="${i*.37}" viewBox="-12 -38 184 206" role="img" aria-label="${esc(heroName(i))}">
+  const pad=k=>pw?`<path d="M70 58 Q80 48 91 58 L89 70 Q80 65 71 70 Z" fill="url(#ga${uid})" stroke="${ink}" stroke-width="3" stroke-linejoin="round" opacity="${k==='B'?.85:1}"/>`:'';
+  const arm=(k,col)=>`<g data-j="arm${k}">${limb(80,64,80,86,16,9,col)}${pad(k)}<g data-j="fore${k}">${limb(80,86,80,103,15,8,col)}<circle cx="80" cy="106" r="7" fill="${skin}" stroke="${ink}" stroke-width="3.5"/></g></g>`;
+  const arcs=pw&&mode!=='runx'?`<g class="arcs" fill="none" stroke="${G2}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 40 l10 8 -6 6 12 10"/><path d="M146 46 l-10 8 6 6 -12 10"/><path d="M28 120 l10 -4 -2 8 12 -4"/><path d="M138 112 l-10 -4 2 8 -12 -4"/></g>`:'';
+  const spark=mode==='p1'||mode==='p1x'?`<g class="spark" fill="${c}" stroke="${ink}" stroke-width="2"><path d="M14 -6l3 6 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1z"/><path d="M146 4l3 6 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1z"/><path d="M150 96l2 4 4 .6-3 3 .7 4-3.7-2-3.7 2 .7-4-3-3 4-.6z"/></g>`:'';
+  const spd=mode==='runx'?`<g data-j="spd"><path d="M30 60 q-22 -10 -44 0 q22 10 44 0z" fill="${c}" opacity=".85"/><path d="M28 86 q-30 -12 -58 0 q30 12 58 0z" fill="${G2}" opacity=".85"/><path d="M32 112 q-24 -9 -48 0 q24 9 48 0z" fill="${c}" opacity=".85"/><path d="M60 72 q-12 -5 -24 0 q12 5 24 0z" fill="${G1}"/><path d="M58 100 q-14 -6 -28 0 q14 6 28 0z" fill="${G1}"/><path d="M8 74 l10 6 -4 4 10 6" stroke="${G1}" stroke-width="3" fill="none"/></g>`:mode==='run'?`<g data-j="spd" stroke="${c}" stroke-width="4" stroke-linecap="round" opacity=".8"><line x1="0" y1="62" x2="26" y2="62"/><line x1="-8" y1="88" x2="22" y2="88"/><line x1="4" y1="114" x2="30" y2="114"/><line x1="40" y1="62" x2="56" y2="62"/><line x1="36" y1="114" x2="50" y2="114"/></g>`:'';
+  const mouth=mode==='p1'||mode==='p2'||mode==='p1x'||mode==='kiai'?`<path d="M91 46 Q97 55 103 45 Z" fill="${ink}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>`:mode==='run'?`<path d="M93 48 Q98 50 102 47" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`:`<path d="M92 47 Q97 52 102 46" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
+  return`<svg class="hf rig ${pw?'pw':''} ${cls}" data-mode="${mode}" data-seed="${i*.37}" viewBox="-12 -38 184 206" role="img" aria-label="${esc(heroName(i))}">
+  ${pw?`<defs><radialGradient id="au${uid}"><stop offset="0" stop-color="${c}" stop-opacity=".75"/><stop offset=".55" stop-color="${G2}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ga${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${G1}"/><stop offset=".5" stop-color="${G2}"/><stop offset="1" stop-color="${G3}"/></linearGradient></defs>
+    <ellipse class="aura" cx="82" cy="80" rx="78" ry="96" fill="url(#au${uid})"/>`:''}${arcs}
   <ellipse data-j="shadow" cx="84" cy="160" rx="34" ry="6" fill="${ink}" opacity=".45"/>
   ${spd}${spark}
   <g data-j="root">
-   <g data-j="cape"><path d="M86 58 Q72 56 64 66 L36 136 Q54 128 66 138 Q74 128 82 132 L88 66 Z" fill="${c}" stroke="${ink}" stroke-width="4" stroke-linejoin="round"/></g>
+   <g data-j="cape"><path d="${pw?'M86 58 Q70 54 60 66 L22 146 Q46 134 60 148 Q72 134 84 140 L88 66 Z':'M86 58 Q72 56 64 66 L36 136 Q54 128 66 138 Q74 128 82 132 L88 66 Z'}" fill="${c}" stroke="${ink}" stroke-width="4" stroke-linejoin="round"/>${pw?`<path d="M80 64 L40 136 M84 70 L62 140" stroke="${G2}" stroke-width="3" opacity=".8"/>`:''}</g>
    ${arm('B',w2)}
    ${leg('B',w2)}
    <g data-j="torso">
     <path d="M67 101 L65 66 Q80 52 95 66 L93 101 Z" fill="${w}" stroke="${ink}" stroke-width="4" stroke-linejoin="round"/>
     <path d="M91 60 L84 78" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>
     <g data-j="belttail"><path d="M68 95 l-14 11" stroke="${ink}" stroke-width="9" stroke-linecap="round"/><path d="M68 95 l-14 11" stroke="${c}" stroke-width="4.5" stroke-linecap="round"/></g>
-    <rect x="63" y="88" width="34" height="10" rx="3" fill="${c}" stroke="${ink}" stroke-width="3.5"/>
-    <g transform="translate(78 68) scale(.55)">${emblem(H.em,c)}</g>
+    ${pw?`<path d="M68 63 Q80 56 93 63 L91 86 Q80 92 69 86 Z" fill="url(#ga${uid})" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>`:''}
+    <rect x="63" y="88" width="34" height="10" rx="3" fill="${pw?`url(#ga${uid})`:c}" stroke="${ink}" stroke-width="3.5" ${pw?'class="gbelt"':''}/>
+    <g transform="translate(78 ${pw?66:68}) scale(${pw?.62:.55})">${emblem(H.em,pw?c:c)}</g>
     <circle cx="79" cy="40" r="4" fill="${skin}" stroke="${ink}" stroke-width="2.5"/>
     <circle cx="86" cy="36" r="20" fill="${skin}" stroke="${ink}" stroke-width="4"/>
     <path d="M66 38 Q64 15 86 16 Q103 17 106 31 Q95 24 86 27 Q75 30 72 44 Z" fill="${hair}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
     <path d="M69 31 Q88 27 106 32 L106 41 Q88 37 69 40 Z" fill="${c}" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/>
     <g data-j="tail"><path d="M70 33 L52 26 L56 38 L50 46 L70 39 Z" fill="${c}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/></g>
+    ${pw?`<path d="M74 22 L78 8 L85 17 L91 4 L96 17 L103 9 L104 25 Q90 19 74 22 Z" fill="url(#ga${uid})" stroke="${ink}" stroke-width="2.5" stroke-linejoin="round"/>`:''}
     <ellipse cx="97" cy="35.5" rx="4.6" ry="3.6" fill="#fff" stroke="${ink}" stroke-width="2"/><circle cx="98.6" cy="36" r="1.8" fill="${ink}"/>
     ${mouth}
    </g>
@@ -1065,6 +1094,11 @@ function poseAt(mode,t){
   if(mode==='run'){const p=t*tau*2.3,s=Math.sin(p),c=Math.cos(p),s2=Math.sin(p+Math.PI),c2=Math.cos(p+Math.PI);
     return{ry:-6*Math.abs(c),lean:15,thF:-42*s-6,shF:12+82*Math.max(0,c),thB:-42*s2-6,shB:12+82*Math.max(0,c2),
       arF:55*s,frF:-85+12*c,arB:55*s2,frB:-85+12*c2,cape:38+10*Math.sin(2*p),tail:20+15*Math.sin(2*p)}}
+  if(mode==='runx'){const P=poseAt('run',t*1.15);P.lean=19;P.cape+=18+8*Math.sin(t*tau*5);P.tail+=12;return P}
+  if(mode==='p1x'){const u=(t/1.9)%1;const P=keysP([[0,PZ.ready],[.14,PZ.crouch],[.3,PZ.fly],[.7,PZ.fly],[.86,PZ.crouch],[1,PZ.ready]],u);
+    if(u>.2&&u<.82){const k=(u-.2)/.62;P.ry-=52*Math.sin(Math.PI*k);P.rot=360*ease(Math.min(1,Math.max(0,(k-.12)/.6)))}P.cape+=14;return P}
+  if(mode==='kiai'){const P=Pz({lean:-7,thF:-34,shF:22,thB:30,shB:2,arF:24,frF:-128,arB:20,frB:-124,cape:22,tail:16});
+    const b=(t/1.4)%1,hit=b<.18?Math.sin(Math.PI*b/.18):0;P.ry=-3*hit+Math.sin(t*40)*.6*hit;P.lean-=4*hit;P.arF=lerp(24,-80,hit);P.frF=lerp(-128,-10,hit);P.cape+=8*Math.sin(t*tau*1.5);return P}
   if(mode==='p1'){const u=(t/1.7)%1;const P=keysP([[0,PZ.ready],[.16,PZ.crouch],[.32,PZ.fly],[.68,PZ.fly],[.84,PZ.crouch],[1,PZ.ready]],u);
     if(u>.22&&u<.8)P.ry-=40*Math.sin(Math.PI*(u-.22)/.58);return P}
   if(mode==='p2'){const u=(t/1.6)%1;return keysP([[0,PZ.ready],[.2,PZ.chamber],[.34,PZ.side],[.7,PZ.side],[.84,PZ.chamber],[1,PZ.ready]],u)}
@@ -1077,7 +1111,7 @@ function poseRig(svg,P,t){
   const j=svg._j||(svg._j=rigParts(svg));
   const L=P.lean*Math.PI/180,sx=80+34*Math.sin(L)-80,sy=98-34*Math.cos(L)-64;
   const st=(e,v)=>e&&e.setAttribute('transform',v);
-  st(j.root,`translate(0 ${P.ry.toFixed(2)})`);
+  st(j.root,`translate(0 ${P.ry.toFixed(2)})${P.rot?` rotate(${P.rot.toFixed(1)} 82 92)`:''}`);
   st(j.torso,`rotate(${P.lean.toFixed(1)} 80 98)`);
   st(j.legF,`rotate(${P.thF.toFixed(1)} 80 98)`);st(j.shinF,`rotate(${P.shF.toFixed(1)} 80 128)`);
   st(j.legB,`rotate(${P.thB.toFixed(1)} 80 98)`);st(j.shinB,`rotate(${P.shB.toFixed(1)} 80 128)`);
@@ -1267,6 +1301,7 @@ function viewRun(){
     <div class="screens">${[['intro','sIntro'],['live','sLive'],['standings','sStand'],['bracket','sBracket'],['champion','sChamp']].map(([v,k])=>`<button data-act="screen" data-v="${v}" aria-pressed="${S.board===v}">${esc(t(k))}</button>`).join('')}</div>
     <button class="btn ghost" data-act="tab" data-v="board">⛶ ${esc(t('tBoard'))}</button>
     <button class="btn" data-act="linkOpen">📱 ${esc(t('lkBtn'))}</button>
+    ${r.kind==='tour'&&r.final?`<button class="btn gold" data-act="pwup">⚡ ${esc(t('pwBtn'))}</button>`:''}
    </div>
    <div class="heats">
     ${S.rounds.length>1?S.rounds.map((x,ri)=>`<button class="heatchip rchip ${ri===S.cur.r?'cur':''}" data-act="pickRound" data-v="${ri}"><b>${esc(roundLabel(ri))}</b></button>`).join(''):''}
@@ -1439,7 +1474,12 @@ let parts=[],bolts=[],fxOn=false;
 function sizeCv(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio}
 addEventListener('resize',sizeCv);sizeCv();
 function fx(name,arg){if(ROLE==='ctrl')send({t:'fx',name,arg});runFx(name,arg)}
+function powerUp(){if(!boardVisible())return;playLocal('fanfare');setTimeout(()=>playLocal('thunder'),500);
+  const b=document.getElementById('board');if(b){b.classList.remove('pwup');void b.offsetWidth;b.classList.add('pwup');setTimeout(()=>b.classList.remove('pwup'),3400)}
+  const o=document.createElement('div');o.className='pwov';o.innerHTML=`<div class="rays"></div><div class="pwt"><b>POWER UP!</b><span>${esc(t('final'))} · FINAL</span></div>`;document.body.appendChild(o);setTimeout(()=>o.remove(),3300);
+  flash();if(!matchMedia('(prefers-reduced-motion: reduce)').matches){const W=cv.width,H=cv.height;[.15,.38,.62,.85].forEach((x,k)=>setTimeout(()=>{bolts.push(makeBolt(W*x,H));flash()},300+k*220));confetti(220);if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}}}
 function runFx(name,arg){
+  if(name==='powerup'){powerUp();return}
   if(name==='bolt'||name==='champion')playLocal(name==='champion'?'fanfare':'thunder');
   if(!boardVisible())return;
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -1496,6 +1536,7 @@ document.addEventListener('click',e=>{
   switch(a){
     case'tab':setTab(v);break;
     case'licOpen':licOpen();break;
+    case'pwup':S.board='live';commit();fx('powerup');break;
     case'linkOpen':linkOpen();break;
     case'linkClose':linkClose();break;
     case'linkCopy':copyTxt(b.dataset.v);break;
