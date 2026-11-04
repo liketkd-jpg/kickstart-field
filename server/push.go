@@ -22,6 +22,14 @@ type pushMsg struct {
 	Divs  int             `json:"divs"`
 	Rows  json.RawMessage `json:"rows"`
 	At    int64           `json:"at"`
+	Move  *moveInfo       `json:"move,omitempty"`
+}
+
+// 부문 옮기기로 온 명단 (받는 코트가 「추가」로 넣음)
+type moveInfo struct {
+	ID   string `json:"id"`
+	From string `json:"from"`
+	Div  string `json:"div"`
 }
 
 func validApp(k string) bool {
@@ -105,6 +113,11 @@ func handleInbox(w http.ResponseWriter, r *http.Request) {
 	}
 	if m.At == 0 {
 		m.At = time.Now().UnixMilli()
+	}
+	if m.Move != nil && m.Move.ID != "" {
+		s.setDoc("inbox/mvin_"+m.Move.ID, map[string]any{"court": m.Court, "app": m.App, "from": m.From, "divs": m.Divs, "rows": m.Rows, "at": m.At, "done": false, "move": m.Move})
+		writeJSON(w, 200, map[string]any{"ok": true})
+		return
 	}
 	s.setDoc("inbox/roster", map[string]any{"court": m.Court, "app": m.App, "name": m.Name, "from": m.From, "divs": m.Divs, "rows": m.Rows, "at": m.At, "done": false})
 	writeJSON(w, 200, map[string]any{"ok": true})

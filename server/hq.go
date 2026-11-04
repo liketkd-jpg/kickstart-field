@@ -135,14 +135,18 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
 		b, okb := s.docs["hq/board"]
 		res, okr := s.docs["hq/results"]
+		mv, okm := s.docs["hq/moves"]
 		s.mu.Unlock()
-		if okb || okr {
+		if okb || okr || okm {
 			m := map[string]any{}
 			if okb {
 				m["board"] = b
 			}
 			if okr {
 				m["results"] = res
+			}
+			if okm {
+				m["moves"] = mv
 			}
 			out[a.Key] = m
 		}
@@ -488,6 +492,9 @@ func pollCourt(addr string) {
 	for _, cl := range calls {
 		autoCall(cl)
 	}
+	if ok && len(fm.Apps) > 0 {
+		handleMoveReports(addr, fm.Court, fm.Apps)
+	}
 	if ok && len(fm.Saves) > 0 {
 		collectSaves(addr, fm.Court, fm.Saves)
 	}
@@ -575,6 +582,8 @@ func startNode() {
 	go listenBeacons()
 	go scanLoop()
 	go pollLoop()
+	loadMoves()
+	go moveSiteLoop()
 	// 본부: 처음 켤 때 지난번 코트 목록은 연결 끊김으로 표시 (새로 찾을 때까지)
 	if s := stores["hq"]; s != nil {
 		s.mu.Lock()

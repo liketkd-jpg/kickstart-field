@@ -5634,7 +5634,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
     try{S.res=window.AW&&AW.results?AW.results():{rows:[]};}catch(err){S.res={rows:[]};}S.step='send';draw();}
   else if(a==='pick'&&S.mode==='draw'){S.comp=S.L.find(c=>c.id===b.dataset.id);S.sent=null;S.err='';try{S.draw=drawData();}catch(err){S.draw={divs:[]};S.err=err.message;}S.step='draw';draw();}
   else if(a==='drawsend'){S.busy=true;S.err='';draw();
-    try{S.draw=drawData();S.sent=await publishDraws(S.comp.id,S.draw);say(`대진표 ${S.sent.divs}개 부문을 접수 홈페이지에 올렸습니다`);}
+    try{S.draw=drawData();S.sent=await publishDraws(S.comp.id,S.draw);try{localStorage.setItem('ks_draw_comp_'+sport(),S.comp.id);}catch(e){}say(`대진표 ${S.sent.divs}개 부문을 접수 홈페이지에 올렸습니다`);}
     catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 대진표를 올릴 수 있습니다.':/publish_draws|function|schema cache/i.test(err.message)?'홈페이지 데이터베이스에 대진표 기능이 아직 없습니다. Supabase에서 10단계 SQL(schema10.sql)을 실행해 주세요.':netErr(err);}
     S.busy=false;draw();}
   else if(a==='send'){S.busy=true;S.err='';draw();
@@ -5781,7 +5781,77 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
 const css=document.createElement('style');css.textContent=`.ksinb{position:fixed;left:16px;bottom:64px;z-index:9990;display:flex;gap:14px;align-items:center;flex-wrap:wrap;max-width:min(560px,calc(100vw - 32px));
   background:var(--surface,#fff);color:var(--ink,#111);border:2px solid var(--brass-2,#B8904E);border-radius:16px;padding:14px 16px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
 .ksinb b{display:block;font-size:16px}.ksinb span{font-size:13px;color:var(--muted,#777)}.ksinbb{display:flex;gap:8px}`;(document.head||document.documentElement).appendChild(css);
-window.KS_COURT={push,pushAll,rowsFor,panel,inbox:()=>INB};
+/* ---------- 부문 옮기기 (본부 화면 「옮기기」) ----------
+   원래 코트: 시작 전인지 확인 → 그 부문 명단·음원 이름을 hq/moves 에 올림 → 본부가 「빼기」를 보내면 명단에서 뺌
+   받는 코트: 본부가 보낸 부문 명단을 「추가」로 넣음 (경기 중인 화면은 그대로)
+   본부 노트북 경기 앱: 코트 나누기의 그 부문 코트를 고치고, 홈페이지에 올린 대진표가 있으면 다시 올림 */
+const T0=Date.now();let MV=[],MVREP={},MVB=false,MVW=false,MVBAN=null;
+function watchMoves(){if(MVW||!FIELD())return;const st=g('store');if(!st||!st.watchColl||!st.watchDoc)return;MVW=true;
+  st.watchColl('inbox',null,null,list=>{MV=(list||[]).filter(x=>/^(mv_|mvin_|court_)/.test(x._id||''));});
+  st.watchDoc('hq/moves',d=>{MVREP={...(d||{}),...MVREP_LOCAL};});}
+let MVREP_LOCAL={};const MVTRY={},MVFAIL={};
+let MVDIRTY=false;
+async function rep(id,o){MVREP_LOCAL[id]={...o,at:Date.now()};MVREP={...MVREP,[id]:MVREP_LOCAL[id]};MVDIRTY=true;await mvFlush();}
+/* 본부가 읽어 가는 보고(hq/moves). 저장이 잠깐 실패하면 다음 차례에 다시 저장 */
+async function mvFlush(){if(!MVDIRTY)return;const st=g('store');
+  const out={};for(const [k,v] of Object.entries(MVREP)){if(Date.now()-(v.at||0)>6*3600e3)continue;out[k]=v.state==='ready'?v:{...v,rows:undefined};}
+  try{await st.put('hq/moves',JSON.parse(JSON.stringify(out)));MVDIRTY=false;}catch(e){console.warn('move report',e);}}
+const isOp=()=>{try{return !g('KIOSK')&&String(g('routeNow')()).startsWith('admin');}catch(e){return false;}};
+function started(d){try{const f=g('divHasResults');if(typeof f==='function'&&f(d))return true;}catch(e){}
+  try{const B=window.KS_HQ&&KS_HQ.board();if(B){if(B.now&&B.now.div===d.name)return true;const x=(B.divs||[]).find(v=>v.name===d.name);if(x&&x.done>0)return true;}}catch(e){}
+  try{const c=g('curOf');const cur=typeof c==='function'?c():null;if(cur&&cur.divId===d.id)return true;}catch(e){}
+  if(APPK==='kyorugi')try{const L=g('live')();if(L&&L.divId===d.id)return true;}catch(e){}
+  return false;}
+function idsOf(d){const S=g('S'),dk=g('divKey');if(typeof dk==='function'&&d.key)return S.roster.filter(a=>{try{return dk(a)===d.key;}catch(e){return false;}}).map(a=>a.id);return (d.order||[]).slice();}
+function moveBan(html){if(MVBAN)MVBAN.remove();MVBAN=document.createElement('div');MVBAN.className='ksinb ksmv';MVBAN.innerHTML=html+'<div class="ksinbb"><button class="btn" data-mvx>확인</button></div>';document.body.appendChild(MVBAN);}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-mvx]')&&MVBAN){MVBAN.remove();MVBAN=null;}});
+const lastComp=()=>{try{return localStorage.getItem('ks_draw_comp_'+APPK)||'';}catch(e){return '';}};
+async function moveTick(){if(MVB||!FIELD()||!isOp()||Date.now()-T0<3000)return;const S=g('S');if(!S||!Array.isArray(S.divs)||!Array.isArray(S.roster)||!S.settings)return;
+  const st=g('store'),C=(window.KS_FIELD&&KS_FIELD.court)||'';MVB=true;
+  try{await mvFlush();for(const doc of MV.slice()){const k=doc._id,id=doc.id||(doc.move&&doc.move.id)||k.replace(/^(mv_|mvin_|court_)/,'');const r=MVREP[id]||{};
+    try{
+      if(k.startsWith('mv_')){                       /* 원래 코트 */
+        if(doc.state==='req'&&!r.state){const d=S.divs.find(x=>x.name===doc.div);
+          if(!d){await rep(id,{state:'err',err:`${C}코트에 「${doc.div}」 부문이 없습니다`});continue;}
+          if(started(d)){await rep(id,{state:'err',err:`「${d.name}」 부문은 이미 시작해서 옮길 수 없습니다`});continue;}
+          const R=rowsFor([{...d,order:idsOf(d)}]);if(!R||R.length<2){await rep(id,{state:'err',err:`「${d.name}」 부문에 보낼 선수가 없습니다`});continue;}
+          const mus=[],LM=window.LMUS;if(LM&&LM.fileOf){const seen=new Set();for(const aid of idsOf(d)){const f=LM.fileOf(aid);if(f&&f.name&&!seen.has(f.name)){seen.add(f.name);mus.push(f.name);}}}
+          await rep(id,{state:'ready',rows:R,music:mus,n:R.length-1,div:d.name});}
+        else if(doc.state==='remove'&&r.state==='ready'){const d=S.divs.find(x=>x.name===doc.div);
+          if(d){if(started(d)){await rep(id,{state:'err',err:`「${d.name}」 부문이 그사이 시작되어 ${C}코트에서 빼지 못했습니다. ${doc.to}코트에서 그 부문을 지워 주세요`});continue;}
+            const ids=new Set(idsOf(d));try{g('rosterSnap')(`부문 옮김: ${d.name} → ${doc.to}코트`);}catch(e){}
+            const list=S.roster.filter(a=>!ids.has(a.id));await g('saveRoster')(list);try{S.roster=list;S.athIdx=null;}catch(e){}await g('regenerateDivs')();
+            try{g('addLog')('부문 옮김',d.name,`${doc.to}코트로 (본부)`);}catch(e){}}
+          await rep(id,{state:'removed'});say(`「${doc.div}」 부문을 ${doc.to}코트로 옮겼습니다`);
+          moveBan(`<div><b>🔀 「${esc(doc.div)}」 부문을 ${esc(doc.to)}코트로 옮겼습니다</b><span>본부 요청 · 이 코트 명단에서 뺐습니다 (선수 등록의 「↩ 되돌리기」로 되돌릴 수 있습니다)</span></div>`);}
+        else if(doc.state==='cancel'&&r.state==='ready'){await rep(id,{state:'cancel',err:doc.err||''});}}
+      else if(k.startsWith('mvin_')){                /* 받는 코트 */
+        if(doc.done||r.state==='taken'||r.state==='err'||!Array.isArray(doc.rows))continue;const mv=doc.move||{};
+        const ex=S.divs.find(x=>x.name===mv.div);
+        /* 지난번에 넣다가 저장 확인만 못 받았으면: 이미 들어와 있는지 먼저 확인 (두 번 넣지 않게) */
+        window.__MVSTEP='mvin-check';if(MVTRY[id]&&ex&&(ex.order||[]).length>=doc.rows.length-1){const {_id,_pending,...rest}=doc;await st.put('inbox/'+k,{...rest,done:true,takenAt:Date.now()});await rep(id,{state:'taken',n:doc.rows.length-1});continue;}
+        if(ex&&started(ex)){await rep(id,{state:'err',err:`이 코트의 같은 이름 부문 「${ex.name}」이 이미 시작되어 합칠 수 없습니다`});await st.put('inbox/'+k,{...doc,_id:undefined,done:true});continue;}
+        window.__MVSTEP='feed';const RI=window.KS_REGIMPORT;const ui0=g('ui');if(ui0)ui0.importRows=null;
+        await RI.feed(RI.toFile(doc.rows,`${mv.from||''}코트_${mv.div||''}.xlsx`));
+        let rows=null;for(let i=0;i<40;i++){const u=g('ui');rows=u&&u.importRows;if(rows&&rows.length)break;await new Promise(x=>setTimeout(x,100));}
+        if(!rows||!rows.length)throw new Error('받은 명단을 읽지 못했습니다');
+        window.__MVSTEP='importAdd';MVTRY[id]=(MVTRY[id]||0)+1;await g('ACT').importAdd();window.__MVSTEP='mvin-done';
+        const {_id,_pending,...rest}=doc;await st.put('inbox/'+k,{...rest,done:true,takenAt:Date.now()});
+        await rep(id,{state:'taken',n:rows.length});say(`${mv.from}코트에서 「${mv.div}」 부문 ${rows.length}건을 받았습니다`);
+        moveBan(`<div><b>🔀 ${esc(mv.from)}코트에서 「${esc(mv.div)}」 부문을 받았습니다</b><span>본부 요청 · ${rows.length}건을 이 코트 명단에 추가했습니다</span></div>`);}
+      else if(k.startsWith('court_')){               /* 본부 노트북 경기 앱 */
+        if(doc.done)continue;let site='local',siteErr='';const d=S.divs.find(x=>x.name===doc.div);
+        window.__MVSTEP='court-save';if(d&&d.court!==doc.to)await g('saveDivs')(S.divs.map(x=>x.name===doc.div?{...x,court:doc.to}:x));
+        if(!d)site='none';
+        window.__MVSTEP='court-site';const comp=lastComp();
+        if(comp&&window.KS_REGIMPORT){try{const RI=KS_REGIMPORT,data=RI.drawData();(data.divs||[]).forEach(x=>{if(x.name===doc.div)x.court=doc.to;});await RI.publishDraws(comp,data);site='ok';}catch(e){site='err';siteErr=String(e&&e.message||e);}}
+        const {_id,_pending,...rest}=doc;await st.put('inbox/'+k,{...rest,done:true,site,siteErr,doneAt:Date.now()});}
+    }catch(err){console.warn('move',k,window.__MVSTEP,err);MVFAIL[k]=(MVFAIL[k]||0)+1;   /* 잠깐 저장이 늦은 것이면 다음 차례에 다시 (5번 넘게 실패하면 본부에 알림) */
+      try{if(MVFAIL[k]>=5&&k.startsWith('mvin_')&&!MVTRY[id])await rep(id,{state:'err',err:String(err&&err.message||err)});}catch(e){}}}}
+  finally{MVB=false;}}
+setInterval(()=>{try{watchMoves();moveTick();}catch(e){}},1500);
+const css2=document.createElement('style');css2.textContent='.ksmv{bottom:150px;border-color:#5B8DEF}';(document.head||document.documentElement).appendChild(css2);
+window.KS_COURT={push,pushAll,rowsFor,panel,inbox:()=>INB,moves:()=>({MV,MVREP}),moveTick};
 })();
 </script><script>/* ===== 허가 코드 (품새·겨루기·격파 공통) =====
    코드가 없으면 「연습 모드」: 선수 20명까지, 전광판·상장에 「연습용」 표시.
