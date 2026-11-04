@@ -491,6 +491,36 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .pwt b{display:block;font-family:var(--f-hero);font-size:13vw;line-height:.9;color:var(--gold);-webkit-text-stroke:.4vw var(--ink);text-shadow:1vw 1vw 0 var(--red),0 0 4vw #fff3b0;letter-spacing:.04em}
 .pwt span{font-family:var(--f-disp);font-size:4vw;color:#fff;text-shadow:.3vw .3vw 0 var(--ink)}
 @keyframes pwt{from{transform:scale(3) rotate(-8deg);opacity:0}}
+/* show effects */
+.fxlist{display:grid;gap:8px}.fxrow{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}.fxrow b{font-family:var(--f-disp);font-weight:400;display:block}
+.tgl{width:46px;height:26px;border-radius:999px;border:2px solid var(--line);background:var(--night);position:relative;margin-top:2px}.tgl i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:left .15s}
+.tgl.on{background:var(--good);border-color:var(--ink)}.tgl.on i{left:22px;background:#fff}
+.camset{display:grid;gap:8px;margin-top:8px;padding:10px;border:2px dashed var(--line);border-radius:12px}.camset select{width:auto;flex:1}
+.campv{position:relative;aspect-ratio:16/9;max-width:100%;background:#000;border-radius:10px;overflow:hidden;display:grid;place-items:center}.camv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lanes4{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);pointer-events:none}.lanes4 i{border-right:2px dashed rgba(255,255,255,.5);font-style:normal;font-family:var(--f-hero);color:var(--c);font-size:1.6rem;padding:4px 8px;text-shadow:1px 1px 0 #000}
+.bbest{justify-self:center;font-family:var(--f-disp);font-size:1.6vw;background:color-mix(in srgb,var(--gold) 18%,var(--panel));border:.2vw solid var(--gold);border-radius:999px;padding:.2vh 1.4vw}.bbest b{font-family:var(--f-num);color:var(--gold)}
+.introv{position:absolute;inset:0;z-index:6;display:grid;grid-template-columns:1fr 1.2fr;align-items:center;gap:2vw;background:radial-gradient(circle at 30% 50%,color-mix(in srgb,var(--c) 55%,transparent),var(--night) 70%);animation:fadein .3s}
+.ifig{height:70vh;display:grid;place-items:center;animation:flyin .7s cubic-bezier(.2,1.5,.4,1) both}.ifig svg{height:100%;width:auto;filter:drop-shadow(.6vw .6vw 0 var(--ink)) drop-shadow(0 0 2vw var(--c))}
+.itx{display:grid;gap:1vh;animation:slidein .6s .15s both}.ilane{font-family:var(--f-hero);font-size:4vw;color:var(--c);-webkit-text-stroke:.15vw var(--ink)}.ihero{font-family:var(--f-hero);font-weight:400;font-size:6vw;line-height:.9;color:var(--gold);-webkit-text-stroke:.2vw var(--ink);text-shadow:.5vw .5vw 0 var(--c)}
+.iname{font-family:var(--f-disp);font-weight:400;font-size:8vw;line-height:1}.iteam{font-size:2.6vw;color:var(--muted)}
+.introv.all{grid-template-columns:1fr;grid-template-rows:1fr auto;background:radial-gradient(circle,color-mix(in srgb,var(--gold) 30%,transparent),var(--night) 70%)}
+.iall{display:flex;justify-content:center;align-items:end;gap:2vw;height:60vh}.iall div{display:grid;justify-items:center;height:100%;grid-template-rows:1fr auto;animation:flyin .6s cubic-bezier(.2,1.5,.4,1) both}.iall div:nth-child(2){animation-delay:.1s}.iall div:nth-child(3){animation-delay:.2s}.iall div:nth-child(4){animation-delay:.3s}
+.iall svg{height:100%;width:auto;filter:drop-shadow(.4vw .4vw 0 var(--ink))}.iall b{font-family:var(--f-disp);font-weight:400;font-size:3.4vw;color:var(--c)}
+.iready{text-align:center;font-family:var(--f-hero);font-size:9vw;color:var(--gold);-webkit-text-stroke:.3vw var(--ink);text-shadow:.8vw .8vw 0 var(--red);animation:cdpop .8s both}
+@keyframes flyin{from{transform:translateX(-60vw) rotate(-20deg) scale(.6);opacity:0}}@keyframes fadein{from{opacity:0}}
+.recov{position:fixed;inset:0;z-index:146;pointer-events:none;display:grid;place-items:center;background:radial-gradient(circle,rgba(255,200,61,.35),transparent 60%);animation:pwov 3.2s ease-out forwards}
+.rect{text-align:center;display:grid;gap:1vh;animation:pwt .8s cubic-bezier(.2,1.8,.4,1) both}.rect b{font-family:var(--f-hero);font-weight:400;font-size:11vw;line-height:.9;color:#fff;-webkit-text-stroke:.35vw var(--ink);text-shadow:.9vw .9vw 0 var(--red),0 0 3vw var(--gold)}
+.rect span{font-family:var(--f-disp);font-size:3vw;color:var(--gold);text-shadow:.3vw .3vw 0 var(--ink)}.rect i{font-style:normal;font-family:var(--f-disp);font-size:4.4vw;color:#fff;background:var(--c);border:.3vw solid var(--ink);border-radius:2vw;padding:.4vh 2vw;color:var(--ink)}.rect small{font-size:1.8vw;color:#fff;text-shadow:.2vw .2vw 0 var(--ink)}
+.cheer{display:grid;grid-template-rows:auto 1fr;gap:2vh;min-height:0;height:100%}.ccall{color:var(--gold)}
+.cgrid{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:2vw;min-height:0}
+.ccol{display:grid;grid-template-rows:minmax(0,1fr) 30vh auto auto;justify-items:center;gap:1vh;background:color-mix(in srgb,var(--c) 18%,var(--panel));border:.35vw solid var(--ink);border-radius:1.6vw;padding:1vh 1vw;min-height:0}
+.ccol.act{box-shadow:0 0 0 .4vw var(--c),0 0 3vw var(--c)}.ccol.win{box-shadow:0 0 0 .5vw var(--gold),0 0 5vw var(--gold)}
+.cfig{min-height:0;height:100%;display:grid;place-items:center}.cfig svg{height:100%;width:auto}
+.cbar{width:5vw;height:100%;background:var(--night);border:.3vw solid var(--ink);border-radius:1vw;position:relative;overflow:hidden}.cbar i{position:absolute;left:0;right:0;bottom:0;height:calc(var(--v,0)*1%);background:linear-gradient(to top,var(--c),var(--gold));transition:height .08s}
+.ccol b{font-family:var(--f-num);font-size:3.6vw}.ccol span{font-family:var(--f-disp);font-size:2.2vw}
+.repov{position:fixed;inset:0;z-index:147;background:#000;display:grid;place-items:center;animation:fadein .3s}.repov canvas{width:100%;height:100%;object-fit:contain}.repov.out{opacity:0;transition:opacity .4s}
+.rtag{position:absolute;top:3vh;left:3vw;font-family:var(--f-hero);font-size:3vw;color:#fff;background:var(--red);border:.3vw solid var(--ink);padding:.2vh 1.4vw;border-radius:1vw;letter-spacing:.06em;animation:pulse .6s infinite alternate}
+.rname{position:absolute;bottom:4vh;left:50%;transform:translateX(-50%);font-family:var(--f-disp);font-size:4vw;background:var(--c);color:var(--ink);border:.35vw solid var(--ink);border-radius:1.4vw;padding:.4vh 2vw;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -522,7 +552,7 @@ const STICON={
 const T={
  ko:{app:'태권 히어로',sub:'유아·초등 장애물 스피드 챌린지',tSetup:'설정',tRun:'경기 진행',tBoard:'전광판',openBoard:'전광판 새 창',
   focusOk:'버튼 입력 준비됨',focusNo:'화면을 한 번 클릭하세요',
-  evInfo:'대회 정보',pwBtn:'결승 파워업 연출',judge:'심판',lkBtn:'심판 폰 · 전광판 QR',lkTitle:'심판 폰 · 전광판 연결',lkHow:'연결 방식',lkModeField:'현장 모드 와이파이',lkModeOnline:'인터넷',lkField:'현장 모드 와이파이로 연결됨 · 심판 폰을 같은 공유기 와이파이에 연결한 뒤 QR을 찍으세요',lkOnline:'인터넷으로 연결됨 · 방 코드 {r} · 심판 폰은 인터넷(LTE·와이파이)만 되면 됩니다',lkNone:'아직 연결되지 않았습니다',lkWhyNone:'심판 폰 연결은 KICKSTART 현장 모드 프로그램이나 홈페이지 앱 주소(liketkd-jpg.github.io/kickstart-field/hero/)에서 열었을 때 됩니다. 인터넷 방식은 인터넷 연결이 필요합니다.',lkBoardHelp:'TV·태블릿 전광판',lkNoKid:'이번 조 선수 없음',lkCopy:'주소 복사',copiedLink:'주소를 복사했습니다',lkSteps:'레인마다 심판 한 명이 자기 레인 QR을 찍습니다. 선수가 있는 레인만 밝게 표시됩니다(2명 경기면 2명, 3명이면 3명). 심판은 감점(+초)을 누르고, 아이가 결승선을 지나면 「도착!」을 누릅니다. 초록 점은 연결된 심판입니다.',lkWaitOp:'운영석을 기다리는 중…',lkConnecting:'연결하는 중…',lkRest:'이번 조는 이 레인에 선수가 없습니다. 다음 조를 기다려 주세요.',licTitle:'사용 권한 (허가 코드)',licPractice:'연습 모드 · 허가 코드 넣기',licLife:'평생',licKinds:{event:'대회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'},licSt_expired:'사용 기간이 끝났습니다',licSt_early:'사용 기간 전입니다',licSt_place:'이 코드는 홈페이지 앱 주소에서만 쓸 수 있습니다',licSt_need:'인터넷에 연결해 권한을 다시 확인해 주세요',licSt_app:'태권 히어로용 코드가 아닙니다',licNet:'인터넷에 연결되어 있어야 코드를 확인할 수 있습니다',licFail:'코드를 확인하지 못했습니다',licHelp:'코드가 없으면 연습 모드로 모든 기능을 써 볼 수 있습니다. 다만 선수는 {n}명까지이고 전광판에 「연습용」이 표시됩니다. KICKSTART UP에서 받은 코드를 넣으면 풀립니다.',licGo:'코드 확인하고 풀기',licBusy:'확인 중…',licRe:'지금 다시 확인',licDel:'이 기기에서 코드 빼기',licNeed:'코드를 넣어 주세요',licDone:'허가되었습니다 · {h}',licCap:'연습 모드는 선수 {n}명까지입니다 ({c}명은 넣지 못했습니다). 허가 코드를 넣으면 모두 등록됩니다',licOnline:'인터넷 주소에서만',licFile:'인터넷 없이 {n}일',licChecked:'마지막 확인',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
+  evInfo:'대회 정보',fxTitle:'대회 연출 (켜기·끄기)',fxIntro:'입장 소개',fxIntroD:'시작을 누르면 레인마다 히어로가 날아 들어와 아이 이름·도장을 소개하고, 네 명이 함께 선 뒤 출발합니다. 소개 중 시작 버튼을 다시 누르면 건너뜁니다.',fxRecord:'신기록 알림',fxRecordD:'이 부문 오늘 가장 빠른 기록(페널티 포함)이 깨지면 전광판에 NEW RECORD!가 터집니다. 전광판에 오늘 최고 기록도 보입니다.',fxCheer:'관중 응원 미터',fxCheerD:'노트북 마이크로 레인별 함성 크기를 재서 전광판 게이지로 보여 주고 응원 1등을 발표합니다. 기록·순위와는 상관없습니다.',fxCam:'결승선 카메라 다시 보기',fxCamD:'결승선 정면에 웹캠을 두면, 1등 도착 순간 앞뒤 3초를 결과 확정 때 슬로모션으로 다시 보여 주고 그 레인을 확대합니다. 이 노트북 화면과 전광판 창에서 나옵니다.',bestToday:'오늘 최고',newRec:'오늘 최고 기록을 새로 세웠어요!',oldRec:'이전 기록',readyGo:'준비! READY?',skipIntro:'소개 건너뛰고',cheerT:'응원 미터',cheerHelp:'레인 버튼을 누르면 「○레인 응원해 주세요!」 뒤 4초 동안 함성을 잽니다. 「자동」은 선수가 있는 레인을 차례로 재고 응원 1등을 발표합니다.',cheerCall:'{n}레인 응원해 주세요!',cheerWin:'응원 1등은 {n}레인!',cheerAuto:'자동으로 차례대로',cheerWinBtn:'응원 1등 발표',micNo:'마이크를 쓸 수 없습니다. 브라우저의 마이크 허용을 확인해 주세요',camOn:'카메라 켜기',camOff:'카메라 끄기',camDefault:'기본 카메라',camNo:'카메라를 켜지 못했습니다. 웹캠 연결과 브라우저 카메라 허용을 확인해 주세요. (현장 모드 프로그램이나 홈페이지 앱 주소에서 됩니다)',camHint:'카메라를 켜면 여기에 결승선 화면이 보입니다. 네 레인이 모두 보이게 맞춰 주세요.',camRev:'화면 오른쪽이 1레인 (카메라 방향이 반대일 때)',camZoom:'1등 레인 확대',slowmo:'슬로모션',flow_replay:'{s}초 다시 보기',pwBtn:'결승 파워업 연출',judge:'심판',lkBtn:'심판 폰 · 전광판 QR',lkTitle:'심판 폰 · 전광판 연결',lkHow:'연결 방식',lkModeField:'현장 모드 와이파이',lkModeOnline:'인터넷',lkField:'현장 모드 와이파이로 연결됨 · 심판 폰을 같은 공유기 와이파이에 연결한 뒤 QR을 찍으세요',lkOnline:'인터넷으로 연결됨 · 방 코드 {r} · 심판 폰은 인터넷(LTE·와이파이)만 되면 됩니다',lkNone:'아직 연결되지 않았습니다',lkWhyNone:'심판 폰 연결은 KICKSTART 현장 모드 프로그램이나 홈페이지 앱 주소(liketkd-jpg.github.io/kickstart-field/hero/)에서 열었을 때 됩니다. 인터넷 방식은 인터넷 연결이 필요합니다.',lkBoardHelp:'TV·태블릿 전광판',lkNoKid:'이번 조 선수 없음',lkCopy:'주소 복사',copiedLink:'주소를 복사했습니다',lkSteps:'레인마다 심판 한 명이 자기 레인 QR을 찍습니다. 선수가 있는 레인만 밝게 표시됩니다(2명 경기면 2명, 3명이면 3명). 심판은 감점(+초)을 누르고, 아이가 결승선을 지나면 「도착!」을 누릅니다. 초록 점은 연결된 심판입니다.',lkWaitOp:'운영석을 기다리는 중…',lkConnecting:'연결하는 중…',lkRest:'이번 조는 이 레인에 선수가 없습니다. 다음 조를 기다려 주세요.',licTitle:'사용 권한 (허가 코드)',licPractice:'연습 모드 · 허가 코드 넣기',licLife:'평생',licKinds:{event:'대회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'},licSt_expired:'사용 기간이 끝났습니다',licSt_early:'사용 기간 전입니다',licSt_place:'이 코드는 홈페이지 앱 주소에서만 쓸 수 있습니다',licSt_need:'인터넷에 연결해 권한을 다시 확인해 주세요',licSt_app:'태권 히어로용 코드가 아닙니다',licNet:'인터넷에 연결되어 있어야 코드를 확인할 수 있습니다',licFail:'코드를 확인하지 못했습니다',licHelp:'코드가 없으면 연습 모드로 모든 기능을 써 볼 수 있습니다. 다만 선수는 {n}명까지이고 전광판에 「연습용」이 표시됩니다. KICKSTART UP에서 받은 코드를 넣으면 풀립니다.',licGo:'코드 확인하고 풀기',licBusy:'확인 중…',licRe:'지금 다시 확인',licDel:'이 기기에서 코드 빼기',licNeed:'코드를 넣어 주세요',licDone:'허가되었습니다 · {h}',licCap:'연습 모드는 선수 {n}명까지입니다 ({c}명은 넣지 못했습니다). 허가 코드를 넣으면 모두 등록됩니다',licOnline:'인터넷 주소에서만',licFile:'인터넷 없이 {n}일',licChecked:'마지막 확인',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
   mode:'경기 방식',mCut:'컷오프만',mTour:'토너먼트만',mBoth:'컷오프 후 토너먼트',
   mCutD:'모든 선수가 한 번씩 뛰고 기록 순으로 최종 순위를 정합니다.',mTourD:'4명씩 한 조로 뛰고 조별 상위 선수가 다음 라운드로 올라갑니다.',mBothD:'컷오프 기록 상위 선수만 토너먼트에 진출합니다.',
   advN:'토너먼트 진출 인원',perHeat:'조별 진출 인원',
@@ -542,7 +572,7 @@ const T={
   heatOf:'{h}조 / 전체 {n}조',full:'전체 화면',waiting:'대기',lanes:'레인 배정',course0:'코스'},
  en:{app:'Taekwon Heroes',sub:'Kids Obstacle Speed Challenge',tSetup:'Setup',tRun:'Run Event',tBoard:'Scoreboard',openBoard:'Scoreboard window',
   focusOk:'Buttons ready',focusNo:'Click the screen once',
-  evInfo:'Event',pwBtn:'Final power-up',judge:'Judge',lkBtn:'Judge phones · board QR',lkTitle:'Connect judge phones & scoreboard',lkHow:'Connection',lkModeField:'Field-mode Wi-Fi',lkModeOnline:'Internet',lkField:'Connected over field-mode Wi-Fi · join the same router Wi-Fi, then scan',lkOnline:'Connected over the internet · room {r} · judge phones just need internet',lkNone:'Not connected yet',lkWhyNone:'Judge phones work when this app is opened in the KICKSTART field-mode program or at the online app address (liketkd-jpg.github.io/kickstart-field/hero/). Internet mode needs a connection.',lkBoardHelp:'TV / tablet scoreboard',lkNoKid:'No runner this heat',lkCopy:'Copy link',copiedLink:'Link copied',lkSteps:'One judge per lane scans that lane’s QR. Lanes with a runner are highlighted. Judges tap penalties (+s) and press FINISH when the child crosses the line. A green dot means the judge is connected.',lkWaitOp:'Waiting for the operator…',lkConnecting:'Connecting…',lkRest:'No runner in this lane this heat. Please wait for the next heat.',licTitle:'License code',licPractice:'Practice mode · enter code',licLife:'lifetime',licKinds:{event:'Event pass',week:'1 week',month:'1 month',year:'1 year',life:'Lifetime'},licSt_expired:'License period has ended',licSt_early:'License period has not started',licSt_place:'This code works only at the online app address',licSt_need:'Connect to the internet to re-check the license',licSt_app:'This code is not for Taekwon Heroes',licNet:'Internet is needed to check the code',licFail:'Could not check the code',licHelp:'Without a code you can try every feature in practice mode, with up to {n} runners and a “PRACTICE” mark on the scoreboard. Enter the code from KICKSTART UP to unlock.',licGo:'Check & unlock',licBusy:'Checking…',licRe:'Re-check now',licDel:'Remove code from this device',licNeed:'Enter a code',licDone:'Unlocked · {h}',licCap:'Practice mode allows {n} runners ({c} not added). Enter a license code to add everyone.',licOnline:'online only',licFile:'{n} days offline',licChecked:'last check',evNameEn:'Event name (English screens)',evDivEn:'Division (English screens)',evName:'Event name',evDiv:'Division',
+  evInfo:'Event',fxTitle:'Show effects (on/off)',fxIntro:'Runner intros',fxIntroD:'Press Start and each lane’s hero flies in with the child’s name and team, then all line up and the race starts. Press Start again to skip.',fxRecord:'New record alert',fxRecordD:'When today’s fastest time in this division (with penalties) is beaten, NEW RECORD! bursts on the board. Today’s best is also shown.',fxCheer:'Crowd cheer meter',fxCheerD:'Measures crowd noise per lane with the laptop mic, shows gauges and announces the loudest lane. Does not affect results.',fxCam:'Finish-line camera replay',fxCamD:'With a webcam facing the finish line, the 3 seconds before and after the winner crosses replay in slow motion when results are confirmed, zoomed to that lane.',bestToday:'Today’s best',newRec:'A new best time today!',oldRec:'Previous',readyGo:'READY?',skipIntro:'Skip intro &',cheerT:'Cheer meter',cheerHelp:'Tap a lane: after “Cheer for lane N!” the noise is measured for 4 seconds. Auto measures each lane with a runner, then announces the winner.',cheerCall:'Cheer for lane {n}!',cheerWin:'Loudest: lane {n}!',cheerAuto:'Auto, lane by lane',cheerWinBtn:'Announce winner',micNo:'Microphone not available. Allow mic access in the browser',camOn:'Turn camera on',camOff:'Turn camera off',camDefault:'Default camera',camNo:'Could not start the camera. Check the webcam and browser permission (works in field mode or at the online app address).',camHint:'Turn the camera on to see the finish line here. Make all four lanes visible.',camRev:'Lane 1 is on the right side of the picture',camZoom:'Zoom to the winner’s lane',slowmo:'slow motion',flow_replay:'Replay {s}s',pwBtn:'Final power-up',judge:'Judge',lkBtn:'Judge phones · board QR',lkTitle:'Connect judge phones & scoreboard',lkHow:'Connection',lkModeField:'Field-mode Wi-Fi',lkModeOnline:'Internet',lkField:'Connected over field-mode Wi-Fi · join the same router Wi-Fi, then scan',lkOnline:'Connected over the internet · room {r} · judge phones just need internet',lkNone:'Not connected yet',lkWhyNone:'Judge phones work when this app is opened in the KICKSTART field-mode program or at the online app address (liketkd-jpg.github.io/kickstart-field/hero/). Internet mode needs a connection.',lkBoardHelp:'TV / tablet scoreboard',lkNoKid:'No runner this heat',lkCopy:'Copy link',copiedLink:'Link copied',lkSteps:'One judge per lane scans that lane’s QR. Lanes with a runner are highlighted. Judges tap penalties (+s) and press FINISH when the child crosses the line. A green dot means the judge is connected.',lkWaitOp:'Waiting for the operator…',lkConnecting:'Connecting…',lkRest:'No runner in this lane this heat. Please wait for the next heat.',licTitle:'License code',licPractice:'Practice mode · enter code',licLife:'lifetime',licKinds:{event:'Event pass',week:'1 week',month:'1 month',year:'1 year',life:'Lifetime'},licSt_expired:'License period has ended',licSt_early:'License period has not started',licSt_place:'This code works only at the online app address',licSt_need:'Connect to the internet to re-check the license',licSt_app:'This code is not for Taekwon Heroes',licNet:'Internet is needed to check the code',licFail:'Could not check the code',licHelp:'Without a code you can try every feature in practice mode, with up to {n} runners and a “PRACTICE” mark on the scoreboard. Enter the code from KICKSTART UP to unlock.',licGo:'Check & unlock',licBusy:'Checking…',licRe:'Re-check now',licDel:'Remove code from this device',licNeed:'Enter a code',licDone:'Unlocked · {h}',licCap:'Practice mode allows {n} runners ({c} not added). Enter a license code to add everyone.',licOnline:'online only',licFile:'{n} days offline',licChecked:'last check',evNameEn:'Event name (English screens)',evDivEn:'Division (English screens)',evName:'Event name',evDiv:'Division',
   mode:'Format',mCut:'Cut-off only',mTour:'Tournament only',mBoth:'Cut-off, then tournament',
   mCutD:'Every child runs once; final ranking by time.',mTourD:'Heats of 4; the top runners of each heat move on.',mBothD:'Only the fastest cut-off runners enter the tournament.',
   advN:'Runners into tournament',perHeat:'Advance per heat',
@@ -596,8 +626,11 @@ const JLANE=HM&&HM[1]?Number(HM[2])-1:-1;
 const QROOM=HM?(HM[3]||HM[5]||''):'';
 let OFF=0;const nowT=()=>Date.now()+OFF;
 let S=load()||defaults();
+/* 대회 연출 켜기·끄기 */
+const FXDEF={intro:true,record:true,cheer:false,cam:false,camRev:false,camZoom:true};
 S.ev=Object.assign({nameEn:'2026 Taekwon Heroes Challenge',divEn:'Kindergarten · Ages 5–7'},S.ev);
-S.cfg=Object.assign({auto:true,confirmSec:4,medalSec:5,standSec:8},S.cfg);
+S.cfg=Object.assign({fx:{},auto:true,confirmSec:4,medalSec:5,standSec:8},S.cfg);
+S.cfg.fx=Object.assign({},FXDEF,S.cfg.fx||{});
 let R={phase:'idle',count:0,start:0,go:0};
 let tab='run', learn=null, lastKey='', armed=null, slideIx=0, gateOpen=ROLE==='board';
 if(!Array.isArray(S.roster)){S.roster=SAMPLE_ROSTER();S.sampleRoster=true;S.divs={};S.dkey=''}
@@ -698,10 +731,24 @@ function projection(){ // future tournament rounds not built yet
 function commit(opts={}){save();if(ROLE==='ctrl'){render();send({t:'sync',S,R,L:licOk()})}}
 function ensureHeat(){const h=curHeat();return h&&!h.done?h:null}
 function startHeat(){
-  const h=ensureHeat();if(!h||R.phase!=='idle')return;
+  const h=ensureHeat();if(!h)return;
+  if(R.phase==='intro'){realStart();return}
+  if(R.phase!=='idle')return;
   if(!h.lanes.some(x=>x!=null))return;
   clearFlow();ac();
-  S.board='live';
+  if(S.cfg.fx.intro){beginIntro(h);return}
+  realStart();
+}
+let introT=[];
+function beginIntro(h){const lanes=[0,1,2,3].filter(k=>h.lanes[k]!=null);S.board='live';R={phase:'intro',ix:0,lanes,count:0,start:0,go:0};commit();sfx('intro',lanes[0]);
+  introT.forEach(clearTimeout);introT=[];
+  lanes.forEach((k,ix)=>{if(ix)introT.push(setTimeout(()=>{if(R.phase!=='intro')return;R.ix=ix;commit();sfx('intro',k)},ix*1900))});
+  introT.push(setTimeout(()=>{if(R.phase!=='intro')return;R.ix=lanes.length;commit();sfx('whoosh')},lanes.length*1900));
+  introT.push(setTimeout(()=>{if(R.phase==='intro')realStart()},lanes.length*1900+2200));}
+function realStart(){
+  introT.forEach(clearTimeout);introT=[];
+  const h=ensureHeat();if(!h)return;
+  S.board='live';CLIP=null;
   if(S.cfg.countdown){
     R={phase:'countdown',count:3,start:0,go:0};commit();sfx('beep');
     let c=3;const tick=()=>{c--;if(c>0){R.count=c;commit();sfx('beep')}else{goNow()}};
@@ -717,7 +764,7 @@ function finishLane(i){
   const first=heatOrder(h).filter(x=>h.time[x]!=null).length===1;
   if(heatComplete(h))R.phase='done';
   commit();maybeAutoConfirm();
-  if(first)fx('bolt',{lane:i});
+  if(first){fx('bolt',{lane:i});onFirstFinish(i)}
 }
 function undoLane(i){const h=ensureHeat();if(!h)return;h.time[i]=null;if(R.phase==='done')R.phase='running';commit();maybeAutoConfirm()}
 function toggleDnf(i){const h=ensureHeat();if(!h||h.lanes[i]==null)return;h.dnf[i]=!h.dnf[i];if(h.dnf[i])h.time[i]=null;
@@ -726,6 +773,7 @@ function addPen(i,sid,d){const h=ensureHeat();if(!h||h.lanes[i]==null)return;con
 function editTime(i,v){const h=ensureHeat();if(!h)return;const x=parseFloat(v);if(isFinite(x)&&x>0){h.time[i]=Math.round(x*1000);h.dnf[i]=false}commit();if(flowInfo&&flowInfo.label==='confirm')maybeAutoConfirm()}
 function confirmHeat(){
   const h=ensureHeat();if(!h||!heatComplete(h))return;
+  if(CLIP_PEND&&CLIP_PEND===heatKey()){setTimeout(confirmHeat,300);return}
   if(R.phase==='running'||R.phase==='countdown')return;
   h.done=true;R={phase:'idle',count:0,start:0,go:0};
   const o=heatOrder(h).filter(i=>!h.dnf[i]);
@@ -736,14 +784,21 @@ function confirmHeat(){
     if(r.kind==='cut'&&S.mode==='cut'){const e=entries(r).filter(x=>isFinite(x.tot));S.champ={order:e.map(x=>x.pid),lanes:e.map(x=>x.lane),times:e.map(x=>x.tot)};champ=true}
   }
   clearFlow();
-  if(champ){S.board='champion';commit();fx('champion');return}
-  S.board='heatres';S.lastHeat={r:S.cur.r,h:S.cur.h};
+  const rec=o.length?checkRecord(h,o[0]):null;
+  const clip=CLIP&&CLIP.heat===heatKey()?CLIP:null;CLIP=null;
+  if(champ){S.board='champion';commit();if(clip){playReplay(clip,()=>{fx('champion');if(rec)fx('record',rec)})}else{fx('champion');if(rec)setTimeout(()=>fx('record',rec),1800)}return}
+  S.lastHeat={r:S.cur.r,h:S.cur.h};
+  if(clip){S.board='live';commit();const dur=playReplay(clip);schedule(dur/1000,'replay',()=>{S.board='heatres';commit();if(rec)fx('record',rec);afterMedal()});return}
+  S.board='heatres';
+  afterMedal();
+  commit();if(o.length)fx('bolt',{lane:o[0],big:true});if(rec)setTimeout(()=>fx('record',rec),900);
+}
+function afterMedal(){
   schedule(S.cfg.medalSec,'stand',()=>{
     if(S.board==='heatres'){S.board='standings'}
     if(S.cfg.auto&&nextOpenHeat()>=0)schedule(S.cfg.standSec,'next',()=>{if(R.phase==='idle')nextHeat()});
     commit();
   });
-  commit();if(o.length)fx('bolt',{lane:o[0],big:true});
 }
 let flowT=null,flowInfo=null;
 function clearFlow(){clearTimeout(flowT);flowT=null;flowInfo=null}
@@ -917,7 +972,7 @@ function netAct(a){if(!a||a.lane==null)return;if(a.k!=='hello'&&a.k!=='hb'&&Math
   const h=curHeat();if(!h)return;const i=a.lane;
   if(a.k==='fin'){if(R.phase!=='running'||h.lanes[i]==null||h.time[i]!=null||h.dnf[i])return;
     const recv=Date.now(),sent=Math.min(Math.max(+a.at||recv,R.start),recv);const el=Math.round((sent+recv)/2)-R.start;if(el<800)return;
-    h.time[i]=el;sfx('finish',i);const first=heatOrder(h).filter(x=>h.time[x]!=null).length===1;if(heatComplete(h))R.phase='done';commit();maybeAutoConfirm();if(first)fx('bolt',{lane:i});}
+    h.time[i]=el;sfx('finish',i);const first=heatOrder(h).filter(x=>h.time[x]!=null).length===1;if(heatComplete(h))R.phase='done';commit();maybeAutoConfirm();if(first){fx('bolt',{lane:i});onFirstFinish(i)}}
   if(a.k==='pen')addPen(i,a.sid,a.d>0?1:-1);
   if(a.k==='undo')undoLane(i);
 }
@@ -963,6 +1018,67 @@ function renderJudge(){const host=document.getElementById('boardHost');document.
 function judgeClick(a,b){ac();if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}
   if(a==='jFin')netAct0({k:'fin'});if(a==='jPen')netAct0({k:'pen',sid:b.dataset.s,d:+b.dataset.d});if(a==='jUndo')netAct0({k:'undo'});}
 
+
+/* ================= 대회 연출: 입장 소개 · 신기록 · 응원 미터 · 결승선 카메라 다시 보기 ================= */
+const heatKey=()=>S.dkey+'|'+S.cur.r+'|'+S.cur.h;
+/* 신기록: 이 부문에서 오늘 가장 빠른 기록(페널티 포함)을 깨면 */
+function bestBefore(exceptH){let b=null;(S.rounds||[]).forEach(r=>r.heats.forEach(h=>{if(h===exceptH||!h.done)return;[0,1,2,3].forEach(i=>{if(h.lanes[i]==null||h.dnf[i]||h.time[i]==null)return;const v=total(h,i);if(b==null||v<b.v)b={v,pid:h.lanes[i]}})}));return b}
+function checkRecord(h,lane){if(!S.cfg.fx.record)return null;const prev=bestBefore(h),v=total(h,lane);if(!prev||!(v<prev.v))return null;const p=P(h.lanes[lane])||{};return {name:pn(p),team:p.team||'',time:v,old:prev.v,lane}}
+function bestLine(){if(!S.cfg.fx.record)return '';const h=curHeat();let b=bestBefore(null);if(h&&!h.done)[0,1,2,3].forEach(i=>{if(h.lanes[i]!=null&&!h.dnf[i]&&h.time[i]!=null){const v=total(h,i);if(!b||v<b.v)b={v,pid:h.lanes[i]}}});
+  return b?`<div class="bbest">🏆 ${esc(t('bestToday'))} <b>${fmt(b.v)}</b> · ${esc(pn(P(b.pid)))}</div>`:''}
+function showRecord(r){const o=document.createElement('div');o.className='recov';o.innerHTML=`<div class="rect"><b>NEW RECORD!</b><span>${esc(t('newRec'))}</span><i style="--c:var(${HEROES[r.lane||0].v})">${esc(r.name)} · ${fmt(r.time)}</i><small>${esc(t('oldRec'))} ${fmt(r.old)}</small></div>`;document.body.appendChild(o);setTimeout(()=>o.remove(),3200);
+  playLocal('fanfare');flash();confetti(160);if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}}
+/* 입장 소개 화면 (전광판) */
+function introHTML(h){const L=R.lanes||[],ix=R.ix||0;
+  if(ix<L.length){const k=L[ix],p=P(h.lanes[k])||{};
+    return `<div class="introv" style="--c:var(${HEROES[k].v})"><div class="ifig" key="${ix}">${heroFig(k,'','p3')}</div><div class="itx"><span class="ilane">${k+1}${S.lang==='en'?' ':''}${esc(t('lane'))}</span><b class="ihero">${esc(HEROES[k].en.toUpperCase())}</b><b class="iname">${esc(pn(p))}</b><span class="iteam">${esc(p.team||'')}</span></div></div>`}
+  return `<div class="introv all"><div class="iall">${L.map(k=>{const p=P(h.lanes[k])||{};return `<div style="--c:var(${HEROES[k].v})">${heroFig(k,'','p1')}<b>${esc(pn(p))}</b></div>`}).join('')}</div><div class="iready">${esc(t('readyGo'))}</div></div>`}
+/* ---- 응원 미터 ---- */
+const CH={stream:null,an:null,buf:null,busy:false};
+async function micOn(){if(CH.an)return true;try{const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const a=ac();const src=a.createMediaStreamSource(st);const an=a.createAnalyser();an.fftSize=1024;src.connect(an);CH.stream=st;CH.an=an;CH.buf=new Float32Array(an.fftSize);return true}catch(e){toast(t('micNo'));return false}}
+function micLevel(){if(!CH.an)return 0;CH.an.getFloatTimeDomainData(CH.buf);let s=0;for(const x of CH.buf)s+=x*x;const db=20*Math.log10(Math.sqrt(s/CH.buf.length)+1e-6);return Math.max(0,Math.min(100,(db+55)*2.2))}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function cheerLane(k){if(CH.busy)return;if(!(await micOn()))return;CH.busy=true;const ch=S.ch&&S.ch.heat===heatKey()?S.ch:{heat:heatKey(),vals:[null,null,null,null],win:-1};
+  S.ch={...ch,lane:k,step:'call',win:-1};S.board='cheer';commit();sfx('whoosh');await wait(2000);
+  S.ch.step='meas';commit();let peak=0,sm=0;const t0=Date.now();
+  while(Date.now()-t0<4000){sm=sm*.7+micLevel()*.3;peak=Math.max(peak,sm);send({t:'cheer',lane:k,lv:Math.round(sm)});document.querySelectorAll(`[data-chl="${k}"]`).forEach(el=>el.style.setProperty('--v',sm));await wait(60)}
+  S.ch.vals[k]=Math.round(peak);S.ch.step='done';CH.busy=false;commit();cheerDraw()}
+async function cheerAuto(){const h=curHeat();if(!h)return;for(const k of [0,1,2,3].filter(i=>h.lanes[i]!=null)){await cheerLane(k);await wait(800)}cheerWin()}
+function cheerWin(){if(!S.ch)return;let w=-1,b=-1;S.ch.vals.forEach((v,i)=>{if(v!=null&&v>b){b=v;w=i}});if(w<0)return;S.ch.win=w;S.ch.step='win';S.board='cheer';commit();fx('bolt',{lane:w,big:true});cheerDraw()}
+function cheerBoard(){const h=curHeat(),c=S.ch&&S.ch.heat===heatKey()?S.ch:{vals:[],lane:-1,step:'',win:-1};if(!h)return'';
+  const L=[0,1,2,3].filter(i=>h.lanes[i]!=null);
+  return `<div class="cheer"><div class="stitle">📣 ${esc(t('cheerT'))}${c.step==='call'||c.step==='meas'?` · <span class="ccall">${esc(t('cheerCall',{n:c.lane+1}))}</span>`:c.step==='win'?` · <span class="ccall">${esc(t('cheerWin',{n:c.win+1}))}</span>`:''}</div>
+   <div class="cgrid" style="--n:${L.length}">${L.map(k=>{const v=c.vals[k],act=c.lane===k&&(c.step==='meas'||c.step==='call'),win=c.win===k,p=P(h.lanes[k])||{};
+     return `<div class="ccol ${act?'act':''} ${win?'win':''}" style="--c:var(${HEROES[k].v})"><div class="cfig">${heroFig(k,'',win?'p1':act?'p3':'ready',win||undefined)}</div><div class="cbar"><i data-chl="${k}" style="--v:${v??0}"></i></div><b>${v!=null?v:'—'}</b><span>${esc(pn(p))}</span></div>`}).join('')}</div></div>`}
+let CHBOX=null;
+function cheerOpen(){if(!CHBOX){CHBOX=document.createElement('div');CHBOX.className='licov';CHBOX.setAttribute('role','dialog');document.body.appendChild(CHBOX)}cheerDraw()}
+function cheerClose(){if(CHBOX){CHBOX.remove();CHBOX=null}}
+function cheerDraw(){if(!CHBOX)return;const h=curHeat();const L=h?[0,1,2,3].filter(i=>h.lanes[i]!=null):[];const c=S.ch&&S.ch.heat===heatKey()?S.ch:{vals:[]};
+  CHBOX.innerHTML=`<div class="licbox"><div class="row" style="justify-content:space-between"><b class="lt">📣 ${esc(t('cheerT'))}</b><button class="btn" data-act="cheerClose" aria-label="close">✕</button></div>
+   <p class="note">${esc(t('cheerHelp'))}</p>
+   <div class="row">${L.map(k=>`<button class="btn" style="border-color:var(${HEROES[k].v})" data-act="cheerLane" data-v="${k}" ${CH.busy?'disabled':''}>${k+1}${S.lang==='en'?' ':''}${esc(t('lane'))} ${c.vals[k]!=null?'· '+c.vals[k]:''}</button>`).join('')}</div>
+   <div class="row"><button class="btn gold" data-act="cheerAuto" ${CH.busy?'disabled':''}>▶ ${esc(t('cheerAuto'))}</button><button class="btn red" data-act="cheerWin" ${CH.busy?'disabled':''}>🏆 ${esc(t('cheerWinBtn'))}</button><button class="btn ghost" data-act="screen" data-v="live">${esc(t('sLive'))}</button></div></div>`}
+/* ---- 결승선 카메라: 1등 도착 앞뒤 3초를 슬로모션으로 ---- */
+const CAM={stream:null,video:null,cv:null,frames:[],timer:null,err:''};let CLIP=null;let CLIP_PEND=null;
+async function camList(){try{return (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput')}catch(e){return[]}}
+async function camStart(){camStop();try{const id=S.cfg.fx.camId;CAM.stream=await navigator.mediaDevices.getUserMedia({video:{...(id?{deviceId:{exact:id}}:{}),width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30}},audio:false});
+    const v=document.createElement('video');v.muted=true;v.playsInline=true;v.srcObject=CAM.stream;await v.play();CAM.video=v;CAM.cv=document.createElement('canvas');CAM.cv.width=1280;CAM.cv.height=720;CAM.err='';
+    CAM.timer=setInterval(camGrab,66);render()}catch(e){CAM.err=t('camNo');render()}}
+function camStop(){clearInterval(CAM.timer);CAM.timer=null;if(CAM.stream)CAM.stream.getTracks().forEach(x=>x.stop());CAM.stream=null;CAM.video=null;CAM.frames.forEach(f=>f.url&&URL.revokeObjectURL(f.url));CAM.frames=[]}
+function camGrab(){const v=CAM.video;if(!v||v.readyState<2)return;const g=CAM.cv.getContext('2d');g.drawImage(v,0,0,CAM.cv.width,CAM.cv.height);const at=Date.now();
+  CAM.cv.toBlob(b=>{if(!b)return;CAM.frames.push({t:at,blob:b});const cut=Date.now()-9000;while(CAM.frames.length&&CAM.frames[0].t<cut){CAM.frames.shift()}},'image/jpeg',.72)}
+function onFirstFinish(lane){if(!S.cfg.fx.cam||!CAM.stream)return;const ft=Date.now(),hk=heatKey(),h=curHeat(),p=P(h.lanes[lane])||{},tm=h.time[lane];
+  CLIP_PEND=hk;setTimeout(()=>{const fr=CAM.frames.filter(f=>f.t>=ft-3000&&f.t<=ft+3000).map(f=>f.blob);if(fr.length>5)CLIP={heat:hk,lane,name:pn(p),time:tm,frames:fr};CLIP_PEND=null},3200)}
+function cropFor(lane,W,H){if(!S.cfg.fx.camZoom)return [0,0,W,H];const pos=S.cfg.fx.camRev?3-lane:lane;const cw=W*.46,chh=cw*9/16;let x=(pos+.5)/4*W-cw/2,y=H*.52-chh/2;x=Math.max(0,Math.min(W-cw,x));y=Math.max(0,Math.min(H-chh,y));return [x,y,cw,chh]}
+function playReplay(clip,done){const dur=Math.round(clip.frames.length*66/0.5);
+  if(ROLE==='ctrl')try{BC&&BC.postMessage({t:'replay',clip})}catch(e){}
+  showReplay(clip,done);return dur}
+async function showReplay(clip,done){if(!boardVisible()){done&&setTimeout(done,clip.frames.length*132);return}
+  const o=document.createElement('div');o.className='repov';o.innerHTML=`<canvas width="1280" height="720"></canvas><div class="rtag">⏪ REPLAY · ${esc(t('slowmo'))}</div><div class="rname" style="--c:var(${HEROES[clip.lane].v})">🥇 ${esc(clip.name)} · ${fmt(clip.time)}</div>`;document.body.appendChild(o);
+  const cv=o.querySelector('canvas'),g=cv.getContext('2d');playLocal('whoosh');
+  for(const b of clip.frames){let bm;try{bm=await createImageBitmap(b)}catch(e){continue}const [x,y,w,h]=cropFor(clip.lane,bm.width,bm.height);g.drawImage(bm,x,y,w,h,0,0,1280,720);bm.close&&bm.close();await wait(132)}
+  o.classList.add('out');setTimeout(()=>{o.remove();done&&done()},400)}
+
 /* ================= sound ================= */
 let AC=null;
 function ac(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}return AC}
@@ -977,6 +1093,7 @@ function playLocal(name,arg){
   if(name==='go'){tone(1320,.7,'square',.22);tone(660,.7,'sawtooth',.08)}
   if(name==='finish'){tone(N[arg||0],.12,'square',.18);tone(N[arg||0]*1.5,.25,'square',.16,.1)}
   if(name==='pen')tone(220,.22,'sawtooth',.16,0,110);
+  if(name==='intro'){noise(.35,.25,2200);tone(330,.18,'square',.14,.05,660);tone(660,.3,'square',.14,.22,990)}
   if(name==='whoosh')noise(.6,.35,1800);
   if(name==='thunder'){noise(1.8,.9,420);noise(.25,.6,3000);tone(90,1.2,'sawtooth',.12,0,40)}
   if(name==='fanfare'){[523,659,784,1047].forEach((f,i)=>tone(f,.22,'square',.15,i*.13));tone(1047,1,'square',.15,.55);tone(784,1,'square',.1,.55);tone(659,1,'square',.08,.55)}
@@ -984,7 +1101,7 @@ function playLocal(name,arg){
 
 /* ================= channel (scoreboard window) ================= */
 let BC=null;try{BC=new BroadcastChannel('tkhero-board')}catch(e){}
-function send(m){try{BC&&BC.postMessage(JSON.parse(JSON.stringify(m)))}catch(e){}if(ROLE==='ctrl'&&m&&(m.t==='sync'||m.t==='fx'||m.t==='sfx'))netOut(m)}
+function send(m){try{BC&&BC.postMessage(m.t==='replay'?m:JSON.parse(JSON.stringify(m)))}catch(e){}if(ROLE==='ctrl'&&m&&(m.t==='sync'||m.t==='fx'||m.t==='sfx'))netOut(m)}
 if(BC)BC.onmessage=ev=>{const m=ev.data||{};
   if(ROLE==='ctrl'){
     if(m.t==='hello'){boardSeen=Date.now();send({t:'sync',S,R,L:licOk()})}
@@ -993,6 +1110,9 @@ if(BC)BC.onmessage=ev=>{const m=ev.data||{};
     remoteMsg(m);
   }};
 function remoteMsg(m){if(!m)return;
+  if(m.t==='replay'&&ROLE==='board'){showReplay(m.clip);return}
+  if(m.t==='cheer'&&ROLE==='board'){document.querySelectorAll(`[data-chl="${m.lane}"]`).forEach(el=>el.style.setProperty('--v',m.lv));return}
+  if(m.t==='fx'&&m.name==='record'&&ROLE==='board'){showRecord(m.arg);return}
   if(m.t==='sync'){if(m.now)OFF=m.now-Date.now();const keepRoster=S&&S.roster;S={...m.S,roster:m.S.roster||keepRoster||[],divs:m.S.divs||{}};R=m.R;BOARD_LIC=!!m.L;linked=true;if(ROLE==='judge')renderJudge();else renderBoard();}
   if(m.t==='fx'&&ROLE==='board')runFx(m.name,m.arg);
   if(m.t==='sfx'&&ROLE==='board')playLocal(m.name,m.arg);
@@ -1005,7 +1125,7 @@ function handleKey(k){
   if(learn!=null){if(k==='Escape'){learn=null;render();return}
     if(learn==='start')S.cfg.startKey=k;else S.cfg.keys[learn]=k;learn=null;commit();return}
   const kl=String(k).toLowerCase();
-  if(kl===String(S.cfg.startKey).toLowerCase()){if(R.phase==='idle')startHeat();return}
+  if(kl===String(S.cfg.startKey).toLowerCase()){if(R.phase==='idle'||R.phase==='intro')startHeat();return}
   const i=S.cfg.keys.findIndex(x=>String(x).toLowerCase()===kl);
   if(i>=0)finishLane(i);
   if(tab==='setup')render();
@@ -1159,8 +1279,11 @@ function renderTop(){
 function setTab(k){tab=k;learn=null;render();if(k==='board')goFull()}
 function goFull(){keepAwake();try{const el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)el.requestFullscreen().catch(()=>{})}catch(e){}}
 
+function camPreview(){const pv=document.getElementById('camPv');if(pv&&CAM.video&&!pv.contains(CAM.video)){CAM.video.className='camv';pv.prepend(CAM.video)}
+  if(S.cfg.fx.cam&&!window.__camsAsked){window.__camsAsked=1;camList().then(l=>{window.__cams=l;if(tab==='setup')render()})}}
 function render(){
   if(ROLE==='judge'){renderJudge();return}
+  setTimeout(camPreview,0);
   if(ROLE==='board'){renderBoard();return}
   renderTop();
   const app=document.getElementById('app');
@@ -1246,6 +1369,11 @@ function viewSetup(){
      <label class="chk"><input type="checkbox" id="snd" data-in="cfg.sound" ${S.cfg.sound?'checked':''}>${esc(t('sound'))}</label>
      <label class="f" style="max-width:16rem">${esc(t('soundAt'))}<select id="sndAt" data-in="cfg.soundAt"><option value="ctrl" ${S.cfg.soundAt!=='board'?'selected':''}>${esc(t('atCtrl'))}</option><option value="board" ${S.cfg.soundAt==='board'?'selected':''}>${esc(t('atBoard'))}</option></select></label>
     </div>
+    <h2 style="margin-top:16px">${esc(t('fxTitle'))}</h2>
+    <div class="fxlist">${[['intro','fxIntro'],['record','fxRecord'],['cheer','fxCheer'],['cam','fxCam']].map(([k,l])=>`<div class="fxrow"><button class="tgl ${S.cfg.fx[k]?'on':''}" data-act="fxT" data-v="${k}" aria-pressed="${!!S.cfg.fx[k]}"><i></i></button><div><b>${esc(t(l))}</b><span class="note">${esc(t(l+'D'))}</span></div></div>`).join('')}</div>
+    ${S.cfg.fx.cam?`<div class="camset"><div class="row">${CAM.stream?`<button class="btn" data-act="camOff">${esc(t('camOff'))}</button>`:`<button class="btn gold" data-act="camOn">📷 ${esc(t('camOn'))}</button>`}<select id="camSel" aria-label="camera"><option value="">${esc(t('camDefault'))}</option>${(window.__cams||[]).map(d=>`<option value="${esc(d.deviceId)}" ${S.cfg.fx.camId===d.deviceId?'selected':''}>${esc(d.label||'Camera')}</option>`).join('')}</select></div>
+      ${CAM.err?`<p class="licerr">${esc(CAM.err)}</p>`:''}<div class="campv" id="camPv">${CAM.stream?'':`<span class="note">${esc(t('camHint'))}</span>`}<div class="lanes4">${[0,1,2,3].map(i=>{const k=S.cfg.fx.camRev?3-i:i;return `<i style="--c:var(${HEROES[k].v})">${k+1}</i>`}).join('')}</div></div>
+      <label class="chk"><input type="checkbox" id="camRev" ${S.cfg.fx.camRev?'checked':''}>${esc(t('camRev'))}</label><label class="chk"><input type="checkbox" id="camZoom" ${S.cfg.fx.camZoom?'checked':''}>${esc(t('camZoom'))}</label></div>`:''}
     <h2 style="margin-top:16px">${esc(t('autoTitle'))}</h2>
     <label class="chk"><input type="checkbox" id="auto" data-in="cfg.auto" ${S.cfg.auto?'checked':''}>${esc(t('autoOn'))}</label>
     <div class="row" style="margin-top:8px">
@@ -1287,7 +1415,7 @@ function viewRun(){
     ${heroLogo('mid')}
     <div class="flowpill" ${flowInfo?'':'hidden'}><span data-flow>${flowInfo?esc(t('flow_'+flowInfo.label,{s:Math.max(0,Math.ceil((flowInfo.until-Date.now())/1000))})):''}</span><button class="btn" data-act="stopFlow">${esc(t('stop'))}</button></div>
     <div class="clock" data-clock>${R.phase==='countdown'?R.count:fmt(h.time.some(x=>x!=null)?Math.max(...h.time.filter(x=>x!=null)):0)}</div>
-    <button class="go" data-act="start" ${R.phase!=='idle'||h.done?'disabled':''}>${esc(t('start'))} <kbd>${esc(keyLabel(S.cfg.startKey))}</kbd></button>
+    <button class="go" data-act="start" ${(R.phase!=='idle'&&R.phase!=='intro')||h.done?'disabled':''}>${R.phase==='intro'?esc(t('skipIntro'))+' ':''}${esc(t('start'))} <kbd>${esc(keyLabel(S.cfg.startKey))}</kbd></button>
   </section>
   <div class="lanes">${[0,1,2,3].map(i=>laneCard(h,i)).join('')}</div>
   <section class="card runfoot">
@@ -1301,6 +1429,7 @@ function viewRun(){
     <div class="screens">${[['intro','sIntro'],['live','sLive'],['standings','sStand'],['bracket','sBracket'],['champion','sChamp']].map(([v,k])=>`<button data-act="screen" data-v="${v}" aria-pressed="${S.board===v}">${esc(t(k))}</button>`).join('')}</div>
     <button class="btn ghost" data-act="tab" data-v="board">⛶ ${esc(t('tBoard'))}</button>
     <button class="btn" data-act="linkOpen">📱 ${esc(t('lkBtn'))}</button>
+    ${S.cfg.fx.cheer?`<button class="btn" data-act="cheerOpen">📣 ${esc(t('cheerT'))}</button>`:''}
     ${r.kind==='tour'&&r.final?`<button class="btn gold" data-act="pwup">⚡ ${esc(t('pwBtn'))}</button>`:''}
    </div>
    <div class="heats">
@@ -1349,6 +1478,7 @@ function renderBoard(){
   else if(S.board==='bracket')body=boardBracket();
   else if(S.board==='champion')body=boardChamp();
   else if(S.board==='heatres')body=boardHeatRes();
+  else if(S.board==='cheer')body=cheerBoard();
   else body=boardIntro();
   let dock='';
   if(ROLE==='ctrl'){
@@ -1378,9 +1508,10 @@ function boardLive(h){
       <div class="btime" data-lt="${i}">${dnf?esc(t('dnf')):(tm!=null?fmt(h.pen[i]&&penSec(h,i)?total(h,i):tm):fmt(0))}</div>
       <div class="bpen">${pens}</div></div>`;
   }).join('');
+  if(R.phase==='intro')return introHTML(h);
   const cd=R.phase==='countdown'?`<div class="cd"><b>${R.count}</b></div>`:(R.phase==='running'&&nowT()-R.go<900?`<div class="cd"><b class="gotxt">${esc(t('go'))}</b></div>`:'');
   const last=Math.max(0,...h.time.filter(x=>x!=null));
-  return`<div class="blive"><div class="bevbig">${heroLogo('big')}</div><div class="bclock" data-clock>${R.phase==='countdown'?'0.00':fmt(R.phase==='running'?0:last)}</div><div class="blanes">${lanes}</div>${cd}</div>`;
+  return`<div class="blive"><div class="bevbig">${heroLogo('big')}</div>${bestLine()}<div class="bclock" data-clock>${R.phase==='countdown'?'0.00':fmt(R.phase==='running'?0:last)}</div><div class="blanes">${lanes}</div>${cd}</div>`;
 }
 function boardIntro(){
   const r=curRound(),h=curHeat();
@@ -1480,6 +1611,7 @@ function powerUp(){if(!boardVisible())return;playLocal('fanfare');setTimeout(()=
   flash();if(!matchMedia('(prefers-reduced-motion: reduce)').matches){const W=cv.width,H=cv.height;[.15,.38,.62,.85].forEach((x,k)=>setTimeout(()=>{bolts.push(makeBolt(W*x,H));flash()},300+k*220));confetti(220);if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}}}
 function runFx(name,arg){
   if(name==='powerup'){powerUp();return}
+  if(name==='record'){if(boardVisible())showRecord(arg);return}
   if(name==='bolt'||name==='champion')playLocal(name==='champion'?'fanfare':'thunder');
   if(!boardVisible())return;
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -1536,6 +1668,10 @@ document.addEventListener('click',e=>{
   switch(a){
     case'tab':setTab(v);break;
     case'licOpen':licOpen();break;
+    case'cheerOpen':cheerOpen();break;case'cheerClose':cheerClose();break;
+    case'cheerLane':cheerLane(+v).then(cheerDraw);cheerDraw();break;case'cheerAuto':cheerAuto().then(cheerDraw);cheerDraw();break;case'cheerWin':cheerWin();break;
+    case'fxT':S.cfg.fx[v]=!S.cfg.fx[v];if(v==='cam'&&!S.cfg.fx.cam)camStop();commit();break;
+    case'camOn':camStart();break;case'camOff':camStop();render();break;
     case'pwup':S.board='live';commit();fx('powerup');break;
     case'linkOpen':linkOpen();break;
     case'linkClose':linkClose();break;
@@ -1590,6 +1726,9 @@ document.addEventListener('change',e=>{
   if(el.dataset.in==='xlsfile'){readExcel(el.files&&el.files[0]);el.value='';return}
   if(el.dataset.rdiv){const a=S.roster.find(x=>x.id===el.dataset.rdiv);if(a){a.div=el.value;S.sampleRoster=false;commit()}return}
   if(el.id==='divSel'){pickDiv(el.value);return}
+  if(el.id==='camSel'){S.cfg.fx.camId=el.value;commit();if(CAM.stream)camStart();return}
+  if(el.id==='camRev'){S.cfg.fx.camRev=el.checked;commit();return}
+  if(el.id==='camZoom'){S.cfg.fx.camZoom=el.checked;commit();return}
   if(el.dataset.st){const st=S.st.find(x=>x.id===el.dataset.st);if(st){st[el.dataset.k]=el.dataset.k==='pen'?Math.max(0,parseFloat(el.value)||0):el.value}commit();return}
   const k=el.dataset.in;if(!k)return;
   let val=el.type==='checkbox'?el.checked:el.value;
