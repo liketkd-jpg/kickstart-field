@@ -875,7 +875,9 @@ function athlete(id){if(!S.athIdx)S.athIdx=new Map(S.roster.map(a=>[a.id,a]));re
 const aName=id=>athlete(id)?.name||'(삭제됨)';
 const aTeam=id=>athlete(id)?.team||'';
 /* 부문 이름: 부별 + 학년 + 성별 + 체급 (예: 중등부 1학년 남자 -45kg) */
-function divKey(a){if(a.division)return a.division;return [a.group||'',a.grade||'',a.gender?a.gender+'자':'',a.weight||''].filter(Boolean).join(' ')||'미분류';}
+/* 실력별 A조·B조: 부문 이름 끝에 붙임 (접수 홈페이지 「실력조」 칸) */
+function divKey(a){const k=divKey0(a);return a.cls&&!a.division?k+' '+a.cls:k;}
+function divKey0(a){if(a.division)return a.division;return [a.group||'',a.grade||'',a.gender?a.gender+'자':'',a.weight||''].filter(Boolean).join(' ')||'미분류';}
 function buildRound1(order){
   if(!order.length)return [];
   let size=1;while(size<order.length)size*=2;
@@ -1798,7 +1800,7 @@ async function readExcel(file){
     const out=rows.map(r=>{const name=String(pick(r,['이름','성명','선수'])).trim();if(!name||name.includes('(예시)'))return null;
       const g=String(pick(r,['성별'])).trim();
       return {id:rid('a'),zh:String(pick(r,['중문','중국','한자'],['소속','도장','학교','팀원'])).trim(),en:String(pick(r,['영문','영어'],['소속','도장','학교','팀원'])).trim(),zhTeam:String(pick(r,['중문소속','중국소속','중문도장','한자소속'])).trim(),enTeam:String(pick(r,['영문소속','영어소속','영문도장'])).trim(),name,team:String(pick(r,['소속','도장','학교','팀'])).trim(),coach:String(pick(r,['지도자','코치','감독'])).trim(),gender:/여|f|w/i.test(g)?'여':'남',
-        ...buNorm(String(pick(r,['부별','종별'],['체급'])).trim(),normGrade(pick(r,['학년']))),weight:String(pick(r,['체급','급'],['부별','학년'])).trim(),division:String(pick(r,['부문'])).trim()};}).filter(Boolean);
+        ...buNorm(String(pick(r,['부별','종별'],['체급'])).trim(),normGrade(pick(r,['학년']))),weight:String(pick(r,['체급','급'],['부별','학년'])).trim(),division:String(pick(r,['부문'])).trim(),cls:(v=>{const t=String(v??'').trim().toUpperCase().replace(/\s/g,'');return /^A(조|반)?$/.test(t)?'A조':/^B(조|반)?$/.test(t)?'B조':'';})(pick(r,['실력조']))};}).filter(Boolean);
     if(!out.length)return toast('이름이 있는 줄을 찾지 못했습니다. 첫 줄에 "이름" 열이 있는지 확인해 주세요');
     ui.importRows=out;render();
     if(pdfInfo)toast(`PDF ${pdfInfo.pages}쪽에서 ${out.length}명을 읽었습니다 (${pdfInfo.mode} 형식). 아래 미리보기에서 체급·부별을 확인해 주세요`);
@@ -4013,7 +4015,7 @@ async function roster(comp){const t=await token();if(!t)throw new Error('로그�
   return await call('/rest/v1/rpc/get_roster',{method:'POST',headers:H(t),body:JSON.stringify({p_comp:comp,p_sport:sport()})})||[];}
 /* 접수 홈페이지의 엑셀 내보내기와 같은 모양 (각 앱 불러오기 형식) */
 /* 나라 칸을 맨 뒤에 붙임 (nat.js 가 읽어 국기에 씀) */
-function rows(sp,E){const R=rows0(sp,E);const nat=e=>[...new Set(e.athletes.map(a=>a.country||(e.coach&&e.coach.country)||'').filter(Boolean))].join(',');
+function rows(sp,E){const R=rows0(sp,E);if(E.some(e=>e.f&&e.f.cls)){R[0]=[...R[0],'실력조'];E.forEach((e,i)=>{if(R[i+1])R[i+1]=[...R[i+1],(e.f&&e.f.cls)||''];});}const nat=e=>[...new Set(e.athletes.map(a=>a.country||(e.coach&&e.coach.country)||'').filter(Boolean))].join(',');
   if(!E.some(e=>nat(e)))return R;R[0]=[...R[0],'나라'];E.forEach((e,i)=>{if(R[i+1])R[i+1]=[...R[i+1],nat(e)];});return R;}
 function rows0(sp,E){
   const org=e=>(e.athletes[0]&&e.athletes[0].org)||e.coach.org||'',names=e=>e.athletes.map(a=>a.name).join(',');

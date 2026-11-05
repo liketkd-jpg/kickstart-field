@@ -1356,7 +1356,9 @@ function ageGroup(age,type,event){
   const a=Number(age);if(age==null||age===''||isNaN(a))return '연령 미상';
   for(const [lo,hi,n] of sch)if(a>=lo&&a<=hi)return n;return '연령 미상';
 }
-function divKey(a){
+/* 실력별 A조·B조: 부문 이름 끝에 붙임 (접수 홈페이지 「실력조」 칸) */
+function divKey(a){const k=divKey0(a);return a.cls&&!a.division?k+' '+a.cls:k;}
+function divKey0(a){
   if(a.division)return a.division;
   /* 새 양식: 공인/자유 + 종목 + 부별 + 학년 + 성별 (예: 공인 개인전 중등부 1학년 남자) */
   if(a.group){const t=SH(a.type).short,ev=a.event||'ind',g=ev==='pair'||a.gender==='혼성'?'혼성':a.gender+'자';
@@ -3192,7 +3194,7 @@ async function readExcel(file){
       const event=/단체/.test(ev)?'team':/복식|페어|pair/i.test(ev)?'pair':'ind';
       const gender=event==='pair'||/혼성|mix/i.test(g)?'혼성':/여|f|w/i.test(g)?'여':'남';
       return {id:rid('a'),zh:String(pick(r,['중문','중국','한자'],['소속','도장','학교','팀원'])).trim(),en:String(pick(r,['영문','영어'],['소속','도장','학교','팀원'])).trim(),zhTeam:String(pick(r,['중문소속','중국소속','중문도장','한자소속'])).trim(),enTeam:String(pick(r,['영문소속','영어소속','영문도장'])).trim(),name,team:String(pick(r,['소속','도장','학교'],['팀원'])).trim(),coach:String(pick(r,['지도자','코치','감독'])).trim(),gender,age,event,members:String(pick(r,['팀원','명단','구성'])).trim(),
-        type:typeOf(t),division:String(pick(r,['부문'])).trim(),
+        type:typeOf(t),division:String(pick(r,['부문'])).trim(),cls:(v=>{const t=String(v??'').trim().toUpperCase().replace(/\s/g,'');return /^A(조|반)?$/.test(t)?'A조':/^B(조|반)?$/.test(t)?'B조':'';})(pick(r,['실력조'])),
         ...buNorm(String(pick(r,['부별','종별'])).trim(),(v=>{const x=String(v??'').trim();return /^\d$/.test(x)?x+'학년':x;})(pick(r,['학년'])))};
     }).filter(Boolean).map(x=>isTeamType(x.type)?{...x,event:'team'}:x);
     if(!out.length){toast('이름이 있는 줄을 찾지 못했습니다. 첫 줄에 "이름" 열이 있는지 확인해 주세요');return;}
@@ -5525,7 +5527,7 @@ async function roster(comp){const t=await token();if(!t)throw new Error('로그�
   return await call('/rest/v1/rpc/get_roster',{method:'POST',headers:H(t),body:JSON.stringify({p_comp:comp,p_sport:sport()})})||[];}
 /* 접수 홈페이지의 엑셀 내보내기와 같은 모양 (각 앱 불러오기 형식) */
 /* 나라 칸을 맨 뒤에 붙임 (nat.js 가 읽어 국기에 씀) */
-function rows(sp,E){const R=rows0(sp,E);const nat=e=>[...new Set(e.athletes.map(a=>a.country||(e.coach&&e.coach.country)||'').filter(Boolean))].join(',');
+function rows(sp,E){const R=rows0(sp,E);if(E.some(e=>e.f&&e.f.cls)){R[0]=[...R[0],'실력조'];E.forEach((e,i)=>{if(R[i+1])R[i+1]=[...R[i+1],(e.f&&e.f.cls)||''];});}const nat=e=>[...new Set(e.athletes.map(a=>a.country||(e.coach&&e.coach.country)||'').filter(Boolean))].join(',');
   if(!E.some(e=>nat(e)))return R;R[0]=[...R[0],'나라'];E.forEach((e,i)=>{if(R[i+1])R[i+1]=[...R[i+1],nat(e)];});return R;}
 function rows0(sp,E){
   const org=e=>(e.athletes[0]&&e.athletes[0].org)||e.coach.org||'',names=e=>e.athletes.map(a=>a.name).join(',');

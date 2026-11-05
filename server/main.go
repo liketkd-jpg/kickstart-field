@@ -30,7 +30,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.26" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.27" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
