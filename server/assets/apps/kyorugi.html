@@ -4018,7 +4018,7 @@ function rows(sp,E){const R=rows0(sp,E);const nat=e=>[...new Set(e.athletes.map(
 function rows0(sp,E){
   const org=e=>(e.athletes[0]&&e.athletes[0].org)||e.coach.org||'',names=e=>e.athletes.map(a=>a.name).join(',');
   if(sp==='poomsae')return [['번호','이름','소속','지도자','부별','학년','성별','공인/자유','종목','팀원'],...E.map((e,i)=>{const A=e.athletes,g=new Set(A.map(a=>a.gender)),team=A.length>1;
-    return [i+1,team?(e.f.team||names(e)):A[0].name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',g.size>1?'혼성':A[0].gender,e.f.type||'공인',/체조|종합/.test(e.f.type||'')?'단체':(e.f.kind||'개인'),team?names(e):''];})];
+    return [i+1,team?(e.f.team||names(e)):A[0].name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',/체조|종합/.test(e.f.type||'')&&e.f.tg?({혼합:'혼성',남:'남',여:'여'}[e.f.tg]||'혼성'):g.size>1?'혼성':A[0].gender,e.f.type||'공인',/체조|종합/.test(e.f.type||'')?'단체':(e.f.kind||'개인'),team?names(e):''];})];
   if(sp==='kyorugi')return [['번호','이름','소속','지도자','부별','학년','성별','체급'],...E.map((e,i)=>{const a=e.athletes[0];return [i+1,a.name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',a.gender,e.f.weight||''];})];
   return [['이름','종목','성별','부별','소속','지도자','체중(kg)','신장(cm)','팀원','부문'],...E.map(e=>{const team=e.f.ev==='기술격파 단체전';
     return [team?`${org(e)} 팀`:e.athletes[0].name,e.f.ev||'',team?'':e.athletes[0].gender,e.f.div||'',org(e),e.coach.name||'',e.f.weight||'',e.f.height||'',team?names(e):'',''];})];
