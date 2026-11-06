@@ -3,7 +3,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@600;800&family=Black+Han+Sans&family=Jua&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@600;800&family=Black+Han+Sans&family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* Layout: comic-book night city. Operator console (tabs) on top; the scoreboard is a full-bleed stage with four hero lanes. */
@@ -770,6 +770,70 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .judge.boss .jkick{min-height:0!important}
 .judge .legs.big{margin:0;height:100%;align-items:center}
 .jpen span i{font-style:normal}.jpen .jn{font-family:var(--f-disp)}.jpen .jv{display:flex;gap:6px;justify-content:center}
+
+/* ===== 전광판 v3: 깔끔한 글로벌 디자인 =====
+   글꼴 2개(글자 Noto Sans KR · 숫자 Orbitron) / 정보 3단계(이름·기록 > 부문·라운드 > 소속) / 화면 비율에 맞춰 줄어드는 단위 --u */
+.board.v3{--u:min(1vw,1.7778vh);--bt:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--f-hero:var(--bt);--f-disp:var(--bt);--f-body:var(--bt);font-family:var(--bt);row-gap:calc(1.2*var(--u))}
+.board.v3 b{font-weight:800}
+.board.v3 .bhead{grid-template-columns:1fr auto 1fr;gap:calc(2*var(--u));padding-bottom:calc(1*var(--u));border-bottom:1px solid rgba(255,255,255,.12)}
+.board.v3 .bks{justify-self:start}
+.board.v3 .bks .ks svg{width:calc(3*var(--u));height:calc(3*var(--u))}.board.v3 .bks .ksw{font-size:calc(1.15*var(--u))}
+.board.v3 .bev{display:grid;justify-items:center;gap:calc(.3*var(--u))}
+.board.v3 .bev .evn{font-family:var(--bt);font-size:calc(1.25*var(--u))!important;font-weight:500;color:var(--muted)!important;letter-spacing:.06em}
+.board.v3 .bev b{font-size:calc(2.6*var(--u))!important;line-height:1.1;font-weight:900;letter-spacing:.03em}
+.board.v3 .bev b small{font-size:.55em;font-weight:500;color:var(--muted);margin-left:.7em;letter-spacing:0}
+.board.v3 .bround{justify-self:end;display:grid;justify-items:end;gap:calc(.3*var(--u));transform:none;background:none;border:0;box-shadow:none!important;padding:0;font-size:inherit!important;border-radius:0}
+.board.v3 .bround b{font-family:var(--bt);font-weight:900;font-size:calc(1.7*var(--u));letter-spacing:.1em;color:#fff;background:var(--red);padding:calc(.3*var(--u)) calc(1.2*var(--u));border-radius:calc(.6*var(--u));white-space:nowrap}
+.board.v3 .bround small{font-size:calc(1.15*var(--u));color:var(--muted);white-space:nowrap}
+.board.v3 .bmain{margin-top:0}
+.board.v3 .blive{grid-template-rows:auto minmax(0,1fr);gap:calc(1.4*var(--u))!important}
+.board.v3 .bclockw{justify-self:center;display:grid;justify-items:center;gap:calc(.6*var(--u))}
+.board.v3 .bclock{font-size:calc(5.4*var(--u))!important;padding:calc(.1*var(--u)) calc(2.4*var(--u));border-radius:calc(1*var(--u));text-shadow:0 0 calc(1.6*var(--u)) color-mix(in srgb,var(--blue) 55%,transparent)}
+.board.v3 .bbest{display:flex;align-items:baseline;gap:calc(.8*var(--u));font-family:var(--bt);font-size:calc(1.25*var(--u));background:none;border:0;padding:0;color:var(--paper)}
+.board.v3 .bbest span{letter-spacing:.16em;font-weight:700;color:var(--gold)}
+.board.v3 .bbest b{font-family:var(--f-num);font-size:1.2em;color:#fff}
+.board.v3 .bbest em{font-style:normal;color:var(--muted)}
+.board.v3 .blanes{gap:calc(1.4*var(--u))!important}
+.board.v3 .bl{grid-template-rows:minmax(0,1fr) calc(2.4*var(--u)) calc(6.2*var(--u)) calc(2.4*var(--u)) calc(6.6*var(--u)) calc(2.6*var(--u))!important;align-items:center;row-gap:calc(.3*var(--u));padding:calc(1*var(--u)) calc(1*var(--u)) calc(1.4*var(--u))!important;border-radius:calc(1.6*var(--u))!important}
+.board.v3 .bl .hero svg{max-height:100%!important}
+.board.v3 .bl .htag{transform:none;font-family:var(--bt);font-weight:800;font-size:calc(1.1*var(--u))!important;letter-spacing:.28em;padding:calc(.25*var(--u)) calc(1*var(--u)) calc(.25*var(--u)) calc(1.28*var(--u));border:0;border-radius:999px;background:var(--c);color:#020010;line-height:1.2}
+.board.v3 .bl .bn{font-size:calc(var(--bnu,4)*1.1*var(--u))!important;font-weight:900;line-height:1.05!important;letter-spacing:-.01em}
+.board.v3 .bl .bt{font-size:calc(1.35*var(--u))!important;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.board.v3 .bl .btime{font-size:calc(4.4*var(--u))!important;padding:0 calc(1.6*var(--u));border-radius:calc(.9*var(--u));line-height:1.3;margin-top:0}
+.board.v3 .bl .bpen{min-height:0;gap:calc(.4*var(--u))}
+.board.v3 .bl .bpen span{font-family:var(--bt);font-weight:700;font-size:calc(1.1*var(--u))!important;padding:calc(.1*var(--u)) calc(.8*var(--u));border:0;border-radius:999px;background:color-mix(in srgb,var(--bad) 80%,#000);color:#fff}
+.board.v3 .bl .bplace{top:calc(1*var(--u));right:calc(1*var(--u));width:calc(4.4*var(--u))!important;height:calc(5.6*var(--u))!important}
+.board.v3 .bl .bplace.p1{width:calc(5.8*var(--u))!important;height:calc(7.2*var(--u))!important}
+.board.v3 .legs{gap:calc(.4*var(--u));margin-left:calc(.6*var(--u))}.board.v3 .legs i{width:calc(1*var(--u));height:calc(1*var(--u))}
+.board.v3 .bosshd{grid-template-columns:1fr auto 1fr;gap:calc(2*var(--u))}
+.board.v3 .bosshd .bclock{font-size:calc(5*var(--u))!important}
+.board.v3 .bosshd .bclock small{font-family:var(--bt);font-weight:700;font-size:calc(1.05*var(--u));letter-spacing:.16em}
+.board.v3 .bossinfo{justify-self:start}
+.board.v3 .vbox{gap:calc(.6*var(--u))}
+.board.v3 .villain{height:calc(20*var(--u))}
+.board.v3 .vbox.st3 .villain{height:calc(23*var(--u))}
+.board.v3 .vname{font-family:var(--bt);font-weight:800;font-size:calc(1.3*var(--u));letter-spacing:.14em}
+.board.v3 .vname b{font-weight:800}
+.board.v3 .vhp{width:calc(30*var(--u));height:calc(2*var(--u));border-width:calc(.2*var(--u))}
+.board.v3 .vhp b{font-size:calc(1.2*var(--u));line-height:calc(1.6*var(--u))}
+.board.v3 .blive.boss .bl .hero svg{max-height:100%}
+.board.v3 .bl .btime.kick{font-size:calc(4.8*var(--u))!important}
+.board.v3 .stitle{font-family:var(--bt);font-weight:900;letter-spacing:.06em;line-height:1.1;text-align:center}
+.board.v3 .stitle small,.board.v3 .champtitle small{display:block;font-size:.48em;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:.3em;-webkit-text-stroke:0;text-shadow:none;background:none;-webkit-text-fill-color:var(--muted)}
+.board.v3 .champtitle{font-family:var(--bt);font-weight:900;font-style:normal;transform:none;letter-spacing:.05em;line-height:1.05;font-size:calc(4.2*var(--u))!important}
+.board.v3 .champtitle{background:none!important;-webkit-text-fill-color:var(--gold);color:var(--gold);-webkit-text-stroke:0;text-shadow:0 0 calc(2*var(--u)) rgba(255,210,63,.35)}
+.board.v3 .villain{height:calc(14*var(--u))}
+.board.v3 .vbox.st3 .villain{height:calc(16*var(--u))}
+.board.v3 .blive.boss{gap:calc(1*var(--u))!important}
+.board.v3 .blive.boss .bl{grid-template-rows:minmax(0,1fr) calc(2*var(--u)) calc(4.4*var(--u)) calc(2*var(--u)) calc(5.2*var(--u)) 0!important}
+.board.v3 .blive.boss .bl .bn{font-size:calc(var(--bnu,4)*.9*var(--u))!important}.board.v3 .blive.boss .bl .btime.kick{font-size:calc(4*var(--u))!important}
+.bline>div:nth-child(n){animation-delay:0s}.bline>div:nth-of-type(2){animation-delay:.5s}.bline>div:nth-of-type(3){animation-delay:1s}
+.bline>div:nth-child(3) .villain{height:24vh}.bline>div:nth-of-type(3) .villain{height:34vh}
+.bossslide .bline b{font-size:2.4vw;font-family:var(--f-disp);color:#ff9ad0;text-shadow:none}
+.bossslide .bline .villain{height:24vh}.bossslide .bline>div:nth-of-type(3) .villain{height:32vh}
+.board.v3 .bossslide .bline b{font-family:var(--bt);font-weight:900;font-size:calc(2.2*var(--u))}
+.board.v3 .bossslide .bline .villain{height:calc(20*var(--u))}.board.v3 .bossslide .bline>div:nth-of-type(3) .villain{height:calc(26*var(--u))}
+.board.v3 .bossslide p{font-size:calc(1.6*var(--u));max-width:calc(70*var(--u))}
 </style>
 
 <header class="top" id="top"></header>
@@ -1394,7 +1458,7 @@ const heatKey=()=>S.dkey+'|'+S.cur.r+'|'+S.cur.h;
 function bestBefore(exceptH){let b=null;(S.rounds||[]).forEach(r=>r.heats.forEach(h=>{if(h===exceptH||!h.done)return;[0,1,2,3].forEach(i=>{if(h.lanes[i]==null||h.dnf[i]||h.time[i]==null)return;const v=total(h,i);if(b==null||v<b.v)b={v,pid:h.lanes[i]}})}));return b}
 function checkRecord(h,lane){if(!S.cfg.fx.record)return null;const prev=bestBefore(h),v=total(h,lane);if(!prev||!(v<prev.v))return null;const p=P(h.lanes[lane])||{};return {name:pn(p),team:p.team||'',time:v,old:prev.v,lane}}
 function bestLine(){if(!S.cfg.fx.record)return '';const h=curHeat();let b=bestBefore(null);if(h&&!h.done)[0,1,2,3].forEach(i=>{if(h.lanes[i]!=null&&!h.dnf[i]&&h.time[i]!=null){const v=total(h,i);if(!b||v<b.v)b={v,pid:h.lanes[i]}}});
-  return b?`<div class="bbest">🏆 ${esc(t('bestToday'))} <b>${fmt(b.v)}</b> · ${esc(pn(P(b.pid)))}</div>`:''}
+  return b?`<div class="bbest"><span>${esc(bil(()=>t('bestToday')).a.toUpperCase())}</span><b>${fmt(b.v)}</b><em>${esc(pn(P(b.pid)))}</em></div>`:''}
 function showRecord(r){const o=document.createElement('div');o.className='recov';o.innerHTML=`<div class="rect"><b>NEW RECORD!</b><span>${esc(t('newRec'))}</span><i style="--c:var(${HEROES[r.lane||0].v})">${esc(r.name)} · ${fmt(r.time)}</i><small>${esc(t('oldRec'))} ${fmt(r.old)}</small></div>`;document.body.appendChild(o);setTimeout(()=>o.remove(),3200);
   playLocal('fanfare');flash();confetti(160);if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}}
 /* 입장 소개 화면 (전광판) */
@@ -2058,13 +2122,19 @@ function laneCard(h,i){
 
 /* ================= scoreboard ================= */
 function boardVisible(){return ROLE==='board'||tab==='board'}
+/* 전광판: 영어를 기본으로, 한국어는 작게 같이 */
+function inLang(l,fn){const o=S.lang;S.lang=l;try{return fn()}finally{S.lang=o}}
+function bil(fn){const en=inLang('en',fn);if(S.lang==='en')return{a:en,b:''};const ko=inLang('ko',fn);return{a:en,b:ko===en?'':ko}}
+const heroEn=i=>HEROES[i].en.toUpperCase();
+function stt(fn){const x=bil(fn);return esc(x.a.toUpperCase())+(x.b?`<small>${esc(x.b)}</small>`:'')}
 function renderBoard(){
   const host=document.getElementById('boardHost');
   if(!boardVisible()){host.innerHTML='';return}
   if(ROLE==='board'){document.getElementById('top').hidden=true;document.getElementById('app').hidden=true}
   const r=curRound(),h=curHeat();
-  const head=`<div class="bhead"><div class="bks">${KSLOGO}</div><div class="bev"><b>${esc(evName())}</b><span>${esc(curDivLabel())}</span></div>
-    <div class="bround">${r?esc(roundLabel(S.cur.r))+(S.board==='live'||S.board==='intro'||S.board==='heatres'?' · '+esc(heatLabel(S.cur.h)):''):'—'}</div></div>`;
+  const dv=bil(curDivLabel),rd=r?bil(()=>roundLabel(S.cur.r)+(S.board==='live'||S.board==='intro'||S.board==='heatres'?' · '+heatLabel(S.cur.h):'')):null;
+  const head=`<div class="bhead"><div class="bks">${KSLOGO}</div><div class="bev"><span class="evn">${esc(evName())}</span><b>${esc(dv.a)}${dv.b?`<small>${esc(dv.b)}</small>`:''}</b></div>
+    <div class="bround">${rd?`<b>${esc(rd.a.toUpperCase())}</b>${rd.b?`<small>${esc(rd.b)}</small>`:''}`:'<b>—</b>'}</div></div>`;
   let body='';
   if(!linked)body=`<div class="empty">${esc(t('waitCtrl'))}</div>`;
   else if(S.board==='live'&&h)body=boardLive(h);
@@ -2083,7 +2153,7 @@ function renderBoard(){
      <button class="btn" data-act="full">⛶</button></div>`;
   }
   const gate=ROLE==='board'&&gateOpen?`<div class="gate" data-act="gate"><div><b>TAEKWON HEROES</b>${esc(t('clickStart'))}</div></div>`:'';
-  host.innerHTML=`<div class="board ${S.board==='live'&&h?'live':''}" id="board">${head}<div class="bmain">${body}</div></div>${!(ROLE==='board'?BOARD_LIC:licOk())?`<div class="wm" aria-hidden="true"><span>${S.lang==='en'?'PRACTICE':'연습용 · PRACTICE'}</span></div>`:''}${dock}${gate}`;
+  host.innerHTML=`<div class="board v3 ${S.board==='live'&&h?'live':''}" id="board">${head}<div class="bmain">${body}</div></div>${!(ROLE==='board'?BOARD_LIC:licOk())?`<div class="wm" aria-hidden="true"><span>${S.lang==='en'?'PRACTICE':'연습용 · PRACTICE'}</span></div>`:''}${dock}${gate}`;
   tickClocks();
 }
 function bnFs(n){const L=[...String(n||'')].reduce((s,c)=>s+(/[\u3131-\uD79D]/.test(c)?1.9:1),0);return L<=6?4.6:L<=8?4:L<=11?3.2:L<=14?2.6:2.2}
@@ -2092,7 +2162,7 @@ function boardLive(h){
   const o=heatOrder(h);
   const lanes=occ.map(i=>{
     const pid=h.lanes[i],H=HEROES[i];
-    if(pid==null)return`<div class="bl emptyb" style="--c:var(${H.v})"><div class="hero">${heroFig(i,'','ready')}</div><div class="htag">${esc(heroName(i))}</div><div class="bn">—</div><div class="bt"></div><div class="btime"></div><div class="bpen"></div></div>`;
+    if(pid==null)return`<div class="bl emptyb" style="--c:var(${H.v})"><div class="hero">${heroFig(i,'','ready')}</div><div class="htag">${esc(heroEn(i))}</div><div class="bn">—</div><div class="bt"></div><div class="btime"></div><div class="bpen"></div></div>`;
     const p=P(pid)||{name:'?'},tm=h.time[i],dnf=h.dnf[i],pl=placeOf(h,i);
     const kk=(h.kicks||[])[i]||0,rel=isRelay()&&tm==null&&!dnf,cr=rel?curRunner(h,i):null;
     const pens=isBoss()?[]:S.st.filter(st=>h.pen[i][st.id]).map(st=>`<span>${esc(stName(st))} +${st.pen*h.pen[i][st.id]}${esc(t('sec'))}</span>`).join('');
@@ -2100,8 +2170,8 @@ function boardLive(h){
     const mode=heroMode(h,i);
     return`<div class="bl ${tm!=null?'fin':''} ${dnf?'dnf':''} ${win?'win':''}" style="--c:var(${H.v})">
       ${pl&&!dnf?`<div class="bplace ${pl===1?'p1':''}">${medalSvg(pl)}</div>`:''}
-      <div class="hero">${heroFig(i,'',mode,undefined,lvLane(h,i))}</div><div class="htag">${esc(heroName(i))}</div>
-      <div class="bn" style="--bnfs:${bnFs(pn(cr||p))}vw">${esc(pn(cr||p))}</div><div class="bt">${esc(rel?pn(p):p.members?p.members.map(m=>pn(m)).join(' · '):p.team)}${legDots(h,i)}</div>
+      <div class="hero">${heroFig(i,'',mode,undefined,lvLane(h,i))}</div><div class="htag">${esc(heroEn(i))}</div>
+      <div class="bn" style="--bnu:${bnFs(pn(cr||p))}">${esc(pn(cr||p))}</div><div class="bt">${esc(rel?pn(p):p.members?p.members.map(m=>pn(m)).join(' · '):p.team)}${legDots(h,i)}</div>
       ${isBoss()?`<div class="btime kick">${dnf?esc(t('dnf')):`${kk}<small>${esc(kU(kk))}</small>`}</div>`:`<div class="btime" data-lt="${i}">${dnf?esc(t('dnf')):(tm!=null?fmt(h.pen[i]&&penSec(h,i)?total(h,i):tm):fmt(0))}</div>`}
       <div class="bpen">${pens}</div></div>`;
   }).join('');
@@ -2109,19 +2179,19 @@ function boardLive(h){
   const cd=R.phase==='countdown'?`<div class="cd"><b>${R.count}</b></div>`:(R.phase==='running'&&nowT()-R.go<900?`<div class="cd"><b class="gotxt">${esc(t('go'))}</b></div>`:'');
   const last=Math.max(0,...h.time.filter(x=>x!=null));
   if(isBoss()){const left=R.phase==='running'?Math.max(0,R.end-nowT()):null;
-    return`<div class="blive boss"><div class="bosshd"><div class="bclock ${left!=null&&left<5000?'low':''}" data-clock>${R.phase==='countdown'?fmt(Math.max(5,+S.cfg.bossSec||20)*1000):clockVal(h)}<small>${esc(t('timeLeft'))}</small></div>${villainBlock()}<div class="bossinfo">${heroLogo('big')}<small>${esc(t('bossCall'))}</small>${bestLine()}</div></div><div class="blanes">${lanes}</div>${cd}</div>`}
-  return`<div class="blive"><div class="bevbig">${heroLogo('big')}</div>${bestLine()}<div class="bclock" data-clock>${R.phase==='countdown'?'0.00':fmt(R.phase==='running'?0:last)}</div><div class="blanes">${lanes}</div>${cd}</div>`;
+    return`<div class="blive boss"><div class="bosshd"><div class="bclock ${left!=null&&left<5000?'low':''}" data-clock>${R.phase==='countdown'?fmt(Math.max(5,+S.cfg.bossSec||20)*1000):clockVal(h)}<small>${esc(bil(()=>t('timeLeft')).a.toUpperCase())}</small></div>${villainBlock()}<div class="bossinfo">${bestLine()}</div></div><div class="blanes">${lanes}</div>${cd}</div>`}
+  return`<div class="blive"><div class="bclockw"><div class="bclock" data-clock>${R.phase==='countdown'?'0.00':fmt(R.phase==='running'?0:last)}</div>${bestLine()}</div><div class="blanes">${lanes}</div>${cd}</div>`;
 }
 const s0=sl=>sl[slideIx%sl.length];
 function boardIntro(){
   const r=curRound(),h=curHeat();
   const slides=['splash','squad',isBoss()?'boss':'course'];if(h&&!h.done)slides.push('next');
-  if(s0(slides)==='boss')return`<div class="slide"><div class="slidewrap"><div class="stitle">👾 ${esc(t('bossIntro'))} · ${esc(t('bossLine'))}</div><div class="bossslide three">${bossLineup()}<p>${esc(t('bossIntroD',{s:S.cfg.bossSec,hp:bossMax(1)}))}</p></div></div></div>`;
+  if(s0(slides)==='boss')return`<div class="slide"><div class="slidewrap"><div class="stitle">${stt(()=>t('bossIntro')+' · '+t('bossLine'))}</div><div class="bossslide three">${bossLineup()}<p>${esc(t('bossIntroD',{s:S.cfg.bossSec,hp:bossMax(1)}))}</p></div></div></div>`;
   const s=slides[slideIx%slides.length];
   if(s==='splash')return`<div class="slide"><div class="splash"><div class="big">TAEKWON<br>HEROES 2</div><div class="ko">${esc(evName())}</div><div class="div">${esc(curDivLabel())}</div></div></div>`;
-  if(s==='squad')return`<div class="slide"><div class="slidewrap"><div class="stitle">${esc(t('meet'))}</div><div class="squad">${HEROES.map((H,i)=>`<div style="--c:var(${H.v})">${heroFig(i,'',['p1','run','p2','p3'][i])}<b>${esc(H.en.toUpperCase())}</b><span>${esc(H.ko)} · ${i+1}${S.lang==='en'?' ':''}${esc(t('lane'))}</span></div>`).join('')}</div></div></div>`;
-  if(s==='course')return`<div class="slide"><div class="slidewrap"><div class="stitle">${esc(t('courseMap'))}</div><div class="cmap">${S.st.map((st,ix)=>`${ix?'<span class="carrow">›</span>':''}<div class="cnode"><div class="ic">${stIcon(st.ic)}</div><b>${esc(stName(st))}</b><span>+${st.pen}${esc(t('sec'))}</span></div>`).join('')}</div></div></div>`;
-  return`<div class="slide"><div class="slidewrap"><div class="stitle">${esc(t('nextUp'))} · ${esc(roundLabel(S.cur.r))} ${esc(heatLabel(S.cur.h))}</div><div class="nextup">${[0,1,2,3].map(i=>{const p=P(h.lanes[i]);return`<div style="--c:var(${HEROES[i].v})"><div class="nf">${p?heroFig(i,'','ready',undefined,lvLane(h,i)):''}</div><i>${i+1} · ${esc(HEROES[i].en.toUpperCase())}</i><b>${p?esc(pn(p)):'—'}</b><span>${p?esc(p.team):''}</span></div>`}).join('')}</div></div></div>`;
+  if(s==='squad')return`<div class="slide"><div class="slidewrap"><div class="stitle">${stt(()=>t('meet'))}</div><div class="squad">${HEROES.map((H,i)=>`<div style="--c:var(${H.v})">${heroFig(i,'',['p1','run','p2','p3'][i])}<b>${esc(H.en.toUpperCase())}</b><span>${esc(H.ko)} · ${i+1}${S.lang==='en'?' ':''}${esc(t('lane'))}</span></div>`).join('')}</div></div></div>`;
+  if(s==='course')return`<div class="slide"><div class="slidewrap"><div class="stitle">${stt(()=>t('courseMap'))}</div><div class="cmap">${S.st.map((st,ix)=>`${ix?'<span class="carrow">›</span>':''}<div class="cnode"><div class="ic">${stIcon(st.ic)}</div><b>${esc(stName(st))}</b><span>+${st.pen}${esc(t('sec'))}</span></div>`).join('')}</div></div></div>`;
+  return`<div class="slide"><div class="slidewrap"><div class="stitle">${stt(()=>t('nextUp')+' · '+roundLabel(S.cur.r)+' '+heatLabel(S.cur.h))}</div><div class="nextup">${[0,1,2,3].map(i=>{const p=P(h.lanes[i]);return`<div style="--c:var(${HEROES[i].v})"><div class="nf">${p?heroFig(i,'','ready',undefined,lvLane(h,i)):''}</div><i>${i+1} · ${esc(HEROES[i].en.toUpperCase())}</i><b>${p?esc(pn(p)):'—'}</b><span>${p?esc(p.team):''}</span></div>`}).join('')}</div></div></div>`;
 }
 function boardCards(){const L=[];(S.players||[]).forEach(p=>(p.members||[p]).filter(m=>!m.isParent).forEach(m=>L.push(m)));
   L.sort((a,b)=>xpOf(xkey(b))-xpOf(xkey(a)));const top=L.slice(0,12);
@@ -2138,14 +2208,14 @@ function boardStand(){
     return`${cut&&ix===cut&&cols===1?`<div class="cutline">${esc(t('cutLine'))}</div>`:''}<div class="srow ${has?'':'wait'} ${has&&isFinite(x.tot)&&ix<3?'top'+(ix+1):''}" style="--fs:${fs}vw;animation-delay:${Math.min(ix,30)*40}ms">
      <span class="r">${has&&isFinite(x.tot)?ix+1:'·'}</span><span class="nm">${esc(pn(p))}<small>${esc(p.team)}</small></span>
      <span class="num">${x.dnf?esc(t('dnf')):(x.raw!=null?fmt(x.raw):esc(t('waiting')))}</span><span class="num pn">${x.pen?'+'+x.pen:''}</span><span class="num tt">${has&&isFinite(x.tot)?fmt(x.tot):''}</span></div>`}).join('');
-  if(cols===1)return`<div class="stand"><div class="stitle">${esc(roundLabel(S.cur.r))} · ${esc(t('sStand'))}</div><div class="stcols">${head}${rows}</div></div>`;
+  if(cols===1)return`<div class="stand"><div class="stitle">${stt(()=>roundLabel(S.cur.r)+' · '+t('sStand'))}</div><div class="stcols">${head}${rows}</div></div>`;
   const half=Math.ceil(e.length/2);
   const all=rows.split('</div><div class="srow').length; // not used
   const list=e.map((_,ix)=>ix);
   const rowHtml=ix=>{const x=e[ix];const p=P(x.pid)||{};const has=x.tot!=null&&isFinite(x.tot);
     return`<div class="srow ${x.tot==null?'wait':''} ${has&&ix<3?'top'+(ix+1):''} " style="--fs:${fs}vw;animation-delay:${Math.min(ix,30)*30}ms;${cut&&ix===cut-1?'border-bottom:.35vh dashed var(--gold)':''}"><span class="r">${has?ix+1:'·'}</span><span class="nm">${esc(pn(p))}<small>${esc(p.team)}</small></span><span class="num">${x.dnf?esc(t('dnf')):(x.raw!=null?fmt(x.raw):esc(t('waiting')))}</span><span class="num pn">${x.pen?'+'+x.pen:''}</span><span class="num tt">${has?fmt(x.tot):''}</span></div>`};
   const colA=list.slice(0,half).map(rowHtml).join(''),colB=list.slice(half).map(rowHtml).join('');
-  return`<div class="stand"><div class="stitle">${esc(roundLabel(S.cur.r))} · ${esc(t('sStand'))}${cut?` <small style="font-size:.5em;color:var(--gold)">— ${esc(t('cutLine'))} ${cut}</small>`:''}</div><div class="stcols" style="--cols:2"><div>${head}${colA}</div><div>${head}${colB}</div></div></div>`;
+  return`<div class="stand"><div class="stitle">${stt(()=>roundLabel(S.cur.r)+' · '+t('sStand'))}${cut?` <small style="font-size:.5em;color:var(--gold)">— ${esc(t('cutLine'))} ${cut}</small>`:''}</div><div class="stcols" style="--cols:2"><div>${head}${colA}</div><div>${head}${colB}</div></div></div>`;
 }
 function boardBracket(){
   if(!S.rounds.length)return`<div class="empty">${esc(t('noDraw'))}</div>`;
@@ -2177,13 +2247,13 @@ function boardHeatRes(){
   const o=heatOrder(h).filter(i=>!h.dnf[i]);
   const list=o.map(ln=>({pid:h.lanes[ln],lane:ln,tot:total(h,ln),pen:penSec(h,ln)}));
   const rest=[0,1,2,3].filter(i=>h.lanes[i]!=null&&h.dnf[i]).map(i=>`${esc(pn(P(h.lanes[i])))} ${esc(t('dnf'))}`);
-  return`<div class="champwrap"><div class="champtitle" style="font-size:4.6vw">${esc(roundLabel(L.r))} · ${esc(t('heatRes',{h:heatLabel(L.h)}))}</div><div></div>${podiumRow(list)}${rest.length?`<div class="restline">${rest.join(' &nbsp;·&nbsp; ')}</div>`:''}</div>`;
+  return`<div class="champwrap"><div class="champtitle">${stt(()=>roundLabel(L.r)+' · '+t('heatRes',{h:heatLabel(L.h)}))}</div><div></div>${podiumRow(list)}${rest.length?`<div class="restline">${rest.join(' &nbsp;·&nbsp; ')}</div>`:''}</div>`;
 }
 function boardChamp(){
   const c=S.champ;
   if(!c)return`<div class="empty">${esc(t('noChamp'))}</div>`;
   const list=c.order.slice(0,4).map((pid,k)=>({pid,lane:c.lanes[k]??k,tot:c.times[k],pen:0}));
-  return`<div class="champwrap"><div class="champtitle">🏆 ${esc(t('champion'))}</div><div></div>${podiumRow(list)}</div>`;
+  return`<div class="champwrap"><div class="champtitle">🏆 ${stt(()=>t('champion'))}</div><div></div>${podiumRow(list)}</div>`;
 }
 
 /* clocks via rAF */
