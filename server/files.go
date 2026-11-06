@@ -219,7 +219,7 @@ func handleResultsAuto(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		name := sanitizeName(r.URL.Query().Get("name"))
-		if name == "" || !strings.HasSuffix(strings.ToLower(name), ".xlsx") {
+		if ln := strings.ToLower(name); name == "" || !(strings.HasSuffix(ln, ".xlsx") || strings.HasSuffix(ln, ".json")) {
 			writeJSON(w, 400, map[string]any{"error": "invalid_argument"})
 			return
 		}
@@ -259,7 +259,7 @@ func handleResultsAuto(w http.ResponseWriter, r *http.Request) {
 }
 
 // 코트 hqfeed 에 실어 보내는 자동 저장 목록
-func autoSaves() []fileInfo { return listDir(autoDir(), regexp.MustCompile(`(?i)\.xlsx$`)) }
+func autoSaves() []fileInfo { return listDir(autoDir(), regexp.MustCompile(`(?i)\.(xlsx|json)$`)) }
 
 // 본부: 코트의 새 자동 저장 파일을 가져와 「대회결과\본부수집\A코트」에 저장
 var collectMu sync.Mutex
@@ -317,3 +317,13 @@ func hqCollectedList() map[string][]fileInfo {
 
 var _ = json.Marshal
 var _ = fmt.Sprint
+
+// 본부: 모은 파일 하나 보내기 (상장 자동 출력 · 자동 백업이 읽음)  GET /api/hq/cfile?court=A코트&name=…
+func handleHQFile(w http.ResponseWriter, r *http.Request) {
+	court := sanitizeName(r.URL.Query().Get("court"))
+	if court == "" {
+		http.NotFound(w, r)
+		return
+	}
+	serveFile(w, r, filepath.Join(resultsDir, "본부수집", court), r.URL.Query().Get("name"))
+}

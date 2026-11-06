@@ -151,11 +151,19 @@ body.mon #mon>*:not(.mwm){position:relative;z-index:1}
 
 .chip.livec{background:#C8102E;color:#fff;border-color:#E2334F}
 .chip.livec .dot{background:#fff}
+#prt{display:none}
+body.prtst #hqtabs{display:none}
+@media print{@page{size:A4 portrait;margin:0}
+  body.prtst>*:not(#prt){display:none!important}
+  body.prtst #prt{display:block}
+  body.prtst #prt .prtp{display:block;width:210mm;height:297mm;object-fit:contain;page-break-after:always;break-after:page}
+  body.prtst #prt .prtp:last-child{page-break-after:auto;break-after:auto}}
 </style><link rel="stylesheet" href="/vendor/ks-lux.css"><link rel="stylesheet" href="/vendor/fonts/themes.css"><link rel="stylesheet" href="/vendor/hq-themes.css">
 
 <svg id="hqdefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ksGoldH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs></svg><header class="bar"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="ksword">KICKSTART<b>UP</b></span><span class="brand">대회 본부</span></header>
 <div class="tabwrap" id="hqtabs"><nav class="tabs"><a href="#admin" data-r="admin">본부 운영</a><a href="#results" data-r="results">통합 결과</a><a href="#board" data-r="board" target="_blank">본부 모니터 ↗</a></nav></div>
 <main id="app"></main>
+<div id="prt" aria-hidden="true"></div>
 <div id="mon"></div>
 <div id="ovl"></div>
 <div class="toast" id="toast" hidden></div>
@@ -167,7 +175,7 @@ body.mon #mon>*:not(.mwm){position:relative;z-index:1}
 const $=s=>document.querySelector(s);
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let toastT=null;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2800);}
-const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results'].includes(h)?h:'admin';};
+const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results','print'].includes(h)?h:'admin';};
 const S={courts:{},cfg:{},announce:null,log:[],ready:false,moves:{},mvArm:null};window.KS_HQS=()=>S;
 let DB=null,DL=null;
 const CFGDEF={autoCall:true,voice:true,notice:{text:'',mode:'off'},manual:[],points:[3,2,1]};
@@ -295,6 +303,7 @@ function vAdmin(){
   <div class="panel"><div class="row between"><h2>💾 코트 결과 자동 모음</h2><button class="btn" data-a="openColl">📂 폴더 열기</button></div>
     <span class="small muted">코트 노트북마다 경기 결과가 바뀔 때마다 결과 엑셀을 자동 저장하고, 본부가 2초마다 가져와 <b>${esc((S.coll&&S.coll.dir)||'대회결과\\본부수집')}</b> 폴더에 코트별로 모읍니다.</span>
     <div class="row">${S.coll&&Object.keys(S.coll.courts||{}).length?Object.entries(S.coll.courts).sort().map(([k,fs])=>`<span class="chip ok">${esc(k)} · ${fs.length}개 · ${fs.length?ago(Math.max(...fs.map(f=>f.at))):''}</span>`).join(''):'<span class="small muted">아직 모은 결과가 없습니다. 코트에서 점수가 공개되면 자동으로 모입니다.</span>'}</div></div>
+  ${hqAutoPanels()}
   <div class="panel"><div class="row between"><h2>본부 모니터</h2><span class="row"><a class="btn primary" href="#board" target="_blank" style="text-decoration:none">본부 모니터 열기 ↗</a><button class="btn" data-a="qr">📱 QR (다른 TV·태블릿)</button></span></div>
     <div class="row"><span class="small muted">화면 디자인</span>${themePick('hqpick')}<span class="small muted">지금: <b>${esc((THEMES.find(x=>x[0]===hqTheme(courtList()))||['','기본 금빛'])[1])}</b> · 「따라가기」는 품새 코트 노트북에서 고른 전광판 디자인을 따릅니다</span></div>
     <span class="small muted">선수 대기실 TV나 큰 모니터에 띄우세요. 새 창을 TV 쪽으로 옮긴 뒤 「전체 화면」을 누르면 됩니다. 소리를 내려면 그 화면을 한 번 눌러 주세요.</span></div>`;
@@ -382,6 +391,90 @@ function onAnnounce(a){S.announce=a;if(!a||!a.id)return;if(lastAnn===null){lastA
   if(route()==='board'&&NOW()-a.at<15000){chime();setTimeout(()=>say(a.text,2),900);setTimeout(render,12100);}}
 
 /* ---------- 그리기 ---------- */
+/* ---------- 상장 자동 출력 · Supabase 자동 백업 ----------
+   코트 경기 앱이 부문(조)이 끝날 때마다 상장 그림(…상장….cert.json)을, 데이터가 바뀔 때마다 백업(…백업(자동저장).json)을 자동 저장하면
+   본부가 「대회결과\본부수집」에 모읍니다. 여기서
+   · 상장 자동 출력: 「자동 출력 창」(인쇄 창 없이 기본 프린터로 바로 인쇄하는 엣지/크롬 창)이 새 상장을 차례로 인쇄합니다.
+   · 자동 백업: 모인 백업 파일을 정해진 간격(기본 5분)마다 Supabase(접수 홈페이지 데이터베이스)에 올립니다. 관리자 계정 로그인이 한 번 필요합니다. */
+const SB_URL='https://nwdptjumclgzbwbsaoxr.supabase.co',SB_KEY='sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG',SB_LS='ks_hq_sb';
+const PR={done:{},req:{},busy:false,now:'',err:'',ready:false};
+const BK={busy:false,err:'',sent:{}};try{BK.sent=JSON.parse(localStorage.getItem('ks_hq_bksent')||'{}')||{};}catch(e){}
+const certFiles=()=>{const out=[];Object.entries((S.coll&&S.coll.courts)||{}).forEach(([court,fs])=>fs.forEach(f=>{if(/\.cert\.json$/i.test(f.name))out.push({court,name:f.name,at:f.at,key:court+'|'+f.name});}));return out.sort((a,b)=>a.at-b.at);};
+const bkFiles=()=>{const out=[];Object.entries((S.coll&&S.coll.courts)||{}).forEach(([court,fs])=>fs.forEach(f=>{if(/백업\(자동저장\)\.json$/i.test(f.name))out.push({court,name:f.name,at:f.at,key:court+'|'+f.name});}));return out;};
+const certLabel=n=>n.replace(/\.cert\.json$/i,'').replace(/^.*?_상장_/,'');
+const needPrint=f=>{const cf=CFG(),d=PR.done[f.key]||0;if(PR.req[f.key]&&PR.req[f.key]>d)return true;return !!cf.certAuto&&f.at>=(cf.certSince||0)&&d<f.at;};
+function sbAuth(){try{return JSON.parse(localStorage.getItem(SB_LS)||'null');}catch(e){return null;}}
+async function sbToken(){let a=sbAuth();if(!a)return null;
+  if(Date.now()/1000>(a.expires_at||0)-60){const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:a.refresh_token})});
+    if(!r.ok){localStorage.removeItem(SB_LS);throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요');}const j=await r.json();a={...a,access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+(j.expires_in||3600)};localStorage.setItem(SB_LS,JSON.stringify(a));}
+  return a.access_token;}
+async function sbLogin(email,pw){const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error_description||j.msg||'로그인하지 못했습니다');
+  localStorage.setItem(SB_LS,JSON.stringify({email,access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+(j.expires_in||3600)}));}
+/* 백업 한 번: 모인 백업 파일 중 바뀐 것만 올림 */
+async function backupNow(force){
+  if(BK.busy)return;BK.busy=true;BK.err='';schedule();let n=0;
+  try{const tok=await sbToken();if(!tok)throw new Error('관리자 계정으로 로그인해 주세요');
+    for(const f of bkFiles()){if(!force&&BK.sent[f.key]===f.at)continue;
+      const r=await fetch(`/api/hq/cfile?court=${encodeURIComponent(f.court)}&name=${encodeURIComponent(f.name)}`,{cache:'no-store'});if(!r.ok)continue;const data=await r.json();
+      const comp=(data.settings&&data.settings.name)||'(대회명 없음)',app=String(data.app||'').replace(/-competition$/,'')||'app';
+      const up=await fetch(SB_URL+'/rest/v1/field_backups?on_conflict=comp,court,app',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify({comp,court:f.court,app,file:f.name,data,saved_at:new Date(data.savedAt||f.at).toISOString(),updated_at:new Date().toISOString()})});
+      if(!up.ok){const t=await up.text().catch(()=>'');throw new Error(/field_backups/.test(t)&&/exist|find/i.test(t)?'Supabase에 백업 표가 없습니다. schema13.sql을 먼저 실행해 주세요':up.status===401||up.status===403?'이 계정은 백업 권한이 없습니다 (관리자·직원 계정)':'올리지 못했습니다 (HTTP '+up.status+')');}
+      BK.sent[f.key]=f.at;n++;}
+    localStorage.setItem('ks_hq_bksent',JSON.stringify(BK.sent));
+    await DB.doc('hqbackup/main').set({at:NOW(),n,files:bkFiles().length,by:sbAuth()?.email||''});if(force)toast(n?`백업 파일 ${n}개를 Supabase에 올렸습니다`:'바뀐 백업이 없습니다');
+  }catch(e){BK.err=e.message||String(e);if(force)toast(BK.err);}
+  finally{BK.busy=false;schedule();}
+}
+setInterval(async()=>{const cf=CFG();if(!DB||!cf.backupAuto||BK.busy||route()==='board')return;
+  const last=(S.bk&&S.bk.at)||0,iv=Math.max(1,Number(cf.backupMin)||5)*60000;if(NOW()-last<iv)return;
+  if(PR.station)return; /* 자동 출력 창은 인쇄만 */ backupNow(false);},20000);
+/* 자동 출력 창: 차례로 인쇄 */
+async function printLoop(){
+  if(route()!=='print'||PR.busy||!PR.ready)return;const f=certFiles().find(needPrint);if(!f)return;
+  PR.busy=true;PR.now=certLabel(f.name)+' · '+f.court;PR.err='';schedule();
+  try{const r=await fetch(`/api/hq/cfile?court=${encodeURIComponent(f.court)}&name=${encodeURIComponent(f.name)}`,{cache:'no-store'});if(!r.ok)throw new Error('파일을 읽지 못했습니다');
+    const job=await r.json(),box=document.getElementById('prt');box.innerHTML=(job.pages||[]).map(p=>`<img class="prtp" src="${p}" alt="">`).join('');
+    await Promise.all([...box.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):Promise.resolve()));
+    window.print();await new Promise(r=>setTimeout(r,1500));box.innerHTML='';
+    const done={...PR.done,[f.key]:Math.max(f.at,PR.req[f.key]||0)};PR.done=done;await DB.doc('hqprint/main').set({done,req:PR.req});
+    await DB.doc('hqprint/log').set({list:[{at:NOW(),court:f.court,div:certLabel(f.name),n:(job.pages||[]).length,again:!!job.again},...((S.plog&&S.plog.list)||[])].slice(0,60)});
+  }catch(e){PR.err=e.message||String(e);const done={...PR.done,[f.key]:Math.max(f.at,PR.req[f.key]||0)};PR.done=done;try{await DB.doc('hqprint/main').set({done,req:PR.req});}catch(x){}}
+  finally{PR.busy=false;PR.now='';schedule();}
+}
+setInterval(printLoop,3000);
+function vPrint(){
+  PR.station=true;const cf=CFG(),q=certFiles().filter(needPrint),log=(S.plog&&S.plog.list)||[];
+  return `<div class="panel"><div class="row between"><h2>🖨 상장 자동 출력 창</h2><span class="chip ${cf.certAuto?'ok':'warn'}">${cf.certAuto?'자동 출력 켜짐':'자동 출력 꺼짐'}</span></div>
+    <span class="small muted">이 창은 켜 둔 채로 두세요. 코트에서 부문(조)이 끝나면 상장이 기본 프린터로 바로 인쇄됩니다. 인쇄 확인 창이 뜨면 이 창이 「인쇄 창 없이」 옵션으로 열리지 않은 것입니다. 본부 운영 화면의 「자동 출력 창 열기」로 다시 열어 주세요.</span>
+    <div class="row">${PR.now?`<span class="chip ok">인쇄 중 · ${esc(PR.now)}</span>`:`<span class="chip">대기 중</span>`}<span class="chip">남은 상장 묶음 ${q.length}개</span>${PR.err?`<span class="chip bad">${esc(PR.err)}</span>`:''}</div>
+    ${log.length?`<div style="overflow-x:auto"><table><tr><th>시각</th><th>코트</th><th>부문</th><th>장수</th></tr>${log.slice(0,15).map(l=>`<tr><td>${new Date(l.at).toTimeString().slice(0,5)}</td><td>${esc(l.court)}</td><td>${esc(l.div)}${l.again?' <span class="chip warn">고친 상장</span>':''}</td><td>${l.n}</td></tr>`).join('')}</table></div>`:''}</div>`;
+}
+function hqAutoPanels(){
+  const cf=CFG(),cs=certFiles(),q=cs.filter(needPrint),log=(S.plog&&S.plog.list)||[],a=sbAuth(),bk=S.bk||{},bf=bkFiles();
+  return `<div class="panel"><div class="row between"><h2>🖨 상장 자동 출력</h2><span class="row"><button class="btn sm ${cf.certAuto?'on':''}" data-a="certAuto">자동 출력 ${cf.certAuto?'켜짐':'꺼짐'}</button><button class="btn sm primary" data-a="printWin">자동 출력 창 열기</button></span></div>
+    <span class="small muted">코트에서 부문(조)의 경기가 모두 끝나면 입상자 상장(1위 금·2위 은·3위 동)이 본부로 오고, <b>자동 출력 창</b>이 이 노트북의 기본 프린터로 바로 인쇄합니다. 켠 뒤에 끝난 부문부터 인쇄합니다. 점수를 고쳐 입상자가 바뀌면 고친 상장을 다시 인쇄합니다. 상장 글자·직인은 각 코트 경기 앱의 「상장·시상」 설정을 씁니다.</span>
+    <div class="row"><span class="chip">받은 상장 묶음 ${cs.length}개</span><span class="chip ${q.length?'warn':'ok'}">인쇄 대기 ${q.length}개</span><span class="chip">인쇄함 ${log.length}번</span></div>
+    ${cs.length?`<details><summary class="small"><b>받은 상장 목록</b> (다시 인쇄)</summary><div style="overflow-x:auto"><table><tr><th>코트</th><th>부문</th><th>받은 시각</th><th></th></tr>${cs.slice().reverse().slice(0,80).map(f=>`<tr><td>${esc(f.court)}</td><td>${esc(certLabel(f.name))}</td><td>${new Date(f.at).toTimeString().slice(0,5)}</td><td>${needPrint(f)?'<span class="chip warn">대기</span>':`<button class="btn sm" data-a="reprint" data-k="${esc(f.key)}" data-at="${f.at}">인쇄</button>`}</td></tr>`).join('')}</table></div></details>`:''}
+  </div>
+  <div class="panel"><div class="row between"><h2>☁️ Supabase 자동 백업</h2><span class="row"><button class="btn sm ${cf.backupAuto?'on':''}" data-a="backupAuto">자동 백업 ${cf.backupAuto?'켜짐':'꺼짐'}</button><select id="bkMin" data-hqbk title="백업 간격">${[3,5,10,15].map(m=>`<option value="${m}" ${(Number(cf.backupMin)||5)===m?'selected':''}>${m}분마다</option>`).join('')}</select><button class="btn sm" data-a="backupNow" ${BK.busy?'disabled':''}>지금 백업</button></span></div>
+    <span class="small muted">코트들이 보낸 대회 데이터(명단·부문·점수·기록)를 접수 홈페이지 데이터베이스(Supabase)에 올려 둡니다. 노트북이 고장 나도 홈페이지에서 되살릴 수 있습니다. 인터넷이 필요하고, 관리자·직원 계정 로그인이 한 번 필요합니다.</span>
+    ${a?`<div class="row"><span class="chip ok">로그인 · ${esc(a.email||'')}</span><button class="btn sm" data-a="sbOut">로그아웃</button></div>`:`<div class="row"><input type="email" id="sbEmail" placeholder="관리자 이메일" style="flex:1;min-width:160px"><input type="password" id="sbPw" placeholder="비밀번호" style="flex:1;min-width:120px"><button class="btn primary" data-a="sbIn">로그인</button></div>`}
+    <div class="row"><span class="chip">모인 백업 파일 ${bf.length}개</span>${bk.at?`<span class="chip ok">마지막 백업 ${ago(bk.at)} · ${bk.n||0}개 올림</span>`:'<span class="chip">아직 백업 안 함</span>'}${BK.busy?'<span class="chip">올리는 중…</span>':''}${BK.err?`<span class="chip bad">${esc(BK.err)}</span>`:''}</div>
+  </div>`;
+}
+document.addEventListener('change',e=>{const s=e.target.closest&&e.target.closest('[data-hqbk]');if(s)saveCfg({backupMin:Number(s.value)||5});});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
+  if(a==='certAuto')saveCfg(cf.certAuto?{certAuto:false}:{certAuto:true,certSince:NOW()});
+  else if(a==='printWin'){try{const r=await fetch('/api/hq/printwin',{method:'POST'});const j=await r.json();toast(j.how==='kiosk'?'자동 출력 창을 열었습니다 (인쇄 창 없이 바로 인쇄)':'자동 출력 창을 열었습니다. 엣지·크롬을 찾지 못해 인쇄할 때 확인 창이 뜹니다');}catch(x){window.open('#print','_blank');}}
+  else if(a==='reprint'){const req={...PR.req,[b.dataset.k]:Number(b.dataset.at)+1};PR.req=req;const done={...PR.done};delete done[b.dataset.k];PR.done=done;await DB.doc('hqprint/main').set({done,req});toast('자동 출력 창에서 다시 인쇄합니다');}
+  else if(a==='backupAuto')saveCfg({backupAuto:!cf.backupAuto});
+  else if(a==='backupNow')backupNow(true);
+  else if(a==='sbIn'){const em=($('#sbEmail').value||'').trim(),pw=$('#sbPw').value||'';if(!em||!pw)return toast('이메일과 비밀번호를 넣어 주세요');try{await sbLogin(em,pw);toast('로그인했습니다');schedule();}catch(x){toast(x.message);}}
+  else if(a==='sbOut'){localStorage.removeItem(SB_LS);schedule();}
+});
+
 let pend=false;function schedule(){if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;render();});}
 function render(){
   const r=route();document.body.classList.toggle('mon',r==='board');
@@ -389,7 +482,8 @@ function render(){
   if(r==='board'){vMon();return;}
   $('#ovl').innerHTML='';
   const keep={};document.querySelectorAll('#app input[id],#app textarea[id],#app select[id]').forEach(el=>keep[el.id]=el.value);const fid=document.activeElement&&document.activeElement.id;
-  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r==='results'?vResults():vAdmin();
+  document.body.classList.toggle('prtst',r==='print');
+  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r==='print'?vPrint():r==='results'?vResults():vAdmin();
   for(const [k,v] of Object.entries(keep)){const el=document.getElementById(k);if(el)el.value=v;}
   if(fid){const el=document.getElementById(fid);if(el)el.focus();}
 }
@@ -429,6 +523,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   DB.collection('courts').onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());S.courts=m;S.ready=true;try{sample();}catch(e){}schedule();});
   DB.collection('moves').onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());S.moves=m;schedule();});
   DB.doc('hqcfg/main').onSnapshot(s=>{S.cfg=s.exists?s.data():{};S.ready=true;schedule();});
+  DB.doc('hqprint/main').onSnapshot(s=>{const d=s.exists?s.data():{};PR.done=d.done||{};PR.req=d.req||{};PR.ready=true;schedule();});
+  DB.doc('hqprint/log').onSnapshot(s=>{S.plog=s.exists?s.data():null;schedule();});
+  DB.doc('hqbackup/main').onSnapshot(s=>{S.bk=s.exists?s.data():null;schedule();});
   DB.doc('hq/announce').onSnapshot(s=>{onAnnounce(s.exists?s.data():null);schedule();});
   DB.collection('calllog').onSnapshot(s=>{S.log=s.docs.map(d=>d.data()).sort((a,b)=>b.at-a.at).slice(0,30);schedule();});
   if(window.KS_FIELD&&KS_FIELD.onStatus)KS_FIELD.onStatus(()=>schedule());

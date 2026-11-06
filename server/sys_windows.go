@@ -4,7 +4,9 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"unsafe"
 )
@@ -42,3 +44,31 @@ func pause() {
 
 // 탐색기로 폴더 열기
 func openFolder(dir string) error { return exec.Command("explorer", dir).Start() }
+
+// 상장 자동 출력 창: 엣지(또는 크롬)를 「인쇄 창 없이 바로 기본 프린터로」(--kiosk-printing) 옵션으로 따로 엽니다.
+// 평소 쓰는 브라우저 설정과 섞이지 않게 프로그램 폴더 안의 별도 프로필을 씁니다.
+func openPrintWindow(url, profile string) string {
+	pf := os.Getenv("ProgramFiles")
+	pf86 := os.Getenv("ProgramFiles(x86)")
+	la := os.Getenv("LocalAppData")
+	cands := []string{
+		filepath.Join(pf86, "Microsoft", "Edge", "Application", "msedge.exe"),
+		filepath.Join(pf, "Microsoft", "Edge", "Application", "msedge.exe"),
+		filepath.Join(pf, "Google", "Chrome", "Application", "chrome.exe"),
+		filepath.Join(pf86, "Google", "Chrome", "Application", "chrome.exe"),
+		filepath.Join(la, "Google", "Chrome", "Application", "chrome.exe"),
+	}
+	_ = os.MkdirAll(profile, 0o755)
+	for _, c := range cands {
+		if c == "" {
+			continue
+		}
+		if _, err := os.Stat(c); err == nil {
+			if exec.Command(c, "--kiosk-printing", "--user-data-dir="+profile, "--no-first-run", "--disable-features=Translate", "--new-window", "--app="+url).Start() == nil {
+				return "kiosk"
+			}
+		}
+	}
+	openBrowser(url)
+	return "normal"
+}

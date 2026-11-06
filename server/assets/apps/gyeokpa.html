@@ -3505,7 +3505,7 @@ async function printCerts(list,fname){
   const safe=String(fname).replace(/[\\/:*?"<>|]/g,'_').slice(0,80);
   const ok=await saveFile(`${safe}.pdf`,doc.output('arraybuffer'));if(ok)toast(`상장 ${list.length}장을 저장했습니다`);
 }
-window.AW.printCerts=printCerts;window.AW.drawCert=drawCert;window.AW.medalCert=medalCert;
+window.AW.printCerts=printCerts;window.AW.drawCert=drawCert;window.AW.medalCert=medalCert;window.AW.sealImg=sealImg;
 window.AW.results=()=>{const cf=CFG(),comp=(SET()||{}).name||'';let med=[],team=[];try{med=medalists();}catch(err){}try{team=teamStandings(false)||[];}catch(err){}
   return {comp,meta:{host:cf.host||'',title:cf.title||'',rep:cf.rep||'',date:cf.date||'',serial:cf.serial||''},rows:[...med.map(x=>({kind:'medal',div:x.div.name||'',rank:x.rank,name:x.name,team:x.team,coach:x.coach||coachOf(x.team)||'',members:x.members||''})),...team.filter(r=>r.rank<=3).map(r=>({kind:'team',div:'',rank:r.rank,name:r.team,team:'',coach:r.coach||'',members:''}))]};};
 })();
@@ -6208,6 +6208,66 @@ const css=document.createElement('style');css.textContent=`.ksauto{position:fixe
 body.disp .ksauto{display:none}`;(document.head||document.documentElement).appendChild(css);
 window.KS_AUTOSAVE={tick,state:ST,capture,fname};
 })();
+</script><script>/*@@HQSEND*//* ===== 본부로 보내기: 자동 백업 파일 · 상장 자동 출력 (현장 모드, 품새·겨루기·격파 공통) =====
+   1) 대회 데이터가 바뀌면 백업 파일(.json)을 「대회결과\자동저장」에 덮어써 저장 → 본부가 모아 Supabase에 올립니다.
+   2) 부문(조)의 경기가 모두 끝나면 그 부문 입상자의 상장 그림을 만들어 「…상장….cert.json」으로 저장 → 본부가 모아 프린터로 출력합니다.
+      입상 결과가 나중에 바뀌면(점수 수정) 고친 상장을 다시 보냅니다. */
+(function(){
+if(window.KS_HQSEND)return;
+const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
+const FLD=()=>!!(window.KS_FIELD&&window.KS_FIELD.status);
+const opRoute=()=>{const h=(location.hash||'').replace('#','');return h===''||/^admin/.test(h);};
+const APPK=typeof g('SHEETS')!=='undefined'?'poomsae':typeof g('KINDS')!=='undefined'?'kyorugi':'gyeokpa';
+const ST={bsig:'',bat:0,cat:0,cn:0,busy:false,err:''};
+const comp=()=>((g('SET')||(()=>({})))()||{}).name||'';
+const LSK=()=>'ks_certsent_'+APPK+'_'+comp();
+let SENT={},SENTK='';
+const sentLoad=()=>{if(SENTK===LSK())return;SENTK=LSK();try{SENT=JSON.parse(localStorage.getItem(SENTK)||'{}')||{};}catch(e){SENT={};}};
+const sentSave=()=>{try{localStorage.setItem(SENTK,JSON.stringify(SENT));}catch(e){}};
+const safe=s=>String(s||'').replace(/[\\/:*?"<>|]/g,'_').replace(/\s+/g,' ').trim().slice(0,70);
+const base=()=>{try{return window.KS_AUTOSAVE.fname().replace(/_결과\(자동저장\)\.xlsx$/,'');}catch(e){return safe(comp()||APPK);}};
+async function post(name,blob){const r=await fetch(`/api/results/auto?name=${encodeURIComponent(name)}`,{method:'POST',body:blob});if(!r.ok)throw new Error('HTTP '+r.status);}
+async function backup(){
+  const bd=g('backupData');if(typeof bd!=='function')return;const d=bd();
+  const sig=JSON.stringify({...d,savedAt:0});if(sig===ST.bsig)return;
+  await post(`${base()}_백업(자동저장).json`,new Blob([JSON.stringify(d)],{type:'application/json'}));ST.bsig=sig;ST.bat=Date.now();
+}
+/* 부문이 끝났는지: 남은 경기가 없고, 마지막 단계(결선·결승)까지 끝남 */
+function finished(d){
+  try{
+    if(APPK==='kyorugi'){const ms=g('matchesOf')(d)||[];return ms.length>0&&ms.every(m=>m.res);}
+    const cs=g('callsOf')(d)||[],done=g('callDone');if(!cs.length||!cs.every(c=>done(c)))return false;
+    if(APPK==='poomsae'&&d.format!=='tournament'){const st=g('curStage')(d);return st&&st.key==='final';}
+    if(APPK==='gyeokpa'){const sts=g('stagesOf')(d)||[];return sts.some(s=>s.key==='final');}
+    return true;
+  }catch(e){return false;}
+}
+let CV=null;
+async function certs(){
+  const AW=window.AW;if(!AW||!AW.medalists||!AW.drawCert||!AW.medalCert)return;sentLoad();
+  let list=[];try{list=AW.medalists()||[];}catch(e){return;}
+  const by=new Map();list.forEach(x=>{const id=x.div&&x.div.id;if(!id)return;if(!by.has(id))by.set(id,{d:x.div,rows:[]});by.get(id).rows.push(x);});
+  for(const [id,v] of by){
+    if(!v.rows.some(x=>x.rank===1)||!finished(v.d))continue;
+    v.rows.sort((a,b)=>a.rank-b.rank||String(a.name).localeCompare(String(b.name),'ko'));
+    const sig=JSON.stringify(v.rows.map(x=>[x.rank,x.name,x.team]));if(SENT[id]===sig)continue;
+    if(!CV){CV=document.createElement('canvas');CV.width=1240;CV.height=1754;}
+    try{await Promise.all([document.fonts.load('800 60px "Noto Serif KR"'),document.fonts.load('500 40px "Noto Serif KR"')]);}catch(e){}
+    const ctx=CV.getContext('2d'),seal=AW.sealImg?await AW.sealImg().catch(()=>null):null,meta=(AW.results&&AW.results().meta)||{};
+    const pages=[];
+    for(const x of v.rows){let no='';if(meta.serial){ST.cn=(Number(localStorage.getItem('ks_certno_'+APPK))||0)+1;try{localStorage.setItem('ks_certno_'+APPK,ST.cn);}catch(e){}no=`${meta.serial}${(window.KS_FIELD&&KS_FIELD.court)||''}${String(ST.cn).padStart(3,'0')}`;}
+      await AW.drawCert(ctx,AW.medalCert(x),no,seal);pages.push(CV.toDataURL('image/jpeg',.82));await new Promise(r=>setTimeout(r,0));}
+    const job={kind:'cert',v:1,app:APPK,comp:comp(),court:(window.KS_FIELD&&KS_FIELD.court)||'',div:v.d.name,sig,at:Date.now(),
+      people:v.rows.map(x=>({rank:x.rank,name:x.name,team:x.team})),pages,again:!!SENT[id]};
+    await post(`${base()}_상장_${safe(v.d.name)}.cert.json`,new Blob([JSON.stringify(job)],{type:'application/json'}));
+    SENT[id]=sig;sentSave();ST.cat=Date.now();
+  }
+}
+async function tick(){if(!FLD()||ST.busy||!opRoute())return;const S=g('S');if(!S||!S.divs)return;ST.busy=true;
+  try{await backup();await certs();ST.err='';}catch(e){ST.err=String(e&&e.message||e);}finally{ST.busy=false;}}
+setInterval(tick,8000);setTimeout(tick,4000);
+window.KS_HQSEND={tick,state:ST};
+})();
 </script><script>/*@@SETSHELL*//* ===================== 설정·백업 화면 정리 (카드 · 요약판 · 대회 전 확인) =====================
    각 앱의 aSettings()가 만든 화면(여러 모듈이 덧붙인 패널 포함)을 주제별 카드로 다시 묶습니다.
    필드는 제목(.label) 글자로, 패널은 class나 제목(h2)으로 카드를 정합니다. 모르는 것은 「기타」 카드로 갑니다.
@@ -6235,7 +6295,7 @@ const F_RULES=[
 /* 통째로 옮기는 패널: class 또는 제목 → [카드, 더 보기] */
 const P_RULES=[
   ['.awpanel','awards'],['.ksfx-set','av'],['.kst-setp','av'],['.mu-panel','av',1],['.ksm','field'],['.ops','backup'],
-  [/백업|초기화/,'backup'],[/경기 소리/,'av'],[/부심 링크/,'field'],[/종목과 경기 시간/,'format',1],[/화면 디자인|전광판 디자인/,'av']];
+  [/백업|초기화/,'backup'],[/경기 소리/,'av'],[/부심 링크|심판 링크/,'field'],[/종목과 경기 시간/,'format',1],[/화면 디자인|전광판 디자인/,'av']];
 const ruleOf=(rules,txt,el)=>{for(const r of rules){if(typeof r[0]==='string'?(el&&el.matches(r[0])):r[0].test(txt))return {c:r[1],more:!!r[2]};}return null;};
 const labOf=el=>{const f=el.matches('.field,.label')?el:el.querySelector('.field,.label');if(!f)return '';const l=f.matches('.label')?f:f.querySelector('.label');return (l?l.textContent:'').trim();};
 
@@ -6429,7 +6489,7 @@ const css=document.createElement('style');css.textContent=`
 .ss-card>summary b{font-size:17px}
 .ss-ic{font-size:20px}
 .ss-st{flex:1;min-width:0;text-align:right;color:var(--muted);font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ss-car{transition:transform .15s;color:var(--muted)}.ss-card[open]>summary .ss-car{transform:rotate(180deg)}
+.ss-car{margin-left:auto;transition:transform .15s;color:var(--muted)}.ss-card[open]>summary .ss-car{transform:rotate(180deg)}
 .ss-card>.ss-body{display:flex;flex-direction:column;gap:14px;padding:0 18px 18px;border-top:1px solid var(--line);padding-top:14px}
 .ss-item{display:flex;flex-direction:column;gap:8px}
 .ss-flat{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}

@@ -30,3 +30,9 @@ func openFolder(dir string) error {
 	}
 	return exec.Command(cmd, dir).Start()
 }
+
+// 윈도우가 아니면 보통 브라우저로 엽니다 (인쇄 창이 뜹니다)
+func openPrintWindow(url, profile string) string {
+	openBrowser(url)
+	return "normal"
+}
