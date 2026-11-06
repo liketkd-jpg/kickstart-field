@@ -792,7 +792,7 @@ const T={
   lane:'레인',empty:'빈 레인',finish:'도착!',undo:'도착 취소',dnf:'기권',dnfOff:'기권 취소',start:'시작',running:'경기 중',
   confirm:'결과 확정',redo:'이 조 다시 하기',nextHeat:'다음 조로',heat:'조',round:'라운드',cutoff:'컷오프',final:'결승',semi:'준결승',
   boardScreen:'전광판 화면',sIntro:'오프닝',sLive:'현재 경기',sStand:'순위표',sBracket:'대진표',sChamp:'챔피언',
-  nextRound:'다음 라운드 대진 만들기',startTour:'상위 {n}명으로 토너먼트 시작',roundDone:'이 라운드의 모든 조가 끝났습니다.',allDone:'이 부문 경기가 끝났습니다. 챔피언이 정해졌어요!',nextDiv:'다음 부문: {d}',
+  nextRound:'다음 라운드 대진 만들기',startTour:'상위 {n}명으로 토너먼트 시작',roundDone:'이 라운드의 모든 조가 끝났습니다.',allDone:'이 부문 경기가 끝났습니다. 챔피언이 정해졌어요!',nextDiv:'다음 부문: {d}',order:'진행 순서',oDiv:'부별로 결승까지',oDivD:'한 부문을 결승까지 끝내고 다음 부문으로 넘어갑니다.',oRound:'라운드별로 모든 부 돌리기',oRoundD:'모든 부문의 1라운드를 먼저 돌리고 다음 라운드로 넘어갑니다. 인원이 적은 부는 그 라운드를 건너뛰고, 결승은 모든 부가 마지막에 함께 치릅니다.',nextGo:'다음 경기: {d}',nextBuild:'다음 라운드 대진 만들기: {d}',allDivDone:'모든 부문 경기가 끝났습니다!',stageLeft:'결승까지 {n}라운드',stageFin:'모든 부 결승',
   waitAll:'모든 선수가 도착하거나 기권해야 확정할 수 있습니다.',noDraw:'아직 대진이 없습니다. 설정에서 명단을 적용해 주세요.',
   sec:'초',total:'최종',raw:'기록',rank:'순위',name:'이름',pen:'페널티',
   nextUp:'다음 경기',meet:'오늘의 태권 히어로',courseMap:'히어로 코스',champion:'CHAMPION!',go:'GO!',cutLine:'토너먼트 진출',
@@ -826,7 +826,7 @@ const T={
   lane:'Lane',empty:'Empty lane',finish:'FINISH!',undo:'Undo finish',dnf:'DNF',dnfOff:'Undo DNF',start:'START',running:'Running',
   confirm:'Confirm results',redo:'Rerun this heat',nextHeat:'Next heat',heat:'Heat',round:'Round',cutoff:'Cut-off',final:'Final',semi:'Semifinal',
   boardScreen:'Scoreboard shows',sIntro:'Opening',sLive:'Live heat',sStand:'Standings',sBracket:'Bracket',sChamp:'Champion',
-  nextRound:'Build next round',startTour:'Start tournament with top {n}',roundDone:'Every heat in this round is finished.',allDone:'This division is done. We have a champion!',nextDiv:'Next: {d}',
+  nextRound:'Build next round',startTour:'Start tournament with top {n}',roundDone:'Every heat in this round is finished.',allDone:'This division is done. We have a champion!',nextDiv:'Next: {d}',order:'Running order',oDiv:'Division by division',oDivD:'Finish one division through its final, then move to the next.',oRound:'Round by round',oRoundD:'Run round 1 for every division, then round 2, and so on. Small divisions skip early rounds, so every final runs together at the end.',nextGo:'Next: {d}',nextBuild:'Build next round: {d}',allDivDone:'Every division is finished!',stageLeft:'{n} rounds to the final',stageFin:'Finals for every division',
   waitAll:'Every runner must finish or be marked DNF before confirming.',noDraw:'No draw yet. Apply the runner list in Setup.',
   sec:'s',total:'Total',raw:'Time',rank:'Rank',name:'Name',pen:'Penalty',
   nextUp:'Next up',meet:'Meet the Taekwon Heroes',courseMap:'Hero Course',champion:'CHAMPION!',go:'GO!',cutLine:'Tournament line',
@@ -860,7 +860,7 @@ const SAMPLE_ROSTER=()=>SAMPLE_ROWS.map((r,i)=>({id:'p'+(i+1),name:r[0],team:r[1
 function defaults(){return{
   v:1,lang:'ko',
   ev:{name:'2026 태권 히어로 2 갤럭시 챌린지',div:'유치부 5~7세',nameEn:'2026 Taekwon Heroes 2 Galaxy Challenge',divEn:'Kindergarten · Ages 5–7'},
-  game:'race',mode:'both',advN:8,perHeat:2,
+  game:'race',mode:'both',order:'div',advN:8,perHeat:2,
   st:[
     {id:'s1',ko:'허들 점프',en:'Hurdle Jump',pen:3,ic:'hurdle'},
     {id:'s2',ko:'터널 기어가기',en:'Tunnel Crawl',pen:2,ic:'tunnel'},
@@ -958,7 +958,7 @@ function anyResults(){stashDiv();return Object.values(S.divs||{}).some(d=>(d.rou
 function drawFor(players){
   let ids=players.map(p=>p.id); if(S.shuffle) ids=shuffle(ids);
   const rounds=[];
-  if(ids.length){if(S.mode==='tour') rounds.push({kind:'tour',final:ids.length<=4,heats:makeHeats(ids,false)});
+  if(ids.length){if(S.mode==='tour'||S.mode==='both'&&ids.length<=Math.max(4,S.advN)) rounds.push({kind:'tour',final:ids.length<=4,heats:makeHeats(ids,false)});
     else rounds.push({kind:'cut',heats:makeHeats(ids,false)});}
   return {players,rounds,cur:{r:0,h:0},champ:null,lastHeat:null};
 }
@@ -971,6 +971,7 @@ function buildDraw(){
   if(first){S.dkey=first;const d=S.divs[first];S.players=d.players;S.rounds=d.rounds;S.cur=d.cur;S.champ=null;S.lastHeat=null}
   else{S.players=[];S.rounds=[];S.cur={r:0,h:0};S.champ=null}
   R={phase:'idle',count:0,start:0,go:0};
+  if(byRound()){const n=nextInOrder();if(n&&n.k!==S.dkey)loadDiv(n.k)}
 }
 const curRound=()=>S.rounds[S.cur.r];
 const curHeat=()=>curRound()?.heats[S.cur.h];
@@ -997,11 +998,11 @@ function advancers(r){ // tournament: winners of each heat first, then runners-u
   const tiers=[];r.heats.forEach(h=>heatOrder(h).filter(i=>!h.dnf[i]).slice(0,S.perHeat).forEach((lane,k)=>{(tiers[k]=tiers[k]||[]).push({pid:h.lanes[lane],tot:total(h,lane)})}));
   return tiers.flatMap(tr=>tr.sort((a,b)=>a.tot-b.tot).map(x=>x.pid));
 }
-function projection(){ // future tournament rounds not built yet
+function projection(rounds=S.rounds,players=S.players){ // future tournament rounds not built yet
   const out=[];let n;
-  const last=S.rounds[S.rounds.length-1];
+  const last=rounds[rounds.length-1];
   if(!last){return out}
-  if(last.kind==='cut'){if(S.mode!=='both')return out;n=Math.min(S.advN,S.players.length)}
+  if(last.kind==='cut'){if(S.mode!=='both')return out;n=Math.min(S.advN,players.length)}
   else{if(last.final)return out;n=Math.min(last.heats.reduce((s,h)=>s+Math.min(S.perHeat,h.lanes.filter(x=>x!=null).length),0),last.heats.length*S.perHeat)}
   let guard=0;
   while(n>0&&guard++<10){if(n<=4){out.push({n,heats:1,final:true});break}const h=Math.ceil(n/4);out.push({n,heats:h});n=Math.min(n,h*S.perHeat)}
@@ -1138,6 +1139,27 @@ function nextRound(){
   const fin=ids.length<=4;S.cur={r:S.rounds.length-1,h:0};S.board=fin?'live':'bracket';R={phase:'idle',count:0,start:0,go:0};commit();sfx('whoosh');
   if(fin)setTimeout(()=>fx('powerup'),400);
 }
+
+/* ---- 진행 순서 ----
+   부별(div): 한 부문을 결승까지 끝내고 다음 부문으로.
+   라운드별(round): 모든 부문의 1라운드 → 2라운드 → … → 결승. 남은 라운드가 가장 많은 부문부터 돌고,
+   인원이 적어 라운드 수가 적은 부문은 그 라운드를 건너뜁니다. 그래서 결승은 모든 부문이 마지막에 함께 치릅니다. */
+const byRound=()=>S.order==='round';
+function remOf(d){if(!d||divDone(d)||!d.rounds||!d.rounds.length)return 0;const last=d.rounds[d.rounds.length-1];return (roundDone(last)?0:1)+projection(d.rounds,d.players).length}
+function stageInfo(){stashDiv();const ks=divKeys(),rem={};ks.forEach(k=>rem[k]=remOf(S.divs[k]));const max=Math.max(0,...ks.map(k=>rem[k]));return{rem,max,group:max?ks.filter(k=>rem[k]===max):[]}}
+function nextInOrder(){const st=stageInfo();if(!st.max)return null;
+  const open=k=>{const d=S.divs[k],r=d.rounds[d.rounds.length-1];return !!r&&!roundDone(r)};
+  if(st.group.includes(S.dkey)&&open(S.dkey))return{k:S.dkey,build:false};
+  const k=st.group[0];return{k,build:!open(k)}}
+function stageText(){if(!byRound()||S.mode==='cut')return'';const st=stageInfo();if(!st.max)return'';return '📋 '+(st.max===1?t('stageFin'):t('stageLeft',{n:st.max}))}
+function goNextInOrder(){if(R.phase==='running'||R.phase==='countdown')return;const n=nextInOrder();if(!n)return;
+  clearFlow();const moved=n.k!==S.dkey;if(moved)loadDiv(n.k);R={phase:'idle',count:0,start:0,go:0};
+  if(n.build){S.cur={r:S.rounds.length-1,h:0};const before=S.rounds.length;nextRound();if(S.rounds.length!==before)return}
+  const ri=S.rounds.length-1,r=S.rounds[ri],hi=r?r.heats.findIndex(h=>!h.done):-1;S.cur={r:ri,h:Math.max(0,hi)};
+  S.board=moved?'intro':'live';if(moved)slideIx=0;commit()}
+function orderBanner(r){const n=nextInOrder(),fin=!!S.champ&&(r.final||r.kind==='cut'&&S.mode==='cut');
+  const go=n?`<button class="btn red" data-act="nextOrder">${esc(n.build&&n.k===S.dkey?t('nextRound'):n.build?t('nextBuild',{d:divLabel(n.k)}):t('nextGo',{d:divLabel(n.k)}))} →</button>`:`<b>🎉 ${esc(t('allDivDone'))}</b>`;
+  return`<div class="banner">${fin?'🏆 '+esc(t('allDone')):esc(t('roundDone'))} ${fin?`<button class="btn" data-act="screen" data-v="champion">${esc(t('sChamp'))}</button>`:''}${go}</div>`}
 
 /* ================= 엑셀 명단 (품새·격파 앱과 같은 열: 번호·이름·소속·지도자·부별·성별) ================= */
 function pick(row,inc,exc=[]){for(const k of Object.keys(row)){const n=String(k).replace(/\s/g,'');if(!inc.some(x=>/영문|영어|English/.test(x))&&/영문|영어|English/i.test(n))continue;if(inc.some(x=>n.includes(x))&&!exc.some(x=>n.includes(x)))return row[k]}return ''}
@@ -1804,6 +1826,8 @@ function viewSetup(){
      <label class="f" style="width:11rem">${esc(t('advN'))}<input type="number" id="advN" min="2" max="64" data-in="advN" value="${S.advN}" ${S.mode!=='both'?'disabled':''}></label>
      <label class="f" style="width:11rem">${esc(t('perHeat'))}<select id="perHeat" data-in="perHeat"><option value="1" ${S.perHeat==1?'selected':''}>1</option><option value="2" ${S.perHeat==2?'selected':''}>2</option></select></label>
     </div>
+    <h2 style="margin-top:16px"><span class="tag">2</span>${esc(t('order'))}</h2>
+    <div class="modes">${[['div','oDiv'],['round','oRound']].map(([v,k])=>`<label class="mode"><input type="radio" name="order" id="order-${v}" data-in="order" value="${v}" ${(S.order||'div')===v?'checked':''}><b>${esc(t(k))}</b><span>${esc(t(k+'D'))}</span></label>`).join('')}</div>
    </section>
 
    <section class="card"><h2><span class="tag">3</span>${esc(t('course'))}</h2>
@@ -1911,7 +1935,8 @@ function viewRun(){
   const complete=heatComplete(h);
   let banner='';
   const nd=divKeys().find(k=>k!==S.dkey&&!divDone(S.divs[k]));
-  if(S.champ&&roundDone(r)&&(r.final||r.kind==='cut'&&S.mode==='cut'))banner=`<div class="banner">🏆 ${esc(t('allDone'))} <button class="btn" data-act="screen" data-v="champion">${esc(t('sChamp'))}</button>${nd?`<button class="btn red" data-act="pickDiv" data-v="${esc(nd)}">${esc(t('nextDiv',{d:divLabel(nd)}))} →</button>`:''}</div>`;
+  if(byRound()&&roundDone(r))banner=orderBanner(r);
+  else if(S.champ&&roundDone(r)&&(r.final||r.kind==='cut'&&S.mode==='cut'))banner=`<div class="banner">🏆 ${esc(t('allDone'))} <button class="btn" data-act="screen" data-v="champion">${esc(t('sChamp'))}</button>${nd?`<button class="btn red" data-act="pickDiv" data-v="${esc(nd)}">${esc(t('nextDiv',{d:divLabel(nd)}))} →</button>`:''}</div>`;
   else if(roundDone(r)){
     const canNext=(r.kind==='cut'&&S.mode==='both')||(r.kind==='tour'&&!r.final);
     banner=`<div class="banner">${esc(t('roundDone'))} ${canNext?`<button class="btn red" data-act="nextRound">${esc(r.kind==='cut'?t('startTour',{n:Math.min(S.advN,S.players.length)}):t('nextRound'))}</button>`:''}</div>`;
@@ -1919,7 +1944,7 @@ function viewRun(){
   return`<div class="runview">
   ${banner}
   <section class="card runbar">
-    <div class="lbl"><select id="divSel" class="divsel" aria-label="${esc(t('division'))}" ${R.phase==='running'||R.phase==='countdown'?'disabled':''}>${divKeys().map(k=>`<option value="${esc(k)}" ${k===S.dkey?'selected':''}>${divDone(S.divs[k])?'✓ ':''}${esc(divLabel(k))} (${S.divs[k].players.length}${esc(t('ppl'))})</option>`).join('')}</select> ${esc(roundLabel(S.cur.r))} · ${esc(heatLabel(S.cur.h))}<small>${gameIc()} ${esc(t(S.game==='relay'?'gRelay':S.game==='family'?'gFamily':S.game==='boss'?(S.cfg.bossTeam?'gBossT':'gBoss'):'gRace'))} · ${esc(t('heatOf',{h:S.cur.h+1,n:r.heats.length}))}${h.done?' · '+esc(t('confirm'))+' ✓':''}</small></div>
+    <div class="lbl"><select id="divSel" class="divsel" aria-label="${esc(t('division'))}" ${R.phase==='running'||R.phase==='countdown'?'disabled':''}>${divKeys().map(k=>`<option value="${esc(k)}" ${k===S.dkey?'selected':''}>${divDone(S.divs[k])?'✓ ':''}${esc(divLabel(k))} (${S.divs[k].players.length}${esc(t('ppl'))})</option>`).join('')}</select> ${esc(roundLabel(S.cur.r))} · ${esc(heatLabel(S.cur.h))}<small>${byRound()&&stageText()?esc(stageText())+' · ':''}${gameIc()} ${esc(t(S.game==='relay'?'gRelay':S.game==='family'?'gFamily':S.game==='boss'?(S.cfg.bossTeam?'gBossT':'gBoss'):'gRace'))} · ${esc(t('heatOf',{h:S.cur.h+1,n:r.heats.length}))}${h.done?' · '+esc(t('confirm'))+' ✓':''}</small></div>
     ${heroLogo('mid')}
     <div class="flowpill" ${flowInfo?'':'hidden'}><span data-flow>${flowInfo?esc(t('flow_'+flowInfo.label,{s:Math.max(0,Math.ceil((flowInfo.until-Date.now())/1000))})):''}</span><button class="btn" data-act="stopFlow">${esc(t('stop'))}</button></div>
     <div class="clock" data-clock>${R.phase==='countdown'?R.count:clockVal(h)}</div>
@@ -2246,6 +2271,7 @@ document.addEventListener('click',e=>{
     case'pickHeat':pickHeat(S.cur.r,+v);break;
     case'pickRound':pickHeat(+v,Math.max(0,S.rounds[+v].heats.findIndex(h=>!h.done)));break;
     case'nextRound':nextRound();break;
+    case'nextOrder':goNextInOrder();break;
     case'screen':S.board=v;slideIx=0;commit();if(v==='champion'&&S.champ)fx('champion');break;
     case'full':goFull();break;
     case'gate':gateOpen=false;goFull();renderBoard();send({t:'hello'});break;
@@ -2289,6 +2315,7 @@ document.addEventListener('change',e=>{
   if(k==='perHeat')val=parseInt(val)||2;
   if(k==='cfg.relayN')val=parseInt(val)||4;
   const path=k.split('.');let o=S;while(path.length>1)o=o[path.shift()];o[path[0]]=val;
+  if(k==='order'&&byRound()&&R.phase==='idle'&&!(S.rounds||[]).some(r=>r.heats.some(h=>h.done))){const n=nextInOrder();if(n&&!n.build&&n.k!==S.dkey){clearFlow();loadDiv(n.k);S.cur={r:S.rounds.length-1,h:0};S.board='intro';slideIx=0}}
   if(k==='game'||k==='cfg.relayN'||k==='cfg.mixG'){gameChanged();return}
   commit();
 });
