@@ -1408,11 +1408,11 @@ function tbCompare(ax,ay,bx,by){
 /* 청·홍 경기의 승패. 품새 2개 경기는 1품새 때는 승패 없이 점수만, 2품새 때 두 품새 평균으로 승자를 정합니다 */
 function matchVerdict(cur,resOf){
   if(!cur||cur.entries.length!==2)return {win:null,why:''};
-  const d=S.divs.find(x=>x.id===cur.divId)||{},two=pCount(d)>1&&!cur.rm;
+  const d=S.divs.find(x=>x.id===cur.divId)||{},rk=rkOf(cur),PR=pCountR(d,rk),two=PR>1&&!cur.rm;
   const [ea,eb]=cur.entries;
   if(two){
-    if((cur.k||1)<pCount(d))return {win:null,why:'',two,stage:cur.k||1};
-    const ag=e=>{const rs=ks(d).map(k=>{const id=e.perfId.replace(/_\d+$/,'_'+k);return id===e.perfId?resOf(e):S.results[id];});return {rs,a:aggRs(rs)};};
+    if((cur.k||1)<PR)return {win:null,why:'',two,stage:cur.k||1};
+    const ag=e=>{const rs=ksR(d,rk).map(k=>{const id=e.perfId.replace(/_\d+$/,'_'+k);return id===e.perfId?resOf(e):S.results[id];});return {rs,a:aggRs(rs)};};
     const A=ag(ea),B=ag(eb);
     if(!A.a||!B.a)return {win:null,why:'',two,stage:2};
     const c=compareRes(A.a,B.a);
@@ -1438,6 +1438,38 @@ function aggRs(rs){
 }
 const pCount=d=>d.poomsae===2&&!isTeamType(d.type)?2:1;
 const ks=d=>pCount(d)===2?[1,2]:[1];
+/* ===================== 지정 품새표 (직접 지정) =====================
+   설정 탭에서 「학년(부문 이름에 들어가는 말) · 라운드 · 품새」를 적어 두면 추첨하지 않고 그대로 씁니다.
+   라운드마다 품새 수가 달라도 됩니다 (예: 예선 2개 평균, 결선 1개). 같은 부문에 여러 줄이 맞으면 더 긴 이름이 우선합니다. */
+const PF_ALL=[...Array.from({length:8},(_,i)=>`태극 ${i+1}장`),'고려','금강','태백','평원','십진','지태','천권','한수','일여'];
+const pfNorm=s=>String(s??'').replace(/\s+/g,'');
+const pfGk=s=>pfNorm(s).replace(/부/g,'');
+function pfRound(s){s=pfNorm(s);if(!s||/^(전체|모든|공통|\*|-)/.test(s))return '*';if(/재경기/.test(s))return '재경기';if(/준결/.test(s))return '준결승';if(/결승|결선/.test(s))return '결선';if(/예선/.test(s))return '예선';if(/본선/.test(s))return '본선';const m=s.match(/(\d+)강/);return m?m[1]+'강':s;}
+const PF_ROUNDS=['전체','예선','본선','결선','32강','16강','8강','준결승','재경기'];
+const pfName=s=>{const t=pfNorm(s);const m=t.match(/^태극(\d)장?$/);return m?`태극 ${m[1]}장`:String(s??'').trim();};
+const pfRows=()=>(SET().pfix||[]).filter(r=>r&&r.g&&Array.isArray(r.p)&&r.p.filter(Boolean).length);
+/* 라운드 키 → 라운드 이름. 컷오프는 pre/semi/final, 토너먼트는 r1, r2 … */
+const unitRk=u=>{u=u||'';const h=u.split('_')[0];if(STAGES[h])return h;const m=/^r\d+/.exec(u);return m?m[0]:'';};
+const rkOf=c=>c?(c.stage||unitRk(c.unit)):'';
+function pfRoundOf(d,rk){if(!rk)return '';if(STAGES[rk])return pfRound(STAGES[rk]);const m=/^r(\d+)$/.exec(rk);if(!m)return '';
+  let n=(d.round1||[]).length,R=1;while(n>1){n=Math.ceil(n/2);R++;}return pfRound(roundName(+m[1],Math.max(R,+m[1])));}
+/* 이 부문·라운드의 지정 품새 목록 (없으면 null). rm=재경기면 「재경기」 줄만 봅니다 */
+function pfixFor(d,rk,rm){
+  if(!d||d.type!=='recognized')return null;const rows=pfRows();if(!rows.length)return null;
+  const nm=pfGk(d.name),rn=rm?'재경기':pfRoundOf(d,rk);if(!rn)return null;let best=null,bs=-1;
+  rows.forEach(r=>{const g=pfGk(r.g);if(!g||!nm.includes(g))return;const rr=pfRound(r.r);if(rm?rr!=='재경기':(rr!==rn&&rr!=='*'))return;
+    const sc=g.length*2+(rr==='*'?0:1);if(sc>bs){bs=sc;best=r;}});
+  return best?best.p.filter(Boolean).map(pfName).slice(0,2):null;
+}
+/* 추첨 단위(unit)에 지정 품새가 있으면 추첨 결과처럼 돌려줍니다. 재경기는 「재경기」 줄, 없으면 그 라운드의 마지막 품새 */
+function pfixUnit(d,unit){
+  if(!d||!unit)return null;const rk=unitRk(unit);if(!rk)return null;
+  if(/_R\d+$/.test(unit)){const r=pfixFor(d,rk,true);if(r)return {list:[r[0]],fixed:1,at:0};const f=pfixFor(d,rk);return f?{list:[f[f.length-1]],fixed:1,at:0}:null;}
+  const f=pfixFor(d,rk);return f?{list:f,fixed:1,at:0}:null;
+}
+/* 라운드별 품새 수 (지정 품새표가 있으면 그 개수, 없으면 부문 설정) */
+const pCountR=(d,rk)=>{const f=rk&&!isTeamType(d.type)?pfixFor(d,rk):null;return f?Math.min(2,f.length):pCount(d);};
+const ksR=(d,rk)=>pCountR(d,rk)===2?[1,2]:[1];
 /* ===================== 지정품새 추첨 (제8조 공인품새의 지정) =====================
    4.1 개인전 / 4.2 단체·복식전 부별 지정품새. 품새 2개면 앞쪽 그룹에서 1개, 뒤쪽 그룹에서 1개
    (8개: 앞 4·뒤 4, 7개: 앞 4·뒤 3). 재경기는 뒤쪽 그룹에서 1개(제14조 2항) */
@@ -1481,8 +1513,8 @@ function drawPoomsae(list,P,rm){
   return [pickOne(list)];
 }
 /* 추첨 결과. 품새 수를 1개→2개로 바꾼 뒤라 개수가 모자라면 없는 것으로 보고 다시 추첨합니다 */
-const pdrawOf=(divId,unit)=>{const d=S.pdraw&&S.pdraw[divId];const x=d&&d.m?d.m[unit]:null;if(!x||!x.list||!x.list.length)return null;
-  const dv=S.divs.find(v=>v.id===divId);if(dv&&!/_R\d+$/.test(unit)&&pCount(dv)>x.list.length)return null;return x;};
+const pdrawOf=(divId,unit)=>{const fx=pfixUnit(S.divs.find(v=>v.id===divId),unit);if(fx)return fx;const d=S.pdraw&&S.pdraw[divId];const x=d&&d.m?d.m[unit]:null;if(!x||!x.list||!x.list.length)return null;
+  const dv=S.divs.find(v=>v.id===divId);if(dv&&!/_R\d+$/.test(unit)&&pCountR(dv,unitRk(unit))>x.list.length)return null;return x;};
 /* 호출 하나의 품새 이름 */
 function pnameOfCall(c){
   if(!c||!c.unit)return '';const x=pdrawOf(c.divId,c.unit);if(!x||!x.list)return '';
@@ -1503,9 +1535,10 @@ function plannedUnits(d){
   return out.map(k=>({unit:k,label:STAGES[k]}));
 }
 async function drawUnit(div,c,{force}={}){
+  if(pfixUnit(div,c.unit))return false; /* 지정 품새표로 정해진 라운드는 추첨하지 않음 */
   const list=plistOf(div);if(!list)return false;
   if(!force&&pdrawOf(div.id,c.unit))return false;
-  const res=drawPoomsae(list,pCount(div),!!c.rm);
+  const res=drawPoomsae(list,pCountR(div,rkOf(c)),!!c.rm);
   await savePdraw(div.id,c.unit,res);
   addLog(force?'품새 다시 추첨':'품새 추첨',`${div.name} · ${c.label.replace(/ · \d품새$/,'')}`,res.join(' · '));
   return true;
@@ -1519,7 +1552,7 @@ function firstStageD(d){const n=(d.order||[]).length,m=cutMode(d);if(m==='final'
 function nextStage(d,k){if(cutMode(d)==='two')return k==='pre'?'final':null;return NEXT_STAGE[k]||null;}
 function stagesOf(d){return d.stages&&d.stages.length?d.stages:[{key:firstStageD(d),order:d.order||[]}];}
 const curStage=d=>{const s=stagesOf(d);return s[s.length-1];};
-const stagePerfIds=(d,stKey,aid)=>ks(d).map(k=>`${d.id}_${stKey}_${aid}_${k}`);
+const stagePerfIds=(d,stKey,aid)=>ksR(d,stKey).map(k=>`${d.id}_${stKey}_${aid}_${k}`);
 function stageRanking(d,st){
   const rows=st.order.map(id=>({id,agg:agg(stagePerfIds(d,st.key,id))}));
   rows.sort((x,y)=>rowCmp(d,st,x,y).c);
@@ -1549,7 +1582,7 @@ function bracketRounds(div){
   const rounds=[];let cur=div.round1.map(p=>({blue:p[0],red:p[1]}));let r=1;
   while(true){
     cur.forEach((m,i)=>{m.r=r;m.i=i;m.id=`${div.id}_r${r}_m${i}`;
-      m.resBlue=agg(ks(div).map(k=>`${m.id}_blue_${k}`));m.resRed=agg(ks(div).map(k=>`${m.id}_red_${k}`));m.winner=decide(m);});
+      const K=ksR(div,`r${r}`);m.resBlue=agg(K.map(k=>`${m.id}_blue_${k}`));m.resRed=agg(K.map(k=>`${m.id}_red_${k}`));m.winner=decide(m);});
     rounds.push(cur);if(cur.length===1)break;
     const next=[];for(let i=0;i<cur.length;i+=2)next.push({blue:cur[i].winner,red:cur[i+1].winner});
     cur=next;r++;
@@ -1562,8 +1595,8 @@ function callsOf(div){
   if(div.format==='tournament'){
     const rounds=bracketRounds(div),R=rounds.length,out=[];
     rounds.forEach(ms=>ms.forEach(m=>{
-      const no=div.matchNo?div.matchNo[`r${m.r}_m${m.i}`]:null;
-      if(m.blue&&m.red)ks(div).forEach(k=>out.push({callId:`${m.id}_${k}`,divId:div.id,type:div.type,k,stage:null,no:no||0,unit:SET().pdraw==='pre'?`r${m.r}`:`r${m.r}_m${m.i}`,
+      const no=div.matchNo?div.matchNo[`r${m.r}_m${m.i}`]:null,P=pCountR(div,`r${m.r}`);
+      if(m.blue&&m.red)ksR(div,`r${m.r}`).forEach(k=>out.push({callId:`${m.id}_${k}`,divId:div.id,type:div.type,k,stage:null,no:no||0,unit:SET().pdraw==='pre'?`r${m.r}`:`r${m.r}_m${m.i}`,
         label:no?`${no}경기 · ${roundName(m.r,R)}${P>1?` · ${k}품새`:''}`:`${roundName(m.r,R)} ${m.i+1}경기${P>1?` · ${k}품새`:''}`,
         entries:[{perfId:`${m.id}_blue_${k}`,athleteId:m.blue,side:'blue'},{perfId:`${m.id}_red_${k}`,athleteId:m.red,side:'red'}]}));
       /* 완전 동점이면 재경기(품새 1개) 호출을 자동으로 붙입니다 */
@@ -1577,8 +1610,8 @@ function callsOf(div){
   }
   const st=curStage(div),out=[];
   if(st.pending)return out; /* 진출자가 올라왔지만 아직 순서 추첨 전 */
-  st.order.forEach((aid,i)=>ks(div).forEach(k=>{const pid=`${div.id}_${st.key}_${aid}_${k}`;
-    out.push({callId:pid,divId:div.id,type:div.type,k,stage:st.key,unit:st.key,label:`${STAGES[st.key]} ${i+1}번${P>1?` · ${k}품새`:''}`,
+  const PS=pCountR(div,st.key);st.order.forEach((aid,i)=>ksR(div,st.key).forEach(k=>{const pid=`${div.id}_${st.key}_${aid}_${k}`;
+    out.push({callId:pid,divId:div.id,type:div.type,k,stage:st.key,unit:st.key,label:`${STAGES[st.key]} ${i+1}번${PS>1?` · ${k}품새`:''}`,
       entries:[{perfId:pid,athleteId:aid,side:null}]});}));
   /* 재경기: 이미 한 재경기 + 지금 필요한 재경기 */
   const rn=rematchNeed(div),rms=[];
@@ -1808,6 +1841,7 @@ function aSettings(){
       <span class="label" style="margin-top:6px">지정품새 추첨 방식 (제8조 2항)</span>
       <div class="seg"><button class="${(s.pdraw||'call')==='call'?'on':''}" data-act="setPdraw" data-v="call">매 경기 현장 추첨</button><button class="${s.pdraw==='pre'?'on':''}" data-act="setPdraw" data-v="pre">경기 당일 일괄 추첨 후 발표</button></div>
       <span class="small muted">매 경기 현장 추첨: 경기를 호출하면 부별 지정품새 중에서 자동으로 추첨해 전광판에 돌림판처럼 보여 줍니다. 당일 일괄 추첨: 대진표 탭에서 부문별로 라운드(단계)마다 미리 추첨해 두고 모든 경기에 같은 품새를 씁니다.</span>
+      ${pfPanel()}
       <span class="label" style="margin-top:6px">컷오프 진출 방식 (대회 기본값 · 부문마다 「대진표」에서 바꿀 수 있음)</span>
       <div class="seg"><button class="${(s.cutMode||'rule')==='two'?'on':''}" data-act="setCutMode" data-v="two">예선 → 결선 (상위 N명)</button><button class="${(s.cutMode||'rule')==='rule'?'on':''}" data-act="setCutMode" data-v="rule">규정 자동</button></div>
       ${(s.cutMode||'rule')==='two'?`<div class="row" style="gap:6px"><span class="small">결선 진출 인원</span><div class="seg">${[1,2,3,4,5,6,8,10].map(x=>`<button class="${Number(s.advN||3)===x?'on':''}" data-act="setAdvN" data-v="${x}">${x}명</button>`).join('')}</div></div>
@@ -1989,9 +2023,10 @@ function advanceBox(d){
    코트별 명단 파일(엑셀)을 각 코트 노트북의 「선수 등록 → 엑셀 불러오기」로 넣으면 같은 부문 이름으로 편성됩니다 */
 const COURT_L='ABCDEFGH';
 const PERF_MIN={recognized:2,freestyle:2.5,gym:3,team100:7.5};
-function estPerf(d){const n=(d.order||[]).length;if(!n)return 0;if(d.format==='tournament')return Math.max(1,n-1)*2*pCount(d);
+const pAvgR=d=>{try{const u=plannedUnits(d);return u.length?u.reduce((t,x)=>t+pCountR(d,unitRk(x.unit)),0)/u.length:pCount(d);}catch(e){return pCount(d);}};
+function estPerf(d){const n=(d.order||[]).length;if(!n)return 0;if(d.format==='tournament')return Math.max(1,n-1)*2*pAvgR(d);
   const m=cutMode(d);let k=n;if(m==='two')k=n>cutAdv(d)?n+cutAdv(d):n;else if(m!=='final'){k=n<=11?n:n<=21?n+8:n+Math.ceil(n/2)+8;}
-  return k*pCount(d);}
+  return k*pAvgR(d);}
 const estMin=d=>estPerf(d)*(PERF_MIN[d.type]||2);
 const hm=min=>{const h=Math.floor(min/60),m=Math.round(min%60);return h?`${h}시간 ${m}분`:`${m}분`;};
 const clockAt=(start,min)=>{const [h,m]=String(start||'09:30').split(':').map(Number),t=h*60+m+Math.round(min);return `${String(Math.floor(t/60)%24).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;};
@@ -2059,6 +2094,12 @@ function aDraw(){
 }
 function pBox(d){
   if(d.type!=='recognized')return '';
+  { const us=plannedUnits(d),fx=us.map(u=>({...u,x:pfixUnit(d,u.unit)}));
+    if(fx.some(u=>u.x)){const rx=pfixUnit(d,(us[0]||{}).unit+'_R1');
+      return `<div class="pbox"><div class="row between"><b>지정 품새 (지정 품새표)</b><button class="btn sm" data-act="go" data-r="admin-settings">품새표 고치기</button></div>
+      <div class="pdrs">${fx.map(u=>`<span class="pdr ${u.x?'on':''}"><span class="small muted">${esc(u.label)}</span> ${u.x?u.x.list.map((p,i)=>`<b>${u.x.list.length>1?`${i+1}. `:''}${esc(p)}</b>`).join(' · ')+(u.x.list.length>1?' <span class="small muted">(평균)</span>':''):'<span class="small muted">지정 없음 · 추첨</span>'}</span>`).join('')}${rx?`<span class="pdr on"><span class="small muted">재경기</span> <b>${esc(rx.list[0])}</b></span>`:''}</div>
+      <span class="small muted">설정 탭의 지정 품새표에서 학년·라운드로 정한 품새입니다. 추첨하지 않습니다.</span></div>`;}
+  }
   const c=pcatOf(d),list=plistOf(d),auto=(()=>{const x={...d,pcat:null};return pcatOf(x);})();
   const sel=`<select data-on="pcat" data-id="${d.id}" aria-label="지정품새 부별">${['',...Object.keys(PLISTS)].map(k=>`<option value="${k}" ${(d.pcat||'')===k?'selected':''}>${k?PLISTS[k].label:`자동 (부문 이름으로 찾기${auto?': '+PLISTS[auto].label:': 못 찾음'})`}</option>`).join('')}</select>`;
   if(!list)return `<div class="pbox"><div class="row between"><b>지정품새 (제8조)</b>${sel}</div><span class="chip warn" style="white-space:normal">부문 이름으로 부별 지정품새를 찾지 못했습니다. 오른쪽에서 부를 골라 주세요.</span></div>`;
@@ -2482,8 +2523,8 @@ function winFlash(st){
 function curPinfo(cur){
   if(!cur||cur.type!=='recognized')return null;
   const d=S.divs.find(x=>x.id===cur.divId);if(!d)return null;
-  const list=plistOf(d),x=cur.unit?pdrawOf(d.id,cur.unit):null;
-  return {d,list,x,P:pCount(d),idx:cur.rm?0:(cur.k||1)-1,rm:!!cur.rm};
+  const x=cur.unit?pdrawOf(d.id,cur.unit):null,list=(x&&x.fixed?x.list:null)||plistOf(d);
+  return {d,list,x,P:pCountR(d,rkOf(cur)),idx:cur.rm?0:(cur.k||1)-1,rm:!!cur.rm,fixed:!!(x&&x.fixed)};
 }
 /* 운영석 경기 진행 화면의 품새 줄 */
 function pbarHtml(cur,revealed){
@@ -2492,7 +2533,7 @@ function pbarHtml(cur,revealed){
   if(!pi.x)return `<div class="pbar"><span class="label">지정품새</span><button class="btn primary" data-act="pdrawCur">🎲 품새 추첨</button><span class="small muted">누르면 전광판에 추첨 화면이 나옵니다</span></div>`;
   const busy=revealed||curScores().length>0;
   return `<div class="pbar"><span class="label">지정품새</span>${pi.x.list.map((p,i)=>`<span class="pnow ${i===pi.idx?'on':''}">${pi.rm?'재경기 ':pi.P>1&&pi.x.list.length>1?`${i+1}품새 `:''}<b>${esc(p)}</b></span>`).join('')}
-    ${busy?'':`<button class="btn sm" data-act="armed" data-do="pdrawCur" data-force="1">다시 추첨</button>`}</div>`;
+    ${pi.fixed?'<span class="chip ok">지정 품새표</span>':busy?'':`<button class="btn sm" data-act="armed" data-do="pdrawCur" data-force="1">다시 추첨</button>`}</div>`;
 }
 const pjChip=cur=>{const n=pnameOfCall(cur);return n?`<span class="pjc">${cur.rm?'재경기 ':''}${esc(n)}</span>`:'';};
 /* 전광판 품새 표시 (추첨 직후에는 돌림판처럼 돌다가 멈춤) */
@@ -2543,7 +2584,7 @@ function cutBoard(cur,st,ctl,head,clock){
   if(el<CB_SCORE_MS||!ag||!stg){
     if(el<CB_SCORE_MS&&ag&&stg)setTimeout(schedule,CB_SCORE_MS-el+30);
     const cards=res.judges.map(j=>`<div class="cbj ok shown"><div class="cbjn">${j.judge}심</div><div class="cbji"><span>${labA}</span><b class="${j.dropA?'drop':''}">${fmt1(j.a)}</b></div><div class="cbji"><span>${labB}</span><b class="${j.dropB?'drop':''}">${fmt1(j.b)}</b></div><div class="cbjt">${fmt1((j.a||0)+(j.b||0))}</div></div>`).join('');
-    const two=d&&pCount(d)>1&&ag&&!cur.rm;
+    const two=d&&pCountR(d,rkOf(cur))>1&&ag&&!cur.rm;
     return `<div class="board cb">${ctl}<div class="colorband none"></div>${head}${who}
       <div class="cbjs" style="--j:${res.judges.length}">${cards}</div>
       <div class="cbres"><span>${labA} <b>${fmt3(res.a)}</b></span><span>${labB} <b>${fmt3(res.b)}</b></span>${res.deduction?`<span class="neg">감점 <b>−${fmt1(res.deduction)}</b></span>`:''}<span class="cbfinal">${fmt3(res.final)}</span>${two?`<span>품새 평균 <b>${fmt3(ag.final)}</b></span>`:''}</div>
@@ -2568,7 +2609,7 @@ function vDisplay(){
   if(cur.entries.length===2){
     const [rb,rr]=cur.entries.map(e=>revealed?S.results[e.perfId]:null);
     const mv=revealed?matchVerdict(cur,e=>S.results[e.perfId]):{win:null,why:''};let win=mv.win,why=mv.why;
-    const dv=S.divs.find(x=>x.id===cur.divId)||{},two=pCount(dv)>1&&!cur.rm;
+    const dv=S.divs.find(x=>x.id===cur.divId)||{},two=pCountR(dv,rkOf(cur))>1&&!cur.rm;
     const p1=e=>S.results[e.perfId.replace(/_\d+$/,'_1')];
     return `<div class="board two">${ctl}<div class="colorband none"></div>${head}<div class="mid2">${pbanHtml(cur)}${revealed?(win==='tie'?'<div class="tie">완전 동점 · 재경기</div>':why?`<div class="tie">${esc(why)}</div>`:two&&mv.stage===1?'<div class="tie" style="color:var(--muted)">1품새 점수</div>':two&&mv.aggs?'<div class="tie" style="color:var(--green)">최종 · 두 품새 평균</div>':'<div></div>'):clock}</div>
       <div class="vs">${cur.entries.map((e,i)=>{const res=i===0?rb:rr,f=win===e.side?winFlash(st):{c:'',s:''};return `<div class="side ${e.side} ${win===e.side?'win':''} ${f.c}" style="${f.s}">
@@ -2642,7 +2683,7 @@ async function doReveal(auto){
 const AUTO_NEXT_MS=5000;let NEXT_KEY='',NEXT_T=null,NEXT_CANCEL='';
 function autoNextInfo(){
   const st=ST(),cur=curOf();if(!cur||st.status!=='revealed'||SET().autoNext==='manual')return null;
-  const d=S.divs.find(x=>x.id===cur.divId);if(!d||pCount(d)<2||cur.rm||(cur.k||1)>=pCount(d))return null;
+  const d=S.divs.find(x=>x.id===cur.divId);if(!d||pCountR(d,rkOf(cur))<2||cur.rm||(cur.k||1)>=pCountR(d,rkOf(cur)))return null;
   const key=cur.callId+'#'+st.epoch;if(NEXT_CANCEL===key)return null;
   return {key,at:(st.revealedAt||Date.now())+AUTO_NEXT_MS};
 }
@@ -2956,7 +2997,7 @@ const ACT={
     const cur=curOf();if(cur&&cur.divId===id)await saveState({...ST(),status:'idle',current:null,epoch:(ST().epoch||0)+1,timer:null});toast(v==='cutoff'?'컷오프로 바꿨습니다. 이제 한 명씩 호출됩니다':'토너먼트로 바꿨습니다');},
   setPdraw:b=>saveSettings({...SET(),pdraw:b.dataset.v}),
   pdrawDiv:async b=>{const d=S.divs.find(x=>x.id===b.dataset.id);if(!d)return;let n=0;
-    if(!plistOf(d))return toast('먼저 지정품새 부를 골라 주세요');
+    if(!plistOf(d))return toast(pfRows().length?'지정 품새표로 정해진 라운드는 추첨하지 않습니다':'먼저 지정품새 부를 골라 주세요');
     const us=SET().pdraw==='pre'?plannedUnits(d).map(u=>({...u,divId:d.id,rm:0,k:1})):unitsOf(d);
     for(const u of us)if(await drawUnit(d,u))n++;toast(n?`${n}개를 추첨했습니다`:'추첨할 것이 없습니다');render();},
   pdrawDivAll:async b=>{const d=S.divs.find(x=>x.id===b.dataset.id);if(!d||!plistOf(d))return toast('먼저 지정품새 부를 골라 주세요');
@@ -2964,11 +3005,12 @@ const ACT={
     const done=new Set(Object.values(S.results).filter(r=>r.divId===d.id).map(r=>{const c=callsOf(d).find(x=>x.callId===r.callId);return c&&c.unit;}));
     let n=0;for(const u of us){if(done.has(u.unit))continue;await drawUnit(d,u,{force:true});n++;}toast(`${n}개를 다시 추첨했습니다 (점수가 있는 경기는 그대로)`);render();},
   pdrawAll:async()=>{let n=0,miss=0;toast('추첨하는 중…');
-    for(const d of S.divs){if(d.type!=='recognized')continue;if(!plistOf(d)){miss++;continue;}
+    for(const d of S.divs){if(d.type!=='recognized')continue;if(!plistOf(d)){if(!plannedUnits(d).every(u=>pfixUnit(d,u.unit)))miss++;continue;}
       const us=SET().pdraw==='pre'?plannedUnits(d).map(u=>({...u,rm:0,k:1})):unitsOf(d);
       for(const u of us)if(await drawUnit(d,u))n++;}
     toast(`지정품새 ${n}개를 추첨했습니다${miss?` · 부를 찾지 못한 부문 ${miss}개는 대진표 탭에서 골라 주세요`:''}`);render();},
   pdrawCur:async b=>{const cur=curOf();if(!cur)return;const d=S.divs.find(x=>x.id===cur.divId);const c=d&&callsOf(d).find(x=>x.callId===cur.callId);if(!c)return;
+    if(pfixUnit(d,c.unit))return toast('지정 품새표로 정해진 경기입니다');
     if(!plistOf(d))return toast('대진표 탭에서 이 부문의 지정품새 부를 골라 주세요');
     await drawUnit(d,c,{force:b.dataset.force==='1'});render();},
   divPoomsae:b=>saveDivs(S.divs.map(d=>d.id===b.dataset.id?{...d,poomsae:Number(b.dataset.v)}:d)),
@@ -3163,6 +3205,75 @@ const ON_CHANGE=new Set(['courtSet','courtStart','pcat','setNumIn','runDiv','res
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=ACT[b.dataset.act];if(f)f(b,e);});
 document.addEventListener('input',e=>{const el=e.target.closest('[data-on]');if(!el||ON_CHANGE.has(el.dataset.on))return;ON[el.dataset.on]?.(el);});
 document.addEventListener('change',e=>{const el=e.target.closest('[data-on]');if(!el||!ON_CHANGE.has(el.dataset.on))return;ON[el.dataset.on]?.(el);});
+
+/* ---------- 지정 품새표 설정 화면 · 엑셀 ---------- */
+const PF_GRADE_RE=/(유치부?|유아부?|초등부?\s*[1-6]\s*학년|중등부?\s*[1-3]\s*학년|중학교?\s*[1-3]\s*학년|고등부?\s*[1-3]\s*학년|초등\s*(?:저|중|고)학년부?|초등부|중등부|고등부|대학부|일반부|성인부|장년\s*[12]?\s*부)/;
+/* 공인 부문 이름에서 학년 부분만 뽑아 목록으로 (없으면 부문 이름 전체) */
+function pfGrades(){const m=new Map();S.divs.filter(d=>d.type==='recognized').forEach(d=>{const g=((d.name||'').match(PF_GRADE_RE)||[])[0]||d.name;const k=g.replace(/\s+/g,' ').trim();if(!m.has(k))m.set(k,new Set());plannedUnits(d).forEach(u=>m.get(k).add(pfRound(u.label)==='결선'?'결선':u.label));});return m;}
+const pfSave=rows=>saveSettings({...SET(),pfix:rows});
+function pfPanel(){
+  const rows=SET().pfix||[],gr=pfGrades(),rec=S.divs.filter(d=>d.type==='recognized');
+  const hit=rec.filter(d=>plannedUnits(d).some(u=>pfixUnit(d,u.unit))),miss=rec.filter(d=>!hit.includes(d));
+  const opt=(v,list,ph)=>`<option value="">${ph}</option>`+list.map(x=>`<option ${x===v?'selected':''}>${esc(x)}</option>`).join('');
+  return `<span class="label" style="margin-top:10px">지정 품새표 (학년·라운드별 직접 지정)</span>
+  <div class="pbox">
+    <span class="small muted">여기에 적은 학년·라운드는 추첨하지 않고 이 품새로 합니다. 품새를 2개 적으면 그 라운드는 2개를 하고 평균 점수로 순위를 냅니다. 학년은 부문 이름에 들어 있는 말로 적습니다(예: 초등부 3학년). 남녀·A조·B조는 같은 품새를 씁니다. 부문 하나만 다르게 하려면 학년 칸에 그 부문 이름을 그대로 적으세요. 라운드를 「전체」로 적으면 따로 적지 않은 모든 라운드에 씁니다.</span>
+    ${rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>학년</th><th>라운드</th><th>품새 1</th><th>품새 2</th><th></th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td><b>${esc(r.g)}</b></td><td>${esc(r.r||'전체')}</td><td>${esc((r.p||[])[0]||'')}</td><td>${esc((r.p||[])[1]||'')}</td><td><button class="btn sm" data-act="pfDel" data-i="${i}">삭제</button></td></tr>`).join('')}</tbody></table></div>`:'<span class="small muted">아직 지정한 품새가 없습니다. 지금은 모든 부문이 추첨 방식입니다.</span>'}
+    <div class="row" style="gap:6px;flex-wrap:wrap;align-items:flex-end">
+      <label class="field" style="min-width:140px"><span class="label">학년</span><input id="pf_g" list="pf_gl" placeholder="초등부 3학년"><datalist id="pf_gl">${[...gr.keys()].map(g=>`<option value="${esc(g)}">`).join('')}</datalist></label>
+      <label class="field"><span class="label">라운드</span><select id="pf_r">${PF_ROUNDS.map(x=>`<option>${x}</option>`).join('')}</select></label>
+      <label class="field"><span class="label">품새 1</span><select id="pf_p1">${opt('',PF_ALL,'고르기')}</select></label>
+      <label class="field"><span class="label">품새 2 (선택)</span><select id="pf_p2">${opt('',PF_ALL,'없음')}</select></label>
+      <button class="btn primary" data-act="pfAdd">추가</button>
+    </div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      <button class="btn" data-act="pfXls">📥 엑셀로 내려받기</button>
+      <label class="btn">📤 엑셀 올리기<input type="file" accept=".xlsx,.xls,.csv" data-on="pfFile" style="display:none"></label>
+      ${rows.length?'<button class="btn danger" data-act="armed" data-do="pfClear">모두 지우기</button>':''}
+    </div>
+    ${rec.length?`<span class="small ${miss.length&&rows.length?'':'muted'}">공인 부문 ${rec.length}개 중 ${hit.length}개에 지정 품새가 적용됩니다.${miss.length&&rows.length?` 적용 안 된 부문(추첨): ${miss.slice(0,4).map(d=>esc(d.name)).join(', ')}${miss.length>4?` 외 ${miss.length-4}개`:''}`:''}</span>`:''}
+    ${rows.length&&rec.some(divHasResults)?'<span class="chip warn" style="white-space:normal">이미 점수가 있는 부문의 품새 수(1개↔2개)를 바꾸면 결과가 달라질 수 있습니다. 대회 전에 정해 두세요.</span>':''}
+  </div>`;
+}
+function pfExport(){
+  if(!window.XLSX)return toast('엑셀 도구를 불러오지 못했습니다');
+  const head=['학년 (부문 이름에 들어가는 말)','라운드','품새 1','품새 2'],rows=[head];
+  const cur=SET().pfix||[];
+  if(cur.length)cur.forEach(r=>rows.push([r.g,r.r||'전체',(r.p||[])[0]||'',(r.p||[])[1]||'']));
+  else{const gr=pfGrades();if(gr.size)gr.forEach((rs,g)=>{const l=[...rs];(l.length?l:['전체']).forEach(r=>rows.push([g,r,'','']));});
+    else [['초등부 1학년','예선','태극 1장','태극 3장'],['초등부 1학년','결선','태극 3장','']].forEach(r=>rows.push(r));}
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:28},{wch:10},{wch:12},{wch:12}];
+  const help=[['작성 방법'],['· 한 줄에 학년 하나, 라운드 하나를 적습니다. 품새 2를 적으면 그 라운드는 품새 2개를 하고 평균 점수로 순위를 냅니다.'],
+    ['· 학년은 부문 이름에 들어 있는 말로 적습니다 (예: 초등부 3학년). 남녀·A조·B조는 같은 품새를 씁니다.'],
+    ['· 부문 하나만 다르게 하려면 학년 칸에 그 부문 이름 전체를 적으세요. 더 긴 이름이 우선합니다.'],
+    ['· 라운드: '+PF_ROUNDS.join(', ')+' — 「전체」는 따로 적지 않은 모든 라운드에 씁니다. 재경기를 적지 않으면 그 라운드의 마지막 품새로 합니다.'],
+    ['· 품새 이름: '+PF_ALL.join(', ')],[''],['지금 대회의 공인 부문'],...S.divs.filter(d=>d.type==='recognized').map(d=>[d.name])];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'지정품새');XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(help),'작성 방법');
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  saveFile(`지정품새표${SET().name?'_'+SET().name:''}.xlsx`,out).then(ok=>{if(ok)toast('지정 품새표를 내려받았습니다');});
+}
+async function pfImport(file){
+  if(!file)return;if(!window.XLSX)return toast('엑셀 도구를 불러오지 못했습니다');
+  try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const ws=wb.Sheets['지정품새']||wb.Sheets[wb.SheetNames[0]];
+    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});const out=[],bad=new Set();
+    aoa.forEach((r,i)=>{const g=String(r[0]??'').trim();if(!g||(i===0&&/학년/.test(g)&&/라운드/.test(String(r[1]))))return;
+      const ps=[r[2],r[3]].map(x=>pfName(x)).filter(Boolean);if(!ps.length)return;ps.forEach(x=>{if(!PF_ALL.includes(x))bad.add(x);});
+      out.push({g,r:String(r[1]??'').trim()||'전체',p:ps});});
+    if(!out.length)return toast('품새가 적힌 줄을 찾지 못했습니다. 「지정품새」 시트의 C열(품새 1)을 확인해 주세요');
+    await pfSave(out);addLog('지정 품새표 올리기',file.name,`${out.length}줄`);
+    toast(`지정 품새표 ${out.length}줄을 올렸습니다${bad.size?` · 목록에 없는 이름: ${[...bad].slice(0,3).join(', ')}`:''}`);render();
+  }catch(e){toast('엑셀을 읽지 못했습니다. 파일을 확인해 주세요');}
+}
+Object.assign(ACT,{
+  pfAdd:()=>{const v=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};const g=v('pf_g'),r=v('pf_r')||'전체',p=[v('pf_p1'),v('pf_p2')].filter(Boolean);
+    if(!g)return toast('학년을 적어 주세요');if(!p.length)return toast('품새 1을 골라 주세요');
+    const rows=(SET().pfix||[]).filter(x=>!(pfGk(x.g)===pfGk(g)&&pfRound(x.r)===pfRound(r)));rows.push({g,r,p});
+    pfSave(rows).then(()=>toast(`${g} · ${r}: ${p.join(' · ')}`));},
+  pfDel:b=>{const rows=[...(SET().pfix||[])];rows.splice(Number(b.dataset.i),1);pfSave(rows);},
+  pfClear:()=>pfSave([]).then(()=>toast('지정 품새표를 지웠습니다')),
+  pfXls:()=>pfExport()
+});
+ON.pfFile=el=>{pfImport(el.files&&el.files[0]);try{el.value='';}catch(e){}};ON_CHANGE.add('pfFile');
 
 /* ===================== 엑셀 ===================== */
 /* 열 이름 찾기: inc 중 하나를 포함하고 exc는 포함하지 않는 열 */
