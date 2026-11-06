@@ -1043,7 +1043,7 @@ function entryForm(c,tab,a){const f=UI.form||defaults(tab,a);UI.form=f;const L=m
       <label class="f"><span>종목</span>${sel('eKind',['개인','복식','단체'],f.kind,'data-on="ef" data-k="kind"')}</label>
       <label class="f"><span>부별</span>${sel('eDiv',PS_DIV,f.div,'data-on="ef" data-k="div"')}</label>
       <label class="f"><span>${f.div==='유치부'?'나이':'학년 (초·중·고)'}</span>${sel('eGrade',gradeList(f.div),f.grade,'data-on="ef" data-k="grade"')}</label></div>
-      ${SILVER[f.div]?`<span class="small mute">${f.div}: ${f.div==='실버1부'?'55~64세 (1962~1971년생)':'65세 이상 (1961년 이전 출생)'}</span>`:''}
+      ${SILVER[f.div]?`<span class="small mute">${f.div}: ${f.div==='실버1부'?'55~64세 (1962~1971년생)':'65세 이상 (1961년 이전 출생)'}</span>`:''}${f.div==='유치부'?`<span class="small mute">생활체육 대회 부별: 3~5세 → 유치부 1부 · 6~7세 → 유치부 2부${f.grade?` (지금: ${/^[3-5]/.test(f.grade)?'유치부 1부':'유치부 2부'})`:''}</span>`:''}
       ${need>1?`<div class="stack" style="gap:6px"><span class="small"><b>함께 나갈 팀원 ${need-1}명</b> (복식 2명 · 단체 3명)</span>${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)} <span class="small mute">${x.gender} · ${schoolTxt(x.birth)}</span></span></label>`).join('')||'<span class="small mute">팀원으로 고를 선수가 더 필요합니다.</span>'}</div>`:''}`;
   }else if(sport==='kyorugi'){
     const named=['초등부','중등부','고등부'].includes(f.div),WL=kyW(f.div,f.grade,a.gender),list=[{v:'',l:WL.length?'체급 고르기':f.div==='초등부'?'학년을 먼저 고르세요':'체급 고르기'},...WL];
