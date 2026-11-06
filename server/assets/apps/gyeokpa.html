@@ -1597,6 +1597,7 @@ function divKey0(a){
 function regenerateDivs(){
   const groups=new Map();
   S.roster.forEach(a=>{const k=divKey(a);if(!groups.has(k))groups.set(k,{key:k,a,ids:[]});groups.get(k).ids.push(a.id);});
+  commApply(groups,g=>g.ids,(g,key,ids)=>({...g,key,ids}));
   const old=new Map(S.divs.map(d=>[d.key,d]));
   const list=[...groups.values()].map(g=>{
     const id='d'+hash(g.key),prev=old.get(g.key),a=g.a;
@@ -1607,7 +1608,7 @@ function regenerateDivs(){
       return changed&&!divHasResults(prev)?{...prev,...base,order,stages:null}:{...prev,...base,order:changed?order:prev.order};
     }
     return {id,key:g.key,name:g.key,...base,order:shuffle(g.ids),G:null,adv:null,tech:null,stages:null};
-  }).sort((x,y)=>(EV_KEYS.indexOf(x.ev)-EV_KEYS.indexOf(y.ev))||(LEVELS.indexOf(x.level)-LEVELS.indexOf(y.level))||x.name.localeCompare(y.name,'ko'));
+  }).sort((x,y)=>(EV_KEYS.indexOf(x.ev)-EV_KEYS.indexOf(y.ev))||(LEVELS.indexOf(x.level)-LEVELS.indexOf(y.level))||x.name.localeCompare(y.name,'ko',{numeric:true}));
   return saveDivs(list).then(async()=>{const cur=curOf();if(cur&&!list.some(d=>d.id===cur.divId)){await saveState({...ST(),status:'idle',current:null,epoch:(ST().epoch||0)+1,timer:null,prep:null,readyAt:null});}
     const um=list.filter(d=>/부별 미정|종목 미정/.test(d.name)).length;toast(`부문 ${list.length}개를 편성했습니다${um?` · 부별·종목을 알 수 없는 부문 ${um}개가 있습니다 (선수 등록에서 확인)`:''}`);});
 }
@@ -1693,7 +1694,8 @@ function rematchNeed(d){
   return null;
 }
 /* 최종 순위 (시상에 사용) */
-function rankDiv(d){
+function rankDiv(d){const r=rankDiv0(d);return COMM()?r.map(x=>x&&x.rank>3?{...x,rank:3}:x):r;}
+function rankDiv0(d){
   const sts=stagesOf(d),fin=sts.find(s=>s.key==='final');
   if(!fin)return rankList(d,'pre',stIds(sts[0])).map(r=>({...r,rank:null,stage:'pre'}));
   const rows=rankList(d,'final',stIds(fin)).map(r=>({...r,stage:'final'}));
@@ -1923,6 +1925,7 @@ function aSettings(){
   <div class="stack"><div class="panel">
     <h2>대회 기본 정보</h2>
     <label class="field"><span class="label">대회명</span><input type="text" id="setName" value="${esc(s.name)}" placeholder="예: 제1회 경민대학교 총장배 격파대회" data-on="setName"></label>
+    ${commPanel()}
     <div class="field"><span class="label">심판 수</span>${seg('setJudges',[[1,'1심제'],[3,'3심제'],[5,'5심제'],[7,'7심제']],s.judges)}
       <span class="small muted">규정은 5인 심판입니다. 5심제 이상은 심판 점수 중 최고·최저를 빼고 평균합니다. 3심제는 소규모 대회용으로 세 심판 평균입니다.</span></div>
     <div class="field"><span class="label">점수 공개</span>${seg('setAutoReveal',[[true,'모든 심판 점수가 오면 자동 공개'],[false,'운영석에서 눌러 공개']],s.autoReveal!==false)}</div>
@@ -2643,7 +2646,66 @@ const UNDO_KEY='ks_gp_roster_undo';let UNDO_MEM=null;
 function rosterSnap(label){const u={label,at:Date.now(),prev:S.roster.slice()};UNDO_MEM=u;try{localStorage.setItem(UNDO_KEY,JSON.stringify(u));}catch(e){}}
 function undoInfo(){if(UNDO_MEM)return UNDO_MEM;try{const u=JSON.parse(localStorage.getItem(UNDO_KEY)||'null');if(u&&Array.isArray(u.prev)){UNDO_MEM=u;return u;}}catch(e){}return null;}
 function undoClear(){UNDO_MEM=null;try{localStorage.removeItem(UNDO_KEY);}catch(e){}}
+
+/* ===================== 생활체육 대회 (4명·4팀 1조) =====================
+   켜면 부문마다 4명(팀)씩 조를 나눠 「부문 이름 · 1조」, 「· 2조」 … 부문으로 만듭니다.
+   남는 인원: small = 마지막 조 2~3명 (10명 4·4·2, 9명 4·3·2, 11명 4·4·3) / merge = 1명이 남으면 5명 조.
+   조마다 1등 금, 2등 은, 3~5등 동메달(3위). 점수가 있는 조는 다시 나누지 않습니다. */
+const COMM=()=>!!SET().comm;
+const COMM_RE=/ · (\d+)조$/;
+function commSizes(n,rem){rem=rem||SET().commRem||'small';if(n<=4)return n?[n]:[];const q=Math.floor(n/4),r=n%4,s=Array(q).fill(4);
+  if(r===1){if(rem==='merge')s[q-1]=5;else{s[q-1]=3;s.push(2);}}else if(r)s.push(r);return s;}
+const commTeam=id=>{const a=S.roster.find(x=>x.id===id);return a?String(a.team||'').trim():'';};
+/* 같은 도장(소속)이 한 조에 몰리지 않게, 1·2번과 3·4번이 같은 도장끼리 붙지 않게 나눕니다 */
+function commDeal(ids,sizes){
+  const by=new Map();shuffle(ids).forEach(id=>{const t=commTeam(id)||'\u0000'+id;if(!by.has(t))by.set(t,[]);by.get(t).push(id);});
+  const gs=sizes.map(n=>({n,ids:[]}));
+  [...by.values()].sort((a,b)=>b.length-a.length).flat().forEach(id=>{const t=commTeam(id);let best=null,bs=null;
+    gs.forEach(g=>{if(g.ids.length>=g.n)return;const sc=[t?g.ids.filter(x=>commTeam(x)===t).length:0,g.ids.length/g.n];if(!best||sc[0]<bs[0]||(sc[0]===bs[0]&&sc[1]<bs[1])){best=g;bs=sc;}});
+    (best||gs[gs.length-1]).ids.push(id);});
+  return gs.map(g=>{const o=shuffle(g.ids);for(let i=0;i+1<o.length;i+=2){const t=commTeam(o[i]);if(t&&t===commTeam(o[i+1])){const j=o.findIndex((x,k)=>k>i+1&&commTeam(x)!==t);if(j>0)[o[i+1],o[j]]=[o[j],o[i+1]];}}return o;});
+}
+/* regenerateDivs 안에서 부문(그룹)을 조로 펼칩니다. getIds: 그룹 → 선수 id, make: (그룹, 새 키, id들) → 새 그룹 */
+function commApply(groups,getIds,make){
+  if(!COMM())return;
+  const out=[];
+  groups.forEach((g,k)=>{const ids=getIds(g);
+    const prev=S.divs.map(d=>{const m=COMM_RE.exec(d.key||'');return m&&d.key.slice(0,m.index)===k?{no:+m[1],d,ids:(d.order||[]).filter(x=>ids.includes(x))}:null;}).filter(Boolean);
+    let parts=null;
+    if(prev.length){
+      const used=new Set(prev.flatMap(x=>x.ids)),added=ids.filter(x=>!used.has(x));
+      const same=!COMM_FORCE&&!added.length&&prev.every(x=>x.ids.length===(x.d.order||[]).length);
+      if(same)parts=prev.map(x=>({no:x.no,ids:x.d.order}));
+      else{const locked=prev.filter(x=>x.ids.length&&divHasResults(x.d));
+        if(locked.length||COMM_FORCE){const ls=new Set(locked.flatMap(x=>x.ids)),rest=ids.filter(x=>!ls.has(x)),nos=new Set(locked.map(x=>x.no));let no=0;
+          parts=[...locked.map(x=>({no:x.no,ids:x.ids})),...commDeal(rest,commSizes(rest.length)).map(s=>{do no++;while(nos.has(no));return {no,ids:s};})];}}
+    }
+    if(!parts)parts=commDeal(ids,commSizes(ids.length)).map((s,i)=>({no:i+1,ids:s}));
+    parts.sort((a,b)=>a.no-b.no).forEach(p=>{const key=`${k} · ${p.no}조`;out.push([key,make(g,key,p.ids)]);});
+  });
+  groups.clear();out.forEach(([k,v])=>groups.set(k,v));
+}
+/* 조 나누기를 다시 해도 되는지 (점수가 있는 부문이 있으면 확인 필요) */
+const commRisky=()=>S.divs.some(divHasResults);
+let COMM_FORCE=false;
+/* 방식을 바꾸면 점수 없는 조는 새로 나눕니다 */
+async function commSet(patch){const re=('commRem' in patch)&&patch.commRem!==(SET().commRem||'small');await saveSettings({...SET(),...patch});COMM_FORCE=re;try{await regenerateDivs();}finally{COMM_FORCE=false;}render();}
+function commPanel(){
+  const s=SET(),on=!!s.comm,rem=s.commRem||'small',risky=commRisky(),act=risky?'armed':'commSet';
+  const bases=new Map();S.roster.forEach(a=>{const k=divKey(a);bases.set(k,(bases.get(k)||0)+1);});
+  const nG=[...bases.values()].reduce((t,n)=>t+commSizes(n,rem).length,0);
+  const ex=n=>commSizes(n,rem).join('·');
+  return `<div class="field"><span class="label">생활체육 대회 (4명·4팀 1조)</span>
+    <div class="seg"><button class="${on?'':'on'}" data-act="${act}" data-do="commSet" data-k="comm" data-v="0">끄기</button><button class="${on?'on':''}" data-act="${act}" data-do="commSet" data-k="comm" data-v="1">켜기</button></div>
+    <span class="label" style="margin-top:6px">남는 인원 처리</span>
+    <div class="seg"><button class="${rem==='small'?'on':''}" data-act="${on?act:'commSet'}" data-do="commSet" data-k="commRem" data-v="small">마지막 조 2~3명</button><button class="${rem==='merge'?'on':''}" data-act="${on?act:'commSet'}" data-do="commSet" data-k="commRem" data-v="merge">5명 조로 합치기</button></div>
+    <span class="small muted">예: 9명 → ${ex(9)}, 10명 → ${ex(10)}, 11명 → ${ex(11)}. 켜면 부문마다 4명(팀)씩 자동으로 조를 나눕니다(같은 도장은 되도록 다른 조로). 조마다 1등 금, 2등 은, 3~5등 동메달이며 상장에는 3위로 표시됩니다. 4명이 안 되는 조도 시상합니다.${S.roster.length?` 지금 선수로는 ${bases.size}개 부문 → ${nG}개 조입니다.`:''}${on?' 이미 점수가 있는 조는 다시 나누지 않습니다.':''}</span>
+    ${risky?'<span class="chip warn" style="white-space:normal">점수가 있는 부문이 있습니다. 끄거나 방식을 바꾸면 조 편성이 바뀔 수 있어 한 번 더 확인합니다.</span>':''}
+    
+  </div>`;
+}
 const ACT={
+  commSet:b=>commSet({[b.dataset.k]:b.dataset.k==='comm'?b.dataset.v==='1':b.dataset.v}),
   go:b=>go(b.dataset.r),
   back:()=>back(),
   armed:b=>{
@@ -3238,7 +3300,7 @@ const T=k=>athlete(k)||{};
 /* ---------- 데이터 ---------- */
 function groupOf(a,d){const g=(a&&a.group)||'';if(g)return g;return String(d.name||'').replace(/\s*-?\d+조$/,'').replace(/\s+(핀|플라이|밴텀|페더|라이트|웰터|미들|헤비)\S*.*$/,'').trim();}
 function genderOf(a,d){if(a&&a.gender)return a.gender==='여'?'여':a.gender==='혼성'?'혼성':'남';return /여/.test(d.name)?'여':'남';}
-function official(d){return (d.order||[]).length>=4;}
+function official(d){return COMM()||(d.order||[]).length>=4;}
 /* 한 부문 안에서 한 선수(팀)의 경기별 점수: back = 결승에서 몇 단계 앞인지 (결승 0, 4강 1, 8강 2 …) */
 function scoresOf(d,id){
   const out=[];
@@ -3277,7 +3339,7 @@ function mvpRows(){
     const tot=sc.reduce((a,s)=>a+s.score,0),val=cf.mvpAgg==='avg'?tot/sc.length:tot;
     seen.set(k,{...x,val,cnt:sc.length,best:Math.max(...sc.map(s=>s.score)),against:sc.reduce((a,s)=>a+(s.against||0),0)});});
   const rows=[...seen.values()];
-  rows.sort((a,b)=>b.val-a.val||a.rank-b.rank||(KY?a.against-b.against:b.best-a.best)||a.name.localeCompare(b.name,'ko'));
+  rows.sort((a,b)=>b.val-a.val||a.rank-b.rank||(KY?a.against-b.against:b.best-a.best)||a.name.localeCompare(b.name,'ko',{numeric:true}));
   return rows;
 }
 function bucketOf(x){const sc=CFG().mvpScope;return sc==='group'?x.group:sc==='gender'?(x.gender==='여'?'여자':x.gender==='혼성'?'혼성':'남자'):'대회 전체';}
