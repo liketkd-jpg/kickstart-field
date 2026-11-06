@@ -7099,8 +7099,10 @@ window.KS_HQSEND={tick,state:ST};
    카드·더 보기의 열림 상태는 이 컴퓨터에 기억합니다. */
 (function(){
 const LSK='ks_ss_open';
-let OPEN;try{OPEN=new Set(JSON.parse(localStorage.getItem(LSK)||'["basic"]'));}catch(e){OPEN=new Set(['basic']);}
-const keep=()=>{try{localStorage.setItem(LSK,JSON.stringify([...OPEN]));}catch(e){}};
+/* OPEN: 펼친 「더 보기」, SEL: 지금 열어 둔 카드 하나 (한 번에 하나만) */
+let OPEN;try{OPEN=new Set(JSON.parse(localStorage.getItem(LSK)||'[]'));}catch(e){OPEN=new Set();}
+let SEL=null;try{SEL=localStorage.getItem('ks_ss_sel')||null;}catch(e){}
+const keep=()=>{try{localStorage.setItem(LSK,JSON.stringify([...OPEN]));localStorage.setItem('ks_ss_sel',SEL||'');}catch(e){}};
 const has=n=>{try{return typeof (0,eval)(n)!=='undefined';}catch(e){return false;}};
 const G=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
 const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -7178,24 +7180,28 @@ function shell(html){
     items.forEach(it=>{const w=document.createElement('div');w.className='ss-item';it.els.forEach(x=>w.appendChild(x));put(it.r.c,it.r.more,w);});
   });
   const o=info(),out=document.createElement('div');out.className='ss';
-  const chips=[[o.name||'대회명 없음','basic',!o.name],[o.comm?'생활체육 켜짐':'생활체육 꺼짐','comm'],[o.fmt,'format'],[o.ref,'basic']];
-  if(APP==='poomsae')chips.push([o.pf?`지정 품새 ${o.pf}줄`:'품새 추첨','poomsae']);
-  chips.push([`선수 ${o.nR}명 · 부문 ${o.nD}개`,'go:admin-players']);
+  wzAuto();
   const ck=checks(o),okN=ck.filter(x=>x[0]).length;
+  const avail=CARDS.filter(([k])=>bins[k].main.length||bins[k].more.length);
+  if(SEL&&!avail.some(([k])=>k===SEL))SEL=null;
+  const warnOf=k=>(k==='basic'&&!o.name)||(k==='awards'&&!(o.aw.host&&o.aw.rep))||(k==='poomsae'&&o.comm&&!o.pf);
   out.innerHTML=`<div class="ss-top panel">
-    <div class="ss-sum">${chips.map(([l,k,w])=>`<button class="ss-chip ${w?'warn':''}" ${jump(k)}>${E(l)}</button>`).join('')}</div>
-    <div class="ss-chk"><span class="ss-chk-h ${okN===ck.length?'ok':'warn'}">대회 전 확인 ${okN}/${ck.length}</span>${ck.map(([ok,l,k])=>`<button class="ss-ck ${ok?'ok':'warn'}" ${jump(k)}><i>${ok?'✓':'!'}</i>${E(l)}</button>`).join('')}</div>
+    <div class="ss-toprow"><div class="ss-chk"><span class="ss-chk-h ${okN===ck.length?'ok':'warn'}">대회 전 확인 ${okN}/${ck.length}</span>${ck.map(([ok,l,k])=>`<button class="ss-ck ${ok?'ok':'warn'}" ${jump(k)}><i>${ok?'✓':'!'}</i>${E(l)}</button>`).join('')}</div>
+      <button class="btn primary ss-wzbtn" data-act="wzOpen">🪄 시작 마법사</button></div>
     ${cmdHtml()}
-  </div><div class="ss-cards"></div>`;
-  const cards=out.querySelector('.ss-cards');
-  CARDS.forEach(([k,ic,title])=>{const b=bins[k];if(!b.main.length&&!b.more.length)return;
-    const d=document.createElement('details');d.className='ss-card panel';d.id='ss-'+k;d.dataset.ss=k;if(OPEN.has(k))d.open=true;
-    const st=cardState(k,o);
-    d.innerHTML=`<summary><span class="ss-ic">${ic}</span><b>${title}</b>${st?`<span class="ss-st">${E(st)}</span>`:''}<span class="ss-car">▾</span></summary><div class="ss-body"></div>`;
-    const body=d.querySelector('.ss-body');b.main.forEach(x=>body.appendChild(x));
+  </div>
+  <div class="ss-tiles">${avail.map(([k,ic,title])=>{const st=cardState(k,o);return `<button class="ss-tile ${SEL===k?'on':''} ${warnOf(k)?'warn':''}" data-act="ssGo" data-k="${k}" aria-expanded="${SEL===k}"><span class="ss-tic">${ic}</span><b>${title}</b><span class="ss-tst">${E(st||'열어서 보기')}</span>${warnOf(k)?'<i class="ss-dot" title="확인 필요"></i>':''}</button>`;}).join('')}</div>
+  <div class="ss-detail panel" id="ss-detail" ${SEL?'':'hidden'}></div>
+  ${SEL?'':'<div class="ss-hint small muted">카드를 누르면 그 설정이 아래에 열립니다. 한 번에 하나만 열립니다.</div>'}
+  ${wzHtml()}`;
+  const det=out.querySelector('.ss-detail');
+  avail.forEach(([k,ic,title])=>{const b=bins[k];
+    const pane=document.createElement('div');pane.className='ss-pane';pane.dataset.k=k;pane.id='ss-'+k;if(SEL!==k)pane.hidden=true;
+    pane.innerHTML=`<div class="ss-phead"><span class="ss-tic">${ic}</span><h2>${title}</h2><button class="btn sm" data-act="ssGo" data-k="${k}">접기 ✕</button></div><div class="ss-body"></div>`;
+    const body=pane.querySelector('.ss-body');b.main.forEach(x=>body.appendChild(x));
     if(b.more.length){const m=document.createElement('details');m.className='ss-more';m.dataset.ss=k+':more';if(OPEN.has(k+':more'))m.open=true;
       m.innerHTML=`<summary>더 보기 (${b.more.length})</summary><div class="ss-body"></div>`;b.more.forEach(x=>m.lastElementChild.appendChild(x));body.appendChild(m);}
-    cards.appendChild(d);});
+    det.appendChild(pane);});
   return out.outerHTML;
 }
 /* ---- 글로 설정하기: 인터넷 없이 핵심 단어를 알아듣고, 바뀔 내용을 먼저 보여 준 뒤 「적용」을 눌러야 바뀝니다 ---- */
@@ -7289,12 +7295,67 @@ document.addEventListener('keydown',e=>{if(e.target&&e.target.id==='ssCmd'&&e.ke
 function doParse(){const r=parseCmd(CMD.text);CMD.items=r.items;CMD.notes=r.notes;CMD.P=r.P;CMD.acts=r.acts;G('render')();}
 window.ssParseCmd=parseCmd;
 try{Object.assign(G('ACT'),{ssParse:()=>{const el=document.getElementById('ssCmd');if(el)CMD.text=el.value;doParse();},ssApply:()=>applyCmd(),ssCancel:()=>{CMD.items=null;CMD.notes=[];G('render')();}});}catch(e){}
+/* ---- 시작 마법사: 처음 쓰는 사람도 순서대로 고르면 대회 설정이 끝납니다 ---- */
+const WZ={open:false,step:0,v:null,done:false};
+function wzInit(){const s=G('SET')(),aw=s.aw||{};
+  WZ.v={name:s.name||'',comm:!!s.comm,format:s.format||'cutoff',judges:s.judges||5,refs:s.refs||3,system:s.system||'bo3',host:aw.host||'',title:aw.title||'회장',rep:aw.rep||''};}
+function wzSteps(){const L=['name','kind'];if(APP!=='gyeokpa')L.push('format');L.push('judges','award','end');return L;}
+const opt=(k,v,cur,title,desc)=>`<button class="ss-wzopt ${String(cur)===String(v)?'on':''}" data-act="wzPick" data-k="${k}" data-v="${v}"><b>${title}</b>${desc?`<span>${desc}</span>`:''}</button>`;
+function wzBody(st){const v=WZ.v;
+  switch(st){
+    case 'name':return `<h3>대회 이름을 적어 주세요</h3><input id="wz_name" type="text" value="${E(v.name)}" placeholder="예: 제1회 KICKSTART UP 생활체육 ${APP==='poomsae'?'품새':APP==='kyorugi'?'겨루기':'격파'}대회" autocomplete="off"><span class="small muted">전광판·상장·결과 파일에 이 이름이 나옵니다.</span>`;
+    case 'kind':return `<h3>어떤 대회인가요?</h3><div class="ss-wzopts">${opt('comm','1',v.comm?1:0,'🤝 생활체육 대회','4명(팀)씩 1조 · 조마다 1등 금 · 2등 은 · 3~5등 동 · 유치부 1·2부, 초등 학년별, 실버 1·2부')}${opt('comm','0',v.comm?1:0,'🏆 일반 대회 (협회 규정)','부문 전체가 함께 경기 · 1~3위 시상 · 협회 부별')}</div>`;
+    case 'format':return APP==='poomsae'?`<h3>경기 방식을 골라 주세요</h3><div class="ss-wzopts">${opt('format','tournament',v.format,'⚔️ 토너먼트 (청·홍)',v.comm?'4명 1조: 1·2번, 3·4번이 겨루고 이긴 선수끼리 결승':'두 명씩 겨뤄 이긴 선수가 올라감')}${opt('format','cutoff',v.format,'📊 컷오프 (점수 순위)','한 명씩 연기하고 점수 순으로 순위')}</div><span class="small muted">학년·라운드별 품새는 마법사를 마친 뒤 「품새 지정」 카드나 엑셀로 정합니다.</span>`
+      :`<h3>경기 방식을 골라 주세요</h3><div class="ss-wzopts">${opt('system','bo3',v.system,'🥋 3전 다승제','회전마다 승자, 2회전 먼저 이기면 승리')}${opt('system','sum',v.system,'➕ 3회전 점수 합산','세 회전 점수를 더해 승패')}</div>`;
+    case 'judges':return APP==='kyorugi'?`<h3>부심은 몇 명인가요?</h3><div class="ss-wzopts row3">${[1,2,3].map(n=>opt('refs',n,v.refs,n+'명',n===3?'2명 이상 같으면 인정':n===2?'2명 모두 같아야 인정':'누르는 즉시 인정')).join('')}</div>`
+      :`<h3>심판은 몇 명인가요?</h3><div class="ss-wzopts row4">${[1,3,5,7].map(n=>opt('judges',n,v.judges,n+'명',n>=5?'최고·최저 빼고 평균':n===3?'소규모 대회':'혼자 채점')).join('')}</div>`;
+    case 'award':return `<h3>상장에 들어갈 이름</h3><div class="ss-wzgrid"><label class="field"><span class="label">주최·주관 기관</span><input id="wz_host" type="text" value="${E(v.host)}" placeholder="예: KICKSTART UP"></label><label class="field"><span class="label">대표 직함</span><input id="wz_title" type="text" value="${E(v.title)}" placeholder="예: 대표, 회장"></label><label class="field"><span class="label">대표 이름</span><input id="wz_rep" type="text" value="${E(v.rep)}" placeholder="예: 노정환"></label></div><span class="small muted">직인 그림은 나중에 「상장·시상」 카드에서 올릴 수 있습니다. 비워 두고 넘어가도 됩니다.</span>`;
+    case 'end':{const L=[['대회 이름',v.name||'(없음)'],['대회 종류',v.comm?'생활체육 대회 (4명 1조)':'일반 대회']];
+      if(APP==='poomsae')L.push(['경기 방식',v.format==='tournament'?'토너먼트':'컷오프']);if(APP==='kyorugi')L.push(['경기 방식',v.system==='sum'?'3회전 점수 합산':'3전 다승제']);
+      L.push(APP==='kyorugi'?['부심',v.refs+'명']:['심판',v.judges+'명'],['상장',[v.host,[v.title,v.rep].filter(Boolean).join(' ')].filter(Boolean).join(' · ')||'(나중에)']);
+      return WZ.done?`<h3>✅ 설정을 저장했습니다</h3><span>다음 차례입니다.</span><div class="ss-wzopts"><button class="ss-wzopt" data-act="wzNext2" data-r="admin-players"><b>1. 선수 명단 불러오기</b><span>접수 홈페이지에서 가져오거나 엑셀을 올립니다</span></button>${APP==='poomsae'?'<button class="ss-wzopt" data-act="wzNext2" data-k="poomsae"><b>2. 학년·라운드별 품새 정하기</b><span>「품새 지정」 카드 · 엑셀로 한 번에 넣기</span></button>':''}<button class="ss-wzopt" data-act="wzNext2" data-r="admin-draw"><b>${APP==='poomsae'?3:2}. 대진표 확인</b><span>${v.comm?'4명씩 자동으로 나뉜 조를 확인합니다':'부문 편성을 확인합니다'}</span></button></div>`
+        :`<h3>이대로 저장할까요?</h3><table class="ss-wzsum">${L.map(([a,b])=>`<tr><th>${a}</th><td>${E(b)}</td></tr>`).join('')}</table>${(G('S').divs||[]).some(d=>{try{return G('divHasResults')(d);}catch(e){return false;}})?'<span class="small" style="color:var(--warn)">점수가 들어간 부문이 있습니다. 경기 방식·조 편성이 바뀌면 결과가 달라질 수 있습니다.</span>':''}`;}
+  }
+  return '';
+}
+function wzHtml(){
+  if(!WZ.open)return '';if(!WZ.v)wzInit();const steps=wzSteps(),i=Math.min(WZ.step,steps.length-1),st=steps[i];
+  return `<div class="ss-wz" role="dialog" aria-modal="true" aria-label="시작 마법사"><div class="ss-wzbox panel">
+    <div class="ss-wzhead"><b>🪄 시작 마법사</b><span class="ss-wzdots">${steps.map((_,k)=>`<i class="${k<i?'d':k===i?'on':''}"></i>`).join('')}</span><button class="btn sm" data-act="wzClose" aria-label="닫기">✕</button></div>
+    <div class="ss-wzbody">${wzBody(st)}</div>
+    <div class="ss-wzfoot">${i>0&&!WZ.done?'<button class="btn" data-act="wzPrev">← 이전</button>':'<span></span>'}${st==='end'?(WZ.done?'<button class="btn primary" data-act="wzClose">닫기</button>':'<button class="btn primary" data-act="wzApply">설정 저장</button>'):'<button class="btn primary" data-act="wzNext">다음 →</button>'}</div>
+  </div></div>`;
+}
+async function wzApply(){const v=WZ.v,s=G('SET')(),S=G('S'),save=G('saveSettings');
+  const P={name:v.name.trim(),aw:{...(s.aw||{}),host:v.host.trim(),title:v.title.trim(),rep:v.rep.trim()}};
+  if(APP==='kyorugi'){P.refs=Number(v.refs);P.system=v.system;}else P.judges=Number(v.judges);
+  const n={...s,...P};S.settings=n;await save(n);
+  if(APP==='poomsae'&&v.format!==(s.format||'cutoff')){try{await G('ACT').setFormat({dataset:{v:v.format}});S.settings={...G('SET')(),format:v.format};}catch(e){}}
+  if(v.comm!==!!s.comm&&G('commSet'))await G('commSet')({comm:v.comm});
+  try{G('addLog')('시작 마법사','설정',`${v.name} · ${v.comm?'생활체육':'일반'}`);}catch(e){}
+  WZ.done=true;G('render')();
+}
+document.addEventListener('input',e=>{const id=e.target&&e.target.id;if(!WZ.v||!/^wz_/.test(id||''))return;WZ.v[id.slice(3)]=e.target.value;},true);
+document.addEventListener('keydown',e=>{if(WZ.open&&e.key==='Escape'){WZ.open=false;G('render')();}},true);
+try{Object.assign(G('ACT'),{
+  wzOpen:()=>{wzInit();WZ.open=true;WZ.step=0;WZ.done=false;try{localStorage.setItem('ks_wz_seen_'+APP,'1');}catch(e){}G('render')();setTimeout(()=>{const el=document.getElementById('wz_name');if(el)el.focus();},50);},
+  wzClose:()=>{WZ.open=false;WZ.done=false;try{localStorage.setItem('ks_wz_seen_'+APP,'1');}catch(e){}G('render')();},
+  wzPick:b=>{const k=b.dataset.k;WZ.v[k]=k==='comm'?b.dataset.v==='1':/^(judges|refs)$/.test(k)?Number(b.dataset.v):b.dataset.v;G('render')();},
+  wzNext:()=>{const st=wzSteps()[WZ.step];if(st==='name'&&!String(WZ.v.name||'').trim()){try{G('toast')('대회 이름을 적어 주세요');}catch(e){}return;}WZ.step=Math.min(WZ.step+1,wzSteps().length-1);G('render')();},
+  wzPrev:()=>{WZ.step=Math.max(0,WZ.step-1);G('render')();},
+  wzApply:()=>wzApply(),
+  wzNext2:b=>{WZ.open=false;WZ.done=false;if(b.dataset.r)G('ACT').go({dataset:{r:b.dataset.r}});else{SEL=b.dataset.k;keep();G('render')();}}
+});}catch(e){}
+/* 처음 켰을 때(대회명·명단이 비어 있으면) 한 번 자동으로 엽니다 */
+function wzAuto(){try{if(localStorage.getItem('ks_wz_seen_'+APP))return;}catch(e){return;}const s=G('SET')(),S=G('S');
+  if(s.name||(S.roster||[]).length)return;wzInit();WZ.open=true;WZ.step=0;try{localStorage.setItem('ks_wz_seen_'+APP,'1');}catch(e){}}
 
 window.ssShell=html=>{try{return shell(html);}catch(e){console.warn('settings shell',e);return html;}};
-window.ssOpen=k=>{OPEN.add(k);keep();};
+window.ssOpen=k=>{SEL=k;keep();};
 document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.ss||!d.matches('details'))return;
   if(d.open)OPEN.add(d.dataset.ss);else OPEN.delete(d.dataset.ss);keep();},true);
-try{Object.assign(G('ACT'),{ssGo:b=>{const k=b.dataset.k;OPEN.add(k);keep();const d=document.getElementById('ss-'+k);if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});}}});}catch(e){}
+try{Object.assign(G('ACT'),{ssGo:b=>{const k=b.dataset.k,fromTile=b.classList.contains('ss-tile')||b.closest('.ss-phead');SEL=(fromTile&&SEL===k)?null:k;keep();G('render')();
+  if(SEL)setTimeout(()=>{const d=document.getElementById('ss-detail');if(d){const r=d.getBoundingClientRect();if(r.top<0||r.top>innerHeight-160)d.scrollIntoView({behavior:'smooth',block:'start'});}},30);}});}catch(e){}
 const css=document.createElement('style');css.textContent=`
 .ss{display:flex;flex-direction:column;gap:14px}
 .ss-top{gap:10px}
@@ -7307,15 +7368,36 @@ const css=document.createElement('style');css.textContent=`
 .ss-ck i{font-style:normal;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:12px;color:#fff}
 .ss-ck.ok{background:var(--ok-soft);color:var(--ok)}.ss-ck.ok i{background:var(--ok)}
 .ss-ck.warn{background:var(--warn-soft);color:var(--warn)}.ss-ck.warn i{background:var(--warn)}
-.ss-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,460px),1fr));gap:14px;align-items:start}
-.ss-card{padding:0!important;gap:0!important;scroll-margin-top:80px}
-.ss-card>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:16px 18px;cursor:pointer;user-select:none}
-.ss-card>summary::-webkit-details-marker,.ss-more>summary::-webkit-details-marker{display:none}
-.ss-card>summary b{font-size:17px}
-.ss-ic{font-size:20px}
-.ss-st{flex:1;min-width:0;text-align:right;color:var(--muted);font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ss-car{margin-left:auto;transition:transform .15s;color:var(--muted)}.ss-card[open]>summary .ss-car{transform:rotate(180deg)}
-.ss-card>.ss-body{display:flex;flex-direction:column;gap:14px;padding:0 18px 18px;border-top:1px solid var(--line);padding-top:14px}
+.ss-toprow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.ss-wzbtn{white-space:nowrap}
+.ss-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.ss-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (max-width:620px){.ss-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.ss-tile{min-height:84px;padding:12px}}
+.ss-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:inherit;font:inherit;cursor:pointer;min-height:96px;box-shadow:var(--shadow)}
+.ss-tile b{font-size:16px}.ss-tic{font-size:22px;line-height:1}
+.ss-tst{color:var(--muted);font-size:12.5px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ss-tile:hover{border-color:var(--ok)}
+.ss-tile.on{border:2px solid var(--ok);background:var(--ok-soft)}
+.ss-tile.warn .ss-tst{color:var(--warn)}
+.ss-dot{position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;background:var(--warn)}
+.ss-detail{scroll-margin-top:80px}
+.ss-phead{display:flex;align-items:center;gap:10px;margin-bottom:6px}.ss-phead h2{margin:0;flex:1;font-size:19px}
+.ss-pane>.ss-body{display:flex;flex-direction:column;gap:14px}
+.ss-pane[hidden]{display:none!important}
+.ss-hint{text-align:center;padding:4px}
+.ss-wz{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
+.ss-wzbox{width:min(640px,100%);max-height:calc(100vh - 32px);overflow:auto;gap:16px!important}
+.ss-wzhead{display:flex;align-items:center;gap:12px}.ss-wzhead b{font-size:18px}
+.ss-wzdots{flex:1;display:flex;gap:6px;justify-content:center}.ss-wzdots i{width:9px;height:9px;border-radius:50%;background:var(--line)}.ss-wzdots i.d{background:var(--ok)}.ss-wzdots i.on{background:var(--ok);width:24px;border-radius:5px}
+.ss-wzbody{display:flex;flex-direction:column;gap:12px;min-height:180px}.ss-wzbody h3{margin:0;font-size:20px}
+.ss-wzbody>input{font-size:18px;padding:12px 14px}
+.ss-wzopts{display:grid;gap:10px}.ss-wzopts.row3{grid-template-columns:repeat(3,1fr)}.ss-wzopts.row4{grid-template-columns:repeat(4,1fr)}
+@media (max-width:560px){.ss-wzopts.row3,.ss-wzopts.row4{grid-template-columns:repeat(2,1fr)}}
+.ss-wzopt{display:flex;flex-direction:column;gap:4px;text-align:left;padding:14px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--sunk);color:inherit;font:inherit;cursor:pointer}
+.ss-wzopt b{font-size:16px}.ss-wzopt span{color:var(--muted);font-size:13px;line-height:1.4}
+.ss-wzopt.on{border-color:var(--ok);background:var(--ok-soft)}.ss-wzopt:hover{border-color:var(--ok)}
+.ss-wzgrid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}@media (max-width:560px){.ss-wzgrid{grid-template-columns:1fr}}
+.ss-wzsum th{text-align:left;color:var(--muted);font-weight:700;padding:6px 14px 6px 0;white-space:nowrap}.ss-wzsum td{font-weight:800;padding:6px 0}
+.ss-wzfoot{display:flex;justify-content:space-between;gap:10px}
 .ss-item{display:flex;flex-direction:column;gap:8px}
 .ss-flat{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
 .ss-flat>h2,.ss-flat>.row>h2{font-size:15px}
