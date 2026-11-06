@@ -550,7 +550,30 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .vbox{position:relative;display:grid;justify-items:center;gap:.4vh}
 .villain{height:25vh;width:auto;overflow:visible;filter:drop-shadow(0 0 1.6vw rgba(255,63,209,.6));animation:vbob 2.6s ease-in-out infinite}
 .vbox.st2 .villain{filter:drop-shadow(0 0 2vw rgba(255,90,31,.8)) saturate(1.3)}
-.vbox.st3 .villain{filter:drop-shadow(0 0 2.6vw rgba(255,42,77,.95)) hue-rotate(-25deg) saturate(1.6)}
+.vbox.st1 .villain{filter:drop-shadow(0 0 1.4vw rgba(255,154,46,.7))}
+.vbox.st3 .villain{height:30vh;filter:drop-shadow(0 0 2.8vw rgba(255,90,31,.95))}
+.villain.minions .mn{animation:mnb 1.6s ease-in-out infinite}.villain.minions .mn:nth-child(3){animation-delay:-.5s}.villain.minions .mn:nth-child(4){animation-delay:-1s}
+@keyframes mnb{50%{transform:translateY(-8px)}}
+.vname .vk{color:#fff}
+/* 스토리 인트로 */
+.story{position:absolute;inset:0;z-index:6;display:grid;grid-template-rows:1fr auto;justify-items:center;align-items:center;padding:3vh 4vw 5vh;overflow:hidden;background:radial-gradient(circle at 50% 40%,#2a1468 0%,#0b0428 55%,#020010 100%)}
+.story::before{content:"";position:absolute;inset:0;background-image:radial-gradient(#fff 1px,transparent 1.5px),radial-gradient(#9fe9ff 1px,transparent 1.5px);background-size:9vw 9vw,13vw 13vw;background-position:0 0,4vw 6vw;opacity:.45}
+.story .stxt{position:relative;font-family:var(--f-disp);font-size:4.2vw;line-height:1.25;text-align:center;color:#fff;text-shadow:0 0 1.6vw #ff3fd1,.25vw .25vw 0 #020010;animation:pwt .7s cubic-bezier(.3,1.6,.5,1) both;max-width:88vw}
+.story .sart{position:relative;width:100%;height:100%;display:grid;place-items:center}
+.earth{width:30vh;height:30vh;filter:drop-shadow(0 0 3vw #38c8ff)}
+.fly{position:absolute;width:12vh;animation:fly 2.6s linear infinite}.fly svg{width:100%;height:auto}
+.fly.f1{top:-10%;right:-8%}.fly.f2{top:-20%;right:20%;animation-delay:-.9s;width:9vh}.fly.f3{top:10%;right:-14%;animation-delay:-1.7s;width:15vh}
+@keyframes fly{from{transform:translate(0,0) rotate(-20deg)}to{transform:translate(-55vw,55vh) rotate(-20deg);opacity:.2}}
+.bline{display:flex;gap:3vw;align-items:flex-end;justify-content:center}
+.bline>div{display:grid;justify-items:center;gap:.8vh;animation:pop .6s cubic-bezier(.3,1.8,.5,1) both}.bline>div:nth-child(2){animation-delay:.5s}.bline>div:nth-child(3){animation-delay:1s}
+.bline .villain{height:24vh;animation:vbob 2.6s ease-in-out infinite}.bline>div:nth-child(3) .villain{height:34vh}
+.bline b{font-family:var(--f-disp);font-size:2.6vw;color:#ff9ad0}.bline small{font-family:var(--f-hero);font-size:1.3vw;color:var(--gold);letter-spacing:.1em}
+.bline span{font-size:3vw;color:var(--gold);align-self:center;font-family:var(--f-hero)}
+.sheroes{display:flex;gap:2vw;align-items:flex-end;justify-content:center}.sheroes>div{animation:pop .6s cubic-bezier(.3,1.8,.5,1) both}.sheroes svg{height:40vh;width:auto}
+.sheroes>div:nth-child(2){animation-delay:.15s}.sheroes>div:nth-child(3){animation-delay:.3s}.sheroes>div:nth-child(4){animation-delay:.45s}
+.sdots{position:absolute;bottom:1.6vh;left:50%;transform:translateX(-50%);display:flex;gap:.8vw}.sdots i{width:1vw;height:1vw;border-radius:50%;background:#ffffff40}.sdots i.on{background:var(--gold)}
+.bossslide .bline .villain{height:26vh}.bossslide .bline>div:nth-child(3) .villain{height:34vh}.bossslide.three{flex-direction:column;gap:2vh}.bossslide.three p{max-width:70vw;text-align:center}
+@media (prefers-reduced-motion: reduce){.fly,.villain.minions .mn{animation:none}}
 .villain.hit{animation:vhit .26s linear}
 .villain .vflame{animation:vfl .35s ease-in-out infinite alternate;transform-origin:170px 70px}
 .villain .vcrack{animation:pulse .8s infinite alternate}
@@ -802,7 +825,7 @@ const T={
   relayN:'팀 인원',mixG:'남녀 함께 팀 만들기 (나이별 혼성부)',teamHelp:'출전 선수의 소속(도장)별로 팀을 만들고, 인원이 모자란 아이들은 「연합팀」으로 묶습니다.',ppl0:'명',
   gameNote:'이미 기록이 있어 대진은 그대로 두었습니다. 새 방식으로 하려면 「명단 적용」을 눌러 주세요.',gameRebuilt:'새 경기 종류로 부문 {n}개 대진을 만들었습니다',
   touch:'터치!',kickBtn:'발차기 +1',kicks:'회',timeLeft:'남은 시간',villain:'다크 메테오',bossStage:'{n}단계',bossNext:'더 강한 {n}단계 보스가 나타났다!',bossCall:'발차기로 악당을 물리쳐라!',timeUp:'시간 끝! 발차기 횟수를 세는 중',
-  bossIntro:'오늘의 악당',bossIntroD:'{s}초 동안 힘껏 발차기! 모두의 발차기로 체력 {hp}을 깎아 다크 메테오를 물리쳐요.',
+  bossIntro:'오늘의 악당',bossIntroD:'{s}초 동안 힘껏 발차기! 운석 부하들 → 다크 메테오 → 메가 메테오, 3단계 보스를 모두 물리치고 지구를 지켜요.',bMinion:'운석 부하들',bDark:'다크 메테오',bMega:'메가 메테오',bBonus:'메가 메테오 +{n}',bossDown2:'운석 부하들을 물리쳤다! 다크 메테오 등장!',bossDown3:'다크 메테오를 물리쳤다! 최종 보스 메가 메테오 등장!',earthSaved:'메가 메테오를 물리쳤다! 지구를 지켰어요!',bossDownB:'보너스 메테오도 물리쳤다! 다음 보너스 등장!',story1:'우주 저 멀리, 운석 군단이 지구로 날아오고 있다!',story2:'3단계 보스가 지구를 노린다!',story3:'태권 히어로들아, 발차기로 지구를 지켜라!',storyT:'스토리 인트로',storyFirst:'부문 첫 조만',storyEvery:'매 조마다',storyOff:'끄기',bossLine:'3단계 보스',
   xpTitle:'히어로 레벨 · 히어로 카드',xpHelp:'대회에 나올 때마다 경험치가 쌓이고, 레벨이 오르면 히어로의 갑옷·망토·헬멧 장식이 바뀝니다. 참가 +10 · 1등 +30 · 2등 +20 · 3등 +10 · 신기록 +20 · 킥 배틀 발차기 1회 +1(최대 40). 이 노트북에 이름+소속으로 저장되며, 내보내기 파일로 다른 노트북에 옮길 수 있습니다.',
   xpOn:'경험치·레벨업 켜기',xpPrint:'히어로 카드 인쇄',xpExp:'경험치 내보내기',xpImp:'경험치 불러오기',xpReset:'경험치 모두 지우기',xpImported:'{n}명의 경험치를 불러왔습니다',xpBad:'경험치 파일을 읽지 못했습니다',
   cards:'히어로 카드',sCards:'히어로 카드',maxLv:'최고 레벨!',nextLv:'다음 레벨까지 {n}',
@@ -836,7 +859,7 @@ const T={
   relayN:'Team size',mixG:'Mixed boys & girls teams (by age)',teamHelp:'Teams are built from each dojang; leftover kids join an All-Star team.',ppl0:'',
   gameNote:'Results already exist, so the draw was kept. Press “Apply roster” to rebuild for the new game type.',gameRebuilt:'Built {n} divisions for the new game type',
   touch:'TAG!',kickBtn:'KICK +1',kicks:'kicks',timeLeft:'Time left',villain:'Dark Meteor',bossStage:'Stage {n}',bossNext:'A stronger Stage {n} boss appears!',bossCall:'Kick the villain down!',timeUp:'Counting kicks…',
-  bossIntro:'Today’s villain',bossIntroD:'Kick with all your power for {s} seconds! Together, drain all {hp} HP and defeat Dark Meteor.',
+  bossIntro:'Today’s villains',bossIntroD:'Kick with all your power for {s} seconds! Beat all three bosses — Meteor Minions, Dark Meteor and Mega Meteor — and save the Earth.',bMinion:'Meteor Minions',bDark:'Dark Meteor',bMega:'Mega Meteor',bBonus:'Mega Meteor +{n}',bossDown2:'Minions down! Dark Meteor appears!',bossDown3:'Dark Meteor down! Final boss Mega Meteor appears!',earthSaved:'Mega Meteor defeated! You saved the Earth!',bossDownB:'Bonus meteor down! Another one is coming!',story1:'Far out in space, a meteor army is heading for Earth!',story2:'Three bosses are coming for Earth!',story3:'Taekwon Heroes, kick hard and save the Earth!',storyT:'Story intro',storyFirst:'First heat of each division',storyEvery:'Every heat',storyOff:'Off',bossLine:'3 bosses',
   xpTitle:'Hero levels · Hero cards',xpHelp:'Every event earns XP. Level up and your hero’s armor, cape and helmet change. Join +10 · 1st +30 · 2nd +20 · 3rd +10 · New record +20 · Kick Battle kicks +1 each (max 40). Saved on this laptop by name + team; export the file to move it to another laptop.',
   xpOn:'XP & level-ups on',xpPrint:'Print hero cards',xpExp:'Export XP',xpImp:'Import XP',xpReset:'Clear all XP',xpImported:'Imported XP for {n} kids',xpBad:'Could not read that XP file',
   cards:'Hero cards',sCards:'Hero cards',maxLv:'Max level!',nextLv:'{n} to next level',
@@ -868,7 +891,7 @@ function defaults(){return{
     {id:'s4',ko:'발 격파',en:'Kick Break',pen:5,ic:'kick'},
     {id:'s5',ko:'링 점프',en:'Ring Hop',pen:2,ic:'ring'},
     {id:'s6',ko:'주먹 격파',en:'Punch Break',pen:5,ic:'punch'}],
-  cfg:{keys:['1','2','3','4'],startKey:' ',countdown:true,sound:true,soundAt:'ctrl',auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,xp:true},
+  cfg:{keys:['1','2','3','4'],startKey:' ',countdown:true,sound:true,soundAt:'ctrl',auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,bossStory:'first',xp:true},
   roster:SAMPLE_ROSTER(),shuffle:false,sampleRoster:true,
   divs:{},dkey:'',players:[],rounds:[],cur:{r:0,h:0},board:'intro',champ:null};}
 
@@ -886,7 +909,7 @@ let S=load()||defaults();
 /* 대회 연출 켜기·끄기 */
 const FXDEF={intro:true,record:true,cheer:false,cam:false,camRev:false,camZoom:true};
 S.ev=Object.assign({nameEn:'2026 Taekwon Heroes 2 Galaxy Challenge',divEn:'Kindergarten · Ages 5–7'},S.ev);
-S.cfg=Object.assign({fx:{},auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,xp:true,mpOn:false,mpLane:1,mpLv:'easy',mpSpin:3,btMode:'each',btGap:150},S.cfg);S.game=S.game||'race';
+S.cfg=Object.assign({fx:{},auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,bossStory:'first',xp:true,mpOn:false,mpLane:1,mpLv:'easy',mpSpin:3,btMode:'each',btGap:150},S.cfg);S.game=S.game||'race';
 S.cfg.fx=Object.assign({},FXDEF,S.cfg.fx||{});
 let R={phase:'idle',count:0,start:0,go:0};
 let tab='run', learn=null, lastKey='', armed=null, slideIx=0, gateOpen=ROLE==='board';
@@ -1018,15 +1041,24 @@ function startHeat(){
   if(R.phase!=='idle')return;
   if(!h.lanes.some(x=>x!=null))return;
   clearFlow();ac();
-  if(S.cfg.fx.intro){beginIntro(h);return}
+  if(S.cfg.fx.intro||storyWanted()){beginIntro(h);return}
   realStart();
 }
 let introT=[];
-function beginIntro(h){const lanes=[0,1,2,3].filter(k=>h.lanes[k]!=null);S.board='live';R={phase:'intro',ix:0,lanes,count:0,start:0,go:0};commit();sfx('intro',lanes[0]);
+/* 킥 배틀 스토리: 부문 첫 조(또는 매 조) 시작 전에 3장면을 보여 주고, 이어서 선수 소개 → 시작 */
+const STORY_N=3,STORY_MS=3200;
+function storyWanted(){if(!isBoss())return false;const m=S.cfg.bossStory||'first';if(m==='off')return false;if(m==='every')return true;
+  return !S.rounds.some(r=>r.heats.some(x=>x.done))}
+function beginIntro(h){const lanes=[0,1,2,3].filter(k=>h.lanes[k]!=null),story=storyWanted(),laneIntro=!!S.cfg.fx.intro;S.board='live';
   introT.forEach(clearTimeout);introT=[];
-  lanes.forEach((k,ix)=>{if(ix)introT.push(setTimeout(()=>{if(R.phase!=='intro')return;R.ix=ix;commit();sfx('intro',k)},ix*1900))});
-  introT.push(setTimeout(()=>{if(R.phase!=='intro')return;R.ix=lanes.length;commit();sfx('whoosh')},lanes.length*1900));
-  introT.push(setTimeout(()=>{if(R.phase==='intro')realStart()},lanes.length*1900+2200));}
+  R={phase:'intro',ix:0,lanes,count:0,start:0,go:0,story:story?0:null};commit();sfx(story?'whoosh':'intro',story?undefined:lanes[0]);
+  const base=story?STORY_N*STORY_MS:0;
+  if(story)for(let k=1;k<STORY_N;k++)introT.push(setTimeout(()=>{if(R.phase!=='intro')return;R.story=k;commit();sfx(k===STORY_N-1?'powerup':'whoosh')},k*STORY_MS));
+  if(!laneIntro){introT.push(setTimeout(()=>{if(R.phase==='intro')realStart()},base));return}
+  if(story)introT.push(setTimeout(()=>{if(R.phase!=='intro')return;R.story=null;R.ix=0;commit();sfx('intro',lanes[0])},base));
+  lanes.forEach((k,ix)=>{if(ix)introT.push(setTimeout(()=>{if(R.phase!=='intro')return;R.ix=ix;commit();sfx('intro',k)},base+ix*1900))});
+  introT.push(setTimeout(()=>{if(R.phase!=='intro')return;R.ix=lanes.length;commit();sfx('whoosh')},base+lanes.length*1900));
+  introT.push(setTimeout(()=>{if(R.phase==='intro')realStart()},base+lanes.length*1900+2200));}
 function realStart(){
   introT.forEach(clearTimeout);introT=[];
   const h=ensureHeat();if(!h)return;
@@ -1366,7 +1398,7 @@ function bestLine(){if(!S.cfg.fx.record)return '';const h=curHeat();let b=bestBe
 function showRecord(r){const o=document.createElement('div');o.className='recov';o.innerHTML=`<div class="rect"><b>NEW RECORD!</b><span>${esc(t('newRec'))}</span><i style="--c:var(${HEROES[r.lane||0].v})">${esc(r.name)} · ${fmt(r.time)}</i><small>${esc(t('oldRec'))} ${fmt(r.old)}</small></div>`;document.body.appendChild(o);setTimeout(()=>o.remove(),3200);
   playLocal('fanfare');flash();confetti(160);if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}}
 /* 입장 소개 화면 (전광판) */
-function introHTML(h){const L=R.lanes||[],ix=R.ix||0;
+function introHTML(h){if(R.story!=null)return storyHTML(R.story);const L=R.lanes||[],ix=R.ix||0;
   if(ix<L.length){const k=L[ix],p=P(h.lanes[k])||{};
     return `<div class="introv" style="--c:var(${HEROES[k].v})"><div class="ifig" key="${ix}">${heroFig(k,'','p3',undefined,lvLane(h,k))}</div><div class="itx"><span class="ilane">${k+1}${S.lang==='en'?' ':''}${esc(t('lane'))}</span><b class="ihero">${esc(HEROES[k].en.toUpperCase())}</b><b class="iname">${esc(pn(p))}</b><span class="iteam">${p.members?p.members.map(m=>esc(pn(m))).join(' · '):esc(p.team||'')}</span></div></div>`}
   return `<div class="introv all"><div class="iall">${L.map(k=>{const p=P(h.lanes[k])||{};return `<div style="--c:var(${HEROES[k].v})">${heroFig(k,'','p1',undefined,lvLane(h,k))}<b>${esc(pn(p))}</b></div>`}).join('')}</div><div class="iready">${esc(t('readyGo'))}</div></div>`}
@@ -1616,26 +1648,53 @@ function btDraw(){if(!BTBOX)return;const h=curHeat();
     <label class="f" style="flex:1">${esc(t('btGapL'))}<input type="number" id="btGap" min="0" max="1000" step="10" value="${+S.cfg.btGap||0}"></label>
     <button class="btn ghost" data-act="btReset">${esc(t('btResetT'))}</button></div>
    <div class="btlanes">${[0,1,2,3].map(row).join('')}</div></div>`}
-/* ================= 악당: 다크 메테오 ================= */
-function villainSvg(stage){const st=stage||1,hot=st>=3;
-  return`<svg class="villain" viewBox="-30 -40 260 250" role="img" aria-label="Dark Meteor"><defs>
-   <radialGradient id="vm" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="${hot?'#b03ad9':'#7a45e0'}"/><stop offset=".55" stop-color="#2c1268"/><stop offset="1" stop-color="#0b0224"/></radialGradient>
-   <linearGradient id="vf" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff1f8e" stop-opacity="0"/><stop offset=".45" stop-color="#ff5a1f"/><stop offset="1" stop-color="#ffec5c"/></linearGradient>
-   <radialGradient id="ve"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#ff5470"/><stop offset="1" stop-color="#c3002b"/></radialGradient></defs>
-   <g class="vflame"><path d="M150 52 Q196 2 232 -30 Q214 18 226 46 Q200 42 186 70 Q176 58 160 84 Z" fill="url(#vf)"/><path d="M160 60 Q190 30 210 12 Q200 38 206 52 Q190 52 178 70 Z" fill="#fff6c8" opacity=".75"/></g>
-   <path d="M62 54 L30 -8 L88 34 Z" fill="#1a0b40" stroke="#020010" stroke-width="6" stroke-linejoin="round"/><path d="M138 54 L170 -8 L112 34 Z" fill="#1a0b40" stroke="#020010" stroke-width="6" stroke-linejoin="round"/>
-   <path d="M44 6 L56 28 M156 6 L144 28" stroke="#ff3fd1" stroke-width="4" stroke-linecap="round"/>
-   <g class="varm"><path d="M30 118 Q4 110 -14 92 L-4 112 L-22 118 L-2 126 L-14 140 Q12 138 30 134" fill="#1a0b40" stroke="#020010" stroke-width="5" stroke-linejoin="round"/><path d="M170 118 Q196 110 214 92 L204 112 L222 118 L202 126 L214 140 Q188 138 170 134" fill="#1a0b40" stroke="#020010" stroke-width="5" stroke-linejoin="round"/></g>
-   <circle cx="100" cy="108" r="80" fill="url(#vm)" stroke="#020010" stroke-width="7"/>
-   <circle cx="58" cy="150" r="13" fill="#170838" opacity=".9"/><circle cx="150" cy="156" r="9" fill="#170838" opacity=".9"/><circle cx="154" cy="70" r="8" fill="#170838" opacity=".9"/><circle cx="46" cy="72" r="6" fill="#170838" opacity=".9"/>
-   <g class="vcrack" fill="none" stroke="#ff3fd1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M28 104 l18 4 -6 14 16 6"/><path d="M172 98 l-16 8 8 12 -14 8"/><path d="M96 30 l6 14 -8 8 6 12"/>${st>=2?'<path d="M70 176 l10 -14 12 4 6 -12"/><path d="M128 178 l-8 -12 10 -8"/>':''}</g>
-   <path d="M48 86 L96 100 L92 118 L54 110 Z" fill="url(#ve)" stroke="#020010" stroke-width="5" stroke-linejoin="round"/><path d="M152 86 L104 100 L108 118 L146 110 Z" fill="url(#ve)" stroke="#020010" stroke-width="5" stroke-linejoin="round"/>
+/* ================= 악당: 3단계 보스 =================
+   1단계 운석 부하들 → 2단계 다크 메테오 → 3단계 메가 메테오(최종 보스). 메가 메테오를 물리친 뒤에도 시간이 남으면 보너스 메가 메테오가 계속 나옵니다. */
+const BOSSES=[{id:'minion',k:'bMinion',en:'METEOR MINIONS'},{id:'dark',k:'bDark',en:'DARK METEOR'},{id:'mega',k:'bMega',en:'MEGA METEOR'}];
+function bossOf(st){st=st||1;if(st<=3)return{...BOSSES[st-1],st};return{...BOSSES[2],st,bonus:st-3}}
+const bossKo=B=>B.bonus?t('bBonus',{n:B.bonus}):t(B.k);
+function villainSvg(stage){const B=bossOf(stage);return B.id==='minion'?minionSvg():meteorSvg(B.id==='mega')}
+/* 작은 운석 부하 한 마리 */
+function minionOne(x,y,sc,c1){return`<g class="mn"><g transform="translate(${x} ${y}) scale(${sc})">
+   <path d="M18 -6 Q46 -40 70 -58 Q58 -28 66 -12 Q48 -14 40 4 Z" fill="url(#mnf)"/>
+   <path d="M-26 -22 L-34 -46 L-12 -30 Z M26 -22 L34 -46 L12 -30 Z" fill="#3a1a12" stroke="#020010" stroke-width="5" stroke-linejoin="round"/>
+   <circle r="34" fill="url(#mnb)" stroke="#020010" stroke-width="6"/>
+   <circle cx="-14" cy="18" r="6" fill="#3a1408" opacity=".8"/><circle cx="18" cy="-18" r="5" fill="#3a1408" opacity=".8"/>
+   <path d="M-22 -8 L-4 0 L-6 8 L-20 4 Z M22 -8 L4 0 L6 8 L20 4 Z" fill="${c1}" stroke="#020010" stroke-width="4" stroke-linejoin="round"/>
+   <path d="M-12 18 Q0 10 12 18" fill="none" stroke="#020010" stroke-width="5" stroke-linecap="round"/></g></g>`}
+function minionSvg(){return`<svg class="villain minions" viewBox="-30 -40 260 250" role="img" aria-label="Meteor Minions"><defs>
+   <radialGradient id="mnb" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#d98a4a"/><stop offset=".55" stop-color="#7a3a1c"/><stop offset="1" stop-color="#2a0e05"/></radialGradient>
+   <linearGradient id="mnf" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a2e" stop-opacity="0"/><stop offset=".5" stop-color="#ff7a1f"/><stop offset="1" stop-color="#ffe45c"/></linearGradient></defs>
+   ${minionOne(100,58,1.15,'#ffe45c')}${minionOne(30,140,.95,'#ff5470')}${minionOne(172,146,.95,'#38f2ff')}</svg>`}
+/* 다크 메테오(2단계) · 메가 메테오(3단계, 왕관·마그마) */
+function meteorSvg(mega){const id=mega?'mg':'dk',c=mega?['#ffb347','#b3260f','#2a0404']:['#7a45e0','#2c1268','#0b0224'],cr=mega?'#ffd23f':'#ff3fd1';
+  return`<svg class="villain ${mega?'mega':'dark'}" viewBox="-30 -50 260 260" role="img" aria-label="${mega?'Mega Meteor':'Dark Meteor'}"><defs>
+   <radialGradient id="vm${id}" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="${c[0]}"/><stop offset=".55" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></radialGradient>
+   <linearGradient id="vf${id}" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff1f8e" stop-opacity="0"/><stop offset=".45" stop-color="#ff5a1f"/><stop offset="1" stop-color="#ffec5c"/></linearGradient>
+   <radialGradient id="ve${id}"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="${mega?'#ffe45c':'#ff5470'}"/><stop offset="1" stop-color="${mega?'#ff7a1f':'#c3002b'}"/></radialGradient></defs>
+   <g class="vflame"><path d="M150 52 Q196 2 232 -30 Q214 18 226 46 Q200 42 186 70 Q176 58 160 84 Z" fill="url(#vf${id})"/><path d="M160 60 Q190 30 210 12 Q200 38 206 52 Q190 52 178 70 Z" fill="#fff6c8" opacity=".75"/>${mega?`<path d="M40 60 Q-6 10 -30 -30 Q-12 16 -24 44 Q4 40 16 70 Z" fill="url(#vf${id})"/>`:''}</g>
+   ${mega?`<path d="M34 44 L46 -16 L70 22 L100 -34 L130 22 L154 -16 L166 44 Z" fill="#ffd23f" stroke="#020010" stroke-width="6" stroke-linejoin="round"/><circle cx="100" cy="2" r="9" fill="#ff3fd1" stroke="#020010" stroke-width="4"/><circle cx="56" cy="22" r="6" fill="#38f2ff" stroke="#020010" stroke-width="3"/><circle cx="144" cy="22" r="6" fill="#38f2ff" stroke="#020010" stroke-width="3"/>`
+     :`<path d="M62 54 L30 -8 L88 34 Z" fill="#1a0b40" stroke="#020010" stroke-width="6" stroke-linejoin="round"/><path d="M138 54 L170 -8 L112 34 Z" fill="#1a0b40" stroke="#020010" stroke-width="6" stroke-linejoin="round"/><path d="M44 6 L56 28 M156 6 L144 28" stroke="#ff3fd1" stroke-width="4" stroke-linecap="round"/>`}
+   <g class="varm"><path d="M30 118 Q4 110 -14 92 L-4 112 L-22 118 L-2 126 L-14 140 Q12 138 30 134" fill="${mega?'#4a0e06':'#1a0b40'}" stroke="#020010" stroke-width="5" stroke-linejoin="round"/><path d="M170 118 Q196 110 214 92 L204 112 L222 118 L202 126 L214 140 Q188 138 170 134" fill="${mega?'#4a0e06':'#1a0b40'}" stroke="#020010" stroke-width="5" stroke-linejoin="round"/></g>
+   <circle cx="100" cy="108" r="${mega?86:80}" fill="url(#vm${id})" stroke="#020010" stroke-width="7"/>
+   <circle cx="58" cy="150" r="13" fill="${mega?'#3a0804':'#170838'}" opacity=".9"/><circle cx="150" cy="156" r="9" fill="${mega?'#3a0804':'#170838'}" opacity=".9"/><circle cx="154" cy="70" r="8" fill="${mega?'#3a0804':'#170838'}" opacity=".9"/><circle cx="46" cy="72" r="6" fill="${mega?'#3a0804':'#170838'}" opacity=".9"/>
+   <g class="vcrack" fill="none" stroke="${cr}" stroke-width="${mega?5:4}" stroke-linecap="round" stroke-linejoin="round"><path d="M28 104 l18 4 -6 14 16 6"/><path d="M172 98 l-16 8 8 12 -14 8"/><path d="M96 30 l6 14 -8 8 6 12"/><path d="M70 176 l10 -14 12 4 6 -12"/><path d="M128 178 l-8 -12 10 -8"/>${mega?'<path d="M20 140 l14 -6 4 12 12 -4"/><path d="M180 136 l-14 -4 -2 12 -12 -2"/>':''}</g>
+   <path d="M48 86 L96 100 L92 118 L54 110 Z" fill="url(#ve${id})" stroke="#020010" stroke-width="5" stroke-linejoin="round"/><path d="M152 86 L104 100 L108 118 L146 110 Z" fill="url(#ve${id})" stroke="#020010" stroke-width="5" stroke-linejoin="round"/>
    <path d="M44 78 L98 92 M156 78 L102 92" stroke="#020010" stroke-width="7" stroke-linecap="round"/>
    <path d="M62 144 L76 134 L86 146 L100 134 L114 146 L124 134 L138 144 Q100 176 62 144 Z" fill="#020010" stroke="#020010" stroke-width="4" stroke-linejoin="round"/>
    <path d="M70 142 L76 150 L82 142 M92 144 L100 154 L108 144 M118 142 L124 150 L130 142" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
   </svg>`}
-function villainBlock(){const st=R.stage||1,mx=bossMax(st),left=Math.max(0,mx-(R.dmg||0)),pct=Math.round(left/mx*100);
-  return`<div class="vbox st${Math.min(st,3)}"><div class="vname">DARK METEOR${S.lang==='en'?'':' · '+esc(t('villain'))} <b>${esc(t('bossStage',{n:st}))}</b></div>${villainSvg(st)}<div class="vhp"><i style="--v:${pct}"></i><b>${left} / ${mx}</b></div></div>`}
+function bossLineup(){return`<div class="bline">${BOSSES.map((B,i)=>`${i?'<span>→</span>':''}<div>${villainSvg(i+1)}<small>STAGE ${i+1}</small><b>${esc(S.lang==='en'?B.en:t(B.k))}</b></div>`).join('')}</div>`}
+function earthSvg(){return`<svg class="earth" viewBox="-60 -60 120 120" aria-hidden="true"><defs><radialGradient id="eg" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#7fe0ff"/><stop offset=".6" stop-color="#1e7fd6"/><stop offset="1" stop-color="#0a2a6a"/></radialGradient></defs>
+   <circle r="52" fill="url(#eg)" stroke="#020010" stroke-width="4"/><path d="M-30 -30 Q-10 -40 0 -26 Q-6 -12 -22 -10 Q-34 -14 -30 -30Z M8 -6 Q30 -14 38 4 Q30 22 12 18 Q2 8 8 -6Z M-36 12 Q-20 8 -16 24 Q-24 38 -36 30Z" fill="#3bd27a" stroke="#020010" stroke-width="2.5"/></svg>`}
+function storyHTML(k){const dots=`<div class="sdots">${Array.from({length:STORY_N},(_,i)=>`<i class="${i===k?'on':''}"></i>`).join('')}</div>`;
+  let art='';
+  if(k===0)art=`${earthSvg()}<div class="fly f1">${minionSvg()}</div><div class="fly f2">${minionSvg()}</div><div class="fly f3">${meteorSvg(false)}</div>`;
+  else if(k===1)art=bossLineup();
+  else art=`<div class="sheroes">${HEROES.map((H,i)=>`<div style="--c:var(${H.v})">${heroFig(i,'',['p1','p2','p3','p1'][i])}</div>`).join('')}</div>`;
+  return`<div class="story" key="s${k}"><div class="sart">${art}</div><div class="stxt">${esc(t('story'+(k+1)))}</div>${dots}</div>`}
+function villainBlock(){const st=R.stage||1,B=bossOf(st),mx=bossMax(st),left=Math.max(0,mx-(R.dmg||0)),pct=Math.round(left/mx*100);
+  return`<div class="vbox st${Math.min(st,3)}"><div class="vname">${esc(B.en)}${B.bonus?' +'+B.bonus:''}${S.lang==='en'?'':' · <span class="vk">'+esc(bossKo(B))+'</span>'} <b>${esc(t('bossStage',{n:Math.min(st,3)}))}${B.bonus?' ★':''}</b></div>${villainSvg(st)}<div class="vhp"><i style="--v:${pct}"></i><b>${left} / ${mx}</b></div></div>`}
 function heroMode(h,i){ // which motion a lane hero shows right now
   if(h.lanes[i]==null||h.dnf[i])return'ready';
   if(isBoss()&&R.phase==='running'&&h.time[i]==null)return'p2';
@@ -1811,7 +1870,8 @@ function viewSetup(){
     <div class="modes games">${[['race','gRace','🏃'],['relay','gRelay','🤝'],['family','gFamily','👨‍👧'],['boss','gBoss','👾']].map(([v,k,ic])=>`<label class="mode"><input type="radio" name="game" id="game-${v}" data-in="game" value="${v}" ${S.game===v?'checked':''}><b>${ic} ${esc(t(k))}</b><span>${esc(t(k+'D'))}</span></label>`).join('')}</div>
     ${S.game==='boss'?`<div class="gset"><label class="f" style="width:9rem">${esc(t('bossSec'))}<input type="number" id="bossSec" min="5" max="120" data-in="cfg.bossSec" value="${S.cfg.bossSec}"></label>
       <label class="f" style="width:9rem">${esc(t('bossHP'))}<input type="number" id="bossHP" min="5" max="999" data-in="cfg.bossHP" value="${S.cfg.bossHP}"></label>
-      <div class="seg" role="group" aria-label="${esc(t('bossKind'))}"><button class="btn ${S.cfg.bossTeam?'':'gold'}" data-act="bossTeam" data-v="">${esc(t('bossSolo'))}</button><button class="btn ${S.cfg.bossTeam?'gold':''}" data-act="bossTeam" data-v="1">${esc(t('bossTeamL'))}</button></div></div>
+      <div class="seg" role="group" aria-label="${esc(t('bossKind'))}"><button class="btn ${S.cfg.bossTeam?'':'gold'}" data-act="bossTeam" data-v="">${esc(t('bossSolo'))}</button><button class="btn ${S.cfg.bossTeam?'gold':''}" data-act="bossTeam" data-v="1">${esc(t('bossTeamL'))}</button></div>
+      <label class="f" style="width:13rem">${esc(t('storyT'))}<select id="bossStory" data-in="cfg.bossStory">${[['first','storyFirst'],['every','storyEvery'],['off','storyOff']].map(([v,k])=>`<option value="${v}" ${(S.cfg.bossStory||'first')===v?'selected':''}>${esc(t(k))}</option>`).join('')}</select></label></div>
       <p class="note">${esc(t('bossHelp'))}</p>
       <div class="row" style="margin-top:6px"><button class="btn gold" data-act="btOpen">🦶 ${esc(t('btBtn'))}</button></div>
       <div class="fxrow" style="margin-top:6px"><button class="tgl ${S.cfg.mpOn?'on':''}" data-act="mpT" aria-pressed="${!!S.cfg.mpOn}"><i></i></button><div><b>📷 ${esc(t('mpT'))}</b><span class="note">${esc(t('mpD'))}</span></div></div>`:''}
@@ -2056,7 +2116,7 @@ const s0=sl=>sl[slideIx%sl.length];
 function boardIntro(){
   const r=curRound(),h=curHeat();
   const slides=['splash','squad',isBoss()?'boss':'course'];if(h&&!h.done)slides.push('next');
-  if(s0(slides)==='boss')return`<div class="slide"><div class="slidewrap"><div class="stitle">👾 ${esc(t('bossIntro'))}</div><div class="bossslide">${villainSvg(1)}<div><b>DARK METEOR</b>${S.lang==='en'?'':`<span>${esc(t('villain'))}</span>`}<p>${esc(t('bossIntroD',{s:S.cfg.bossSec,hp:bossMax(1)}))}</p></div></div></div></div>`;
+  if(s0(slides)==='boss')return`<div class="slide"><div class="slidewrap"><div class="stitle">👾 ${esc(t('bossIntro'))} · ${esc(t('bossLine'))}</div><div class="bossslide three">${bossLineup()}<p>${esc(t('bossIntroD',{s:S.cfg.bossSec,hp:bossMax(1)}))}</p></div></div></div>`;
   const s=slides[slideIx%slides.length];
   if(s==='splash')return`<div class="slide"><div class="splash"><div class="big">TAEKWON<br>HEROES 2</div><div class="ko">${esc(evName())}</div><div class="div">${esc(curDivLabel())}</div></div></div>`;
   if(s==='squad')return`<div class="slide"><div class="slidewrap"><div class="stitle">${esc(t('meet'))}</div><div class="squad">${HEROES.map((H,i)=>`<div style="--c:var(${H.v})">${heroFig(i,'',['p1','run','p2','p3'][i])}<b>${esc(H.en.toUpperCase())}</b><span>${esc(H.ko)} · ${i+1}${S.lang==='en'?' ':''}${esc(t('lane'))}</span></div>`).join('')}</div></div></div>`;
@@ -2166,7 +2226,7 @@ function runFx(name,arg){
   if(name==='hit'){if(!boardVisible())return;const v=document.querySelector('#board .villain');if(v){v.classList.remove('hit');void v.getBBox;v.classList.add('hit')}
     const bl=document.querySelector('#board .blanes .bl:nth-child('+(arg.lane+1)+')');if(bl){bl.classList.remove('kicked');void bl.offsetWidth;bl.classList.add('kicked')}
     const vb=document.querySelector('#board .vbox');if(vb){const r=vb.getBoundingClientRect();const o=document.createElement('div');o.className='dmg';o.style.setProperty('--c',`var(${HEROES[arg.lane].v})`);o.textContent='-1';o.style.left=(r.left+r.width*(.25+Math.random()*.5))+'px';o.style.top=(r.top+r.height*(.25+Math.random()*.3))+'px';document.body.appendChild(o);setTimeout(()=>o.remove(),850)}return}
-  if(name==='bossdown'){playLocal('bossdown');if(!boardVisible())return;bigOv('BOSS DOWN!',esc(t('bossNext',{n:arg.stage})),2200,'bd');flash();confetti(140);if(!matchMedia('(prefers-reduced-motion: reduce)').matches){bolts.push(makeBolt(cv.width*.5,cv.height))}if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}return}
+  if(name==='bossdown'){playLocal('bossdown');if(!boardVisible())return;const ns=arg.stage;if(ns===4)bigOv('EARTH SAVED!',esc(t('earthSaved')),3200,'bd');else bigOv('BOSS DOWN!',esc(ns===2?t('bossDown2'):ns===3?t('bossDown3'):t('bossDownB')),2400,'bd');flash();confetti(140);if(!matchMedia('(prefers-reduced-motion: reduce)').matches){bolts.push(makeBolt(cv.width*.5,cv.height))}if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}return}
   if(name==='timeup'){if(boardVisible())bigOv('TIME UP!',esc(t('timeUp')),1500,'tu');return}
   if(name==='levelup'){showLevelUp(arg);return}
   if(name==='record'){if(boardVisible())showRecord(arg);return}
