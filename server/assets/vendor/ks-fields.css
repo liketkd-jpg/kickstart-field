@@ -1,0 +1,17 @@
+/* ===== KICKSTART UP · 입력·선택 칸 공통 색 (모든 앱·본부·대기실) =====
+   흰 바탕 선택 칸이 어두운 화면에서 눈부시고, 펼친 목록이 흰 바탕에 흰 글자로 안 보이던 문제 →
+   진한 남색 바탕 + 밝은 글자 + 은은한 금색 테두리. 펼친 목록(option)도 같은 색. */
+html body select,html body input[type=number],html body input[type=time],html body input[type=date],html body input[type=datetime-local]{
+  background-color:#141A26!important;color:#EEF0F4!important;border:1px solid rgba(214,182,124,.38)!important;color-scheme:dark}
+html body select{cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,#D6B67C 50%),linear-gradient(135deg,#D6B67C 50%,transparent 50%)!important;
+  background-position:calc(100% - 13px) 52%,calc(100% - 8px) 52%!important;background-size:5px 5px,5px 5px!important;background-repeat:no-repeat!important;padding-right:24px!important;-webkit-appearance:none;appearance:none}
+html body select option,html body select optgroup{background-color:#141A26;color:#EEF0F4}
+html body select option:checked{background-color:#3A2F1A;color:#F4D896}
+html body select:hover,html body input[type=number]:hover,html body input[type=time]:hover{border-color:rgba(214,182,124,.65)!important}
+html body select:focus,html body input[type=number]:focus,html body input[type=time]:focus,html body input[type=date]:focus{outline:2px solid rgba(214,182,124,.55)!important;outline-offset:1px;border-color:#D6B67C!important}
+html body select:disabled,html body input:disabled{opacity:.45}
+/* 밝은 테마를 고른 화면: 흰색 대신 옅은 회청색 */
+:root[data-theme="light"] body select,:root[data-theme="light"] body input[type=number],:root[data-theme="light"] body input[type=time],:root[data-theme="light"] body input[type=date]{
+  background-color:#EEF1F6!important;color:#1B2230!important;border-color:rgba(160,126,67,.55)!important;color-scheme:light}
+:root[data-theme="light"] body select option{background-color:#EEF1F6;color:#1B2230}
+:root[data-theme="light"] body select option:checked{background-color:#F3E6C6;color:#2A1F08}

@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.40" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.41" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -409,6 +409,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 	var out bytes.Buffer
 	out.WriteString(skeleton)
 	out.WriteString(`<script>window.KS_FIELD=` + string(cj) + `;</script><script src="/field.js"></script>`)
+	out.WriteString(`<link rel="stylesheet" href="/vendor/ks-fields.css">`) // 입력·선택 칸 공통 색 (흰 바탕 → 진한 남색)
 	if key != "hq" {
 		out.WriteString(`<script src="/sim.js"></script>`) // 운영표 「가상 경기」 (가상 심판)
 		out.WriteString(`<script src="/room.js"></script>`) // 대기실 출석·불참·추가 대기 알림
