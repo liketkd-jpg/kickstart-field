@@ -86,6 +86,9 @@ setInterval(()=>{
   if(!LEADER){if(Date.now()-lastMsg>12000){lost();try{BC.postMessage({t:'hello'});}catch(e){}lastMsg=Date.now()-6000;}return;}
   if(!es)return;if(es.readyState===2){connect();return;}if(Date.now()-lastMsg>12000){lost();connect();}},2000);
 window.addEventListener('online',()=>{if(!NET.connected&&LEADER)connect();});
+/* 휴대폰 화면이 꺼졌다 켜지면(대기실 진행 요원 등) 12초를 기다리지 않고 바로 다시 연결 */
+function wake(){if(document.hidden)return;if(LEADER){if(!es||es.readyState===2||Date.now()-lastMsg>5000){lost();connect();}}else{try{BC&&BC.postMessage({t:'hello'});}catch(e){}}}
+document.addEventListener('visibilitychange',wake);window.addEventListener('pageshow',wake);window.addEventListener('focus',wake);
 if(!SHARE)connect();
 
 /* ---------- 서버 요청 (시간 제한) ---------- */

@@ -193,7 +193,7 @@ details summary{cursor:pointer}
   background:linear-gradient(160deg,color-mix(in srgb,var(--c) 20%,var(--surface)),var(--surface) 70%);color:var(--ink);text-align:left;cursor:pointer;font:inherit;box-shadow:0 6px 18px -10px rgba(0,0,0,.5)}
 .rmt:active{transform:scale(.98)}.rmt b{font-size:18px}.rmti{font-size:32px;line-height:1}.rmts{font-size:13px;color:var(--muted);font-weight:700}.rmts em{font-style:normal;color:var(--c);font-weight:900}
 .rmt.blue{--c:#4F7BFF}.rmt.green{--c:#22A05A}.rmt.gold{--c:#D6B67C}.rmt.amber{--c:#E2A400}.rmt.violet{--c:#8B5CF6}.rmt.red{--c:#E5484D}.rmt.hot{--c:#E2A400;box-shadow:0 0 0 2px #E2A400}.rmt.warm{--c:#E5484D}
-.rmt.wide{min-height:auto;flex-direction:row;align-items:center;gap:10px;width:100%}.rmt.wide .rmti{font-size:22px}
+.rmt.slate{--c:#8E939C}.rmt.wide{min-height:auto;flex-direction:row;align-items:center;gap:10px;width:100%}.rmt.wide .rmti{font-size:22px}
 .rmvh{display:flex;align-items:center;gap:10px;font-size:19px;margin:4px 0}
 .rmcnt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.rmcnt span{background:var(--sunk);border-radius:12px;padding:8px;font-weight:700;color:var(--muted)}
 .rmcnt b{display:block;font-size:26px;color:var(--ink)}.rmcnt .ok b{color:var(--ok)}.rmcnt .bad b{color:var(--red)}
@@ -347,7 +347,9 @@ function vAdmin(){
   <div class="grid2">
   <div class="panel"><div class="row between"><h2>📣 호출</h2><span class="row"><button class="btn sm ${cf.autoCall?'on':''}" data-a="autoCall">자동 호출 ${cf.autoCall?'켜짐':'꺼짐'}</button><button class="btn sm ${cf.voice?'on':''}" data-a="voice">음성 ${cf.voice?'켜짐':'꺼짐'}</button></span></div>
     <span class="small muted">자동 호출: 코트가 새 부문을 시작하면 그다음 부문 선수에게 「○코트, ○○부 선수는 준비해 주세요」를 본부 모니터에 크게 띄우고 소리로 알립니다.</span>
-    <div class="row"><input type="text" id="annText" placeholder="직접 호출: 예) B코트, 중등부 3학년 남자 선수는 준비해 주세요." style="flex:1"><button class="btn primary" data-a="announce">보내기</button></div>
+    <div class="row"><input type="text" id="annText" placeholder="직접 호출: 예) B코트, 중등부 3학년 남자 선수는 준비해 주세요." style="flex:1"><button class="btn primary" data-a="announce">📣 방송</button><button class="btn" data-a="annSave" title="이 문구를 아래 「저장한 방송 문구」에 넣기">＋ 저장</button></div>
+    <div><span class="small muted">저장한 방송 문구 — 누르면 바로 본부 모니터·음성으로 나갑니다 (대기실 휴대폰 「📢 방송」에도 같은 목록)</span>
+      <div class="rmphs">${(cf.annPh||PH_ANN).map((p,i)=>`<span class="rmph"><button class="btn" data-a="annPh" data-i="${i}">📣 ${esc(p)}</button><button class="rmx" data-a="annPhDel" data-i="${i}" title="지우기">×</button></span>`).join('')}</div></div>
     <div><span class="small muted">최근 호출</span>${S.log.length?`<table>${S.log.slice(0,8).map(l=>`<tr><td class="small muted" style="white-space:nowrap;width:1%">${new Date(l.at).toTimeString().slice(0,5)}</td><td>${esc(l.text)}${l.auto?' <span class="chip">자동</span>':''}</td></tr>`).join('')}</table>`:'<div class="small muted">아직 없습니다.</div>'}</div></div>
   <div class="panel"><div class="row between"><h2>📢 공지</h2><span class="chip ${n.mode==='off'||!n.text?'':'ok'}">${n.mode==='full'?'전체 화면 표시 중':n.mode==='banner'&&n.text?'아래 띠 표시 중':'표시 안 함'}</span></div>
     <textarea id="noticeText" rows="3" placeholder="본부 모니터에 띄울 공지">${esc(n.text||'')}</textarea>
@@ -423,7 +425,7 @@ function vMon(){
   tick();
   let ov='';
   if(n.mode==='full'&&n.text)ov+=`<div class="full"><div><b>${esc(n.text)}</b><span>${esc(comp)}</span></div></div>`;
-  const a=S.announce;if(a&&NOW()-a.at<12000)ov+=`<div class="ann"><small>${a.auto?'선수 호출':'본부 안내'}</small><b>${esc(a.text)}</b></div>`;
+  const a=S.announce;if(a&&S.annAt&&NOW()-S.annAt<12000)ov+=`<div class="ann"><small>${a.auto?'선수 호출':'본부 안내'}</small><b>${esc(a.text)}</b></div>`;
   const needTap=navigator.userActivation&&!navigator.userActivation.hasBeenActive&&CFG().voice;
   if(needTap)ov+='<button class="tapv" data-a="unlock">🔊 화면을 한 번 눌러 호출 소리를 켜 주세요</button>';
   $('#ovl').innerHTML=ov;
@@ -444,8 +446,9 @@ window.KS_HQVOICE=()=>koVoice();
 function say(text,times){if(!('speechSynthesis' in window)||!CFG().voice)return;try{speechSynthesis.cancel();for(let i=0;i<(times||1);i++){const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';const v=koVoice();if(v)u.voice=v;u.rate=.95;speechSynthesis.speak(u);}}catch(e){}}
 function chime(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C(),t=c.currentTime;[[880,0],[1175,.18],[1568,.36]].forEach(([f,d])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.5);o.connect(g).connect(c.destination);o.start(t+d);o.stop(t+d+.55);});}catch(e){}}
 let lastAnn=null;
-function onAnnounce(a){S.announce=a;if(!a||!a.id)return;if(lastAnn===null){lastAnn=a.id;return;}if(a.id===lastAnn)return;lastAnn=a.id;
-  if(route()==='board'&&NOW()-a.at<15000){chime();setTimeout(()=>say(a.text,2),900);setTimeout(render,12100);}}
+/* 새 호출이 오면 소리·화면. 보낸 기기(휴대폰·다른 노트북)의 시계가 달라도 되도록 「이 화면이 받은 시각」으로 판단 */
+function onAnnounce(a){S.announce=a;if(!a||!a.id)return;if(lastAnn===null){lastAnn=a.id;S.annAt=0;return;}if(a.id===lastAnn)return;lastAnn=a.id;S.annAt=NOW();
+  if(route()==='board'){chime();setTimeout(()=>say(a.text,2),900);setTimeout(render,12100);}}
 
 /* ---------- 그리기 ---------- */
 /* ---------- 상장 자동 출력 · Supabase 자동 백업 ----------
@@ -603,7 +606,7 @@ setInterval(()=>{const r=route();if(r==='board'||r==='admin'||r.startsWith('room
 async function hqctl(op,addr){try{await fetch('/api/hqctl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op,addr})});}catch(e){}}
 async function announce(text,extra){const id='m'+NOW().toString(36);const doc={id,text,at:NOW(),auto:false,...(extra||{})};await DB.doc('hq/announce').set(doc);await DB.doc('calllog/'+id).set({text,at:doc.at,auto:false,court:doc.court||''});toast('본부 모니터에 띄웠습니다');}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
-  if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
+  if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest|annPhDelR)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
   if(a==='mv'){const k=b.dataset.k;if(S.mvArm!==k){S.mvArm=k;schedule();setTimeout(()=>{if(S.mvArm===k){S.mvArm=null;schedule();}},5000);return;}
     S.mvArm=null;const [from,app,...rest]=k.split('|'),div=rest.join('|'),sel=document.getElementById(b.dataset.sel),to=sel&&sel.value;if(!to)return toast('받을 코트를 골라 주세요');
     b.disabled=true;try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app,div,from,to})});const j=await r.json().catch(()=>({}));
@@ -617,6 +620,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   else if(a==='autoCall')saveCfg({autoCall:!cf.autoCall});
   else if(a==='voice')saveCfg({voice:!cf.voice});
   else if(a==='announce'){const v=($('#annText').value||'').trim();if(!v)return toast('호출할 내용을 넣어 주세요');await announce(v);$('#annText').value='';}
+  else if(a==='annPh'){const v=(cf.annPh||PH_ANN)[Number(b.dataset.i)];if(v)await announce(v);}
+  else if(a==='annSave'){const v=($('#annText').value||'').trim();if(!v)return toast('저장할 문구를 위 칸에 써 주세요');await saveCfg({annPh:[...(cf.annPh||PH_ANN),v].slice(0,30)});$('#annText').value='';toast('방송 문구를 저장했습니다');}
+  else if(a==='annPhDel'){if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='지울까요?';setTimeout(()=>{b.dataset.arm='';b.textContent='×';},3000);return;}const L=[...(cf.annPh||PH_ANN)];L.splice(Number(b.dataset.i),1);await saveCfg({annPh:L});}
   else if(a==='callNext'){const c=courtList().find(x=>x.id===b.dataset.id);const bd=c&&c.app&&c.app.board;if(bd&&bd.nextDiv)await announce(`${c.court}코트, ${bd.nextDiv} 선수는 준비해 주세요.`,{court:c.court});}
   else if(a==='preset'){const p=['점심시간입니다. 13시에 경기가 다시 시작됩니다.','시상식을 시작합니다. 입상 선수는 시상대 앞으로 모여 주세요.','잠시 후 오후 경기가 시작됩니다. 선수들은 준비해 주세요.','대회장 안에서는 음식물 섭취를 삼가 주세요.'][Number(b.dataset.i)];$('#noticeText').value=p;}
   else if(a==='notice'){const t=($('#noticeText').value||'').trim();const m=b.dataset.m;if(m!=='off'&&!t)return toast('공지 내용을 넣어 주세요');await saveCfg({notice:{text:m==='off'?(cf.notice||{}).text||'':t,mode:m,at:NOW()}});toast(m==='off'?'공지를 내렸습니다':'본부 모니터에 공지를 띄웠습니다');}
@@ -636,15 +642,17 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
 const RDEF=[{id:'r1',name:'품새 대기실',app:'poomsae',kw:'-체조,-경연,-단체'},{id:'r2',name:'격파 대기실',app:'gyeokpa',kw:'-경연,-단체'},{id:'r3',name:'팀 대항 대기실',app:'',kw:'체조,경연,단체'},
   {id:'r4',name:'대기실 4',app:'',kw:''},{id:'r5',name:'대기실 5',app:'',kw:''},{id:'r6',name:'대기실 6',app:'',kw:''}];
 const PH_HQ=['다음 부문 선수 입장 준비해 주세요.','5분 뒤 입장합니다. 선수 줄 세워 주세요.','잠시 대기해 주세요. 코트 정리 중입니다.','점심시간입니다. 13시에 다시 시작합니다.'];
+const PH_ANN=['중등부 3학년 대기실로 모여 주시기 바랍니다.','시상식을 시작합니다.','입상 선수는 시상대 앞으로 모여 주세요.','점심시간입니다. 13시에 경기가 다시 시작됩니다.','잠시 후 오후 경기가 시작됩니다. 선수들은 준비해 주세요.','대회장 안에서는 음식물 섭취를 삼가 주세요.'];
 const PH_RM=['선수 입장 준비 끝났습니다.','선수가 아직 다 오지 않았습니다.','물·구급함이 필요합니다.','대기실이 붐빕니다. 안내 요원을 보내 주세요.'];
-const RK={call:['📣','호출 요청'],wait:['⏳','추가 대기 요청'],emg:['🚨','긴급'],msg:['💬','메시지']};
-const RST={new:['warn','새 요청'],sent:['ok','전광판에 나감'],done:['','처리함'],ack:['ok','확인함']};
+const RK={call:['📣','호출 요청'],ann:['📢','방송 요청'],wait:['⏳','추가 대기 요청'],emg:['🚨','긴급'],msg:['💬','메시지']};
+const RST={new:['warn','새 요청'],sending:['warn','보내는 중'],sent:['ok','전광판에 나감'],done:['','처리함'],ack:['ok','확인함']};
 const RS={seen:null,view:null,hv:null,div:'',all:false,unlocked:false,lastBeep:0,fwdT:{}};
 function rooms(){const cf=CFG(),n=Math.min(6,Math.max(2,Number(cf.roomN)||3)),sv=cf.rooms||[];return RDEF.slice(0,n).map((d,i)=>({...d,...(sv[i]||{}),id:d.id}));}
 const roomOf=id=>rooms().find(r=>r.id===id)||null;
 function kwMatch(r,app,div){if(r.app&&r.app!==app)return false;div=String(div||'');const ks=String(r.kw||'').split(/[,\s]+/).filter(Boolean),inc=ks.filter(k=>k[0]!=='-'),exc=ks.filter(k=>k[0]==='-').map(k=>k.slice(1)).filter(Boolean);
   return (!inc.length||inc.some(k=>div.includes(k)))&&!exc.some(k=>div.includes(k));}
 const spoken=d=>String(d||'').replace(/^\d+\s+/,'');
+const callText=(u,r)=>`${u.court}코트, ${spoken(u.div)} 선수는 ${r.name}로 와 주세요.`;
 const rid=p=>(p||'m')+NOW().toString(36)+Math.random().toString(36).slice(2,6);
 const hash36=s=>{let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0).toString(36);};
 const msgs=()=>S.rmsg||[];
@@ -663,7 +671,22 @@ async function toCourt(court,app,kind,id,doc){try{const r=await fetch('/api/hq/t
   if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'HTTP '+r.status);}return true;}catch(e){toast('코트 운영석에 알리지 못했습니다: '+e.message);return false;}}
 async function postMsg(doc){const id=rid('m');await DB.doc('roommsg/'+id).set({id,at:NOW(),...doc});return id;}
 /* 대기실 요청을 본부 모니터(전광판)·음성으로 */
-async function callOut(m){const text=m.text;await announce(text,{court:m.court||'',room:m.roomName||''});await DB.doc('roommsg/'+m.id).set({...m,st:'sent',doneAt:NOW()});}
+async function callOut(m){const id='r'+m.id,at=NOW();
+  await DB.doc('hq/announce').set({id,text:m.text,at,auto:false,court:m.court||'',room:m.roomName||''});
+  await DB.doc('calllog/'+id).set({text:m.text,at,auto:false,court:m.court||'',room:m.roomName||''});
+  await DB.doc('roommsg/'+m.id).set({...m,st:'sent',doneAt:at});}
+/* 자동 호출: 대기실 휴대폰이 보낸 「부문 호출」·「방송」을 본부 노트북(본부 운영 또는 본부 모니터 화면)이 바로 내보냄.
+   (예전에는 휴대폰이 직접 내보내서, 휴대폰과 노트북 시계가 다르면 본부 모니터가 「지난 호출」로 보고 무시했음)
+   본부 화면을 연 순간 이미 쌓여 있던 요청은 내보내지 않음 (수동 확인) */
+const DTAB='d'+Math.random().toString(36).slice(2,8),DSENT=new Set();let DINIT=null;
+function dispLeader(){if(route().startsWith('room-'))return false;try{const v=JSON.parse(localStorage.getItem('ks_hq_disp')||'null'),now=Date.now();
+  if(!v||v.t===DTAB||now-v.at>4000){localStorage.setItem('ks_hq_disp',JSON.stringify({t:DTAB,at:now}));return true;}return false;}catch(e){return true;}}
+async function autoDispatch(){if(route().startsWith('room-')||!DB||!S.rmsg)return;
+  if(DINIT===null){DINIT=new Set(msgs().filter(m=>m.st==='new').map(m=>m.id));return;}
+  if(!dispLeader()||!CFG().roomAuto)return;
+  for(const m of msgs().filter(m=>m.dir==='up'&&(m.kind==='call'||m.kind==='ann')&&m.st==='new')){if(DSENT.has(m.id)||DINIT.has(m.id))continue;DSENT.add(m.id);
+    try{await callOut(m);}catch(e){DSENT.delete(m.id);}}}
+setInterval(autoDispatch,700);
 
 /* ----- 알림: 새 요청·긴급 (본부) / 새 메시지 (대기실) ----- */
 function onRoomMsgs(list){
@@ -681,7 +704,7 @@ function roomAlerts(){const n=msgs().filter(m=>m.dir==='up'&&m.st==='new'&&m.kin
 
 /* 화면 글 — 한곳에 모아 둠 (나중에 영어 등으로 바꿀 때 이 표만 바꾸면 됨) */
 const RT={
-  prog:'코트 진행',att:'출석',call:'부문 호출',wait:'추가 대기',msg:'메시지',emg:'긴급',log:'기록',back:'뒤로',
+  prog:'코트 진행',att:'출석',call:'부문 호출',ann:'방송',annTip:'누르면 전광판·음성 방송으로 나갑니다',wait:'추가 대기',msg:'메시지',emg:'긴급',log:'기록',back:'뒤로',
   req:'받은 요청',send:'대기실로 보내기',attNow:'출석 현황',set:'설정',
   now:'지금',next:'다음',after:'그다음',left:'남은 경기',endAt:'끝 약',startAt:'시작',games:'경기',
   arrived:'도착',absent:'불참',remain:'남음',allCourts:'모든 코트·종목 보기',
@@ -712,7 +735,7 @@ function vRoomPanel(){
   else{const T={req:['📥',RT.req],send:['📨',RT.send],att:['✅',RT.attNow],log:['🕘','연락 기록'],set:['⚙️','대기실 설정 · 목소리']}[v]||['',''];
     body=`<div class="rmvh"><button class="btn sm" data-a="hqRmView" data-k="">← ${RT.back}</button><b>${T[0]} ${esc(T[1])}</b></div>`;
     if(v==='req')body+=pend.length?`<div class="rmreqs">${pend.map(m=>`<div class="rmreq ${m.kind==='emg'?'emg':''}"><span class="rmti">${(RK[m.kind]||['🚪'])[0]}</span><div><b>${esc(m.text||'')}</b><span class="small muted">${esc(m.roomName||'')} · ${esc((RK[m.kind]||['',''])[1])} · ${hhmm(m.at)}</span></div>
-        <div class="row">${m.kind==='call'?`<button class="btn primary" data-a="hqRmOut" data-id="${esc(m.id)}">📣 전광판 보내기</button>`:''}<button class="btn" data-a="hqRmAck" data-id="${esc(m.id)}">${m.kind==='call'?'닫기':'확인'}</button></div></div>`).join('')}</div>`:`<div class="empty">새 요청이 없습니다</div>`;
+        <div class="row">${m.kind==='call'||m.kind==='ann'?`<button class="btn primary" data-a="hqRmOut" data-id="${esc(m.id)}">📣 전광판 보내기</button>`:''}<button class="btn" data-a="hqRmAck" data-id="${esc(m.id)}">${m.kind==='call'||m.kind==='ann'?'닫기':'확인'}</button></div></div>`).join('')}</div>`:`<div class="empty">새 요청이 없습니다</div>`;
     else if(v==='send')body+=`<div class="rmc"><div class="row"><select id="hqRmTo"><option value="all">모든 대기실</option>${R.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select>
         <input type="text" id="hqRmText" placeholder="예) 격파 A조 5분 뒤 입장 준비해 주세요." style="flex:1;min-width:200px"><button class="btn primary" data-a="hqRmSend">${RT.sendBtn}</button></div>
         <span class="small muted">자주 쓰는 말 — 누르면 바로 보냅니다</span><div class="rmphs">${ph.map((p,i)=>`<span class="rmph"><button class="btn" data-a="hqRmPh" data-i="${i}">${esc(p)}</button><button class="rmx" data-a="hqPhDel" data-i="${i}" title="지우기">×</button></span>`).join('')}</div>
@@ -750,11 +773,12 @@ function vRoom(id){
       ${tileBtn('prog','📊',RT.prog,L.length?`${L.length}개 코트${first?` · ${esc(first.name)}`:''}`:'진행 정보 없음','blue')}
       ${tileBtn('att','✅',RT.att,cur?`${RT.arrived} ${ain}/${al.length}${aout?` · ${RT.absent} ${aout}`:''}`:'—','green')}
       ${tileBtn('call','📣',RT.call,cf.roomAuto?'바로 전광판':'본부 확인 뒤','gold')}
+      ${tileBtn('ann','📢',RT.ann,'저장한 문구 · 직접 쓰기','gold')}
       ${tileBtn('wait','⏳',RT.wait,'본부·코트에 알림','amber')}
       ${tileBtn('msg','💬',RT.msg,'본부와 연락','violet')}
-      ${tileBtn('emg','🚨',RT.emg,'부상·분실물','red')}</div>
-      ${tileBtn('log','🕘',RT.log,M.filter(m=>m.room===id).length+'건','wide')}`;}
-  else{const T={prog:['📊',RT.prog],att:['✅',RT.att],call:['📣',RT.call],wait:['⏳',RT.wait],msg:['💬',RT.msg],emg:['🚨',RT.emg],log:['🕘',RT.log]}[v]||['',''];
+      ${tileBtn('emg','🚨',RT.emg,'부상·분실물','red')}
+      ${tileBtn('log','🕘',RT.log,M.filter(m=>m.room===id).length+'건','slate')}</div>`;}
+  else{const T={prog:['📊',RT.prog],att:['✅',RT.att],call:['📣',RT.call],ann:['📢',RT.ann],wait:['⏳',RT.wait],msg:['💬',RT.msg],emg:['🚨',RT.emg],log:['🕘',RT.log]}[v]||['',''];
     body=`<div class="rmvh"><button class="btn" data-a="rmView" data-k="">← ${RT.back}</button><b>${T[0]} ${esc(T[1])}</b></div>`;
     if(v==='prog'){const L=roomLanes(r,RS.all);
       body+=allBox+(L.length?L.map(x=>`<div class="rmc"><div class="row between"><b style="font-size:19px">${esc(x.court)}코트 <span class="chip">${esc(APPN[x.app]||x.app)}</span></b><span class="small muted">${RT.left} ${x.left} · ${RT.endAt} ${hhmm(x.end)}</span></div>
@@ -763,7 +787,10 @@ function vRoom(id){
     else if(v==='att'){body+=allBox+divSel();if(cur){const L=attList(cur),inn=L.filter(p=>p.st==='in').length,out=L.filter(p=>p.st==='out').length;
       body+=`<div class="rmcnt"><span class="ok"><b>${inn}</b>${RT.arrived}</span><span class="bad"><b>${out}</b>${RT.absent}</span><span><b>${L.length-inn-out}</b>${RT.remain}</span></div><div class="rmbar"><i style="width:${L.length?Math.round(inn/L.length*100):0}%"></i></div>
         <div class="rmatt">${L.map(p=>`<div class="rmp ${p.st}"><span><b>${esc(p.name)}</b> <small>${esc(p.team)}</small></span><span class="row"><button class="btn ${p.st==='in'?'primary':''}" data-a="rmAtt" data-st="in" data-n="${esc(p.name)}" data-t="${esc(p.team)}">✓ ${RT.arrived}</button><button class="btn ${p.st==='out'?'bad':''}" data-a="rmAtt" data-st="out" data-n="${esc(p.name)}" data-t="${esc(p.team)}">✕ ${RT.absent}</button></span></div>`).join('')}</div>`;}}
-    else if(v==='call')body+=`${divSel()}${U.length?`<button class="btn primary rmbig" data-a="rmCall">📣 ${RT.callBtn}</button><span class="small muted center">${cf.roomAuto?RT.autoTip:RT.manualTip}</span>`:''}`;
+    else if(v==='call')body+=`${divSel()}${U.length&&cur?`<input type="text" id="rmCallTxt" class="rmsel" placeholder="${esc(callText(cur,r))}" title="비워 두면 이 문구로 나갑니다. 고쳐 쓸 수 있습니다">
+        <button class="btn primary rmbig" data-a="rmCall">📣 ${RT.callBtn}</button><span class="small muted center">${cf.roomAuto?RT.autoTip:RT.manualTip} · 문구는 칸에 고쳐 쓸 수 있습니다</span>`:''}`;
+    else if(v==='ann')body+=`<span class="small muted center">${cf.roomAuto?RT.annTip:RT.manualTip}</span><div class="rmphs col">${(cf.annPh||PH_ANN).map((p,i)=>`<span class="rmph"><button class="btn" data-a="rmAnn" data-i="${i}">📣 ${esc(p)}</button><button class="rmx" data-a="annPhDelR" data-i="${i}" title="지우기">×</button></span>`).join('')}</div>
+        <input type="text" id="rmAnnTxt" class="rmsel" placeholder="직접 쓰기 — 예: 중등부 3학년 대기실로 모여 주시기 바랍니다."><div class="row"><button class="btn primary" data-a="rmAnnTxt" style="flex:1">📣 방송</button><button class="btn" data-a="rmAnnSave">＋ 저장</button></div>`;
     else if(v==='wait')body+=`${divSel()}${U.length?`<div class="rmphs">${RT.reasons.map(t=>`<button class="btn" data-a="rmWaitQ" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
         <input type="text" id="rmWaitTxt" class="rmsel" placeholder="사유 직접 쓰기 (선택)"><button class="btn primary rmbig" data-a="rmWait">⏳ ${RT.waitBtn}</button><span class="small muted center">${RT.waitTip}</span>`:''}`;
     else if(v==='msg')body+=`<div class="rmphs col">${ph.map((p,i)=>`<span class="rmph"><button class="btn" data-a="rmPh" data-i="${i}">${esc(p)}</button><button class="rmx" data-a="rmPhDel" data-i="${i}" title="지우기">×</button></span>`).join('')}</div>
@@ -795,9 +822,14 @@ async function roomClick(a,b){
       p.st=p.st===b.dataset.st?'':b.dataset.st;const id=attKey(u.court,u.app,u.div),doc={court:u.court,app:u.app,div:u.div,list:L,at:NOW(),room:me,roomName:room.name};
       S.att={...(S.att||{}),[id]:doc};render();await DB.doc('att/'+id).set(doc);
       clearTimeout(RS.fwdT[id]);RS.fwdT[id]=setTimeout(()=>toCourt(u.court,u.app,'att',id,{div:u.div,list:L,at:NOW(),room:room.name}),700);return true;}
-    case 'rmCall':{const u=pickDiv();if(!u)return toast('부문을 골라 주세요'),true;const text=`${u.court}코트, ${spoken(u.div)} 선수는 ${room.name}로 와 주세요.`;
-      const id=await postMsg({dir:'up',room:me,roomName:room.name,kind:'call',text,court:u.court,app:u.app,div:u.div,st:'new'});
-      if(cf.roomAuto){await callOut({id,dir:'up',room:me,roomName:room.name,kind:'call',text,court:u.court,app:u.app,div:u.div,at:NOW()});toast('본부 모니터·음성으로 보냈습니다');}else toast('본부에 호출을 요청했습니다');return true;}
+    case 'rmCall':{const u=pickDiv();if(!u)return toast('부문을 골라 주세요'),true;const text=(($('#rmCallTxt')||{}).value||'').trim()||callText(u,room);
+      await postMsg({dir:'up',room:me,roomName:room.name,kind:'call',text,court:u.court,app:u.app,div:u.div,st:'new'});if($('#rmCallTxt'))$('#rmCallTxt').value='';
+      toast(cf.roomAuto?'보냈습니다 · 곧 본부 모니터·음성으로 나갑니다':'본부에 호출을 요청했습니다');return true;}
+    case 'rmAnn':case 'rmAnnTxt':{const text=a==='rmAnn'?(cf.annPh||PH_ANN)[+b.dataset.i]:(($('#rmAnnTxt')||{}).value||'').trim();if(!text)return toast('방송할 문구를 써 주세요'),true;
+      await postMsg({dir:'up',room:me,roomName:room.name,kind:'ann',text,st:'new'});if(a==='rmAnnTxt')$('#rmAnnTxt').value='';
+      toast(cf.roomAuto?'보냈습니다 · 곧 본부 모니터·음성으로 나갑니다':'본부에 방송을 요청했습니다');return true;}
+    case 'rmAnnSave':{const t=(($('#rmAnnTxt')||{}).value||'').trim();if(!t)return toast('저장할 문구를 써 주세요'),true;await saveCfg({annPh:[...(cf.annPh||PH_ANN),t].slice(0,30)});$('#rmAnnTxt').value='';toast('방송 문구를 저장했습니다');return true;}
+    case 'annPhDelR':{if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='지울까요?';setTimeout(()=>{b.dataset.arm='';b.textContent='×';},3000);return true;}const L=[...(cf.annPh||PH_ANN)];L.splice(+b.dataset.i,1);await saveCfg({annPh:L});return true;}
     case 'rmWait':case 'rmWaitQ':{const u=pickDiv();if(!u)return toast('부문을 골라 주세요'),true;const why=a==='rmWaitQ'?b.dataset.t:(($('#rmWaitTxt')||{}).value||'').trim(),text=`${u.court}코트 ${spoken(u.div)} 추가 대기 요청${why?' — '+why:''}`;
       const id=await postMsg({dir:'up',room:me,roomName:room.name,kind:'wait',text,court:u.court,app:u.app,div:u.div,st:'new'});if($('#rmWaitTxt'))$('#rmWaitTxt').value='';
       const ok=await toCourt(u.court,u.app,'note',id,{text:why?'추가 대기 요청 — '+why:'추가 대기 요청',div:u.div,room:room.name,at:NOW()});toast(ok?`본부와 ${u.court}코트 운영석에 알렸습니다`:'본부에 알렸습니다');return true;}
@@ -812,8 +844,8 @@ async function roomClick(a,b){
     case 'hqRmSend':case 'hqRmPh':{const text=a==='hqRmPh'?(cf.phHQ||PH_HQ)[+b.dataset.i]:($('#hqRmText').value||'').trim();if(!text)return toast('보낼 말을 넣어 주세요'),true;
       const to=($('#hqRmTo')||{}).value||'all',R=to==='all'?rooms():[roomOf(to)].filter(Boolean);
       for(const x of R)await postMsg({dir:'down',room:x.id,kind:'msg',text,st:'new'});if(a==='hqRmSend')$('#hqRmText').value='';toast(`${to==='all'?'모든 대기실':R[0].name}에 보냈습니다`);return true;}
-    case 'hqRmOut':{const m=msgs().find(x=>x.id===b.dataset.id);if(m)await callOut(m);return true;}
-    case 'hqRmAck':{const m=msgs().find(x=>x.id===b.dataset.id);if(m)await DB.doc('roommsg/'+m.id).set({...m,st:m.kind==='call'||m.kind==='wait'?'done':'ack',doneAt:NOW()});return true;}
+    case 'hqRmOut':{const m=msgs().find(x=>x.id===b.dataset.id);if(m){await callOut(m);toast('본부 모니터에 띄웠습니다');}return true;}
+    case 'hqRmAck':{const m=msgs().find(x=>x.id===b.dataset.id);if(m)await DB.doc('roommsg/'+m.id).set({...m,st:m.kind==='call'||m.kind==='ann'||m.kind==='wait'?'done':'ack',doneAt:NOW()});return true;}
     case 'roomAuto':await saveCfg({roomAuto:!cf.roomAuto});return true;
     case 'hqRmSave':{const R=rooms().map((x,i)=>({name:(($('#rmName_'+i)||{}).value||x.name).trim()||x.name,app:($('#rmApp_'+i)||{}).value??x.app,kw:(($('#rmKw_'+i)||{}).value??x.kw).trim()}));
       const sv=[...(cf.rooms||[])];R.forEach((x,i)=>sv[i]=x);await saveCfg({rooms:sv});toast('대기실 설정을 저장했습니다');return true;}
