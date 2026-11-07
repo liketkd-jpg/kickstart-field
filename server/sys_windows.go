@@ -58,7 +58,9 @@ func browserExe() string {
 
 func openBrowser(url string) {
 	if b := browserExe(); b != "" {
-		if exec.Command(b, "--new-window", url).Start() == nil {
+		// 「기본 브라우저로 설정」·「기본 PDF 뷰어로 설정」 안내 막기: 이 안내를 누르면 윈도우 설정 창을 기다리며 화면이 멈춘 것처럼 보였음
+		// (크롬이 이미 켜져 있으면 크롬이 이 옵션을 무시하므로, 그때는 안내 오른쪽 X로 닫으면 됩니다)
+		if exec.Command(b, "--no-default-browser-check", "--disable-features=PdfInfoBar,DefaultBrowserPromptRefresh,DefaultBrowserPromptRefreshTrial", "--new-window", url).Start() == nil {
 			return
 		}
 	}
@@ -98,7 +100,7 @@ func openPrintWindow(url, profile string) string {
 			continue
 		}
 		if _, err := os.Stat(c); err == nil {
-			if exec.Command(c, "--kiosk-printing", "--user-data-dir="+profile, "--no-first-run", "--disable-features=Translate", "--new-window", "--app="+url).Start() == nil {
+			if exec.Command(c, "--kiosk-printing", "--user-data-dir="+profile, "--no-first-run", "--no-default-browser-check", "--disable-features=Translate,PdfInfoBar,DefaultBrowserPromptRefresh", "--new-window", "--app="+url).Start() == nil {
 				return "kiosk"
 			}
 		}

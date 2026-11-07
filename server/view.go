@@ -42,6 +42,25 @@ func slimBoard(raw json.RawMessage) (map[string]any, string, string) {
 		}
 		out["next"] = nx
 	}
+	// 지금·다음 부문 선수 명단 (지도자 「내 도장」 보기) — 부문 3개, 부문마다 80명까지
+	if up, ok := b["upcoming"].([]any); ok {
+		if len(up) > 3 {
+			up = up[:3]
+		}
+		slim := []any{}
+		for _, u := range up {
+			m, _ := u.(map[string]any)
+			if m == nil {
+				continue
+			}
+			names, _ := m["names"].([]any)
+			if len(names) > 80 {
+				names = names[:80]
+			}
+			slim = append(slim, map[string]any{"name": m["name"], "names": names})
+		}
+		out["upcoming"] = slim
+	}
 	comp, _ := b["comp"].(string)
 	name, _ := b["appName"].(string)
 	return out, comp, name
