@@ -6544,30 +6544,38 @@ document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.dataset||!d.da
 let LISTY=0;
 /* 탭 높이를 재서 카드 제목 줄이 탭 바로 아래 붙게 */
 function navH(){try{const n=document.querySelector('#app>nav.tabs');if(n)document.documentElement.style.setProperty('--ss-navh',(n.getBoundingClientRect().height+8)+'px');}catch(e){}}
-setInterval(navH,1500);
+setInterval(()=>{if(!document.hidden&&urOnSettings())navH();},1500);
 function ssOpenCard(k){if(SEL===k)return;if(!SEL)LISTY=scrollY;SEL=k;keep();G('render')();scrollTo({top:0});}
 function ssCloseCard(){if(!SEL)return;SEL=null;keep();G('render')();scrollTo({top:LISTY});}
 try{Object.assign(G('ACT'),{ssGo:b=>ssOpenCard(b.dataset.k),ssClose:()=>ssCloseCard(),ssUndo:()=>urGo(-1),ssRedo:()=>urGo(1)});}catch(e){}
 /* 되돌리기·다시 실행: 대회 설정이 바뀔 때마다 바로 앞 상태를 기억합니다 (최근 60번).
    대회명처럼 글자를 칠 때는 2초 안의 연속 입력을 한 번으로 묶습니다. 선수 명단·점수는 대상이 아닙니다. */
-const UR={u:[],r:[],last:null,at:0,key:'',skip:0};window.__SS_UR=UR;
+/* 가볍게 동작하도록: 설정 화면을 보고 있을 때만 1초마다 살피고, 바뀐 항목의 이전 값만 기억합니다.
+   (상장 직인·음악처럼 큰 그림·소리 파일을 매번 통째로 비교·복사하지 않음) */
+const UR={u:[],r:[],last:null,at:0,key:'',skip:0};
 const UR_L={name:'대회명',judges:'심판 수',refs:'부심 수',comm:'생활체육 대회',commRem:'남는 인원 처리',format:'경기 방식',poomsae:'품새 수',pfix:'지정 품새표',aw:'상장·시상',voice:'음성',ageScheme:'부별 구분',pdraw:'품새 추첨 방식',cutMode:'컷오프 진출 방식',advN:'결선 진출 인원',system:'경기 방식',hogu:'호구',roundSec:'회전 시간',restSec:'회전 간 휴식',finalN:'결선 인원',preMin:'예선 인원',elemMix:'초등부 남녀',autoReveal:'점수 공개',tieAll:'진출 경계 동점'};
-const urSnap=()=>{try{const S=G('S');if(!S)return null;return JSON.stringify(G('SET')());}catch(e){return null;}};
-const urDiff=(a,b)=>{try{const x=JSON.parse(a),y=JSON.parse(b);return Object.keys({...x,...y}).filter(k=>JSON.stringify(x[k])!==JSON.stringify(y[k])&&!/^(ageBefore|certSince)$/.test(k));}catch(e){return [];}};
+const urCur=()=>{try{return G('SET')();}catch(e){return null;}};
+function urSame(a,b){if(a===b)return true;if(!a||!b||typeof a!=='object'||typeof b!=='object')return false;try{const x=JSON.stringify(a);if(x.length>300000)return false;return x===JSON.stringify(b);}catch(e){return false;}}
+const urKeys=(a,b)=>Object.keys({...a,...b}).filter(k=>!/^(ageBefore|certSince)$/.test(k)&&!urSame(a[k],b[k]));
 const urLabel=ks=>[...new Set(ks.map(k=>UR_L[k]||'설정'))].slice(0,3).join(', ');
-setInterval(()=>{const cur=urSnap();if(cur==null)return;if(UR.last==null){UR.last=cur;return;}if(cur===UR.last)return;
-  if(UR.skip>Date.now()){UR.last=cur;return;}
-  const d=urDiff(UR.last,cur);if(!d.length){UR.last=cur;return;}const now=Date.now(),key=d.join();
-  if(!(now-UR.at<2000&&key===UR.key&&key==='name')){UR.u.push(UR.last);if(UR.u.length>60)UR.u.shift();}
-  UR.r=[];UR.last=cur;UR.at=now;UR.key=key;
-  try{if(String(G('routeNow')()).startsWith('admin-settings'))G('render')();}catch(e){}},400);
-async function urApply(str){const S=G('S'),prev=S.settings||{},n=JSON.parse(str);UR.skip=Date.now()+1500;S.settings=n;await G('saveSettings')(n);
+const urOnSettings=()=>{try{return String(G('routeNow')()).startsWith('admin-settings');}catch(e){return false;}};
+setInterval(()=>{
+  if(document.hidden||!urOnSettings()){UR.last=null;return;}
+  const cur=urCur();if(!cur)return;if(!UR.last){UR.last={...cur};return;}
+  if(UR.skip>Date.now()){UR.last={...cur};return;}
+  const ks=urKeys(UR.last,cur);if(!ks.length)return;const now=Date.now(),key=ks.join();
+  const b={},a={};ks.forEach(k=>{b[k]=UR.last[k];a[k]=cur[k];});
+  const top=UR.u[UR.u.length-1];
+  if(top&&now-UR.at<2000&&key===UR.key&&key==='name')top.a=a; /* 대회명 연속 입력은 한 번으로 */
+  else{UR.u.push({b,a});if(UR.u.length>60)UR.u.shift();}
+  UR.r=[];UR.last={...cur};UR.at=now;UR.key=key;G('render')();},1000);
+async function urApply(patch){const S=G('S'),prev=urCur()||{},n={...prev,...patch};UR.skip=Date.now()+1500;S.settings=n;await G('saveSettings')(n);
   try{if(APP==='poomsae'&&(prev.format||'cutoff')!==(n.format||'cutoff'))await G('ACT').setFormat({dataset:{v:n.format||'cutoff'}});
     if(APP==='poomsae'&&(prev.poomsae===2?2:1)!==(n.poomsae===2?2:1))await G('ACT').setPoomsaeAll({dataset:{v:String(n.poomsae===2?2:1)}});}catch(e){}
   if((!!prev.comm!==!!n.comm||(prev.commRem||'small')!==(n.commRem||'small')||(prev.ageScheme||'kta')!==(n.ageScheme||'kta'))&&(S.roster||[]).length){try{await G('regenerateDivs')();}catch(e){}}
-  S.settings=n;UR.skip=Date.now()+1500;UR.last=JSON.stringify(n);G('render')();}
-async function urGo(dir){const from=dir<0?UR.u:UR.r,to=dir<0?UR.r:UR.u;if(!from.length)return;const cur=urSnap()||UR.last,tgt=from.pop();to.push(cur);
-  const lab=urLabel(urDiff(cur,tgt));await urApply(tgt);try{G('toast')(`${dir<0?'되돌렸습니다':'다시 실행했습니다'}${lab?' · '+lab:''}`);}catch(e){}}
+  S.settings=n;UR.skip=Date.now()+1500;UR.last={...n};G('render')();}
+async function urGo(dir){const from=dir<0?UR.u:UR.r,to=dir<0?UR.r:UR.u;if(!from.length)return;const e=from.pop();to.push(e);
+  await urApply(dir<0?e.b:e.a);try{G('toast')(`${dir<0?'되돌렸습니다':'다시 실행했습니다'} · ${urLabel(Object.keys(e.b))}`);}catch(x){}}
 document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey)return;let r='';try{r=String(G('routeNow')());}catch(x){}if(!r.startsWith('admin-settings'))return;
   const t=e.target;if(t&&(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||t.isContentEditable))return;const k=e.key.toLowerCase();
   if(k==='z'&&!e.shiftKey){e.preventDefault();urGo(-1);}else if(k==='y'||(k==='z'&&e.shiftKey)){e.preventDefault();urGo(1);}},true);
