@@ -4,12 +4,14 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -174,8 +176,29 @@ func checkForUpdate(exe string) bool {
 	return true
 }
 
+// 내려받기: 끊기면 세 번까지 다시 시도하고, 두 번째부터는 IPv4로만 연결합니다
+// (일부 공유기·통신사에서 IPv6 연결이 중간에 끊겨 업데이트가 실패했습니다)
 func download(a *ghAsset, dst string) error {
+	var err error
+	for i := 0; i < 3; i++ {
+		if i > 0 {
+			fmt.Printf("  다시 내려받는 중… (%d/3)\n", i+1)
+			time.Sleep(time.Duration(i) * 2 * time.Second)
+		}
+		if err = downloadOnce(a, dst, i > 0); err == nil {
+			return nil
+		}
+	}
+	return err
+}
+
+func downloadOnce(a *ghAsset, dst string, v4 bool) error {
 	c := &http.Client{Timeout: 3 * time.Minute}
+	if v4 {
+		d := &net.Dialer{Timeout: 15 * time.Second, KeepAlive: 30 * time.Second}
+		c.Transport = &http.Transport{Proxy: http.ProxyFromEnvironment, ForceAttemptHTTP2: true, TLSHandshakeTimeout: 15 * time.Second,
+			DialContext: func(ctx context.Context, _, addr string) (net.Conn, error) { return d.DialContext(ctx, "tcp4", addr) }}
+	}
 	req, _ := http.NewRequest("GET", a.URL, nil)
 	req.Header.Set("User-Agent", "kickstart-field/"+version)
 	res, err := c.Do(req)
