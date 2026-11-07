@@ -6360,19 +6360,21 @@ function shell(html){
   const avail=CARDS.filter(([k])=>bins[k].main.length||bins[k].more.length);
   if(SEL&&!avail.some(([k])=>k===SEL))SEL=null;
   const warnOf=k=>(k==='basic'&&!o.name)||(k==='awards'&&!(o.aw.host&&o.aw.rep))||(k==='poomsae'&&o.comm&&!o.pf);
-  out.innerHTML=`<div class="ss-top panel">
+  const urb=`<span class="ss-ur"><button class="btn sm" data-act="ssUndo" ${UR.u.length?'':'disabled'} title="되돌리기 (Ctrl+Z)">↶ 되돌리기</button><button class="btn sm" data-act="ssRedo" ${UR.r.length?'':'disabled'} title="다시 실행 (Ctrl+Y)">↷ 다시 실행</button></span>`;
+  if(SEL)out.classList.add('ss-full');
+  out.innerHTML=`<div class="ss-top panel" ${SEL?'hidden':''}>
     <div class="ss-toprow"><div class="ss-chk"><span class="ss-chk-h ${okN===ck.length?'ok':'warn'}">대회 전 확인 ${okN}/${ck.length}</span>${ck.map(([ok,l,k])=>`<button class="ss-ck ${ok?'ok':'warn'}" ${jump(k)}><i>${ok?'✓':'!'}</i>${E(l)}</button>`).join('')}</div>
-      <button class="btn primary ss-wzbtn" data-act="wzOpen">🪄 시작 마법사</button></div>
+      <span class="ss-topbtns">${urb}<button class="btn primary ss-wzbtn" data-act="wzOpen">🪄 시작 마법사</button></span></div>
     ${cmdHtml()}
   </div>
-  <div class="ss-tiles">${avail.map(([k,ic,title])=>{const st=cardState(k,o);return `<button class="ss-tile ${SEL===k?'on':''} ${warnOf(k)?'warn':''}" data-act="ssGo" data-k="${k}" aria-expanded="${SEL===k}"><span class="ss-tic">${ic}</span><b>${title}</b><span class="ss-tst">${E(st||'열어서 보기')}</span>${warnOf(k)?'<i class="ss-dot" title="확인 필요"></i>':''}</button>`;}).join('')}</div>
+  <div class="ss-tiles" ${SEL?'hidden':''}>${avail.map(([k,ic,title])=>{const st=cardState(k,o);return `<button class="ss-tile ${SEL===k?'on':''} ${warnOf(k)?'warn':''}" data-act="ssGo" data-k="${k}" aria-expanded="${SEL===k}"><span class="ss-tic">${ic}</span><b>${title}</b><span class="ss-tst">${E(st||'열어서 보기')}</span>${warnOf(k)?'<i class="ss-dot" title="확인 필요"></i>':''}</button>`;}).join('')}</div>
   <div class="ss-detail panel" id="ss-detail" ${SEL?'':'hidden'}></div>
-  ${SEL?'':'<div class="ss-hint small muted">카드를 누르면 그 설정이 아래에 열립니다. 한 번에 하나만 열립니다.</div>'}
+  ${SEL?'':'<div class="ss-hint small muted">카드를 누르면 그 설정이 화면 전체로 열리고, 「닫기」를 누르면 이 화면으로 돌아옵니다.</div>'}
   ${wzHtml()}`;
   const det=out.querySelector('.ss-detail');
   avail.forEach(([k,ic,title])=>{const b=bins[k];
     const pane=document.createElement('div');pane.className='ss-pane';pane.dataset.k=k;pane.id='ss-'+k;if(SEL!==k)pane.hidden=true;
-    pane.innerHTML=`<div class="ss-phead"><span class="ss-tic">${ic}</span><h2>${title}</h2><button class="btn sm" data-act="ssGo" data-k="${k}">접기 ✕</button></div><div class="ss-body"></div>`;
+    pane.innerHTML=`<div class="ss-phead"><button class="btn ss-back" data-act="ssClose">← 설정 목록</button><span class="ss-tic">${ic}</span><h2>${title}</h2>${urb}<button class="btn primary" data-act="ssClose">닫기 ✕</button></div><div class="ss-body"></div>`;
     const body=pane.querySelector('.ss-body');b.main.forEach(x=>body.appendChild(x));
     if(b.more.length){const m=document.createElement('details');m.className='ss-more';m.dataset.ss=k+':more';if(OPEN.has(k+':more'))m.open=true;
       m.innerHTML=`<summary>더 보기 (${b.more.length})</summary><div class="ss-body"></div>`;b.more.forEach(x=>m.lastElementChild.appendChild(x));body.appendChild(m);}
@@ -6519,18 +6521,48 @@ try{Object.assign(G('ACT'),{
   wzNext:()=>{const st=wzSteps()[WZ.step];if(st==='name'&&!String(WZ.v.name||'').trim()){try{G('toast')('대회 이름을 적어 주세요');}catch(e){}return;}WZ.step=Math.min(WZ.step+1,wzSteps().length-1);G('render')();},
   wzPrev:()=>{WZ.step=Math.max(0,WZ.step-1);G('render')();},
   wzApply:()=>wzApply(),
-  wzNext2:b=>{WZ.open=false;WZ.done=false;if(b.dataset.r)G('ACT').go({dataset:{r:b.dataset.r}});else{SEL=b.dataset.k;keep();G('render')();}}
+  wzNext2:b=>{WZ.open=false;WZ.done=false;if(b.dataset.r)G('ACT').go({dataset:{r:b.dataset.r}});else ssOpenCard(b.dataset.k);}
 });}catch(e){}
 /* 처음 켰을 때(대회명·명단이 비어 있으면) 한 번 자동으로 엽니다 */
 function wzAuto(){try{if(localStorage.getItem('ks_wz_seen_'+APP))return;}catch(e){return;}const s=G('SET')(),S=G('S');
   if(s.name||(S.roster||[]).length)return;wzInit();WZ.open=true;WZ.step=0;try{localStorage.setItem('ks_wz_seen_'+APP,'1');}catch(e){}}
 
 window.ssShell=html=>{try{return shell(html);}catch(e){console.warn('settings shell',e);return html;}};
-window.ssOpen=k=>{SEL=k;keep();};
+window.ssOpen=k=>ssOpenCard(k);
 document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.ss||!d.matches('details'))return;
   if(d.open)OPEN.add(d.dataset.ss);else OPEN.delete(d.dataset.ss);keep();},true);
-try{Object.assign(G('ACT'),{ssGo:b=>{const k=b.dataset.k,fromTile=b.classList.contains('ss-tile')||b.closest('.ss-phead');SEL=(fromTile&&SEL===k)?null:k;keep();G('render')();
-  if(SEL)setTimeout(()=>{const d=document.getElementById('ss-detail');if(d){const r=d.getBoundingClientRect();if(r.top<0||r.top>innerHeight-160)d.scrollIntoView({behavior:'smooth',block:'start'});}},30);}});}catch(e){}
+/* 카드 열기·닫기: 열면 그 카드만 화면 전체에, 닫으면 카드 목록으로 (위치도 그대로) */
+let LISTY=0;
+/* 탭 높이를 재서 카드 제목 줄이 탭 바로 아래 붙게 */
+function navH(){try{const n=document.querySelector('#app>nav.tabs');if(n)document.documentElement.style.setProperty('--ss-navh',(n.getBoundingClientRect().height+8)+'px');}catch(e){}}
+setInterval(navH,1500);
+function ssOpenCard(k){if(SEL===k)return;if(!SEL)LISTY=scrollY;SEL=k;keep();G('render')();scrollTo({top:0});}
+function ssCloseCard(){if(!SEL)return;SEL=null;keep();G('render')();scrollTo({top:LISTY});}
+try{Object.assign(G('ACT'),{ssGo:b=>ssOpenCard(b.dataset.k),ssClose:()=>ssCloseCard(),ssUndo:()=>urGo(-1),ssRedo:()=>urGo(1)});}catch(e){}
+/* 되돌리기·다시 실행: 대회 설정이 바뀔 때마다 바로 앞 상태를 기억합니다 (최근 60번).
+   대회명처럼 글자를 칠 때는 2초 안의 연속 입력을 한 번으로 묶습니다. 선수 명단·점수는 대상이 아닙니다. */
+const UR={u:[],r:[],last:null,at:0,key:'',skip:0};window.__SS_UR=UR;
+const UR_L={name:'대회명',judges:'심판 수',refs:'부심 수',comm:'생활체육 대회',commRem:'남는 인원 처리',format:'경기 방식',poomsae:'품새 수',pfix:'지정 품새표',aw:'상장·시상',voice:'음성',ageScheme:'부별 구분',pdraw:'품새 추첨 방식',cutMode:'컷오프 진출 방식',advN:'결선 진출 인원',system:'경기 방식',hogu:'호구',roundSec:'회전 시간',restSec:'회전 간 휴식',finalN:'결선 인원',preMin:'예선 인원',elemMix:'초등부 남녀',autoReveal:'점수 공개',tieAll:'진출 경계 동점'};
+const urSnap=()=>{try{const S=G('S');if(!S)return null;return JSON.stringify(G('SET')());}catch(e){return null;}};
+const urDiff=(a,b)=>{try{const x=JSON.parse(a),y=JSON.parse(b);return Object.keys({...x,...y}).filter(k=>JSON.stringify(x[k])!==JSON.stringify(y[k])&&!/^(ageBefore|certSince)$/.test(k));}catch(e){return [];}};
+const urLabel=ks=>[...new Set(ks.map(k=>UR_L[k]||'설정'))].slice(0,3).join(', ');
+setInterval(()=>{const cur=urSnap();if(cur==null)return;if(UR.last==null){UR.last=cur;return;}if(cur===UR.last)return;
+  if(UR.skip>Date.now()){UR.last=cur;return;}
+  const d=urDiff(UR.last,cur);if(!d.length){UR.last=cur;return;}const now=Date.now(),key=d.join();
+  if(!(now-UR.at<2000&&key===UR.key&&key==='name')){UR.u.push(UR.last);if(UR.u.length>60)UR.u.shift();}
+  UR.r=[];UR.last=cur;UR.at=now;UR.key=key;
+  try{if(String(G('routeNow')()).startsWith('admin-settings'))G('render')();}catch(e){}},400);
+async function urApply(str){const S=G('S'),prev=S.settings||{},n=JSON.parse(str);UR.skip=Date.now()+1500;S.settings=n;await G('saveSettings')(n);
+  try{if(APP==='poomsae'&&(prev.format||'cutoff')!==(n.format||'cutoff'))await G('ACT').setFormat({dataset:{v:n.format||'cutoff'}});
+    if(APP==='poomsae'&&(prev.poomsae===2?2:1)!==(n.poomsae===2?2:1))await G('ACT').setPoomsaeAll({dataset:{v:String(n.poomsae===2?2:1)}});}catch(e){}
+  if((!!prev.comm!==!!n.comm||(prev.commRem||'small')!==(n.commRem||'small')||(prev.ageScheme||'kta')!==(n.ageScheme||'kta'))&&(S.roster||[]).length){try{await G('regenerateDivs')();}catch(e){}}
+  S.settings=n;UR.skip=Date.now()+1500;UR.last=JSON.stringify(n);G('render')();}
+async function urGo(dir){const from=dir<0?UR.u:UR.r,to=dir<0?UR.r:UR.u;if(!from.length)return;const cur=urSnap()||UR.last,tgt=from.pop();to.push(cur);
+  const lab=urLabel(urDiff(cur,tgt));await urApply(tgt);try{G('toast')(`${dir<0?'되돌렸습니다':'다시 실행했습니다'}${lab?' · '+lab:''}`);}catch(e){}}
+document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey)return;let r='';try{r=String(G('routeNow')());}catch(x){}if(!r.startsWith('admin-settings'))return;
+  const t=e.target;if(t&&(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||t.isContentEditable))return;const k=e.key.toLowerCase();
+  if(k==='z'&&!e.shiftKey){e.preventDefault();urGo(-1);}else if(k==='y'||(k==='z'&&e.shiftKey)){e.preventDefault();urGo(1);}},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&SEL&&!WZ.open){let r='';try{r=String(G('routeNow')());}catch(x){}if(r.startsWith('admin-settings')){e.preventDefault();ssCloseCard();}}});
 const css=document.createElement('style');css.textContent=`
 .ss{display:flex;flex-direction:column;gap:14px}
 .ss-top{gap:10px}
@@ -6554,10 +6586,17 @@ const css=document.createElement('style');css.textContent=`
 .ss-tile.on{border:2px solid var(--ok);background:var(--ok-soft)}
 .ss-tile.warn .ss-tst{color:var(--warn)}
 .ss-dot{position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;background:var(--warn)}
-.ss-detail{scroll-margin-top:80px}
-.ss-phead{display:flex;align-items:center;gap:10px;margin-bottom:6px}.ss-phead h2{margin:0;flex:1;font-size:19px}
+.ss-topbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ss-ur{display:inline-flex;gap:4px}
+.ss-ur .btn[disabled]{opacity:.4;cursor:default}
+.ss-full .ss-detail{min-height:calc(100vh - 220px)}
+.ss-phead{position:sticky;top:0;z-index:5;background:var(--surface);padding:10px 0;margin:-10px 0 8px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ss-back{white-space:nowrap}
+/* 앱처럼: 위쪽 탭(설정·선수 등록·대진표…)이 스크롤해도 늘 보이게 */
+body:not(.disp):not(.jdg):not(.brdv) #app>nav.tabs{position:sticky;top:0;z-index:40;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+body:not(.disp):not(.jdg):not(.brdv) .ss-phead{top:var(--ss-navh,64px)}
+.ss-phead{display:flex;align-items:center;gap:10px}.ss-phead h2{margin:0;flex:1;font-size:19px}
 .ss-pane>.ss-body{display:flex;flex-direction:column;gap:14px}
-.ss-pane[hidden]{display:none!important}
+.ss-pane[hidden],.ss [hidden]{display:none!important}
 .ss-hint{text-align:center;padding:4px}
 .ss-wz{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
 .ss-wzbox{width:min(640px,100%);max-height:calc(100vh - 32px);overflow:auto;gap:16px!important}

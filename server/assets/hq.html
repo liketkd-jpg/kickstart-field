@@ -152,6 +152,16 @@ body.mon #mon>*:not(.mwm){position:relative;z-index:1}
 .chip.livec{background:#C8102E;color:#fff;border-color:#E2334F}
 .chip.livec .dot{background:#fff}
 #prt{display:none}
+.hqs{display:flex;flex-direction:column;gap:14px}.hqs [hidden]{display:none!important}
+.hqs-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.hqs-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (max-width:620px){.hqs-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hqs-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:18px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:inherit;font:inherit;cursor:pointer;min-height:118px;box-shadow:var(--shadow)}
+.hqs-tile b{font-size:18px}.hqs-ic{font-size:26px;line-height:1}.hqs-st{color:var(--muted);font-size:13.5px;font-weight:700}
+.hqs-tile.ok .hqs-st{color:var(--ok)}.hqs-tile.warn .hqs-st{color:var(--warn)}.hqs-tile:hover{border-color:var(--ok)}
+.hqs-dot{position:absolute;top:12px;right:12px;width:11px;height:11px;border-radius:50%;background:var(--warn)}
+.hqs-page{display:flex;flex-direction:column;gap:12px;min-height:calc(100vh - 140px)}
+.hqs-head{position:relative;z-index:1;display:flex;align-items:center;gap:10px;background:var(--bg,var(--surface));padding:10px 0;border-bottom:1px solid var(--line)}
+.hqs-head h2{margin:0;flex:1;font-size:21px}
 body.prtst #hqtabs{display:none}
 @media print{@page{size:A4 portrait;margin:0}
   body.prtst>*:not(#prt){display:none!important}
@@ -475,6 +485,46 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   else if(a==='sbOut'){localStorage.removeItem(SB_LS);schedule();}
 });
 
+/* ---------- 본부 운영 화면을 앱처럼: 기능을 타일로 한 화면에 모으고, 누르면 그 기능만 화면 전체로 ---------- */
+setInterval(()=>{try{const n=document.getElementById('hqtabs');if(n)document.documentElement.style.setProperty('--hq-navh',(n.getBoundingClientRect().height+4)+'px');}catch(e){}},1000);
+let HSEL=null,HLISTY=0;try{HSEL=localStorage.getItem('ks_hq_sel')||null;}catch(e){}
+const HQ_T=[[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
+  [/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터']];
+function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
+  switch(k){
+    case 'court':{const on=list.filter(c=>c.online).length,bad=list.filter(c=>!c.online||c.stale).length;return [list.length?`${on}/${list.length}곳 연결`:'아직 코트 없음',list.length&&!bad?'ok':list.length?'warn':''];}
+    case 'call':return [`자동 호출 ${cf.autoCall?'켜짐':'꺼짐'}${S.log[0]?' · 최근 '+new Date(S.log[0].at).toTimeString().slice(0,5):''}`,''];
+    case 'notice':return [n.mode==='full'?'전체 화면 표시 중':n.mode==='banner'&&n.text?'아래 띠 표시 중':'표시 안 함',n.mode&&n.mode!=='off'&&n.text?'ok':''];
+    case 'coll':{const c=Object.keys((S.coll&&S.coll.courts)||{}).length;return [c?`${c}개 코트 모음`:'아직 없음',c?'ok':''];}
+    case 'cert':{const q=certFiles().filter(needPrint).length;return [`${cf.certAuto?'켜짐':'꺼짐'}${q?` · 대기 ${q}`:''}`,cf.certAuto?(q?'warn':'ok'):''];}
+    case 'backup':{const b=S.bk||{};return [`${cf.backupAuto?'켜짐':'꺼짐'}${b.at?' · '+ago(b.at):''}${BK.err?' · 오류':''}`,BK.err?'warn':cf.backupAuto&&b.at?'ok':''];}
+    case 'mon':return ['대기실 TV·태블릿',''];
+    default:return ['',''];
+  }
+}
+function hqShell(html){
+  let t;try{t=document.createElement('template');t.innerHTML=html;}catch(e){return html;}
+  const top=[],cards=[];
+  const walk=el=>[...el.children].forEach(c=>{if(c.classList.contains('panel')){const h=c.querySelector('h2'),ht=h?h.textContent:'';const m=HQ_T.find(x=>x[0].test(ht));
+      const key=m?m[1]:'p'+cards.length;cards.push({key,ic:m?m[2]:'📁',title:m?m[3]:(ht.trim().slice(0,20)||'기타'),el:c});}
+    else if(c.classList.contains('grid2')||(!c.className&&c.querySelector('.panel')))walk(c);else top.push(c);});
+  walk(t.content);
+  if(HSEL&&!cards.some(c=>c.key===HSEL))HSEL=null;
+  const out=document.createElement('div');out.className='hqs'+(HSEL?' hqs-open':'');
+  top.forEach(x=>out.appendChild(x));
+  const tiles=document.createElement('div');tiles.className='hqs-tiles';if(HSEL)tiles.hidden=true;
+  tiles.innerHTML=cards.map(c=>{const [st,cl]=hqTileState(c.key);return `<button class="hqs-tile ${cl}" data-a="hqOpen" data-k="${c.key}"><span class="hqs-ic">${c.ic}</span><b>${esc(c.title)}</b><span class="hqs-st">${esc(st||'열어서 보기')}</span>${cl==='warn'?'<i class="hqs-dot"></i>':''}</button>`;}).join('');
+  out.appendChild(tiles);
+  cards.forEach(c=>{const w=document.createElement('div');w.className='hqs-page';if(HSEL!==c.key)w.hidden=true;
+    w.innerHTML=`<div class="hqs-head"><button class="btn" data-a="hqClose">← 본부 메뉴</button><span class="hqs-ic">${c.ic}</span><h2>${esc(c.title)}</h2><button class="btn primary" data-a="hqClose">닫기 ✕</button></div>`;
+    w.appendChild(c.el);out.appendChild(w);});
+  return out.outerHTML;
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+  if(a==='hqOpen'){if(!HSEL)HLISTY=scrollY;HSEL=b.dataset.k;try{localStorage.setItem('ks_hq_sel',HSEL);}catch(x){}render();scrollTo({top:0});}
+  else if(a==='hqClose'){HSEL=null;try{localStorage.setItem('ks_hq_sel','');}catch(x){}render();scrollTo({top:HLISTY});}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&HSEL&&route()==='admin'&&!/^(INPUT|TEXTAREA)$/.test((e.target||{}).tagName||'')){HSEL=null;try{localStorage.setItem('ks_hq_sel','');}catch(x){}render();}});
+
 let pend=false;function schedule(){if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;render();});}
 function render(){
   const r=route();document.body.classList.toggle('mon',r==='board');
@@ -483,7 +533,7 @@ function render(){
   $('#ovl').innerHTML='';
   const keep={};document.querySelectorAll('#app input[id],#app textarea[id],#app select[id]').forEach(el=>keep[el.id]=el.value);const fid=document.activeElement&&document.activeElement.id;
   document.body.classList.toggle('prtst',r==='print');
-  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r==='print'?vPrint():r==='results'?vResults():vAdmin();
+  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
   for(const [k,v] of Object.entries(keep)){const el=document.getElementById(k);if(el)el.value=v;}
   if(fid){const el=document.getElementById(fid);if(el)el.focus();}
 }
