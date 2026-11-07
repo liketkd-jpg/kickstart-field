@@ -33,10 +33,41 @@ func keepAwake() {
 	procSetThreadExecutionState.Call(uintptr(0x80000000 | 0x00000001 | 0x00000002))
 }
 
-func openBrowser(url string) {
-	if err := exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start(); err != nil {
-		fmt.Println("브라우저를 열지 못했습니다. 크롬에서 직접 열어 주세요:", url)
+// 브라우저 열기: 윈도우의 「기본 앱」 연결을 거치지 않고 크롬(없으면 엣지)을 직접 실행합니다.
+// 예전 방식(rundll32 url.dll)은 연결 정보가 꼬인 컴퓨터에서 「어떤 앱으로 열까요?」 창을 띄우고 멈춘 것처럼 보였습니다.
+func browserExe() string {
+	pf := os.Getenv("ProgramFiles")
+	pf86 := os.Getenv("ProgramFiles(x86)")
+	la := os.Getenv("LocalAppData")
+	for _, c := range []string{
+		filepath.Join(pf, "Google", "Chrome", "Application", "chrome.exe"),
+		filepath.Join(pf86, "Google", "Chrome", "Application", "chrome.exe"),
+		filepath.Join(la, "Google", "Chrome", "Application", "chrome.exe"),
+		filepath.Join(pf86, "Microsoft", "Edge", "Application", "msedge.exe"),
+		filepath.Join(pf, "Microsoft", "Edge", "Application", "msedge.exe"),
+	} {
+		if c == "" || strings.HasPrefix(c, string(filepath.Separator)) {
+			continue
+		}
+		if st, err := os.Stat(c); err == nil && !st.IsDir() {
+			return c
+		}
 	}
+	return ""
+}
+
+func openBrowser(url string) {
+	if b := browserExe(); b != "" {
+		if exec.Command(b, "--new-window", url).Start() == nil {
+			return
+		}
+	}
+	cmd := exec.Command("cmd", "/c", "start", "", url)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	if cmd.Start() == nil {
+		return
+	}
+	fmt.Println("브라우저를 열지 못했습니다. 크롬을 켜고 주소창에 직접 넣어 주세요:", url)
 }
 
 func pause() {
