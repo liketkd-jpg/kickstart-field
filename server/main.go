@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.38" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.39" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -210,6 +210,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/" || p == "/index.html":
 		serveLanding(w, r)
 		return
+	case p == "/room.js":
+		serveAsset(w, "assets/room.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/sim.js":
 		serveAsset(w, "assets/sim.js", "application/javascript; charset=utf-8")
 		return
@@ -245,6 +248,12 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/inbox/move" && r.Method == http.MethodPost:
 		handleInboxMove(w, r)
+		return
+	case p == "/api/hq/tocourt" && r.Method == http.MethodPost:
+		handleHQToCourt(w, r)
+		return
+	case p == "/api/inbox/room" && r.Method == http.MethodPost:
+		handleInboxRoom(w, r)
 		return
 	case p == "/api/hq/sim" && r.Method == http.MethodPost:
 		handleHQSim(w, r)
@@ -402,6 +411,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 	out.WriteString(`<script>window.KS_FIELD=` + string(cj) + `;</script><script src="/field.js"></script>`)
 	if key != "hq" {
 		out.WriteString(`<script src="/sim.js"></script>`) // 운영표 「가상 경기」 (가상 심판)
+		out.WriteString(`<script src="/room.js"></script>`) // 대기실 출석·불참·추가 대기 알림
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)

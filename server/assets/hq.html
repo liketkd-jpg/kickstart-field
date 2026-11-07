@@ -163,6 +163,30 @@ body.mon #mon>*:not(.mwm){position:relative;z-index:1}
 .hqs-head{position:relative;z-index:1;display:flex;align-items:center;gap:10px;background:var(--bg,var(--surface));padding:10px 0;border-bottom:1px solid var(--line)}
 .hqs-head h2{margin:0;flex:1;font-size:21px}
 body.prtst #hqtabs{display:none}
+body.rmode #hqtabs{display:none}
+.rm{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:10px;padding:6px 0 40px}
+.rmh{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:20px;position:sticky;top:0;background:var(--bg,var(--surface));padding:8px 0;z-index:2}
+.rmbig{width:100%;padding:14px;font-size:17px}
+.rmin{border:3px solid #E2A400;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;background:color-mix(in srgb,#E2A400 12%,var(--surface));animation:rmpulse 1.1s ease-in-out infinite alternate}
+.rmin b{font-size:21px;line-height:1.35}
+@keyframes rmpulse{to{box-shadow:0 0 0 6px color-mix(in srgb,#E2A400 30%,transparent)}}
+.rmtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--sunk);padding:4px;border-radius:12px}
+.rmtabs button{border:0;background:transparent;padding:10px 2px;border-radius:9px;font-weight:800;color:var(--muted);font-size:13.5px;cursor:pointer}
+.rmtabs button.on{background:var(--surface);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.rmc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.rmd{display:grid;grid-template-columns:52px 1fr;gap:2px 8px;padding:8px;border-radius:10px;background:var(--sunk)}.rmd .small{grid-column:2}
+.rmd.live{background:color-mix(in srgb,var(--ok) 14%,var(--surface))}.rmk{grid-row:span 2;font-weight:900;color:var(--muted);align-self:center}.rmd.live .rmk{color:var(--ok)}
+.rmsel{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);font-weight:700;background:var(--surface);color:var(--ink)}
+.rmatt{display:flex;flex-direction:column;gap:6px}
+.rmp{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.rmp.in{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--surface))}.rmp.out{border-color:var(--red);background:color-mix(in srgb,var(--red) 12%,var(--surface))}
+.rmph{display:inline-flex;align-items:center}.rmx{border:0;background:transparent;color:var(--muted);font-size:15px;cursor:pointer;padding:0 6px}
+.rmemgbox{border-color:var(--red)}.btn.bad{background:var(--red);color:#fff;border-color:var(--red)}
+.rmmine{display:flex;flex-wrap:wrap;gap:6px}
+.rmemg{position:fixed;inset:0;z-index:95;background:rgba(120,10,10,.55);display:grid;place-items:center;padding:16px}
+.rmemg>div{background:var(--surface);border:4px solid var(--red);border-radius:20px;padding:22px;max-width:640px;width:100%;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.rmemg small{font-size:22px;font-weight:900;color:var(--red)}.rmemgi{display:flex;flex-direction:column;gap:6px}.rmemgi b{font-size:24px}
+details summary{cursor:pointer}
 @media print{@page{size:A4 portrait;margin:0}
   body.prtst>*:not(#prt){display:none!important}
   body.prtst #prt{display:block}
@@ -185,7 +209,7 @@ body.prtst #hqtabs{display:none}
 const $=s=>document.querySelector(s);
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let toastT=null;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2800);}
-const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results','print'].includes(h)?h:'admin';};
+const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results','print'].includes(h)||/^room-r[1-6]$/.test(h)?h:'admin';};
 const S={courts:{},cfg:{},announce:null,log:[],ready:false,moves:{},mvArm:null};window.KS_HQS=()=>S;
 let DB=null,DL=null;
 const CFGDEF={autoCall:true,voice:true,notice:{text:'',mode:'off'},manual:[],points:[3,2,1]};
@@ -295,8 +319,9 @@ function vAdmin(){
       <td style="white-space:nowrap">${b&&b.nextDiv?`<button class="btn sm primary" data-a="callNext" data-id="${esc(c.id)}">📣 다음 부문 호출</button> `:''}<button class="btn sm" data-a="forget" data-addr="${esc(c.addr)}" title="목록에서 빼기">빼기</button></td></tr>`;}).join('')
     :`<tr><td colspan="4"><div class="empty">아직 찾은 코트가 없습니다. 코트 노트북에서 현장 모드를 켜고 역할을 「코트」로 고르면 자동으로 나타납니다.<br>같은 공유기 와이파이에 연결되어 있는지 확인해 주세요.</div></td></tr>`;
   const presets=['점심시간입니다. 13시에 경기가 다시 시작됩니다.','시상식을 시작합니다. 입상 선수는 시상대 앞으로 모여 주세요.','잠시 후 오후 경기가 시작됩니다. 선수들은 준비해 주세요.','대회장 안에서는 음식물 섭취를 삼가 주세요.'];
-  return `${[...al].sort((x,y)=>(x[0]==='bad'?0:1)-(y[0]==='bad'?0:1)).map(a=>`<div class="alert ${a[0]}">${esc(a[1])}</div>`).join('')}
+  return `${roomAlerts()}${[...al].sort((x,y)=>(x[0]==='bad'?0:1)-(y[0]==='bad'?0:1)).map(a=>`<div class="alert ${a[0]}">${esc(a[1])}</div>`).join('')}
   <div class="panel"><div class="row between"><h2>📋 대회 운영표</h2><button class="btn primary" data-a="hqOpen" data-k="plan">운영표 열기</button></div><span class="small muted">코트 수·종목별 경기 시간으로 코트 배정과 예상 시각을 짜고 엑셀로 내보냅니다</span></div>
+  ${vRoomPanel()}
   <div class="panel"><div class="row between"><h2>코트 연결 ${checkSummary(list,al)}</h2><span class="row"><span class="small muted">같은 와이파이의 코트 노트북을 자동으로 찾습니다</span><button class="btn sm" data-a="scan">🔎 지금 다시 찾기</button></span></div>
     <div style="overflow-x:auto"><table><tr><th>코트</th><th>상태</th><th>지금 진행 · 심판 연결</th><th></th></tr>${rows}</table></div>${JLEGEND}
     <div class="row"><span class="small muted">자동으로 안 보이면 코트 노트북 검은 창의 주소를 넣으세요</span><input type="text" id="manAddr" placeholder="예: 192.168.0.12:8080" style="width:220px"><button class="btn sm" data-a="addMan">주소로 추가</button></div></div>
@@ -390,10 +415,13 @@ setInterval(tick,1000);
 
 /* ---------- 음성 ---------- */
 const OFFLINE_VOICE=()=>true;
-function koVoice(){const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));const local=vs.filter(v=>v.localService!==false&&!/Online|Google|Natural/i.test(v.name));
+function koVoice(){const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));
+  /* 본부 설정에서 고른 목소리가 이 노트북에 있으면 그 목소리 */const want=(S.cfg&&S.cfg.voiceName)||'';if(want){const w=vs.find(v=>v.name===want);if(w)return w;}
+  const male=v=>/InJoon|Hyunsu|male|남자/i.test(v.name)&&!/female|여자/i.test(v.name);const local=vs.filter(v=>v.localService!==false&&!/Online|Google|Natural/i.test(v.name));
   /* 인터넷이 없으면(현장 모드) 노트북 안 목소리만: 「Google·Online」 목소리는 인터넷이 있어야 소리가 납니다 */
-  if(OFFLINE_VOICE())return local.find(v=>/female|여|Heami|Yuna/i.test(v.name))||local[0]||null;
-  return vs.find(v=>/female|여|Heami|SunHi|Yuna/i.test(v.name))||local[0]||vs[0]||null;}
+  /* 여자 목소리 먼저 · 남자 목소리는 마지막 */
+  if(OFFLINE_VOICE())return local.find(v=>/female|여|Heami|Yuna/i.test(v.name))||local.find(v=>!male(v))||local[0]||null;
+  return vs.find(v=>/female|여|Heami|SunHi|Yuna/i.test(v.name))||local.find(v=>!male(v))||vs.find(v=>!male(v))||local[0]||vs[0]||null;}
 window.KS_HQVOICE=()=>koVoice();
 function say(text,times){if(!('speechSynthesis' in window)||!CFG().voice)return;try{speechSynthesis.cancel();for(let i=0;i<(times||1);i++){const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';const v=koVoice();if(v)u.voice=v;u.rate=.95;speechSynthesis.speak(u);}}catch(e){}}
 function chime(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C(),t=c.currentTime;[[880,0],[1175,.18],[1568,.36]].forEach(([f,d])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.5);o.connect(g).connect(c.destination);o.start(t+d);o.stop(t+d+.55);});}catch(e){}}
@@ -493,7 +521,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
 /* ---------- 본부 운영 화면을 앱처럼: 기능을 타일로 한 화면에 모으고, 누르면 그 기능만 화면 전체로 ---------- */
 setInterval(()=>{try{const n=document.getElementById('hqtabs');if(n)document.documentElement.style.setProperty('--hq-navh',(n.getBoundingClientRect().height+4)+'px');}catch(e){}},1000);
 let HSEL=null,HLISTY=0; /* 다시 열면 늘 타일 목록부터 (열려 있던 화면을 기억하지 않음) */
-const HQ_T=[[/대회 운영표/,'plan','📋','대회 운영표'],[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
+const HQ_T=[[/대회 운영표/,'plan','📋','대회 운영표'],[/대기실 연결/,'room','🚪','대기실 연결'],[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
   [/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터']];
 function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
   switch(k){
@@ -505,6 +533,7 @@ function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
     case 'backup':{const b=S.bk||{};return [`${cf.backupAuto?'켜짐':'꺼짐'}${b.at?' · '+ago(b.at):''}${BK.err?' · 오류':''}`,BK.err?'warn':cf.backupAuto&&b.at?'ok':''];}
     case 'mon':return ['대기실 TV·태블릿',''];
     case 'plan':return window.KSPLAN?KSPLAN.tileState():['열어서 짜기',''];
+    case 'room':{const M=msgs(),n=M.filter(m=>m.dir==='up'&&m.st==='new').length,e=M.some(m=>m.dir==='up'&&m.kind==='emg'&&m.st==='new');return [e?'🚨 긴급 알림':`${rooms().length}곳 · ${cf.roomAuto?'자동':'수동'}${n?` · 새 요청 ${n}`:''}`,n?'warn':'ok'];}
     default:return ['',''];
   }
 }
@@ -539,18 +568,20 @@ function render(){
   if(r==='board'){vMon();return;}
   $('#ovl').innerHTML='';
   const keep={};document.querySelectorAll('#app input[id],#app textarea[id],#app select[id]').forEach(el=>keep[el.id]=el.value);const fid=document.activeElement&&document.activeElement.id;
-  document.body.classList.toggle('prtst',r==='print');
-  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
+  document.body.classList.toggle('prtst',r==='print');document.body.classList.toggle('rmode',r.startsWith('room-'));
+  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r.startsWith('room-')?vRoom(r.slice(5)):r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
   for(const [k,v] of Object.entries(keep)){const el=document.getElementById(k);if(el)el.value=v;}
   if(fid){const el=document.getElementById(fid);if(el)el.focus();}
+  if(r==='admin')$('#ovl').innerHTML=roomOverlay();
 }
 window.addEventListener('hashchange',render);
-setInterval(()=>{if(route()==='board'||route()==='admin')schedule();},3000);   /* "○초 전" 갱신 */
+setInterval(()=>{const r=route();if(r==='board'||r==='admin'||r.startsWith('room-'))schedule();},3000);   /* "○초 전" 갱신 */
 
 /* ---------- 버튼 ---------- */
 async function hqctl(op,addr){try{await fetch('/api/hqctl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op,addr})});}catch(e){}}
 async function announce(text,extra){const id='m'+NOW().toString(36);const doc={id,text,at:NOW(),auto:false,...(extra||{})};await DB.doc('hq/announce').set(doc);await DB.doc('calllog/'+id).set({text,at:doc.at,auto:false,court:doc.court||''});toast('본부 모니터에 띄웠습니다');}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
+  if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
   if(a==='mv'){const k=b.dataset.k;if(S.mvArm!==k){S.mvArm=k;schedule();setTimeout(()=>{if(S.mvArm===k){S.mvArm=null;schedule();}},5000);return;}
     S.mvArm=null;const [from,app,...rest]=k.split('|'),div=rest.join('|'),sel=document.getElementById(b.dataset.sel),to=sel&&sel.value;if(!to)return toast('받을 코트를 골라 주세요');
     b.disabled=true;try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app,div,from,to})});const j=await r.json().catch(()=>({}));
@@ -573,6 +604,171 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   else if(a==='qr'){if(window.KSQR)KSQR.open({title:'본부 모니터',items:[{label:'본부 모니터',sub:'대기실 TV·태블릿',url:(window.KS_FIELD.base||location.href.split('#')[0])+'#board'}]});}
 });
 
+/* ---------- 🚪 대기실 연결 ----------
+   대기실(2~6곳, 이름·종목 바꾸기)마다 QR → 진행 요원 휴대폰이 「#room-r1」 화면을 엽니다 (대회장 와이파이).
+   - 대기실 → 본부: 「이 부문 불러 주세요」(자동: 바로 본부 모니터·음성 / 수동: 본부가 「전광판 보내기」), 「추가 대기 요청」(코트 운영석에도 알림),
+     🚨 긴급(본부에 큰 알림·소리), 메시지·자주 쓰는 말
+   - 본부 → 대기실: 메시지(휴대폰에 크게 + 소리) → 대기실이 「확인」 → 본부에 읽음 표시
+   - 대기실 화면: 코트별 지금·다음 부문, 남은 경기, 예상 시작 · 출석 체크(도착·불참 → 본부·코트 운영석) · 연락 기록
+   저장: roommsg/* (연락 기록), att/* (출석), hqcfg/main 의 roomN·rooms·roomAuto·phHQ·phRoom·voiceName */
+const RDEF=[{id:'r1',name:'품새 대기실',app:'poomsae',kw:'-체조,-경연,-단체'},{id:'r2',name:'격파 대기실',app:'gyeokpa',kw:'-경연,-단체'},{id:'r3',name:'팀 대항 대기실',app:'',kw:'체조,경연,단체'},
+  {id:'r4',name:'대기실 4',app:'',kw:''},{id:'r5',name:'대기실 5',app:'',kw:''},{id:'r6',name:'대기실 6',app:'',kw:''}];
+const PH_HQ=['다음 부문 선수 입장 준비해 주세요.','5분 뒤 입장합니다. 선수 줄 세워 주세요.','잠시 대기해 주세요. 코트 정리 중입니다.','점심시간입니다. 13시에 다시 시작합니다.'];
+const PH_RM=['선수 입장 준비 끝났습니다.','선수가 아직 다 오지 않았습니다.','물·구급함이 필요합니다.','대기실이 붐빕니다. 안내 요원을 보내 주세요.'];
+const RK={call:['📣','호출 요청'],wait:['⏳','추가 대기 요청'],emg:['🚨','긴급'],msg:['💬','메시지']};
+const RST={new:['warn','새 요청'],sent:['ok','전광판에 나감'],done:['','처리함'],ack:['ok','확인함']};
+const RS={seen:null,tab:'prog',all:false,unlocked:false,lastBeep:0,fwdT:{}};
+function rooms(){const cf=CFG(),n=Math.min(6,Math.max(2,Number(cf.roomN)||3)),sv=cf.rooms||[];return RDEF.slice(0,n).map((d,i)=>({...d,...(sv[i]||{}),id:d.id}));}
+const roomOf=id=>rooms().find(r=>r.id===id)||null;
+function kwMatch(r,app,div){if(r.app&&r.app!==app)return false;div=String(div||'');const ks=String(r.kw||'').split(/[,\s]+/).filter(Boolean),inc=ks.filter(k=>k[0]!=='-'),exc=ks.filter(k=>k[0]==='-').map(k=>k.slice(1)).filter(Boolean);
+  return (!inc.length||inc.some(k=>div.includes(k)))&&!exc.some(k=>div.includes(k));}
+const spoken=d=>String(d||'').replace(/^\d+\s+/,'');
+const rid=p=>(p||'m')+NOW().toString(36)+Math.random().toString(36).slice(2,6);
+const hash36=s=>{let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0).toString(36);};
+const msgs=()=>S.rmsg||[];
+/* 코트별 진행 (대기실 종목만 / 전체): 지금 부문 + 남은 부문의 예상 시작 */
+function roomLanes(r,all){return lanes().map(L=>{let t=NOW();const items=[];
+    L.rem.forEach(d=>{const left=d.total-d.done,mine=all||!r||kwMatch(r,L.app,d.name);if(mine)items.push({name:d.name,done:d.done,total:d.total,left,live:d.live,start:t});t+=left*L.p.min*60000;});
+    return {...L,items};}).filter(L=>L.items.length);}
+/* 출석: 보드의 upcoming(지금·다음 부문 선수) + 저장된 도착·불참 */
+function upcoming(r,all){const out=[];for(const c of courtList()){if(!c.online)continue;for(const [app,v] of Object.entries(c.apps||{})){const b=v&&v.board;if(!b||!Array.isArray(b.upcoming))continue;
+    b.upcoming.forEach((u,i)=>{if(all||!r||kwMatch(r,app,u.name))out.push({court:c.court,app,div:u.name,names:u.names||[],order:i,live:b.curDiv===u.name});});}}
+  return out.sort((a,b)=>a.order-b.order||a.court.localeCompare(b.court));}
+const attKey=(court,app,div)=>'a'+hash36(court+'|'+app+'|'+div);
+function attList(u){const d=(S.att||{})[attKey(u.court,u.app,u.div)],st={};((d&&d.list)||[]).forEach(p=>st[p.name+'|'+(p.team||'')]=p.st);
+  return u.names.map(p=>({name:p.name,team:p.team||'',st:st[p.name+'|'+(p.team||'')]||''}));}
+async function toCourt(court,app,kind,id,doc){try{const r=await fetch('/api/hq/tocourt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({court,app,kind,id,doc})});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'HTTP '+r.status);}return true;}catch(e){toast('코트 운영석에 알리지 못했습니다: '+e.message);return false;}}
+async function postMsg(doc){const id=rid('m');await DB.doc('roommsg/'+id).set({id,at:NOW(),...doc});return id;}
+/* 대기실 요청을 본부 모니터(전광판)·음성으로 */
+async function callOut(m){const text=m.text;await announce(text,{court:m.court||'',room:m.roomName||''});await DB.doc('roommsg/'+m.id).set({...m,st:'sent',doneAt:NOW()});}
+
+/* ----- 알림: 새 요청·긴급 (본부) / 새 메시지 (대기실) ----- */
+function onRoomMsgs(list){
+  const prev=RS.seen;RS.seen=new Set(list.map(m=>m.id+'|'+m.st));S.rmsg=list;if(prev===null)return;
+  const fresh=list.filter(m=>!prev.has(m.id+'|'+m.st)&&!prev.has(m.id+'|new')&&m.st==='new');if(!fresh.length)return;
+  const r=route();
+  if(r==='admin'){const up=fresh.filter(m=>m.dir==='up');if(up.length){chime();const m=up[0];toast(`${RK[m.kind]?RK[m.kind][0]:'🚪'} ${m.roomName||''}: ${m.text||''}`);}}
+  else if(r.startsWith('room-')){const me=r.slice(5),dn=fresh.filter(m=>m.dir==='down'&&m.room===me);if(dn.length){chime();setTimeout(chime,700);try{navigator.vibrate&&navigator.vibrate([300,150,300]);}catch(e){}}}
+}
+setInterval(()=>{if(route()!=='admin')return;const e=msgs().some(m=>m.dir==='up'&&m.kind==='emg'&&m.st==='new');if(e&&Date.now()-RS.lastBeep>4500){RS.lastBeep=Date.now();chime();}},1000);
+function roomOverlay(){const e=msgs().filter(m=>m.dir==='up'&&m.kind==='emg'&&m.st==='new');if(!e.length)return '';
+  return `<div class="rmemg"><div><small>🚨 대기실 긴급 알림</small>${e.map(m=>`<div class="rmemgi"><b>${esc(m.roomName||'')} · ${esc(m.text||'')}</b><span>${hhmm(m.at)}</span><button class="btn primary" data-a="hqRmAck" data-id="${esc(m.id)}">확인했습니다</button></div>`).join('')}</div></div>`;}
+function roomAlerts(){const n=msgs().filter(m=>m.dir==='up'&&m.st==='new'&&m.kind!=='emg');
+  return n.length?`<div class="alert warn">🚪 대기실 새 요청 ${n.length}건 · ${n.slice(0,2).map(m=>`${esc(m.roomName||'')} ${esc((RK[m.kind]||['',''])[1])}`).join(', ')} → 「🚪 대기실 연결」에서 확인해 주세요.</div>`:'';}
+
+/* ----- 본부: 대기실 연결 패널 ----- */
+function voiceOpts(){let vs=[];try{vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));}catch(e){}const cur=CFG().voiceName||'';
+  return `<option value="" ${!cur?'selected':''}>자동 (여자 목소리 먼저)</option>${vs.map(v=>`<option value="${esc(v.name)}" ${cur===v.name?'selected':''}>${esc(v.name)}${/InJoon|Hyunsu|male|남/i.test(v.name)&&!/female/i.test(v.name)?' (남자)':' '}</option>`).join('')}`;}
+function vRoomPanel(){
+  const cf=CFG(),R=rooms(),M=msgs(),pend=M.filter(m=>m.dir==='up'&&m.st==='new'),ph=cf.phHQ||PH_HQ,att=Object.values(S.att||{}).filter(a=>NOW()-(a.at||0)<6*3600e3).sort((a,b)=>b.at-a.at);
+  const line=m=>{const k=RK[m.kind]||['📨','메시지'],up=m.dir==='up',st=up?(RST[m.st]||['',m.st]):m.st==='ack'?['ok','✓ 읽음 '+hhmm(m.ackAt||m.at)]:['warn','안 읽음'];
+    return `<tr><td class="small muted" style="white-space:nowrap">${hhmm(m.at)}</td><td style="white-space:nowrap">${up?`<b>${esc(m.roomName||'')}</b> → 본부`:`본부 → <b>${esc((roomOf(m.room)||{}).name||m.room)}</b>`}</td><td>${up?k[0]+' ':''}${esc(m.text||'')}${m.div?` <span class="small muted">${esc(m.court||'')}코트 ${esc(m.div)}</span>`:''}</td><td><span class="chip ${st[0]}">${esc(st[1])}</span></td></tr>`;};
+  return `<div class="panel"><div class="row between"><h2>🚪 대기실 연결</h2><span class="row"><button class="btn sm ${cf.roomAuto?'on':''}" data-a="roomAuto" title="대기실의 「부문 불러 주세요」를 바로 전광판으로 보낼지">대기실 호출 ${cf.roomAuto?'자동':'수동'}</button><button class="btn sm primary" data-a="hqRmQR">📱 대기실 QR</button></span></div>
+    <span class="small muted">${cf.roomAuto?'<b>자동</b>: 대기실에서 「이 부문 불러 주세요」를 누르면 바로 본부 모니터(전광판)에 뜨고 음성으로 나갑니다.':'<b>수동</b>: 대기실 요청이 아래에 쌓이고, 「📣 전광판 보내기」를 눌러야 본부 모니터·음성으로 나갑니다.'} 대기실 휴대폰도 대회장 와이파이에 연결해야 합니다.</span>
+    ${pend.length?`<div><b>받은 요청 ${pend.length}건</b><table>${pend.map(m=>`<tr><td class="small muted">${hhmm(m.at)}</td><td><b>${esc(m.roomName||'')}</b> <span class="chip ${m.kind==='emg'?'bad':'warn'}">${(RK[m.kind]||['',''])[0]} ${(RK[m.kind]||['',''])[1]}</span></td><td>${esc(m.text||'')}</td>
+      <td style="white-space:nowrap">${m.kind==='call'?`<button class="btn sm primary" data-a="hqRmOut" data-id="${esc(m.id)}">📣 전광판 보내기</button> `:''}<button class="btn sm" data-a="hqRmAck" data-id="${esc(m.id)}">${m.kind==='call'?'닫기':'확인'}</button></td></tr>`).join('')}</table></div>`:'<span class="chip ok">받은 요청 없음</span>'}
+    <div><b>대기실로 보내기</b><div class="row" style="margin-top:6px"><select id="hqRmTo"><option value="all">모든 대기실</option>${R.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select>
+      <input type="text" id="hqRmText" placeholder="예) 격파 A조 5분 뒤 입장 준비해 주세요." style="flex:1;min-width:200px"><button class="btn primary" data-a="hqRmSend">보내기</button></div>
+      <div class="row" style="margin-top:6px;flex-wrap:wrap">${ph.map((p,i)=>`<span class="rmph"><button class="btn sm" data-a="hqRmPh" data-i="${i}">${esc(p)}</button><button class="rmx" data-a="hqPhDel" data-i="${i}" title="지우기">×</button></span>`).join('')}
+        <input type="text" id="hqPhNew" placeholder="자주 쓰는 말 더하기" style="min-width:160px"><button class="btn sm" data-a="hqPhAdd">＋ 저장</button></div></div>
+    ${att.length?`<div><b>출석 현황</b><table>${att.slice(0,8).map(a=>{const L=a.list||[],inn=L.filter(p=>p.st==='in').length,out=L.filter(p=>p.st==='out');
+      return `<tr><td>${esc(a.court)}코트</td><td>${esc(a.div)}</td><td>도착 <b>${inn}</b>/${L.length}</td><td>${out.length?`<span class="chip bad">불참 ${out.map(p=>esc(p.name)).join(', ')}</span>`:''}</td><td class="small muted">${esc(a.roomName||'')} ${hhmm(a.at)}</td></tr>`;}).join('')}</table></div>`:''}
+    <div><b>연락 기록</b>${M.length?`<div style="max-height:320px;overflow:auto"><table>${M.slice(0,60).map(line).join('')}</table></div>`:'<span class="small muted"> 아직 없음</span>'}</div>
+    <details><summary><b>⚙️ 대기실 설정 · 목소리</b></summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+      <label class="row">대기실 수 <select id="hqRmN">${[2,3,4,5,6].map(n=>`<option ${R.length===n?'selected':''}>${n}</option>`).join('')}</select><span class="small muted">바꾸면 바로 저장됩니다</span></label>
+      ${R.map((r,i)=>`<div class="row" style="flex-wrap:wrap"><b style="width:22px">${i+1}</b><input type="text" id="rmName_${i}" value="${esc(r.name)}" style="width:150px" title="대기실 이름">
+        <select id="rmApp_${i}" title="이 대기실이 맡는 경기 앱"><option value="" ${!r.app?'selected':''}>모든 앱</option>${Object.entries(APPN).map(([k,l])=>`<option value="${k}" ${r.app===k?'selected':''}>${l} 앱</option>`).join('')}</select>
+        <input type="text" id="rmKw_${i}" value="${esc(r.kw||'')}" style="flex:1;min-width:160px" placeholder="부문 이름 낱말 (쉼표로) · 빼려면 -체조" title="부문 이름에 이 낱말이 있는 것만 · 앞에 -를 붙이면 그 낱말이 있는 부문은 빼기"></div>`).join('')}
+      <div class="row"><button class="btn sm primary" data-a="hqRmSave">대기실 설정 저장</button><span class="small muted">예) 팀 대항 대기실: 모든 앱 · 「체조,경연,단체」 / 품새 대기실: 품새 앱 · 「-체조,-경연」</span></div>
+      <label class="row">🔊 본부 모니터 목소리 <select id="hqVoice">${voiceOpts()}</select><button class="btn sm" data-a="hqVoiceTest">들어 보기</button></label>
+      <span class="small muted">목소리 목록은 이 노트북에 깔린 것입니다. 본부 모니터를 다른 노트북에서 열면 그 노트북에 같은 이름의 목소리가 있어야 하고, 없으면 여자 목소리를 먼저 고릅니다.</span>
+    </div></details></div>`;
+}
+
+/* ----- 대기실 휴대폰 화면 ----- */
+function vRoom(id){
+  const r=roomOf(id);if(!r)return `<div class="empty">대기실을 찾지 못했습니다. 본부의 「🚪 대기실 연결」에서 QR을 다시 찍어 주세요.</div>`;
+  const M=msgs(),inbox=M.filter(m=>m.dir==='down'&&m.room===id&&m.st!=='ack'),mine=M.filter(m=>m.dir==='up'&&m.room===id).slice(0,3),cf=CFG(),ph=cf.phRoom||PH_RM;
+  const st=window.KS_FIELD&&KS_FIELD.status?KS_FIELD.status():null,conn=!st||st.connected!==false;
+  const U=upcoming(r,RS.all),sel=$('#rmDiv')?$('#rmDiv').value:'',cur=U.find(u=>`${u.court}|${u.app}|${u.div}`===sel)||U[0];
+  const tab=RS.tab,TABS=[['prog','📊 코트 진행'],['att','✅ 출석'],['req','📣 요청·연락'],['log','🕘 기록']];
+  const divSel=(sid)=>`<select id="${sid}" class="rmsel">${U.map(u=>{const v=`${u.court}|${u.app}|${u.div}`;return `<option value="${esc(v)}">${esc(u.court)}코트 · ${esc(u.div)}${u.live?' (진행 중)':''}</option>`;}).join('')}</select>`;
+  let body='';
+  if(tab==='prog'){const L=roomLanes(r,RS.all);
+    body=L.length?L.map(x=>`<div class="rmc"><div class="row between"><b style="font-size:19px">${esc(x.court)}코트 <span class="chip">${esc(APPN[x.app]||x.app)}</span></b><span class="small muted">남은 경기 ${x.left} · 끝 약 ${hhmm(x.end)}</span></div>
+        ${x.items.slice(0,3).map((d,i)=>`<div class="rmd ${d.live?'live':''}"><span class="rmk">${d.live?'지금':i===0||(i===1&&x.items[0].live)?'다음':'그다음'}</span><b>${esc(d.name)}</b><span class="small">${d.live?`경기 ${d.done}/${d.total}`:`약 ${hhmm(d.start)} 시작 · ${d.total}경기`}</span></div>`).join('')}</div>`).join('')
+      :`<div class="empty">${RS.all?'진행 중인 코트가 없습니다':'이 대기실 종목으로 남은 부문이 없습니다'}.<br><span class="small">코트 노트북 운영석이 열려 있어야 보입니다.</span></div>`;}
+  else if(tab==='att'){
+    body=!cur?`<div class="empty">출석을 볼 부문이 없습니다.<br><span class="small">코트 운영석이 열려 있어야 지금·다음 부문 선수 명단이 보입니다.</span></div>`:(()=>{const L=attList(cur),inn=L.filter(p=>p.st==='in').length,out=L.filter(p=>p.st==='out').length;
+      return `${divSel('rmDiv')}<div class="row" style="margin:8px 0"><span class="chip ok">도착 ${inn}</span><span class="chip bad">불참 ${out}</span><span class="chip">남음 ${L.length-inn-out}</span><span class="small muted">${esc(cur.court)}코트 운영석에도 보입니다</span></div>
+        <div class="rmatt">${L.map(p=>`<div class="rmp ${p.st}"><span><b>${esc(p.name)}</b> <small>${esc(p.team)}</small></span><span class="row"><button class="btn sm ${p.st==='in'?'primary':''}" data-a="rmAtt" data-st="in" data-n="${esc(p.name)}" data-t="${esc(p.team)}">도착</button><button class="btn sm ${p.st==='out'?'bad':''}" data-a="rmAtt" data-st="out" data-n="${esc(p.name)}" data-t="${esc(p.team)}">불참</button></span></div>`).join('')}</div>`;})();}
+  else if(tab==='req'){
+    body=`${U.length?`<div class="rmc"><b>부문 고르기</b>${divSel('rmDiv2')}
+        <button class="btn primary rmbig" data-a="rmCall">📣 이 부문 불러 주세요</button><span class="small muted">${cf.roomAuto?'누르면 바로 본부 모니터(전광판)·음성으로 나갑니다':'본부가 확인하면 본부 모니터(전광판)·음성으로 나갑니다'}</span>
+        <div class="row"><input type="text" id="rmWaitTxt" placeholder="추가 대기 사유 (예: 2명 아직 안 옴)" style="flex:1"><button class="btn" data-a="rmWait">⏳ 추가 대기 요청</button></div><span class="small muted">추가 대기 요청은 본부와 그 코트 운영석에 함께 알립니다</span></div>`:'<div class="small muted">코트 운영석이 열리면 부문을 고를 수 있습니다.</div>'}
+      <div class="rmc"><b>본부에 메시지</b><div class="row"><input type="text" id="rmMsg" placeholder="본부에 보낼 말" style="flex:1"><button class="btn primary" data-a="rmMsg">보내기</button></div>
+        <div class="row" style="flex-wrap:wrap">${ph.map((p,i)=>`<span class="rmph"><button class="btn sm" data-a="rmPh" data-i="${i}">${esc(p)}</button><button class="rmx" data-a="rmPhDel" data-i="${i}" title="지우기">×</button></span>`).join('')}</div>
+        <div class="row"><input type="text" id="rmPhNew" placeholder="자주 쓰는 말 더하기" style="flex:1"><button class="btn sm" data-a="rmPhAdd">＋ 저장</button></div></div>
+      <div class="rmc rmemgbox"><b>🚨 긴급</b><input type="text" id="rmEmgTxt" placeholder="내용 (선택)"><div class="row">${['부상','분실물','싸움·소란','기타'].map(t=>`<button class="btn bad" data-a="rmEmg" data-t="${t}">${t}</button>`).join('')}</div></div>`;}
+  else{const L=M.filter(m=>m.room===id).slice(0,40);
+    body=L.length?`<table>${L.map(m=>`<tr><td class="small muted">${hhmm(m.at)}</td><td>${m.dir==='up'?`→ 본부 ${(RK[m.kind]||['',''])[0]}`:'📨 본부'}</td><td>${esc(m.text||'')}</td><td class="small">${m.dir==='up'?esc((RST[m.st]||['',m.st])[1]):m.st==='ack'?'✓ 확인':''}</td></tr>`).join('')}</table>`:'<div class="empty">아직 연락이 없습니다</div>';}
+  return `<div class="rm">
+    <div class="rmh"><b>🚪 ${esc(r.name)}</b><span class="chip ${conn?'ok':'bad'}"><i class="dot"></i>${conn?'연결됨':'끊김'}</span><span data-clock class="small"></span></div>
+    ${!RS.unlocked?`<button class="btn primary rmbig" data-a="rmUnlock">🔔 알림 소리 켜기 (한 번 눌러 주세요)</button>`:''}
+    ${inbox.map(m=>`<div class="rmin"><small>📨 본부에서 · ${hhmm(m.at)}</small><b>${esc(m.text)}</b><button class="btn primary rmbig" data-a="rmAck" data-id="${esc(m.id)}">확인했습니다</button></div>`).join('')}
+    ${mine.length?`<div class="rmmine">${mine.map(m=>`<span class="chip ${(RST[m.st]||[''])[0]}">${(RK[m.kind]||['',''])[0]} ${esc(String(m.text||'').slice(0,26))} · ${esc((RST[m.st]||['',m.st])[1])}</span>`).join('')}</div>`:''}
+    <div class="rmtabs">${TABS.map(([k,l])=>`<button class="${tab===k?'on':''}" data-a="rmTab" data-k="${k}">${l}</button>`).join('')}</div>
+    ${tab==='prog'||tab==='att'?`<label class="row small"><input type="checkbox" data-a="rmAll" ${RS.all?'checked':''}> 모든 코트·종목 보기</label>`:''}
+    ${body}</div>`;
+}
+
+/* ----- 버튼 ----- */
+async function roomClick(a,b){
+  const r=route(),me=r.startsWith('room-')?r.slice(5):null,room=me&&roomOf(me),cf=CFG();
+  const pickDiv=sid=>{const v=($('#'+sid)||{}).value||'';const U=upcoming(room,RS.all);return U.find(u=>`${u.court}|${u.app}|${u.div}`===v)||U[0]||null;};
+  switch(a){
+    case 'rmTab':RS.tab=b.dataset.k;render();return true;
+    case 'rmAll':RS.all=!RS.all;render();return true;
+    case 'rmUnlock':RS.unlocked=true;chime();try{speechSynthesis.speak(new SpeechSynthesisUtterance(' '));}catch(e){}render();return true;
+    case 'rmAck':{const m=msgs().find(x=>x.id===b.dataset.id);if(m)await DB.doc('roommsg/'+m.id).set({...m,st:'ack',ackAt:NOW()});return true;}
+    case 'rmAtt':{const u=pickDiv('rmDiv');if(!u)return true;const L=attList(u),k=b.dataset.n+'|'+(b.dataset.t||''),p=L.find(x=>x.name+'|'+x.team===k);if(!p)return true;
+      p.st=p.st===b.dataset.st?'':b.dataset.st;const id=attKey(u.court,u.app,u.div),doc={court:u.court,app:u.app,div:u.div,list:L,at:NOW(),room:me,roomName:room.name};
+      S.att={...(S.att||{}),[id]:doc};render();await DB.doc('att/'+id).set(doc);
+      clearTimeout(RS.fwdT[id]);RS.fwdT[id]=setTimeout(()=>toCourt(u.court,u.app,'att',id,{div:u.div,list:L,at:NOW(),room:room.name}),700);return true;}
+    case 'rmCall':{const u=pickDiv('rmDiv2');if(!u)return toast('부문을 골라 주세요'),true;const text=`${u.court}코트, ${spoken(u.div)} 선수는 ${room.name}로 와 주세요.`;
+      const id=await postMsg({dir:'up',room:me,roomName:room.name,kind:'call',text,court:u.court,app:u.app,div:u.div,st:'new'});
+      if(cf.roomAuto){await callOut({id,dir:'up',room:me,roomName:room.name,kind:'call',text,court:u.court,app:u.app,div:u.div,at:NOW()});toast('본부 모니터·음성으로 보냈습니다');}else toast('본부에 호출을 요청했습니다');return true;}
+    case 'rmWait':{const u=pickDiv('rmDiv2');if(!u)return toast('부문을 골라 주세요'),true;const why=($('#rmWaitTxt').value||'').trim(),text=`${u.court}코트 ${spoken(u.div)} 추가 대기 요청${why?' — '+why:''}`;
+      const id=await postMsg({dir:'up',room:me,roomName:room.name,kind:'wait',text,court:u.court,app:u.app,div:u.div,st:'new'});$('#rmWaitTxt').value='';
+      const ok=await toCourt(u.court,u.app,'note',id,{text:why?'추가 대기 요청 — '+why:'추가 대기 요청',div:u.div,room:room.name,at:NOW()});toast(ok?`본부와 ${u.court}코트 운영석에 알렸습니다`:'본부에 알렸습니다');return true;}
+    case 'rmMsg':case 'rmPh':{const text=a==='rmPh'?(cf.phRoom||PH_RM)[+b.dataset.i]:($('#rmMsg').value||'').trim();if(!text)return toast('보낼 말을 넣어 주세요'),true;
+      await postMsg({dir:'up',room:me,roomName:room.name,kind:'msg',text,st:'new'});if(a==='rmMsg')$('#rmMsg').value='';toast('본부에 보냈습니다');return true;}
+    case 'rmEmg':{const t=($('#rmEmgTxt').value||'').trim();await postMsg({dir:'up',room:me,roomName:room.name,kind:'emg',text:b.dataset.t+(t?' — '+t:''),st:'new'});$('#rmEmgTxt').value='';toast('🚨 본부에 긴급 알림을 보냈습니다');return true;}
+    case 'rmPhAdd':case 'hqPhAdd':{const key=a==='rmPhAdd'?'phRoom':'phHQ',inp=$(a==='rmPhAdd'?'#rmPhNew':'#hqPhNew'),t=(inp.value||'').trim();if(!t)return toast('저장할 말을 넣어 주세요'),true;
+      await saveCfg({[key]:[...(cf[key]||(key==='phRoom'?PH_RM:PH_HQ)),t].slice(0,20)});inp.value='';toast('자주 쓰는 말을 저장했습니다');return true;}
+    case 'rmPhDel':case 'hqPhDel':{const key=a==='rmPhDel'?'phRoom':'phHQ',L=[...(cf[key]||(key==='phRoom'?PH_RM:PH_HQ))];
+      if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='지울까요?';setTimeout(()=>{b.dataset.arm='';b.textContent='×';},3000);return true;}
+      L.splice(+b.dataset.i,1);await saveCfg({[key]:L});return true;}
+    case 'hqRmSend':case 'hqRmPh':{const text=a==='hqRmPh'?(cf.phHQ||PH_HQ)[+b.dataset.i]:($('#hqRmText').value||'').trim();if(!text)return toast('보낼 말을 넣어 주세요'),true;
+      const to=($('#hqRmTo')||{}).value||'all',R=to==='all'?rooms():[roomOf(to)].filter(Boolean);
+      for(const x of R)await postMsg({dir:'down',room:x.id,kind:'msg',text,st:'new'});if(a==='hqRmSend')$('#hqRmText').value='';toast(`${to==='all'?'모든 대기실':R[0].name}에 보냈습니다`);return true;}
+    case 'hqRmOut':{const m=msgs().find(x=>x.id===b.dataset.id);if(m)await callOut(m);return true;}
+    case 'hqRmAck':{const m=msgs().find(x=>x.id===b.dataset.id);if(m)await DB.doc('roommsg/'+m.id).set({...m,st:m.kind==='call'||m.kind==='wait'?'done':'ack',doneAt:NOW()});return true;}
+    case 'roomAuto':await saveCfg({roomAuto:!cf.roomAuto});return true;
+    case 'hqRmSave':{const R=rooms().map((x,i)=>({name:(($('#rmName_'+i)||{}).value||x.name).trim()||x.name,app:($('#rmApp_'+i)||{}).value??x.app,kw:(($('#rmKw_'+i)||{}).value??x.kw).trim()}));
+      const sv=[...(cf.rooms||[])];R.forEach((x,i)=>sv[i]=x);await saveCfg({rooms:sv});toast('대기실 설정을 저장했습니다');return true;}
+    case 'hqRmQR':{if(window.KSQR){const base=(window.KS_FIELD&&KS_FIELD.base)||location.href.split('#')[0];KSQR.open({title:'대기실 휴대폰',items:rooms().map(x=>({label:x.name,sub:'진행 요원 휴대폰으로 찍기',url:base+'#room-'+x.id}))});}return true;}
+    case 'hqVoiceTest':{const v=($('#hqVoice')||{}).value||'';if(v!==(cf.voiceName||''))await saveCfg({voiceName:v});sayTest('본부 모니터 목소리 시험입니다. B코트, 중등부 3학년 선수는 준비해 주세요.');return true;}
+  }
+  return false;
+}
+document.addEventListener('change',e=>{const el=e.target;if(!el||!el.id)return;
+  if(el.id==='hqRmN'){saveCfg({roomN:Number(el.value)||3});}
+  else if(el.id==='hqVoice'){saveCfg({voiceName:el.value||''});}
+  else if(el.id==='rmDiv'&&route().startsWith('room-'))render();});
+function sayTest(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';const v=koVoice();if(v)u.voice=v;u.rate=.95;speechSynthesis.speak(u);}catch(e){}}
+
 /* ---------- 시작 ---------- */
 (async function boot(){
   render();
@@ -584,6 +780,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   DB.doc('hqprint/log').onSnapshot(s=>{S.plog=s.exists?s.data():null;schedule();});
   DB.doc('hqbackup/main').onSnapshot(s=>{S.bk=s.exists?s.data():null;schedule();});
   DB.doc('hq/announce').onSnapshot(s=>{onAnnounce(s.exists?s.data():null);schedule();});
+  DB.collection('roommsg').onSnapshot(s=>{onRoomMsgs(s.docs.map(d=>d.data()).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,400));schedule();});
+  DB.collection('att').onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());S.att=m;schedule();});
   DB.collection('calllog').onSnapshot(s=>{S.log=s.docs.map(d=>d.data()).sort((a,b)=>b.at-a.at).slice(0,30);schedule();});
   if(window.KS_FIELD&&KS_FIELD.onStatus)KS_FIELD.onStatus(()=>schedule());
   const coll=async()=>{try{const r=await fetch('/api/hq/collected',{cache:'no-store'});if(r.ok){S.coll=await r.json();if(route()==='admin')schedule();}}catch(e){}};coll();setInterval(coll,5000);

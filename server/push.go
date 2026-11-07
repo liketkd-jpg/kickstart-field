@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"regexp"
 	"time"
 )
 
@@ -177,6 +178,75 @@ func handleInboxSim(w http.ResponseWriter, r *http.Request) {
 	for _, a := range apps {
 		if s := stores[a.Key]; s != nil {
 			s.setDoc("sim/main", map[string]any{"on": m.On, "speed": m.Speed, "at": m.At, "from": "본부"})
+		}
+	}
+	writeJSON(w, 200, map[string]any{"ok": true})
+}
+
+// ---------------- 대기실 연결: 출석·불참·추가 대기 → 코트 운영석 ----------------
+//   대기실 휴대폰(본부 화면) → 본부 /api/hq/tocourt {court, app, kind:"att"|"note", id, doc}
+//   → 코트 /api/inbox/room → 그 앱 저장소 hqatt/<id> · hqnote/<id> (app 이 비면 모든 앱)
+
+type roomFwd struct {
+	Court string         `json:"court"`
+	App   string         `json:"app"`
+	Kind  string         `json:"kind"`
+	ID    string         `json:"id"`
+	Doc   map[string]any `json:"doc"`
+}
+
+var roomIDRe = regexp.MustCompile(`^[A-Za-z0-9_-]{1,80}$`)
+
+func (m *roomFwd) ok() bool {
+	return (m.Kind == "att" || m.Kind == "note") && roomIDRe.MatchString(m.ID) && m.Doc != nil && (m.App == "" || validApp(m.App))
+}
+
+func handleHQToCourt(w http.ResponseWriter, r *http.Request) {
+	if getConfig().Role != "hq" {
+		writeJSON(w, 400, map[string]any{"error": "이 노트북이 「본부」가 아닙니다"})
+		return
+	}
+	var m roomFwd
+	if err := readBody(r, 1<<20, &m); err != nil || !validCourt(m.Court) || !m.ok() {
+		writeJSON(w, 400, map[string]any{"error": "invalid_argument"})
+		return
+	}
+	hqMu.Lock()
+	addr := ""
+	for a, c := range courts {
+		if c.court == m.Court && c.online {
+			addr = a
+			break
+		}
+	}
+	hqMu.Unlock()
+	if addr == "" {
+		writeJSON(w, 404, map[string]any{"error": m.Court + "코트 노트북과 연결되어 있지 않습니다"})
+		return
+	}
+	if _, err := postJSON(addr, "/api/inbox/room", m, 5*time.Second); err != nil {
+		writeJSON(w, 502, map[string]any{"error": m.Court + "코트 노트북에 보내지 못했습니다"})
+		return
+	}
+	writeJSON(w, 200, map[string]any{"ok": true})
+}
+
+func handleInboxRoom(w http.ResponseWriter, r *http.Request) {
+	var m roomFwd
+	if err := readBody(r, 1<<20, &m); err != nil || !m.ok() {
+		writeJSON(w, 400, map[string]any{"error": "invalid_argument"})
+		return
+	}
+	col := "hqatt/"
+	if m.Kind == "note" {
+		col = "hqnote/"
+	}
+	for _, a := range apps {
+		if m.App != "" && a.Key != m.App {
+			continue
+		}
+		if s := stores[a.Key]; s != nil {
+			s.setDoc(col+m.ID, m.Doc)
 		}
 	}
 	writeJSON(w, 200, map[string]any{"ok": true})
