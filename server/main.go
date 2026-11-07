@@ -19,6 +19,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.32" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.33" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -263,8 +264,19 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		u := fmt.Sprintf("http://127.0.0.1:%d/hq/#print", port)
+		// 실제 프린터가 기본이 아니면(PDF·OneNote·팩스) 「인쇄 창 없이」 모드로 열지 않습니다.
+		// 그 상태로 열면 상장마다 「다른 이름으로 저장」 창이 숨어서 떠 브라우저가 멈춘 것처럼 됩니다.
+		pn := defaultPrinter()
+		if runtime.GOOS == "windows" && !realPrinter(pn) {
+			writeJSON(w, 200, map[string]any{"ok": false, "how": "noprinter", "printer": pn})
+			return
+		}
 		how := openPrintWindow(u, filepath.Join(dataDir, "자동출력창"))
-		writeJSON(w, 200, map[string]any{"ok": true, "how": how, "url": u})
+		writeJSON(w, 200, map[string]any{"ok": true, "how": how, "url": u, "printer": pn})
+		return
+	case p == "/api/hq/printer":
+		pn := defaultPrinter()
+		writeJSON(w, 200, map[string]any{"printer": pn, "real": runtime.GOOS != "windows" || realPrinter(pn), "os": runtime.GOOS})
 		return
 	case p == "/api/hq/collected":
 		writeJSON(w, 200, map[string]any{"dir": filepath.Join(resultsDir, "본부수집"), "courts": hqCollectedList()})
@@ -823,4 +835,18 @@ func lanIPs() []string {
 		out = append(out, c.ip)
 	}
 	return out
+}
+
+// PDF·OneNote·팩스·XPS 같은 「가상 프린터」가 아니면 실제 프린터로 봅니다
+func realPrinter(name string) bool {
+	n := strings.ToLower(strings.TrimSpace(name))
+	if n == "" {
+		return false
+	}
+	for _, v := range []string{"pdf", "onenote", "fax", "팩스", "xps", "print to", "send to"} {
+		if strings.Contains(n, v) {
+			return false
+		}
+	}
+	return true
 }

@@ -36,3 +36,6 @@ func openPrintWindow(url, profile string) string {
 	openBrowser(url)
 	return "normal"
 }
+
+// 윈도우가 아니면 기본 프린터를 확인하지 않습니다
+func defaultPrinter() string { return "" }

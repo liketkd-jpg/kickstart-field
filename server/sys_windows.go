@@ -3,11 +3,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -71,4 +74,18 @@ func openPrintWindow(url, profile string) string {
 	}
 	openBrowser(url)
 	return "normal"
+}
+
+// 윈도우 기본 프린터 이름 (없으면 ""). 8초 안에 답이 없으면 포기합니다.
+func defaultPrinter() string {
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "powershell", "-NoProfile", "-NonInteractive", "-Command",
+		"[Console]::OutputEncoding=[Text.Encoding]::UTF8; (Get-CimInstance Win32_Printer -Filter 'Default=TRUE').Name")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }

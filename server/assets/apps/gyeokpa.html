@@ -6216,6 +6216,11 @@ window.KS_AUTOSAVE={tick,state:ST,capture,fname};
 if(window.KS_HQSEND)return;
 const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
 const FLD=()=>!!(window.KS_FIELD&&window.KS_FIELD.status);
+/* 본부와 연결된 코트 노트북에서만, 같은 종목 화면이 여러 개 열려 있어도 한 화면만 일합니다 */
+const COURT=()=>FLD()&&window.KS_FIELD.role==='court';
+const TAB='t'+Math.random().toString(36).slice(2,8);
+function leader(){const k='ks_hqsend_lead_'+APPK;try{const v=JSON.parse(localStorage.getItem(k)||'null');const now=Date.now();
+  if(!v||v.t<now-30000||v.id===TAB){localStorage.setItem(k,JSON.stringify({id:TAB,t:now}));return true;}return false;}catch(e){return true;}}
 const opRoute=()=>{const h=(location.hash||'').replace('#','');return h===''||/^admin/.test(h);};
 const APPK=typeof g('SHEETS')!=='undefined'?'poomsae':typeof g('KINDS')!=='undefined'?'kyorugi':'gyeokpa';
 const ST={bsig:'',bat:0,cat:0,cn:0,busy:false,err:''};
@@ -6228,8 +6233,9 @@ const safe=s=>String(s||'').replace(/[\\/:*?"<>|]/g,'_').replace(/\s+/g,' ').tri
 const base=()=>{try{return window.KS_AUTOSAVE.fname().replace(/_결과\(자동저장\)\.xlsx$/,'');}catch(e){return safe(comp()||APPK);}};
 async function post(name,blob){const r=await fetch(`/api/results/auto?name=${encodeURIComponent(name)}`,{method:'POST',body:blob});if(!r.ok)throw new Error('HTTP '+r.status);}
 async function backup(){
+  if(Date.now()-ST.bat<60000)return; /* 1분에 한 번까지 */
   const bd=g('backupData');if(typeof bd!=='function')return;const d=bd();
-  const sig=JSON.stringify({...d,savedAt:0});if(sig===ST.bsig)return;
+  const sig=JSON.stringify({...d,savedAt:0});if(sig===ST.bsig)return;if(sig.length>12e6){ST.bsig=sig;ST.bat=Date.now();return;}
   await post(`${base()}_백업(자동저장).json`,new Blob([JSON.stringify(d)],{type:'application/json'}));ST.bsig=sig;ST.bat=Date.now();
 }
 /* 부문이 끝났는지: 남은 경기가 없고, 마지막 단계(결선·결승)까지 끝남 */
@@ -6245,10 +6251,13 @@ function finished(d){
 let CV=null;
 async function certs(){
   const AW=window.AW;if(!AW||!AW.medalists||!AW.drawCert||!AW.medalCert)return;sentLoad();
+  const s0=(g('SET')||(()=>({})))()||{};if(!s0.comm&&!s0.certHQ)return; /* 생활체육 대회(또는 「상장 본부로 보내기」)일 때만 */
+  let made=0;
   let list=[];try{list=AW.medalists()||[];}catch(e){return;}
   const by=new Map();list.forEach(x=>{const id=x.div&&x.div.id;if(!id)return;if(!by.has(id))by.set(id,{d:x.div,rows:[]});by.get(id).rows.push(x);});
   for(const [id,v] of by){
     if(!v.rows.some(x=>x.rank===1)||!finished(v.d))continue;
+    if(made>=2)break; /* 한 번에 두 부문까지만 (화면이 버벅이지 않게) */
     v.rows.sort((a,b)=>a.rank-b.rank||String(a.name).localeCompare(String(b.name),'ko'));
     const sig=JSON.stringify(v.rows.map(x=>[x.rank,x.name,x.team]));if(SENT[id]===sig)continue;
     if(!CV){CV=document.createElement('canvas');CV.width=1240;CV.height=1754;}
@@ -6260,12 +6269,12 @@ async function certs(){
     const job={kind:'cert',v:1,app:APPK,comp:comp(),court:(window.KS_FIELD&&KS_FIELD.court)||'',div:v.d.name,sig,at:Date.now(),
       people:v.rows.map(x=>({rank:x.rank,name:x.name,team:x.team})),pages,again:!!SENT[id]};
     await post(`${base()}_상장_${safe(v.d.name)}.cert.json`,new Blob([JSON.stringify(job)],{type:'application/json'}));
-    SENT[id]=sig;sentSave();ST.cat=Date.now();
+    SENT[id]=sig;sentSave();ST.cat=Date.now();made++;
   }
 }
-async function tick(){if(!FLD()||ST.busy||!opRoute())return;const S=g('S');if(!S||!S.divs)return;ST.busy=true;
+async function tick(){if(!COURT()||ST.busy||!opRoute()||!leader())return;const S=g('S');if(!S||!S.divs)return;ST.busy=true;
   try{await backup();await certs();ST.err='';}catch(e){ST.err=String(e&&e.message||e);}finally{ST.busy=false;}}
-setInterval(tick,8000);setTimeout(tick,4000);
+setInterval(tick,10000);setTimeout(tick,8000);
 window.KS_HQSEND={tick,state:ST};
 })();
 </script><script>/*@@SETSHELL*//* ===================== 설정·백업 화면 정리 (카드 · 요약판 · 대회 전 확인) =====================
@@ -6276,7 +6285,7 @@ window.KS_HQSEND={tick,state:ST};
 const LSK='ks_ss_open';
 /* OPEN: 펼친 「더 보기」, SEL: 지금 열어 둔 카드 하나 (한 번에 하나만) */
 let OPEN;try{OPEN=new Set(JSON.parse(localStorage.getItem(LSK)||'[]'));}catch(e){OPEN=new Set();}
-let SEL=null;try{SEL=localStorage.getItem('ks_ss_sel')||null;}catch(e){}
+let SEL=null; /* 설정 화면은 늘 카드 목록부터 */
 const keep=()=>{try{localStorage.setItem(LSK,JSON.stringify([...OPEN]));localStorage.setItem('ks_ss_sel',SEL||'');}catch(e){}};
 const has=n=>{try{return typeof (0,eval)(n)!=='undefined';}catch(e){return false;}};
 const G=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};

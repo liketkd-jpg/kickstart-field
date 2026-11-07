@@ -407,7 +407,9 @@ function onAnnounce(a){S.announce=a;if(!a||!a.id)return;if(lastAnn===null){lastA
    · 상장 자동 출력: 「자동 출력 창」(인쇄 창 없이 기본 프린터로 바로 인쇄하는 엣지/크롬 창)이 새 상장을 차례로 인쇄합니다.
    · 자동 백업: 모인 백업 파일을 정해진 간격(기본 5분)마다 Supabase(접수 홈페이지 데이터베이스)에 올립니다. 관리자 계정 로그인이 한 번 필요합니다. */
 const SB_URL='https://nwdptjumclgzbwbsaoxr.supabase.co',SB_KEY='sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG',SB_LS='ks_hq_sb';
-const PR={done:{},req:{},busy:false,now:'',err:'',ready:false};
+const PR={done:{},req:{},busy:false,now:'',err:'',ready:false,pause:false,printer:null,real:null,next:0};
+/* 자동 출력 창: 기본 프린터가 실제 프린터인지 1분마다 확인 (PDF·OneNote면 인쇄하지 않음) */
+async function chkPrinter(){try{const r=await fetch('/api/hq/printer',{cache:'no-store'});const j=await r.json();PR.printer=j.printer||'';PR.real=!!j.real;}catch(e){PR.real=null;}schedule();}
 const BK={busy:false,err:'',sent:{}};try{BK.sent=JSON.parse(localStorage.getItem('ks_hq_bksent')||'{}')||{};}catch(e){}
 const certFiles=()=>{const out=[];Object.entries((S.coll&&S.coll.courts)||{}).forEach(([court,fs])=>fs.forEach(f=>{if(/\.cert\.json$/i.test(f.name))out.push({court,name:f.name,at:f.at,key:court+'|'+f.name});}));return out.sort((a,b)=>a.at-b.at);};
 const bkFiles=()=>{const out=[];Object.entries((S.coll&&S.coll.courts)||{}).forEach(([court,fs])=>fs.forEach(f=>{if(/백업\(자동저장\)\.json$/i.test(f.name))out.push({court,name:f.name,at:f.at,key:court+'|'+f.name});}));return out;};
@@ -442,7 +444,7 @@ setInterval(async()=>{const cf=CFG();if(!DB||!cf.backupAuto||BK.busy||route()===
   if(PR.station)return; /* 자동 출력 창은 인쇄만 */ backupNow(false);},20000);
 /* 자동 출력 창: 차례로 인쇄 */
 async function printLoop(){
-  if(route()!=='print'||PR.busy||!PR.ready)return;const f=certFiles().find(needPrint);if(!f)return;
+  if(route()!=='print'||PR.busy||!PR.ready||PR.pause||PR.real===false||Date.now()<PR.next)return;if(PR.real===null){chkPrinter();return;}const f=certFiles().find(needPrint);if(!f)return;
   PR.busy=true;PR.now=certLabel(f.name)+' · '+f.court;PR.err='';schedule();
   try{const r=await fetch(`/api/hq/cfile?court=${encodeURIComponent(f.court)}&name=${encodeURIComponent(f.name)}`,{cache:'no-store'});if(!r.ok)throw new Error('파일을 읽지 못했습니다');
     const job=await r.json(),box=document.getElementById('prt');box.innerHTML=(job.pages||[]).map(p=>`<img class="prtp" src="${p}" alt="">`).join('');
@@ -451,14 +453,15 @@ async function printLoop(){
     const done={...PR.done,[f.key]:Math.max(f.at,PR.req[f.key]||0)};PR.done=done;await DB.doc('hqprint/main').set({done,req:PR.req});
     await DB.doc('hqprint/log').set({list:[{at:NOW(),court:f.court,div:certLabel(f.name),n:(job.pages||[]).length,again:!!job.again},...((S.plog&&S.plog.list)||[])].slice(0,60)});
   }catch(e){PR.err=e.message||String(e);const done={...PR.done,[f.key]:Math.max(f.at,PR.req[f.key]||0)};PR.done=done;try{await DB.doc('hqprint/main').set({done,req:PR.req});}catch(x){}}
-  finally{PR.busy=false;PR.now='';schedule();}
+  finally{PR.busy=false;PR.now='';PR.next=Date.now()+4000;schedule();}
 }
-setInterval(printLoop,3000);
+setInterval(printLoop,3000);setInterval(()=>{if(route()==='print')chkPrinter();},60000);
 function vPrint(){
   PR.station=true;const cf=CFG(),q=certFiles().filter(needPrint),log=(S.plog&&S.plog.list)||[];
   return `<div class="panel"><div class="row between"><h2>🖨 상장 자동 출력 창</h2><span class="chip ${cf.certAuto?'ok':'warn'}">${cf.certAuto?'자동 출력 켜짐':'자동 출력 꺼짐'}</span></div>
     <span class="small muted">이 창은 켜 둔 채로 두세요. 코트에서 부문(조)이 끝나면 상장이 기본 프린터로 바로 인쇄됩니다. 인쇄 확인 창이 뜨면 이 창이 「인쇄 창 없이」 옵션으로 열리지 않은 것입니다. 본부 운영 화면의 「자동 출력 창 열기」로 다시 열어 주세요.</span>
-    <div class="row">${PR.now?`<span class="chip ok">인쇄 중 · ${esc(PR.now)}</span>`:`<span class="chip">대기 중</span>`}<span class="chip">남은 상장 묶음 ${q.length}개</span>${PR.err?`<span class="chip bad">${esc(PR.err)}</span>`:''}</div>
+    ${PR.real===false?`<div class="alert warn">🖨 기본 프린터가 「${esc(PR.printer||'없음')}」입니다. 실제 프린터를 연결하고 윈도우 설정에서 「기본값으로 설정」한 뒤 이 창을 다시 열어 주세요. 그 전에는 인쇄하지 않습니다.</div>`:''}
+    <div class="row"><button class="btn sm ${PR.pause?'primary':''}" data-a="prPause">${PR.pause?'▶ 다시 시작':'⏸ 잠시 멈춤'}</button>${PR.printer?`<span class="chip">프린터 · ${esc(PR.printer)}</span>`:''}${PR.now?`<span class="chip ok">인쇄 중 · ${esc(PR.now)}</span>`:`<span class="chip">${PR.pause?'멈춤':'대기 중'}</span>`}<span class="chip">남은 상장 묶음 ${q.length}개</span>${PR.err?`<span class="chip bad">${esc(PR.err)}</span>`:''}</div>
     ${log.length?`<div style="overflow-x:auto"><table><tr><th>시각</th><th>코트</th><th>부문</th><th>장수</th></tr>${log.slice(0,15).map(l=>`<tr><td>${new Date(l.at).toTimeString().slice(0,5)}</td><td>${esc(l.court)}</td><td>${esc(l.div)}${l.again?' <span class="chip warn">고친 상장</span>':''}</td><td>${l.n}</td></tr>`).join('')}</table></div>`:''}</div>`;
 }
 function hqAutoPanels(){
@@ -477,7 +480,8 @@ function hqAutoPanels(){
 document.addEventListener('change',e=>{const s=e.target.closest&&e.target.closest('[data-hqbk]');if(s)saveCfg({backupMin:Number(s.value)||5});});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
   if(a==='certAuto')saveCfg(cf.certAuto?{certAuto:false}:{certAuto:true,certSince:NOW()});
-  else if(a==='printWin'){try{const r=await fetch('/api/hq/printwin',{method:'POST'});const j=await r.json();toast(j.how==='kiosk'?'자동 출력 창을 열었습니다 (인쇄 창 없이 바로 인쇄)':'자동 출력 창을 열었습니다. 엣지·크롬을 찾지 못해 인쇄할 때 확인 창이 뜹니다');}catch(x){window.open('#print','_blank');}}
+  else if(a==='printWin'){try{const r=await fetch('/api/hq/printwin',{method:'POST'});const j=await r.json();toast(j.how==='noprinter'?`실제 프린터가 기본으로 정해져 있지 않습니다 (지금: ${j.printer||'없음'}). 프린터를 연결하고 기본값으로 설정한 뒤 다시 눌러 주세요`:j.how==='kiosk'?'자동 출력 창을 열었습니다 (인쇄 창 없이 바로 인쇄)':'자동 출력 창을 열었습니다. 엣지·크롬을 찾지 못해 인쇄할 때 확인 창이 뜹니다');}catch(x){toast('자동 출력 창을 열지 못했습니다');}}
+  else if(a==='prPause'){PR.pause=!PR.pause;schedule();}
   else if(a==='reprint'){const req={...PR.req,[b.dataset.k]:Number(b.dataset.at)+1};PR.req=req;const done={...PR.done};delete done[b.dataset.k];PR.done=done;await DB.doc('hqprint/main').set({done,req});toast('자동 출력 창에서 다시 인쇄합니다');}
   else if(a==='backupAuto')saveCfg({backupAuto:!cf.backupAuto});
   else if(a==='backupNow')backupNow(true);
@@ -487,7 +491,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
 
 /* ---------- 본부 운영 화면을 앱처럼: 기능을 타일로 한 화면에 모으고, 누르면 그 기능만 화면 전체로 ---------- */
 setInterval(()=>{try{const n=document.getElementById('hqtabs');if(n)document.documentElement.style.setProperty('--hq-navh',(n.getBoundingClientRect().height+4)+'px');}catch(e){}},1000);
-let HSEL=null,HLISTY=0;try{HSEL=localStorage.getItem('ks_hq_sel')||null;}catch(e){}
+let HSEL=null,HLISTY=0; /* 다시 열면 늘 타일 목록부터 (열려 있던 화면을 기억하지 않음) */
 const HQ_T=[[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
   [/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터']];
 function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
