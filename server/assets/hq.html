@@ -234,7 +234,7 @@ function judgeChips(b,live){
     return `<span class="jch ${c}" title="${j.n}${J.label} · ${l}${j.q?' · 보관 '+j.q+'건':''}"><i></i>${j.n}${J.label}${live&&j.st==='off'?' 끊김':live&&j.st==='wait'?' 대기 '+j.q:live&&j.st==='none'?' 미접속':''}${live&&J.open&&j.sent?' ✓':''}</span>`;}).join('')}</div>`;
 }
 function judgeAlerts(court,b){
-  const out=[],J=b&&b.judges;if(!J||!J.list)return out;const L=J.label;
+  const out=[],J=b&&b.judges;if(!J||!J.list)return out;if(window.KSPLAN&&KSPLAN.simOn)return out;/* 가상 경기 중에는 심판 휴대폰 알림을 띄우지 않음 */const L=J.label;
   const wifi=FIELD_MODE?'휴대폰 와이파이가 대회 공유기에 연결돼 있는지':'휴대폰 인터넷(와이파이·데이터)이 켜져 있는지';
   J.list.forEach(j=>{
     if(j.st==='off'&&j.sec>=10)out.push([J.open?'bad':'warn',`${court}코트 ${j.n}${L} 휴대폰 연결 끊김 (${fmtSec(j.sec)}째) → ${wifi}, 화면이 꺼지지 않았는지 확인하세요. 다시 연결되면 보관된 점수는 자동으로 들어갑니다.`]);
@@ -637,6 +637,12 @@ html.pl-lock,html.pl-lock body{overflow:hidden}
 .pl-leg{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--muted)}
 .pl-leg i{width:11px;height:11px;border-radius:3px;background:var(--c)}
 .pl-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0B0D12;color:#F4EFE4;border:1px solid rgba(214,182,124,.45);padding:11px 18px;border-radius:999px;font-weight:700;z-index:90;max-width:92vw;text-align:center}
+.pl-mask{position:fixed;inset:0;z-index:75;background:rgba(5,6,8,.55);display:grid;place-items:center;padding:16px}
+.pl-modal{width:min(820px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:12px}
+.pl-modal h3{margin:0;font-size:19px}.pl-modal table{font-size:14px}.pl-modal td{vertical-align:middle}
+.pl-modal .opt{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-weight:700;font-size:14px}
+.pl-modal select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 6px;font-weight:700;color:var(--ink)}
+.pl-simbox{border:2px dashed #7A3FC8;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:color-mix(in srgb,#7A3FC8 6%,var(--surface))}
 @media (max-width:760px){.pl-board{grid-auto-flow:column;grid-template-columns:none!important;grid-auto-columns:minmax(160px,1fr);overflow-x:auto}.pl-set .grp{border-right:0;padding-right:0}}
 </style>
 <script>
@@ -666,6 +672,11 @@ const normEv=v=>{v=String(v||'').trim();if(/품새/.test(v))return '품새';if(/
 
 const DEF={courts:5,start:'09:30',lunchOn:true,lunchS:'12:00',lunchE:'13:00',target:'15:00',gap:1,per:{},courtEv:[],lanes:[],roster:[],src:''};
 let P=clone(DEF),G={},UNDO=[],REDO=[],DB=null,DL=null,saveT=null,myRev='',OPEN=false,D=null;
+const SEND={open:false,sim:true,gev:'comp',speed:30,res:{},busy:false,simOn:null};let COURTS={};
+const L8='ABCDEFGH';
+const GEV=[['air','체공 도약 격파'],['vert','수직축 회전 격파'],['horz','수평축 회전 격파'],['comp','종합 격파'],['hjump','높이 뛰어차기'],['cbk','제자리 연속 뒤 후려차기'],['fist','주먹 격파'],['foot','발 격파']];
+const appOf=e=>/격파/.test(e)?'gyeokpa':/겨루기/.test(e)?'kyorugi':'poomsae';
+const APPN={poomsae:'품새',gyeokpa:'격파',kyorugi:'겨루기'};
 
 /* ---------- 명단 → 경기 카드 ---------- */
 function rebuild(){
@@ -781,7 +792,7 @@ function draw(){
   const evCount=e=>{const gs=gamesOf(e);return isTeam(e)?`${gs.reduce((a,g)=>a+g.units,0)}팀`:`${gs.reduce((a,g)=>a+g.people,0)}명`;};
   r.innerHTML=`<div class="pl-head"><button class="btn" data-p="close">← 본부 메뉴</button><span style="font-size:22px">📋</span><h2>대회 운영표</h2>
       <button class="btn" data-p="undo" ${UNDO.length?'':'disabled'} title="되돌리기 (Ctrl+Z)">↶ 되돌리기</button><button class="btn" data-p="redo" ${REDO.length?'':'disabled'} title="다시 실행 (Ctrl+Y)">↷ 다시 실행</button>
-      <span class="sp"></span><button class="btn primary" data-p="xlsx" ${has?'':'disabled'}>📊 엑셀로 내보내기</button><button class="btn primary" data-p="close">닫기 ✕</button></div>
+      <span class="sp"></span><button class="btn" data-p="send" ${has?'':'disabled'}>📡 코트로 보내기 · 🧪 가상 경기</button><button class="btn primary" data-p="xlsx" ${has?'':'disabled'}>📊 엑셀로 내보내기</button><button class="btn primary" data-p="close">닫기 ✕</button></div>
     <div class="pl-set">
       <span class="grp"><label>코트 수 <select data-f="courts">${Array.from({length:10},(_,i)=>`<option ${P.courts===i+1?'selected':''}>${i+1}</option>`).join('')}</select></label>
         <label>시작 <input type="time" data-f="start" value="${esc(P.start)}"></label>
@@ -803,6 +814,7 @@ function draw(){
           <div class="pl-list">${x.items.map((it,k)=>`${k===x.lunch?`<div class="pl-lunch">🍱 점심 ${esc(P.lunchS)}~${esc(P.lunchE)}</div>`:''}<div class="pl-card" data-id="${esc(it.g.id)}" style="--c:${evColor(it.g.ev)}" title="${esc(it.g.ev)} ${esc(it.g.div)} ${esc(it.g.grp)} ${esc(it.g.sex)} · ${Math.round(dur(it.g))}분">
             <div><span class="t">${hm(it.s)}~${hm(it.e)}</span></div><div class="n">${esc(it.g.div)} ${esc(it.g.grp)}${it.g.sex?' '+esc(it.g.sex):''}</div>
             <div class="m">${esc(it.g.ev)} · ${isTeam(it.g.ev)?it.g.units+'팀':it.g.people+'명'} · ${Math.round(dur(it.g))}분</div></div>`).join('')}</div></div>`;}).join('')}</div>`;
+  if(SEND.open&&has)r.insertAdjacentHTML('beforeend',sendHtml(TL));
   r.querySelectorAll('.pl-list').forEach((l,i)=>{if(keep[i])l.scrollTop=keep[i];});
   if(fe){const el=r.querySelector(`[data-f="${fe}"]`);if(el)el.focus();}
 }
@@ -816,6 +828,12 @@ function bind(r){
     else if(a==='auto'){commit(()=>plan(recommendEv()));toast('종목별 코트 수와 순서를 새로 추천했습니다');}
     else if(a==='virt'){if(P.roster.length&&!confirmTwice(b))return;commit(()=>{P.roster=virtualRoster();P.src='가상 명단 800명';rebuild();plan(recommendEv());});toast('가상 명단 800명을 넣고 자동으로 배정했습니다');}
     else if(a==='imp')r.querySelector('[data-p="file"]').click();
+    else if(a==='send'){SEND.open=true;SEND.res={};draw();}
+    else if(a==='sendX'){SEND.open=false;draw();}
+    else if(a==='sendGo')sendAll();
+    else if(a==='simSp'){SEND.speed=Number(b.dataset.v)||30;draw();if(SEND.simOn)simCtl(true);}
+    else if(a==='simGo')simCtl(true);
+    else if(a==='simStop')simCtl(false);
   });
   r.addEventListener('change',async e=>{const el=e.target;
     if(el.dataset.p==='file'){const f=el.files&&el.files[0];el.value='';if(!f)return;
@@ -824,6 +842,8 @@ function bind(r){
         const ro=rowsFromSheet(rows);if(!ro.length)throw new Error('「종목」 칸이 있는 줄을 찾지 못했습니다 (종목·부별·조·성별·이름·도장 칸이 필요합니다)');
         commit(()=>{P.roster=ro;P.src=f.name.replace(/\.\w+$/,'')+` (${ro.length}줄)`;rebuild();plan(recommendEv());});toast(`명단 ${ro.length}줄을 불러와 자동으로 배정했습니다`);}
       catch(x){toast(x.message||'명단을 읽지 못했습니다');}return;}
+    if(el.dataset.p==='gev'){SEND.gev=el.value;return;}
+    if(el.dataset.p==='simChk'){SEND.sim=el.checked;draw();return;}
     const f=el.dataset.f;if(!f)return;
     if(f==='courts'){const n=Number(el.value)||5;commit(()=>{P.courts=n;if(P.roster.length)plan(recommendEv());});if(P.roster.length)toast(`${n}코트로 다시 추천했습니다 (↶ 되돌리기 가능)`);}
     else if(f==='cev'){const i=Number(el.dataset.i);const w=commit(()=>{const ce=P.courtEv.slice();ce[i]=el.value;return plan(ce);});toast(w||`${i+1}코트를 「${el.value||'자동'}」(으)로 정하고 다시 짰습니다`);}
@@ -855,11 +875,63 @@ function bind(r){
     const g=G[d.id];toast(`${g.div} ${g.grp} ${g.sex} (${g.ev}) → ${d.to.lane+1}코트 ${d.to.idx+1}번째`);};
   addEventListener('pointerup',end);addEventListener('pointercancel',()=>{if(D&&D.on){D.to=null;}end();});
   addEventListener('keydown',e=>{if(!OPEN)return;const typing=/^(INPUT|SELECT|TEXTAREA)$/.test((e.target||{}).tagName||'');
-    if(e.key==='Escape'&&!typing){e.stopImmediatePropagation();close();}
+    if(e.key==='Escape'&&!typing){e.stopImmediatePropagation();if(SEND.open){SEND.open=false;draw();}else close();}
     else if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();}
     else if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='y'){e.preventDefault();redo();}},true);
 }
 function confirmTwice(b){if(b.dataset.arm)return true;b.dataset.arm='1';const t=b.textContent;b.textContent='한 번 더 누르면 지금 명단을 바꿉니다';setTimeout(()=>{delete b.dataset.arm;b.textContent=t;},4000);return false;}
+
+/* ---------- 코트로 보내기 · 가상 경기 ----------
+   운영표 1코트 → A코트, 2코트 → B코트 … (현장 프로그램 코트는 A~H 8개까지)
+   품새·팀 태권체조·종합시범 → 품새 앱, 개인 격파 → 격파 앱. 부문 이름 앞 번호가 운영표 순서입니다. */
+function laneApps(x){const m={};x.items.forEach((it,k)=>{const a=appOf(it.g.ev);(m[a]=m[a]||[]).push({it,k});});return m;}
+function divName(it,k){const g=it.g;return `${String(k+1).padStart(2,'0')} ${g.ev} ${g.div} ${g.grp}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();}
+function rowsFor(app,list){
+  if(app==='gyeokpa'){const ev=(GEV.find(x=>x[0]===SEND.gev)||GEV[3])[1];const R=[['이름','종목','성별','부별','소속','체중(kg)','신장(cm)','팀원','부문']];
+    list.forEach(({it,k})=>{const dn=divName(it,k);it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',ev,r.sex||'남',r.div||it.g.div,r.dojang||'','','','',dn]);});});return R;}
+  const R=[['이름','성별','나이','소속','부별','공인/자유','종목','팀원','부문']];
+  list.forEach(({it,k})=>{const dn=divName(it,k),ev=it.g.ev,team=isTeam(ev),t=/시범|종합/.test(ev)?'팀대항 종합경연':/체조/.test(ev)?'태권체조':/자유/.test(ev)?'자유':'공인';
+    it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',team?'혼성':(r.sex||'남'),'',r.dojang||'',r.div||it.g.div,t,team?'단체':'개인','',dn]);});});
+  return R;}
+function sendHtml(TL){
+  const lanes=TL.map((x,i)=>({x,i,L:L8[i]||'',apps:laneApps(x)}));
+  const st=L=>{const c=Object.values(COURTS).find(c=>c.court===L);return c?(c.online?'<span class="chip ok"><i class="dot"></i>연결됨</span>':'<span class="chip bad"><i class="dot"></i>끊김</span>'):'<span class="chip">못 찾음</span>';};
+  return `<div class="pl-mask"><div class="pl-modal">
+    <div class="row between"><h3>📡 코트로 보내기 · 🧪 가상 경기</h3><button class="btn" data-p="sendX">닫기 ✕</button></div>
+    <span class="small muted">운영표의 1코트 → <b>A코트</b>, 2코트 → <b>B코트</b> … 순서로 각 코트 노트북의 경기 앱에 명단을 보냅니다. 부문 이름 앞 번호(01, 02 …)가 운영표 순서입니다.</span>
+    <div style="overflow-x:auto"><table><tr><th>운영표</th><th>코트 노트북</th><th>보낼 명단</th><th>상태</th><th>결과</th></tr>
+      ${lanes.map(({x,i,L,apps})=>`<tr><td><b>${i+1}코트</b></td><td>${L?`<b>${L}코트</b>`:'—'}</td>
+        <td>${x.items.length?Object.entries(apps).map(([a,l])=>`<span class="chip">${APPN[a]} ${l.length}부문 · ${l.reduce((s,y)=>s+y.it.g.units,0)}${l.some(y=>isTeam(y.it.g.ev))?'팀·명':'명'}</span>`).join(' '):'<span class="small muted">비어 있음</span>'}</td>
+        <td>${L?st(L):'<span class="chip warn">A~H 8코트까지만</span>'}</td><td class="small">${esc(SEND.res[L]||'')}</td></tr>`).join('')}</table></div>
+    <div class="opt"><label>격파 세부 종목 <select data-p="gev">${GEV.map(([k,l])=>`<option value="${k}" ${SEND.gev===k?'selected':''}>${l}</option>`).join('')}</select></label>
+      <label><input type="checkbox" data-p="simChk" ${SEND.sim?'checked':''}> 🧪 가상 경기용 (코트 노트북이 묻지 않고 명단을 바꾸고 점수·결과를 지움)</label></div>
+    ${SEND.sim?'<div class="alert warn" style="font-size:13.5px">가상 경기용으로 보내면 받는 코트 노트북의 지금 명단·점수가 바로 지워집니다. 실제 대회 중인 노트북에는 보내지 마세요.</div>':'<span class="small muted">일반으로 보내면 코트 노트북 운영석에 「본부에서 명단이 왔습니다」가 뜨고, 그 노트북에서 「명단 가져오기」를 눌러야 들어갑니다.</span>'}
+    <div class="row"><button class="btn primary" data-p="sendGo" ${SEND.busy?'disabled':''}>${SEND.busy?'보내는 중…':`📡 ${SEND.sim?'가상 경기용으로 ':''}모든 코트로 보내기`}</button></div>
+    <div class="pl-simbox"><b>🧪 가상 경기 (가상 심판이 점수를 넣고 끝까지 자동 진행)</b>
+      <span class="small muted">각 코트 노트북의 품새·격파 <b>운영석 화면</b>이 열려 있어야 진행됩니다. 호출 → 심판 점수 → 점수 공개 → 다음 경기 → 다음 부문(결선 순서 추첨 포함)까지 자동으로 넘어갑니다. 진행 상황은 본부 메뉴 「코트 진행·옮기기」와 본부 모니터에서 볼 수 있습니다.</span>
+      <div class="row"><span class="small"><b>속도</b></span>${[1,10,30,100].map(v=>`<button class="btn sm ${SEND.speed===v?'primary':''}" data-p="simSp" data-v="${v}">×${v}${v===1?' 실제':''}</button>`).join('')}
+        <span style="flex:1"></span><button class="btn primary" data-p="simGo">▶ 모든 코트 가상 경기 시작</button><button class="btn" data-p="simStop">⏸ 멈춤</button></div>
+      ${SEND.simOn!=null?`<span class="small"><b>${SEND.simOn?'▶ 진행 중':'⏸ 멈춤'}</b> · ${esc(SEND.simMsg||'')}</span>`:''}</div>
+  </div></div>`;}
+async function postJ(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j;}
+async function sendAll(){
+  if(!(window.KS_FIELD&&KS_FIELD.status))return toast('코트로 보내기는 현장 모드(본부 노트북 프로그램)에서만 됩니다');
+  SEND.busy=true;SEND.res={};draw();const TL=timeline();let ok=0,bad=0;
+  for(let i=0;i<TL.length&&i<8;i++){const L=L8[i],apps=laneApps(TL[i]);const out=[];
+    for(const [app,list] of Object.entries(apps)){
+      if(app==='kyorugi'){out.push('겨루기 ✕ (아직 지원 안 함)');bad++;continue;}
+      try{const rows=rowsFor(app,list);await postJ('/api/hq/push',{court:L,app,name:'대회 운영표',divs:list.length,rows,from:'본부 운영표',sim:SEND.sim});out.push(`${APPN[app]} ${rows.length-1}건 ✓`);ok++;}
+      catch(e){out.push(`${APPN[app]} ✕ ${e.message}`);bad++;}}
+    SEND.res[L]=out.join(' · ');draw();}
+  SEND.busy=false;draw();toast(bad?`보냄 ${ok}건 · 실패 ${bad}건 (표에서 확인)`:`모든 코트로 보냈습니다${SEND.sim?' · 코트 노트북 운영석에서 명단이 바로 바뀝니다':''}`);
+}
+async function simCtl(on){
+  if(!(window.KS_FIELD&&KS_FIELD.status))return toast('가상 경기는 현장 모드(본부 노트북 프로그램)에서만 됩니다');
+  try{const j=await postJ('/api/hq/sim',{on,speed:SEND.speed});const c=Object.entries(j.courts||{});
+    SEND.simOn=on;SEND.simMsg=c.length?c.map(([k,v])=>`${k}코트 ${v==='ok'?'✓':'✕'}`).join(' · ')+` · 속도 ×${SEND.speed}`:'연결된 코트 노트북이 없습니다';
+    toast(c.length?(on?`가상 경기를 시작했습니다 (×${SEND.speed})`:'가상 경기를 멈췄습니다'):'연결된 코트 노트북이 없습니다');}
+  catch(e){toast('보내지 못했습니다: '+e.message);}draw();
+}
 
 /* ---------- 엑셀 ---------- */
 function exportX(){
@@ -902,12 +974,13 @@ function close(){OPEN=false;root().hidden=true;document.documentElement.classLis
 function tileState(){if(!P.roster.length)return ['명단 없음 · 열어서 짜기',''];const TL=timeline().filter(x=>x.items.length);if(!TL.length)return [`${P.courts}코트`,''];
   const late=Math.max(...TL.map(x=>x.end));return [`${P.courts}코트 · 예상 종료 ${hm(late)}`,late>toMin(P.target)?'warn':'ok'];}
 function refreshTile(){const t=document.querySelector('.hqs-tile[data-k="plan"] .hqs-st');if(t){const [s]=tileState();t.textContent=s;}}
-window.KSPLAN={open,close,tileState,get state(){return clone(P);}};
+window.KSPLAN={open,close,tileState,get state(){return clone(P);},get simOn(){return !!SEND.simOn;}};
 
 (async function(){
   try{const d=JSON.parse(localStorage.getItem('ks_hqplan')||'null');if(d){P={...clone(DEF),...d};rebuild();}}catch(e){}
   try{if(window.claude&&window.claude.use){DB=await window.claude.use('db');DL=await window.claude.use('downloads');
-    DB.doc('hqplan/main').onSnapshot(s=>{if(s&&s.exists)adopt(s.data());});}}catch(e){}
+    DB.doc('hqplan/main').onSnapshot(s=>{if(s&&s.exists)adopt(s.data());});
+    DB.collection('courts').onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());COURTS=m;if(OPEN&&SEND.open&&!(D&&D.on))draw();});}}catch(e){}
 })();
 })();
 </script><!--@@END-PLAN-->

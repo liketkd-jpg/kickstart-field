@@ -23,6 +23,7 @@ type pushMsg struct {
 	Rows  json.RawMessage `json:"rows"`
 	At    int64           `json:"at"`
 	Move  *moveInfo       `json:"move,omitempty"`
+	Sim   bool            `json:"sim,omitempty"` // 운영표 「가상 경기」: 코트 앱이 묻지 않고 명단을 바꾸고 가상 심판으로 진행
 }
 
 // 부문 옮기기로 온 명단 (받는 코트가 「추가」로 넣음)
@@ -119,6 +120,64 @@ func handleInbox(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, map[string]any{"ok": true})
 		return
 	}
-	s.setDoc("inbox/roster", map[string]any{"court": m.Court, "app": m.App, "name": m.Name, "from": m.From, "divs": m.Divs, "rows": m.Rows, "at": m.At, "done": false})
+	s.setDoc("inbox/roster", map[string]any{"court": m.Court, "app": m.App, "name": m.Name, "from": m.From, "divs": m.Divs, "rows": m.Rows, "at": m.At, "done": false, "sim": m.Sim})
+	writeJSON(w, 200, map[string]any{"ok": true})
+}
+
+// ---------------- 가상 경기 (운영표 시험 운영) ----------------
+//   본부: /api/hq/sim {on,speed} → 연결된 모든 코트 노트북의 /api/inbox/sim 으로 넘김
+//   코트: 품새·격파·겨루기 앱 저장소에 sim/main 문서를 씀 → 운영석 화면의 가상 심판이 켜지고 꺼짐
+
+type simMsg struct {
+	On    bool    `json:"on"`
+	Speed float64 `json:"speed"`
+	At    int64   `json:"at"`
+}
+
+func handleHQSim(w http.ResponseWriter, r *http.Request) {
+	if getConfig().Role != "hq" {
+		writeJSON(w, 400, map[string]any{"error": "이 노트북이 「본부」가 아닙니다"})
+		return
+	}
+	var m simMsg
+	if err := readBody(r, 4096, &m); err != nil {
+		writeJSON(w, 400, map[string]any{"error": "invalid_argument"})
+		return
+	}
+	m.At = time.Now().UnixMilli()
+	type tgt struct{ addr, court string }
+	var list []tgt
+	hqMu.Lock()
+	for a, c := range courts {
+		if c.online {
+			list = append(list, tgt{a, c.court})
+		}
+	}
+	hqMu.Unlock()
+	res := map[string]string{}
+	for _, t := range list {
+		if _, err := postJSON(t.addr, "/api/inbox/sim", m, 5*time.Second); err != nil {
+			res[t.court] = err.Error()
+		} else {
+			res[t.court] = "ok"
+		}
+	}
+	writeJSON(w, 200, map[string]any{"ok": true, "courts": res})
+}
+
+func handleInboxSim(w http.ResponseWriter, r *http.Request) {
+	var m simMsg
+	if err := readBody(r, 4096, &m); err != nil {
+		writeJSON(w, 400, map[string]any{"error": "invalid_argument"})
+		return
+	}
+	if m.At == 0 {
+		m.At = time.Now().UnixMilli()
+	}
+	for _, a := range apps {
+		if s := stores[a.Key]; s != nil {
+			s.setDoc("sim/main", map[string]any{"on": m.On, "speed": m.Speed, "at": m.At, "from": "본부"})
+		}
+	}
 	writeJSON(w, 200, map[string]any{"ok": true})
 }
