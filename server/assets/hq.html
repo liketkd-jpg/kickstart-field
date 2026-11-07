@@ -296,6 +296,7 @@ function vAdmin(){
     :`<tr><td colspan="4"><div class="empty">아직 찾은 코트가 없습니다. 코트 노트북에서 현장 모드를 켜고 역할을 「코트」로 고르면 자동으로 나타납니다.<br>같은 공유기 와이파이에 연결되어 있는지 확인해 주세요.</div></td></tr>`;
   const presets=['점심시간입니다. 13시에 경기가 다시 시작됩니다.','시상식을 시작합니다. 입상 선수는 시상대 앞으로 모여 주세요.','잠시 후 오후 경기가 시작됩니다. 선수들은 준비해 주세요.','대회장 안에서는 음식물 섭취를 삼가 주세요.'];
   return `${[...al].sort((x,y)=>(x[0]==='bad'?0:1)-(y[0]==='bad'?0:1)).map(a=>`<div class="alert ${a[0]}">${esc(a[1])}</div>`).join('')}
+  <div class="panel"><div class="row between"><h2>📋 대회 운영표</h2><button class="btn primary" data-a="hqOpen" data-k="plan">운영표 열기</button></div><span class="small muted">코트 수·종목별 경기 시간으로 코트 배정과 예상 시각을 짜고 엑셀로 내보냅니다</span></div>
   <div class="panel"><div class="row between"><h2>코트 연결 ${checkSummary(list,al)}</h2><span class="row"><span class="small muted">같은 와이파이의 코트 노트북을 자동으로 찾습니다</span><button class="btn sm" data-a="scan">🔎 지금 다시 찾기</button></span></div>
     <div style="overflow-x:auto"><table><tr><th>코트</th><th>상태</th><th>지금 진행 · 심판 연결</th><th></th></tr>${rows}</table></div>${JLEGEND}
     <div class="row"><span class="small muted">자동으로 안 보이면 코트 노트북 검은 창의 주소를 넣으세요</span><input type="text" id="manAddr" placeholder="예: 192.168.0.12:8080" style="width:220px"><button class="btn sm" data-a="addMan">주소로 추가</button></div></div>
@@ -492,7 +493,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
 /* ---------- 본부 운영 화면을 앱처럼: 기능을 타일로 한 화면에 모으고, 누르면 그 기능만 화면 전체로 ---------- */
 setInterval(()=>{try{const n=document.getElementById('hqtabs');if(n)document.documentElement.style.setProperty('--hq-navh',(n.getBoundingClientRect().height+4)+'px');}catch(e){}},1000);
 let HSEL=null,HLISTY=0; /* 다시 열면 늘 타일 목록부터 (열려 있던 화면을 기억하지 않음) */
-const HQ_T=[[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
+const HQ_T=[[/대회 운영표/,'plan','📋','대회 운영표'],[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
   [/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터']];
 function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
   switch(k){
@@ -503,6 +504,7 @@ function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
     case 'cert':{const q=certFiles().filter(needPrint).length;return [`${cf.certAuto?'켜짐':'꺼짐'}${q?` · 대기 ${q}`:''}`,cf.certAuto?(q?'warn':'ok'):''];}
     case 'backup':{const b=S.bk||{};return [`${cf.backupAuto?'켜짐':'꺼짐'}${b.at?' · '+ago(b.at):''}${BK.err?' · 오류':''}`,BK.err?'warn':cf.backupAuto&&b.at?'ok':''];}
     case 'mon':return ['대기실 TV·태블릿',''];
+    case 'plan':return window.KSPLAN?KSPLAN.tileState():['열어서 짜기',''];
     default:return ['',''];
   }
 }
@@ -525,6 +527,7 @@ function hqShell(html){
   return out.outerHTML;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+  if(a==='hqOpen'&&b.dataset.k==='plan'){if(window.KSPLAN)KSPLAN.open();return;}
   if(a==='hqOpen'){if(!HSEL)HLISTY=scrollY;HSEL=b.dataset.k;try{localStorage.setItem('ks_hq_sel',HSEL);}catch(x){}render();scrollTo({top:0});}
   else if(a==='hqClose'){HSEL=null;try{localStorage.setItem('ks_hq_sel','');}catch(x){}render();scrollTo({top:HLISTY});}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&HSEL&&route()==='admin'&&!/^(INPUT|TEXTAREA)$/.test((e.target||{}).tagName||'')){HSEL=null;try{localStorage.setItem('ks_hq_sel','');}catch(x){}render();}});
@@ -587,6 +590,327 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
 })();
 })();
 </script>
+<!--@@PLAN--><style>
+/* ===== 대회 운영표 (코트 배정 · 예상 시각 · 엑셀) ===== */
+#ksplan{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;color:var(--ink)}
+#ksplan[hidden]{display:none}
+html.pl-lock,html.pl-lock body{overflow:hidden}
+.pl-head{display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(180deg,#14171D,#0B0D12);color:#F4EFE4;border-bottom:1px solid rgba(214,182,124,.35);flex-wrap:wrap}
+.pl-head h2{color:#F4EFE4;font-size:19px;margin:0 4px}
+.pl-head .sp{flex:1}
+.pl-head .btn{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);color:#F4EFE4}
+.pl-head .btn:hover{background:rgba(255,255,255,.12)}
+.pl-head .btn.primary{background:linear-gradient(180deg,var(--brass-1),var(--brass-2));border-color:#A07E43;color:var(--brass-ink)}
+.pl-head .btn:disabled{opacity:.35;cursor:default}
+.pl-set{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:9px 14px;background:var(--surface);border-bottom:1px solid var(--line);font-size:13.5px}
+.pl-set .grp{display:inline-flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding-right:14px;border-right:1px solid var(--line)}
+.pl-set .grp:last-child{border-right:0}
+.pl-set label{display:inline-flex;align-items:center;gap:5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.pl-set input,.pl-set select,.pl-lh select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 6px;font-weight:700;color:var(--ink)}
+.pl-set input[type=number]{width:60px}
+.pl-set .btn{padding:6px 11px;font-size:13.5px}
+.pl-sum{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:8px 14px}
+.pl-sum .chip{font-size:13px}
+.pl-board{flex:1;min-height:0;display:grid;gap:8px;padding:0 14px 14px}
+.pl-lane{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.pl-lane.late{border-color:var(--red);box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 28%,transparent)}
+.pl-lane.over{outline:2px dashed var(--brass-2);outline-offset:-2px}
+.pl-lh{padding:8px 9px;border-bottom:1px solid var(--line);background:var(--sunk);display:flex;flex-direction:column;gap:5px}
+.pl-lh .r{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.pl-lh b{font-size:17px;white-space:nowrap}
+.pl-lh select{width:100%;font-size:12.5px}
+.pl-end{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pl-lane.late .pl-end{color:var(--red)}
+.pl-meta{font-size:11.5px;color:var(--muted);font-weight:700}
+.pl-list{flex:1;min-height:0;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:5px}
+.pl-card{--c:#6B7280;border-radius:9px;padding:6px 8px;border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));border-left:5px solid var(--c);background:color-mix(in srgb,var(--c) 9%,var(--surface));cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;font-size:12.5px;line-height:1.3;flex:none}
+.pl-card:hover{border-color:var(--c)}
+.pl-card .t{font-variant-numeric:tabular-nums;font-weight:800;color:var(--c)}
+.pl-card .n{font-weight:800;font-size:13.5px;word-break:keep-all}
+.pl-card .m{color:var(--muted);font-weight:700}
+.pl-card.dragging{opacity:.25}
+.pl-lunch{flex:none;text-align:center;font-size:12px;font-weight:800;color:var(--warn);background:var(--warn-soft);border-radius:8px;padding:3px}
+.pl-ph{flex:none;height:5px;border-radius:3px;background:var(--brass-2)}
+.pl-ghost{position:fixed;z-index:80;pointer-events:none;opacity:.95;box-shadow:0 14px 30px -10px rgba(0,0,0,.45);transform:rotate(1.5deg)}
+.pl-board.dense .pl-card{padding:5px 6px;font-size:11.5px}.pl-board.dense .pl-card .n{font-size:12.5px}.pl-board.dense .pl-lh b{font-size:15px}
+.pl-empty{grid-column:1/-1;align-self:start;margin-top:30px;padding:30px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;background:var(--surface);font-weight:700;line-height:1.7}
+.pl-leg{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.pl-leg i{width:11px;height:11px;border-radius:3px;background:var(--c)}
+.pl-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0B0D12;color:#F4EFE4;border:1px solid rgba(214,182,124,.45);padding:11px 18px;border-radius:999px;font-weight:700;z-index:90;max-width:92vw;text-align:center}
+@media (max-width:760px){.pl-board{grid-auto-flow:column;grid-template-columns:none!important;grid-auto-columns:minmax(160px,1fr);overflow-x:auto}.pl-set .grp{border-right:0;padding-right:0}}
+</style>
+<script>
+/* ===== 대회 운영표 =====
+   - 접수 명단(또는 가상 명단·엑셀 명단)을 종목·부별·조·성별로 묶어 「경기 카드」를 만듭니다.
+   - 「자동 추천」: 종목별 걸리는 시간을 보고 코트 수를 나누고, 모든 코트가 비슷하게 끝나도록 배정합니다.
+   - 코트마다 종목을 직접 고르면 그 안에서만 순서·시각을 짭니다.
+   - 카드를 마우스(터치)로 끌어 다른 코트·다른 순서로 옮기면 예상 시각을 바로 다시 계산합니다.
+   - 저장: 본부 저장소(hqplan/main) · 되돌리기/다시 실행 · 엑셀 내보내기(전체 요약·코트별·도장별) */
+(function(){
+if(window.KSPLAN)return;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const toMin=s=>{const m=/^(\d{1,2}):(\d{2})/.exec(s||'');return m?(+m[1])*60+(+m[2]):0;};
+const hm=v=>{v=Math.round(v);return String(Math.floor(v/60)%24).padStart(2,'0')+':'+String(v%60).padStart(2,'0');};
+
+const EVC=[[/품새/,'#2F5BD8'],[/격파/,'#D9731A'],[/체조/,'#17804A'],[/시범/,'#7A3FC8'],[/겨루기/,'#C8202A']];
+const evColor=e=>{for(const [r,c] of EVC)if(r.test(e))return c;return '#6B7280';};
+const isTeam=e=>/체조|시범|팀/.test(e);
+const DEFPER={'품새':1.5,'개인 격파':1.2,'팀 태권체조':4,'종합시범':6,'겨루기':5};
+const EVORD=['품새','개인 격파','겨루기','팀 태권체조','종합시범'];
+const evRank=e=>{const i=EVORD.indexOf(e);return i<0?9:i;};
+const divRank=d=>{d=String(d||'');if(/유치|유아|미취학/.test(d))return 0;const m=d.match(/(\d)/);
+  if(/초/.test(d))return 1+(m?(+m[1]-1)/2:0);if(/중/.test(d))return 4+(m?+m[1]/10:0);if(/고/.test(d))return 5+(m?+m[1]/10:0);if(/일반|대학|성인|시니어|마스터/.test(d))return 6;return 7;};
+const normEv=v=>{v=String(v||'').trim();if(/품새/.test(v))return '품새';if(/격파/.test(v))return '개인 격파';if(/체조/.test(v))return '팀 태권체조';if(/시범/.test(v))return '종합시범';if(/겨루기/.test(v))return '겨루기';return v;};
+
+const DEF={courts:5,start:'09:30',lunchOn:true,lunchS:'12:00',lunchE:'13:00',target:'15:00',gap:1,per:{},courtEv:[],lanes:[],roster:[],src:''};
+let P=clone(DEF),G={},UNDO=[],REDO=[],DB=null,DL=null,saveT=null,myRev='',OPEN=false,D=null;
+
+/* ---------- 명단 → 경기 카드 ---------- */
+function rebuild(){
+  G={};
+  P.roster.forEach((r,i)=>{const id=[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||'')].join('|');
+    const g=G[id]||(G[id]={id,ev:r.ev,div:r.div,grp:r.grp||'',sex:isTeam(r.ev)?'':(r.sex||''),units:0,people:0,members:[]});
+    g.units++;g.people+=isTeam(r.ev)?(+r.cnt||1):1;g.members.push(i);});
+}
+const perOf=e=>{const v=Number(P.per[e]);return v>0?v:(DEFPER[e]||(isTeam(e)?4:1.5));};
+const dur=g=>g.units*perOf(g.ev);
+const gap=()=>Math.max(0,Number(P.gap)||0);
+const events=()=>[...new Set(Object.values(G).map(g=>g.ev))].sort((a,b)=>evRank(a)-evRank(b)||a.localeCompare(b));
+const cmpG=(a,b)=>evRank(a.ev)-evRank(b.ev)||divRank(a.div)-divRank(b.div)||a.div.localeCompare(b.div)||a.grp.localeCompare(b.grp)||(a.sex==='남'?0:1)-(b.sex==='남'?0:1);
+const gamesOf=e=>Object.values(G).filter(g=>g.ev===e).sort(cmpG);
+const wt=g=>dur(g)+gap();
+
+/* ---------- 시각 계산 ---------- */
+function timeline(){
+  const st=toMin(P.start),ls=toMin(P.lunchS),le=toMin(P.lunchE);
+  return P.lanes.map(ids=>{let t=st,lunch=-1;const items=[];
+    ids.forEach(id=>{const g=G[id];if(!g)return;const d=dur(g);
+      if(P.lunchOn&&lunch<0&&le>ls&&t<le&&t+d>ls){t=Math.max(t,le);lunch=items.length;}
+      items.push({g,s:t,e:t+d});t+=d+gap();});
+    const end=items.length?items[items.length-1].e:st;
+    return {items,lunch,end,people:items.reduce((a,x)=>a+x.g.people,0),evs:[...new Set(items.map(x=>x.g.ev))]};});
+}
+
+/* ---------- 자동 배정 ---------- */
+function splitContig(gs,k){const parts=Array.from({length:k},()=>[]);const T=gs.reduce((a,g)=>a+wt(g),0)||1;let acc=0;
+  gs.forEach(g=>{const d=wt(g);parts[Math.min(k-1,Math.floor((acc+d/2)/(T/k)))].push(g);acc+=d;});return parts;}
+/* 점심시간까지 넣어 실제 끝나는 시각으로 이웃 코트 경계를 한 부문씩 옮겨 가며 맞추기 */
+function laneEnd(ids){const st=toMin(P.start),ls=toMin(P.lunchS),le=toMin(P.lunchE);let t=st,e=st,l=false;
+  ids.forEach(id=>{const g=G[id];if(!g)return;const d=dur(g);if(P.lunchOn&&!l&&le>ls&&t<le&&t+d>ls){t=Math.max(t,le);l=true;}e=t+d;t=e+gap();});return e;}
+function balance(lanes,cs){if(cs.length<2)return;const worst=()=>Math.max(...cs.map(i=>laneEnd(lanes[i])));
+  for(let it=0;it<300;it++){let best=worst(),mv=null;
+    for(let j=0;j+1<cs.length;j++){const a=lanes[cs[j]],b=lanes[cs[j+1]];
+      if(a.length>1){b.unshift(a.pop());const w=worst();if(w<best-0.01){best=w;mv=[j,'r'];}a.push(b.shift());}
+      if(b.length>1){a.push(b.shift());const w=worst();if(w<best-0.01){best=w;mv=[j,'l'];}b.unshift(a.pop());}}
+    if(!mv)break;const a=lanes[cs[mv[0]]],b=lanes[cs[mv[0]+1]];if(mv[1]==='r')b.unshift(a.pop());else a.push(b.shift());}}
+function recommendEv(){
+  const n=P.courts,evs=events(),tot={};evs.forEach(e=>tot[e]=gamesOf(e).reduce((a,g)=>a+wt(g),0));
+  if(!evs.length)return new Array(n).fill('');
+  if(n<evs.length)return new Array(n).fill('');           /* 코트가 종목보다 적으면 종목을 묶어서 배정 */
+  const cnt={};evs.forEach(e=>cnt[e]=1);
+  for(let k=evs.length;k<n;k++){const e=evs.reduce((a,b)=>tot[b]/cnt[b]>tot[a]/cnt[a]?b:a);cnt[e]++;}
+  const out=[];evs.forEach(e=>{for(let k=0;k<cnt[e];k++)out.push(e);});return out;
+}
+function plan(ce){
+  const n=P.courts,evs=events();ce=(ce||[]).slice(0,n);while(ce.length<n)ce.push('');
+  ce=ce.map(x=>evs.includes(x)?x:'');P.courtEv=ce;
+  const lanes=Array.from({length:n},()=>[]),load=i=>lanes[i].reduce((a,id)=>a+wt(G[id]),0),left=[];
+  evs.forEach(e=>{const cs=ce.map((x,i)=>x===e?i:-1).filter(i=>i>=0);
+    if(!cs.length){left.push(e);return;}
+    splitContig(gamesOf(e),cs.length).forEach((part,k)=>lanes[cs[k]].push(...part.map(g=>g.id)));
+    balance(lanes,cs);});
+  let warn='';
+  if(left.length){let pool=ce.map((x,i)=>!x?i:-1).filter(i=>i>=0);
+    if(!pool.length){pool=lanes.map((_,i)=>i);warn=`${left.join('·')}을(를) 맡은 코트가 없어 일찍 끝나는 코트에 넣었습니다`;}
+    left.map(e=>[e,gamesOf(e)]).sort((a,b)=>b[1].reduce((s,g)=>s+wt(g),0)-a[1].reduce((s,g)=>s+wt(g),0)).forEach(([e,gs])=>{
+      const i=pool.reduce((a,b)=>load(b)<load(a)?b:a);lanes[i].push(...gs.map(g=>g.id));});
+    pool.forEach(i=>lanes[i].sort((a,b)=>cmpG(G[a],G[b])));}
+  P.lanes=lanes;return warn;
+}
+
+/* ---------- 가상 명단 (품새 250 · 개인 격파 350 · 팀 태권체조 40팀 200명) ---------- */
+function virtualRoster(){
+  let s=20261128;const rnd=()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  const DIVS=[['유치부',.12],['초등 1·2학년',.22],['초등 3·4학년',.24],['초등 5·6학년',.22],['중등부',.12],['고등·일반부',.08]];
+  const DJ=['아크리아점','에스파이브점','글로벌점','아라점','한빛도장','청룡도장','새솔도장','정의도장','용인도장','하늘도장'];
+  const LN='김이박최정강조윤장임한오서신권황안송류홍'.split(''),FN=['민준','서연','도윤','하은','시우','지우','예준','수아','주원','지호','유나','건우','서준','하린','은우','채원','준서','다인','현우','소율'];
+  const split=n=>{const k=DIVS.map(([,p])=>Math.round(n*p));k[k.length-1]+=n-k.reduce((a,b)=>a+b,0);return k;};
+  const out=[];
+  [['품새',250],['개인 격파',350]].forEach(([ev,n])=>split(n).forEach((k,di)=>{for(let i=0;i<k;i++)out.push({ev,div:DIVS[di][0],grp:pick(['A조','B조']),sex:pick(['남','여']),name:pick(LN)+pick(FN),dojang:pick(DJ)});}));
+  const no={};split(40).forEach((k,di)=>{for(let i=0;i<k;i++){const dj=pick(DJ);no[dj]=(no[dj]||0)+1;out.push({ev:'팀 태권체조',div:DIVS[di][0],grp:pick(['A조','B조']),sex:'',name:`${dj} ${no[dj]}팀`,dojang:dj,cnt:5});}});
+  return out;
+}
+
+/* ---------- 엑셀 명단 불러오기 ---------- */
+function rowsFromSheet(rows){
+  const col=(o,re)=>{const k=Object.keys(o).find(k=>re.test(String(k).replace(/\s/g,'')));return k?String(o[k]==null?'':o[k]).trim():'';};
+  const out=[],teams={};
+  rows.forEach(o=>{const ev=normEv(col(o,/^(종목|경기|경기종목|참가종목)$/));if(!ev)return;
+    const r={ev,div:col(o,/^(부별|부문|학년|구분|부)$/)||'일반',grp:col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),sex:col(o,/^성별$/),
+      name:col(o,/^(이름|선수|선수명|성명)$/),dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0};
+    const tn=col(o,/^(팀명|팀|팀이름)$/);
+    if(isTeam(ev)){const k=[ev,r.div,r.grp,tn||r.name||r.dojang].join('|');
+      if(teams[k]){teams[k].cnt+=r.cnt||1;return;}r.name=tn||r.name||r.dojang;r.cnt=r.cnt||1;r.sex='';teams[k]=r;}
+    out.push(r);});
+  return out;
+}
+
+/* ---------- 저장 · 되돌리기 ---------- */
+const snap=()=>JSON.stringify({...P,rev:undefined});
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{myRev='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const d={...clone(P),rev:myRev,at:Date.now()};
+  if(DB)DB.doc('hqplan/main').set(d).catch(()=>{});try{localStorage.setItem('ks_hqplan',JSON.stringify(d));}catch(e){}refreshTile();},500);}
+function commit(fn){UNDO.push(snap());if(UNDO.length>60)UNDO.shift();REDO=[];const r=fn();save();draw();return r;}
+function restore(s){const o=JSON.parse(s);P={...clone(DEF),...o};rebuild();save();draw();}
+function undo(){if(!UNDO.length)return;REDO.push(snap());restore(UNDO.pop());}
+function redo(){if(!REDO.length)return;UNDO.push(snap());restore(REDO.pop());}
+function adopt(d){if(!d||!d.lanes)return;if(d.rev&&d.rev===myRev)return;if(D&&D.on)return;P={...clone(DEF),...d};delete P.rev;delete P.at;rebuild();if(OPEN)draw();refreshTile();}
+
+let TT=null;function toast(m){let t=$('.pl-toast');if(!t){t=document.createElement('div');t.className='pl-toast';document.body.appendChild(t);}t.textContent=m;t.hidden=false;clearTimeout(TT);TT=setTimeout(()=>t.hidden=true,3200);}
+
+/* ---------- 화면 ---------- */
+function root(){let r=$('#ksplan');if(!r){r=document.createElement('div');r.id='ksplan';r.hidden=true;document.body.appendChild(r);bind(r);}return r;}
+function draw(){
+  if(!OPEN)return;const r=root(),TL=timeline(),evs=events(),has=P.roster.length>0;
+  const act=TL.filter(x=>x.items.length),late=act.length?Math.max(...act.map(x=>x.end)):0,early=act.length?Math.min(...act.map(x=>x.end)):0,tgt=toMin(P.target);
+  const keep={};r.querySelectorAll('.pl-list').forEach((l,i)=>keep[i]=l.scrollTop);
+  const fe=document.activeElement&&r.contains(document.activeElement)?document.activeElement.dataset.f:null;
+  const evCount=e=>{const gs=gamesOf(e);return isTeam(e)?`${gs.reduce((a,g)=>a+g.units,0)}팀`:`${gs.reduce((a,g)=>a+g.people,0)}명`;};
+  r.innerHTML=`<div class="pl-head"><button class="btn" data-p="close">← 본부 메뉴</button><span style="font-size:22px">📋</span><h2>대회 운영표</h2>
+      <button class="btn" data-p="undo" ${UNDO.length?'':'disabled'} title="되돌리기 (Ctrl+Z)">↶ 되돌리기</button><button class="btn" data-p="redo" ${REDO.length?'':'disabled'} title="다시 실행 (Ctrl+Y)">↷ 다시 실행</button>
+      <span class="sp"></span><button class="btn primary" data-p="xlsx" ${has?'':'disabled'}>📊 엑셀로 내보내기</button><button class="btn primary" data-p="close">닫기 ✕</button></div>
+    <div class="pl-set">
+      <span class="grp"><label>코트 수 <select data-f="courts">${Array.from({length:10},(_,i)=>`<option ${P.courts===i+1?'selected':''}>${i+1}</option>`).join('')}</select></label>
+        <label>시작 <input type="time" data-f="start" value="${esc(P.start)}"></label>
+        <label><input type="checkbox" data-f="lunchOn" ${P.lunchOn?'checked':''}> 점심</label><input type="time" data-f="lunchS" value="${esc(P.lunchS)}" ${P.lunchOn?'':'disabled'}><span>~</span><input type="time" data-f="lunchE" value="${esc(P.lunchE)}" ${P.lunchOn?'':'disabled'}>
+        <label>목표 종료 <input type="time" data-f="target" value="${esc(P.target)}"></label>
+        <label>부문 사이 <input type="number" min="0" max="15" step="0.5" data-f="gap" value="${esc(P.gap)}">분</label></span>
+      <span class="grp">${(evs.length?evs:['품새','개인 격파','팀 태권체조']).map(e=>`<label title="${isTeam(e)?'1팀':'1명'}이 경기하는 데 걸리는 시간"><span class="pl-leg" style="--c:${evColor(e)}"><i></i></span>${esc(e)} ${isTeam(e)?'1팀':'1인'} <input type="number" min="0.1" max="30" step="0.1" data-f="per" data-e="${esc(e)}" value="${perOf(e)}">분</label>`).join('')}</span>
+      <span class="grp"><button class="btn primary" data-p="auto" ${has?'':'disabled'}>✨ 자동 추천</button><button class="btn" data-p="virt">🧪 가상 데이터 불러오기</button><button class="btn" data-p="imp">📥 명단 엑셀 불러오기</button><input type="file" accept=".xlsx,.xls,.csv" data-p="file" hidden></span>
+    </div>
+    ${has?`<div class="pl-sum"><span class="chip">${esc(P.src||'명단')}</span>${evs.map(e=>`<span class="chip" style="color:${evColor(e)}">${esc(e)} ${evCount(e)} · ${gamesOf(e).length}부문</span>`).join('')}
+      <span class="chip ${late>tgt?'bad':'ok'}"><i class="dot"></i>전체 예상 종료 ${act.length?hm(late):'-'}${late>tgt?` · 목표보다 ${Math.round(late-tgt)}분 늦음`:''}</span>
+      ${act.length>1?`<span class="chip ${late-early>=30?'warn':''}">코트 사이 차이 ${Math.round(late-early)}분</span>`:''}
+      <span class="small muted">카드를 마우스로 끌어 다른 코트·순서로 옮길 수 있습니다</span></div>`:''}
+    <div class="pl-board ${P.courts>6?'dense':''}" style="grid-template-columns:repeat(${P.courts},minmax(0,1fr))">${!has?`<div class="pl-empty">아직 명단이 없습니다.<br>「🧪 가상 데이터 불러오기」로 800명 가상 명단을 넣어 시험하거나,<br>「📥 명단 엑셀 불러오기」로 접수 명단(종목·부별·조·성별·이름·도장 칸)을 넣어 주세요.</div>`:
+      TL.map((x,i)=>{const isLate=x.items.length&&act.length>1&&(x.end>tgt||(x.end===late&&late-early>=30));
+        return `<div class="pl-lane ${isLate?'late':''}" data-i="${i}"><div class="pl-lh"><div class="r"><b>${i+1}코트</b><span class="pl-end">${x.items.length?'~'+hm(x.end):'비어 있음'}</span></div>
+          <select data-f="cev" data-i="${i}" title="이 코트가 맡을 종목"><option value="">자동 (남는 종목)</option>${evs.map(e=>`<option ${P.courtEv[i]===e?'selected':''}>${esc(e)}</option>`).join('')}</select>
+          <span class="pl-meta">${x.items.length}부문 · ${x.people}명${x.evs.length>1?' · 종목 섞임':''}</span></div>
+          <div class="pl-list">${x.items.map((it,k)=>`${k===x.lunch?`<div class="pl-lunch">🍱 점심 ${esc(P.lunchS)}~${esc(P.lunchE)}</div>`:''}<div class="pl-card" data-id="${esc(it.g.id)}" style="--c:${evColor(it.g.ev)}" title="${esc(it.g.ev)} ${esc(it.g.div)} ${esc(it.g.grp)} ${esc(it.g.sex)} · ${Math.round(dur(it.g))}분">
+            <div><span class="t">${hm(it.s)}~${hm(it.e)}</span></div><div class="n">${esc(it.g.div)} ${esc(it.g.grp)}${it.g.sex?' '+esc(it.g.sex):''}</div>
+            <div class="m">${esc(it.g.ev)} · ${isTeam(it.g.ev)?it.g.units+'팀':it.g.people+'명'} · ${Math.round(dur(it.g))}분</div></div>`).join('')}</div></div>`;}).join('')}</div>`;
+  r.querySelectorAll('.pl-list').forEach((l,i)=>{if(keep[i])l.scrollTop=keep[i];});
+  if(fe){const el=r.querySelector(`[data-f="${fe}"]`);if(el)el.focus();}
+}
+
+/* ---------- 조작 ---------- */
+function bind(r){
+  r.addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b||b.disabled)return;const a=b.dataset.p;
+    if(a==='close')close();
+    else if(a==='undo')undo();else if(a==='redo')redo();
+    else if(a==='xlsx')exportX();
+    else if(a==='auto'){commit(()=>plan(recommendEv()));toast('종목별 코트 수와 순서를 새로 추천했습니다');}
+    else if(a==='virt'){if(P.roster.length&&!confirmTwice(b))return;commit(()=>{P.roster=virtualRoster();P.src='가상 명단 800명';rebuild();plan(recommendEv());});toast('가상 명단 800명을 넣고 자동으로 배정했습니다');}
+    else if(a==='imp')r.querySelector('[data-p="file"]').click();
+  });
+  r.addEventListener('change',async e=>{const el=e.target;
+    if(el.dataset.p==='file'){const f=el.files&&el.files[0];el.value='';if(!f)return;
+      try{if(typeof XLSX==='undefined')throw new Error('엑셀 도구를 불러오지 못했습니다');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});let rows=[];
+        wb.SheetNames.forEach(n=>{rows=rows.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:''}));});
+        const ro=rowsFromSheet(rows);if(!ro.length)throw new Error('「종목」 칸이 있는 줄을 찾지 못했습니다 (종목·부별·조·성별·이름·도장 칸이 필요합니다)');
+        commit(()=>{P.roster=ro;P.src=f.name.replace(/\.\w+$/,'')+` (${ro.length}줄)`;rebuild();plan(recommendEv());});toast(`명단 ${ro.length}줄을 불러와 자동으로 배정했습니다`);}
+      catch(x){toast(x.message||'명단을 읽지 못했습니다');}return;}
+    const f=el.dataset.f;if(!f)return;
+    if(f==='courts'){const n=Number(el.value)||5;commit(()=>{P.courts=n;if(P.roster.length)plan(recommendEv());});if(P.roster.length)toast(`${n}코트로 다시 추천했습니다 (↶ 되돌리기 가능)`);}
+    else if(f==='cev'){const i=Number(el.dataset.i);const w=commit(()=>{const ce=P.courtEv.slice();ce[i]=el.value;return plan(ce);});toast(w||`${i+1}코트를 「${el.value||'자동'}」(으)로 정하고 다시 짰습니다`);}
+    else if(f==='per'){const v=Number(el.value);if(v>0)commit(()=>{P.per={...P.per,[el.dataset.e]:v};});}
+    else if(f==='lunchOn')commit(()=>{P.lunchOn=el.checked;});
+    else if(f==='gap')commit(()=>{P.gap=Math.max(0,Number(el.value)||0);});
+    else if(['start','lunchS','lunchE','target'].includes(f)&&el.value)commit(()=>{P[f]=el.value;});
+  });
+  /* 끌어서 옮기기 (마우스·터치 공통) */
+  r.addEventListener('pointerdown',e=>{const c=e.target.closest('.pl-card');if(!c||e.button>0)return;D={id:c.dataset.id,el:c,x:e.clientX,y:e.clientY,on:false,to:null};});
+  addEventListener('pointermove',e=>{if(!D)return;
+    if(!D.on){if(Math.hypot(e.clientX-D.x,e.clientY-D.y)<6)return;D.on=true;const rc=D.el.getBoundingClientRect();
+      D.gh=D.el.cloneNode(true);D.gh.classList.add('pl-ghost');D.gh.style.width=rc.width+'px';D.dx=D.x-rc.left;D.dy=D.y-rc.top;document.body.appendChild(D.gh);
+      D.el.classList.add('dragging');D.ph=document.createElement('div');D.ph.className='pl-ph';}
+    e.preventDefault();D.gh.style.left=(e.clientX-D.dx)+'px';D.gh.style.top=(e.clientY-D.dy)+'px';
+    const under=document.elementFromPoint(e.clientX,e.clientY),lane=under&&under.closest('#ksplan .pl-lane');
+    r.querySelectorAll('.pl-lane.over').forEach(l=>{if(l!==lane)l.classList.remove('over');});
+    if(!lane){D.to=null;D.ph.remove();return;}lane.classList.add('over');
+    const list=lane.querySelector('.pl-list'),cards=[...list.querySelectorAll('.pl-card:not(.dragging)')];
+    let idx=cards.findIndex(c=>{const b=c.getBoundingClientRect();return e.clientY<b.top+b.height/2;});if(idx<0)idx=cards.length;
+    if(idx<cards.length)list.insertBefore(D.ph,cards[idx]);else list.appendChild(D.ph);
+    D.to={lane:Number(lane.dataset.i),idx};
+    const lb=list.getBoundingClientRect();if(e.clientY<lb.top+30)list.scrollTop-=12;else if(e.clientY>lb.bottom-30)list.scrollTop+=12;
+  },{passive:false});
+  const end=()=>{if(!D)return;const d=D;D=null;if(!d.on)return;d.gh.remove();d.ph.remove();d.el.classList.remove('dragging');r.querySelectorAll('.pl-lane.over').forEach(l=>l.classList.remove('over'));
+    if(!d.to)return;const from=P.lanes.findIndex(l=>l.includes(d.id));if(from<0)return;
+    const cur=P.lanes[from].filter(id=>G[id]).indexOf(d.id);if(from===d.to.lane&&cur===d.to.idx)return;
+    commit(()=>{const L=P.lanes.map(l=>l.filter(id=>G[id]&&id!==d.id));L[d.to.lane].splice(d.to.idx,0,d.id);P.lanes=L;});
+    const g=G[d.id];toast(`${g.div} ${g.grp} ${g.sex} (${g.ev}) → ${d.to.lane+1}코트 ${d.to.idx+1}번째`);};
+  addEventListener('pointerup',end);addEventListener('pointercancel',()=>{if(D&&D.on){D.to=null;}end();});
+  addEventListener('keydown',e=>{if(!OPEN)return;const typing=/^(INPUT|SELECT|TEXTAREA)$/.test((e.target||{}).tagName||'');
+    if(e.key==='Escape'&&!typing){e.stopImmediatePropagation();close();}
+    else if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();}
+    else if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='y'){e.preventDefault();redo();}},true);
+}
+function confirmTwice(b){if(b.dataset.arm)return true;b.dataset.arm='1';const t=b.textContent;b.textContent='한 번 더 누르면 지금 명단을 바꿉니다';setTimeout(()=>{delete b.dataset.arm;b.textContent=t;},4000);return false;}
+
+/* ---------- 엑셀 ---------- */
+function exportX(){
+  if(typeof XLSX==='undefined')return toast('엑셀 도구를 불러오지 못했습니다');
+  const TL=timeline(),wb=XLSX.utils.book_new(),d=new Date(),evs=events();
+  const stamp=`${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ${hm(d.getHours()*60+d.getMinutes())}`;
+  const sheet=(aoa,cols,merge)=>{const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=cols.map(w=>({wch:w}));if(merge)ws['!merges']=merge;return ws;};
+  const act=TL.filter(x=>x.items.length),late=act.length?Math.max(...act.map(x=>x.end)):0;
+  /* 1) 전체 요약 */
+  const S=[['KICKSTART UP 대회 운영표 — 전체 요약'],[`명단: ${P.src||''} · 만든 시각 ${stamp}`],[],
+    ['시작',P.start,'점심',P.lunchOn?`${P.lunchS}~${P.lunchE}`:'없음','부문 사이',`${gap()}분`,'목표 종료',P.target],
+    ['한 경기 시간',evs.map(e=>`${e} ${isTeam(e)?'1팀':'1인'} ${perOf(e)}분`).join(' · ')],[],
+    ['코트','맡은 종목','부문 수','인원','팀 수','시작','예상 종료','목표 대비']];
+  TL.forEach((x,i)=>{const tm=x.items.filter(it=>isTeam(it.g.ev)).reduce((a,it)=>a+it.g.units,0);
+    S.push([`${i+1}코트`,x.evs.join(', ')||'-',x.items.length,x.people,tm||'',x.items.length?hm(x.items[0].s):'',x.items.length?hm(x.end):'',x.items.length?(x.end>toMin(P.target)?`${Math.round(x.end-toMin(P.target))}분 늦음`:'목표 안'):'']);});
+  S.push([],['합계','',TL.reduce((a,x)=>a+x.items.length,0),TL.reduce((a,x)=>a+x.people,0),'','',act.length?hm(late):'','']);
+  S.push([],['종목','부문 수','인원(팀)','걸리는 시간(분)']);evs.forEach(e=>{const gs=gamesOf(e);S.push([e,gs.length,isTeam(e)?`${gs.reduce((a,g)=>a+g.units,0)}팀 (${gs.reduce((a,g)=>a+g.people,0)}명)`:`${gs.reduce((a,g)=>a+g.people,0)}명`,Math.round(gs.reduce((a,g)=>a+dur(g),0))]);});
+  XLSX.utils.book_append_sheet(wb,sheet(S,[10,22,9,9,8,9,11,14],[{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:1,c:0},e:{r:1,c:7}},{s:{r:4,c:1},e:{r:4,c:7}}]),'전체 요약');
+  /* 2) 코트별 진행표 */
+  const pos={};
+  TL.forEach((x,i)=>{const A=[[`${i+1}코트 진행표 — ${x.evs.join(', ')||'비어 있음'}`],[`예상 종료 ${x.items.length?hm(x.end):'-'} · ${x.items.length}부문 · ${x.people}명`],[],['순번','시작','종료','종목','부별','조','성별','인원','팀 수','소요(분)','비고']];
+    x.items.forEach((it,k)=>{if(k===x.lunch)A.push(['','','','점심시간',`${P.lunchS}~${P.lunchE}`]);const g=it.g;
+      A.push([k+1,hm(it.s),hm(it.e),g.ev,g.div,g.grp,g.sex,g.people,isTeam(g.ev)?g.units:'',Math.round(dur(g)),'']);pos[g.id]={court:i+1,no:k+1,s:it.s};});
+    XLSX.utils.book_append_sheet(wb,sheet(A,[6,8,8,12,14,6,6,7,7,9,16],[{s:{r:0,c:0},e:{r:0,c:10}},{s:{r:1,c:0},e:{r:1,c:10}}]),`${i+1}코트`);});
+  /* 3) 도장별 출전 시각 */
+  const R=[];Object.values(G).forEach(g=>{const p=pos[g.id];if(!p)return;g.members.forEach((ri,k)=>{const r=P.roster[ri];
+    R.push({dj:r.dojang||'(소속 없음)',nm:r.name||'',ev:g.ev,div:g.div,grp:g.grp,sex:g.sex,c:p.court,no:p.no,s:p.s,t:p.s+k*perOf(g.ev),n:isTeam(g.ev)?(+r.cnt||1):1});});});
+  R.sort((a,b)=>a.dj.localeCompare(b.dj)||a.t-b.t);
+  const B=[['도장별 출전 시각 (예상)'],['부문 안에서의 순서는 명단 순서로 어림한 시각입니다 · 실제 순서는 추첨에 따라 달라질 수 있습니다'],[],['도장','이름(팀)','종목','부별','조','성별','인원','코트','부문 순번','부문 시작','예상 출전']];
+  let prev='';R.forEach(x=>{if(prev&&prev!==x.dj)B.push([]);prev=x.dj;B.push([x.dj,x.nm,x.ev,x.div,x.grp,x.sex,x.n,`${x.c}코트`,x.no,hm(x.s),hm(x.t)]);});
+  XLSX.utils.book_append_sheet(wb,sheet(B,[14,16,12,14,6,6,6,7,9,9,9],[{s:{r:0,c:0},e:{r:0,c:10}},{s:{r:1,c:0},e:{r:1,c:10}}]),'도장별 출전 시각');
+  const data=XLSX.write(wb,{bookType:'xlsx',type:'array'}),p2=n=>String(n).padStart(2,'0');
+  const fn=`대회운영표_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}.xlsx`;
+  Promise.resolve(DL?DL.save({filename:fn,data:new Uint8Array(data)}):null).then(r=>{if(!r){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=fn;a.click();}toast(`엑셀을 저장했습니다: ${fn}`);}).catch(()=>toast('저장하지 못했습니다'));
+}
+
+/* ---------- 열기 · 닫기 · 타일 ---------- */
+function open(){OPEN=true;root().hidden=false;document.documentElement.classList.add('pl-lock');draw();}
+function close(){OPEN=false;root().hidden=true;document.documentElement.classList.remove('pl-lock');refreshTile();}
+function tileState(){if(!P.roster.length)return ['명단 없음 · 열어서 짜기',''];const TL=timeline().filter(x=>x.items.length);if(!TL.length)return [`${P.courts}코트`,''];
+  const late=Math.max(...TL.map(x=>x.end));return [`${P.courts}코트 · 예상 종료 ${hm(late)}`,late>toMin(P.target)?'warn':'ok'];}
+function refreshTile(){const t=document.querySelector('.hqs-tile[data-k="plan"] .hqs-st');if(t){const [s]=tileState();t.textContent=s;}}
+window.KSPLAN={open,close,tileState,get state(){return clone(P);}};
+
+(async function(){
+  try{const d=JSON.parse(localStorage.getItem('ks_hqplan')||'null');if(d){P={...clone(DEF),...d};rebuild();}}catch(e){}
+  try{if(window.claude&&window.claude.use){DB=await window.claude.use('db');DL=await window.claude.use('downloads');
+    DB.doc('hqplan/main').onSnapshot(s=>{if(s&&s.exists)adopt(s.data());});}}catch(e){}
+})();
+})();
+</script><!--@@END-PLAN-->
 <!--@@AUDIOFIX--><script>/* ===== 경기 소리 안정화 (품새·격파·겨루기 공통) =====
    1) HDMI·모니터 스피커는 소리가 잠깐 멈추면 절전으로 꺼졌다가 다음 소리 앞부분을 잘라 먹습니다("띠디디", "준…비").
       → 들리지 않을 만큼 아주 작은 소리를 계속 흘려 소리 장치가 꺼지지 않게 합니다.
