@@ -15,7 +15,7 @@ let SIM=null,INB=null,WATCHED=false,TAKING=false,BUSY=false,LAST={},DONE=false,P
 
 /* ---------- 준비: 앱 저장소 감시 ---------- */
 function watch(){const st=g('store');if(WATCHED||!st||!st.watchDoc||!st.watchColl)return;WATCHED=true;
-  st.watchDoc('sim/main',d=>{const was=SIM&&SIM.on;SIM=d;if(d&&d.on&&!was){DONE=false;COUNT=0;}draw();});
+  st.watchDoc('sim/main',d=>{const was=SIM&&SIM.on;SIM=d;if(d&&d.on&&!was){DONE=false;COUNT=0;}if(d&&d.reset)RESETQ=d.reset;draw();});
   st.watchColl('inbox',null,null,list=>{INB=(list||[]).find(x=>x._id==='roster')||null;});}
 const admin=()=>{try{return String(g('routeNow')()||'').startsWith('admin');}catch(e){return false;}};
 /* 같은 컴퓨터에서 운영석 창이 여러 개면 한 창만 진행 */
@@ -86,9 +86,15 @@ function progress(){const L=divsSorted(),cO=g('callsOf'),cD=g('callDone');let to
   L.forEach(d=>{let c=[];try{c=cO(d)||[];}catch(e){}tot+=c.length;const k=c.filter(cD).length;dn+=k;if(c.length&&k===c.length)dd++;});return {divs:L.length,dd,tot,dn};}
 
 /* ---------- 진행 ---------- */
+/* v1.4.54 본부 「가상 경기 초기화」: 이 코트의 점수·결과·진행을 모두 지우고 처음부터 (명단·경기 규칙은 그대로). 한 번만 실행 */
+let RESETQ=0,RESETTING=false;
+async function doReset(){const k='ks_sim_reset_'+APP;let done=0;try{done=Number(localStorage.getItem(k))||0;}catch(e){}if(RESETQ<=done||RESETTING)return false;
+  RESETTING=true;try{const ACT=g('ACT');if(!ACT||!ACT.resetScores)return false;await ACT.resetScores();try{localStorage.setItem(k,String(RESETQ));}catch(e){}
+    DONE=false;COUNT=0;STALL={};LAST={};say('본부 요청으로 가상 경기를 초기화했습니다 · 점수·결과를 지우고 처음부터 시작합니다');}catch(e){console.warn('sim reset',e);}finally{RESETTING=false;}return true;}
 async function tick(){
   watch();draw();
   if(!F.status||!admin())return;
+  if(RESETQ&&leader()&&!BUSY){BUSY=true;try{if(await doReset())return;}finally{BUSY=false;}}
   if(INB&&INB.sim&&!INB.done&&!TAKING&&leader()){await take(INB);return;}
   if(!SIM||!SIM.on||DONE||BUSY||TAKING||!leader())return;
   const S=g('S'),ST=g('ST'),curOf=g('curOf');if(!S||!ST||!curOf||!S.stateLoaded)return;

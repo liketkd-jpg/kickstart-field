@@ -1384,12 +1384,12 @@ const EVC=[[/품새/,'#2F5BD8'],[/종합경연/,'#7A3FC8'],[/격파/,'#D9731A'],
 const evColor=e=>{for(const [r,c] of EVC)if(r.test(e))return c;return '#6B7280';};
 const isTeam=e=>/체조|시범|팀|경연/.test(e);
 /* 요강 기준 (4명 1조 컷오프·3심제): 품새 1조 약 4분 50초 → 1인 1.2분, 격파 1인 1.2분, 태권체조 1팀 4분, 팀 종합경연 1팀 8분 */
-const DEFPER={'품새':1.2,'개인 격파':1.2,'팀 태권체조':4,'팀 종합경연':8,'종합시범':6,'겨루기':5};
-const EVORD=['품새','개인 격파','겨루기','팀 태권체조','팀 종합경연','종합시범'];
+const DEFPER={'품새':1.2,'자유 품새':1.5,'개인 격파':1.2,'팀 태권체조':4,'팀 종합경연':8,'종합시범':6,'겨루기':5};
+const EVORD=['품새','자유 품새','개인 격파','겨루기','팀 태권체조','팀 종합경연','종합시범'];
 const evRank=e=>{const i=EVORD.indexOf(e);return i<0?9:i;};
 const divRank=d=>{d=String(d||'');if(/유치|유아|미취학/.test(d))return 0;const m=d.match(/(\d)/);
   if(/초/.test(d))return 1+(m?(+m[1]-1)/2:0);if(/중/.test(d))return 4+(m?+m[1]/10:0);if(/고/.test(d))return 5+(m?+m[1]/10:0);if(/일반|대학|성인|시니어|마스터/.test(d))return 6;return 7;};
-const normEv=v=>{v=String(v||'').trim();if(/품새/.test(v))return '품새';if(/격파/.test(v))return '개인 격파';if(/체조/.test(v))return '팀 태권체조';if(/종합\s*경연|팀\s*경연/.test(v))return '팀 종합경연';if(/시범/.test(v))return '종합시범';if(/겨루기/.test(v))return '겨루기';return v;};
+const normEv=v=>{v=String(v||'').trim();if(/자유|프리스타일/.test(v)&&/품새/.test(v))return '자유 품새';if(/품새/.test(v))return '품새';if(/격파/.test(v))return '개인 격파';if(/체조/.test(v))return '팀 태권체조';if(/종합\s*경연|팀\s*경연/.test(v))return '팀 종합경연';if(/시범/.test(v))return '종합시범';if(/겨루기/.test(v))return '겨루기';return v;};
 
 const DEF={courts:5,start:'09:30',openOn:false,openS:'09:30',openE:'10:00',lunchOn:true,lunchS:'12:00',lunchE:'13:00',awardOn:false,awardS:'14:30',awardE:'15:00',buf:10,target:'15:00',gap:1,per:{},courtEv:[],lanes:[],roster:[],src:''};
 let P=clone(DEF),G={},UNDO=[],REDO=[],DB=null,DL=null,saveT=null,myRev='',OPEN=false,D=null,OVL=false;
@@ -1517,15 +1517,26 @@ function virtualRoster(){
 }
 
 /* ---------- 엑셀 명단 불러오기 ---------- */
+/* v1.4.54 접수 홈페이지 「도장용 엑셀 양식」(시트마다 종목: 공인품새·프리스타일품새·태권체조·팀대항 종합경연·격파)과
+   접수 홈페이지 「대회 앱 형식」 내보내기도 그대로 읽음. 칸 이름의 「*」·괄호 설명은 무시, 「(예시)」 줄은 건너뜀. */
+const KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
 function rowsFromSheet(rows){
-  const col=(o,re)=>{const k=Object.keys(o).find(k=>re.test(String(k).replace(/\s/g,'')));return k?String(o[k]==null?'':o[k]).trim():'';};
+  const col=(o,re)=>{const k=Object.keys(o).find(k=>k!=='__sheet'&&re.test(KEYN(k)));return k?String(o[k]==null?'':o[k]).trim():'';};
   const out=[],teams={};
-  rows.forEach(o=>{const ev=normEv(col(o,/^(종목|경기|경기종목|참가종목)$/));if(!ev)return;
-    const r={ev,div:col(o,/^(부별|부문|학년|구분|부)$/)||'일반',grp:col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),sex:col(o,/^성별$/),
-      name:col(o,/^(이름|선수|선수명|성명)$/),dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0};
-    const tn=col(o,/^(팀명|팀|팀이름)$/);
-    if(isTeam(ev)){const k=[ev,r.div,r.grp,tn||r.name||r.dojang].join('|');
-      if(teams[k]){teams[k].cnt+=r.cnt||1;return;}r.name=tn||r.name||r.dojang;r.cnt=r.cnt||1;r.sex='';teams[k]=r;}
+  rows.forEach(o=>{const sh=String(o.__sheet||'');if(/목록|작성|방법|안내/.test(sh.replace(/\s/g,'')))return;
+    const name0=col(o,/^(이름|선수|선수명|성명)$/);if(/\(예시\)|^예시/.test(name0)||/\(예시\)/.test(col(o,/^(팀명|팀|팀이름)$/)))return;
+    const kindRaw=col(o,/^(종목|경기|경기종목|참가종목)$/),pz=col(o,/^(공인\/자유|공인자유|품새구분)$/);
+    const shEv=normEv(sh),known=e=>EVORD.includes(e);
+    let ev=known(shEv)?shEv:'';
+    if(!ev&&pz)ev=normEv(/자유/.test(pz)?'자유 품새':/체조/.test(pz)?'태권체조':/경연|시범/.test(pz)?'팀 경연':'품새');
+    if(!ev)ev=normEv(kindRaw);if(!ev||/히어로/.test(ev+sh))return;
+    let div=col(o,/^(부별|부문|구분|부)$/)||col(o,/^학년$/)||'일반';const gr=col(o,/^학년$/),gm=/(\d)/.exec(gr);
+    if(/^초등부$/.test(div)&&gm&&!isTeam(ev)){const n=+gm[1];div=n<=2?'초등 1·2학년':n<=4?'초등 3·4학년':'초등 5·6학년';}
+    const mem=col(o,/^(팀원|선수명단)$/),tn=col(o,/^(팀명|팀|팀이름)$/),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
+    const r={ev,div,grp:col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),sex:col(o,/^성별$/),
+      name:name0,dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0};
+    if(isTeam(ev)||kind){if(kind)r.kind=kind;const k=[ev,r.div,r.grp,tn||r.name||r.dojang].join('|');const add=mem?mem.split(/[,，·]/).filter(x=>x.trim()).length:1;
+      if(teams[k]){teams[k].cnt+=r.cnt||add;return;}r.name=tn||r.name||r.dojang;r.cnt=r.cnt||add;r.sex=kind?r.sex:'';teams[k]=r;}
     out.push(r);});
   return out;
 }
@@ -1691,11 +1702,12 @@ function bind(r){
     else if(a==='simSp'){SEND.speed=Number(b.dataset.v)||30;draw();if(SEND.simOn)simCtl(true);}
     else if(a==='simGo')simCtl(true);
     else if(a==='simStop')simCtl(false);
+    else if(a==='simReset'){if(!SEND.rstArm){SEND.rstArm=true;draw();setTimeout(()=>{if(SEND.rstArm){SEND.rstArm=false;draw();}},5000);}else{SEND.rstArm=false;simReset();}}
   });
   r.addEventListener('change',async e=>{const el=e.target;
     if(el.dataset.p==='file'){const f=el.files&&el.files[0];el.value='';if(!f)return;
       try{if(typeof XLSX==='undefined')throw new Error('엑셀 도구를 불러오지 못했습니다');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});let rows=[];
-        wb.SheetNames.forEach(n=>{rows=rows.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:''}));});
+        wb.SheetNames.forEach(n=>{rows=rows.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:''}).map(o=>({...o,__sheet:n})));});
         const ro=rowsFromSheet(rows);if(!ro.length)throw new Error('「종목」 칸이 있는 줄을 찾지 못했습니다 (종목·부별·조·성별·이름·도장 칸이 필요합니다)');
         commit(()=>{P.roster=ro;P.src=f.name.replace(/\.\w+$/,'')+` (${ro.length}줄)`;rebuild();plan(recommendEv());});toast(`명단 ${ro.length}줄을 불러와 자동으로 배정했습니다`);}
       catch(x){toast(x.message||'명단을 읽지 못했습니다');}return;}
@@ -1750,7 +1762,7 @@ function rowsFor(app,list){
       it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',ev,team?'혼성':(r.sex||'남'),r.div||it.g.div,r.dojang||'','','','',dn]);});});return R;}
   const R=[['이름','성별','나이','소속','부별','공인/자유','종목','팀원','부문']];
   list.forEach(({it,k})=>{const dn=divName(it,k),ev=it.g.ev,team=isTeam(ev),t=/시범|종합/.test(ev)?'팀대항 종합경연':/체조/.test(ev)?'태권체조':/자유/.test(ev)?'자유':'공인';
-    it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',team?'혼성':(r.sex||'남'),'',r.dojang||'',r.div||it.g.div,t,team?'단체':'개인','',dn]);});});
+    it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',team?'혼성':(r.sex||'남'),'',r.dojang||'',r.div||it.g.div,t,team?'단체':(r.kind||'개인'),'',dn]);});});
   return R;}
 function sendHtml(TL){
   const lanes=TL.map((x,i)=>({x,i,L:L8[i]||'',apps:laneApps(x)}));
@@ -1769,7 +1781,7 @@ function sendHtml(TL){
     <div class="pl-simbox"><b>🧪 가상 경기 (가상 심판이 점수를 넣고 끝까지 자동 진행)</b>
       <span class="small muted">각 코트 노트북의 품새·격파 <b>운영석 화면</b>이 열려 있어야 진행됩니다. 호출 → 심판 점수 → 점수 공개 → 다음 경기 → 다음 부문(결선 순서 추첨 포함)까지 자동으로 넘어갑니다. 진행 상황은 본부 메뉴 「코트 진행·옮기기」와 본부 모니터에서 볼 수 있습니다.</span>
       <div class="row"><span class="small"><b>속도</b></span>${[1,10,30,100].map(v=>`<button class="btn sm ${SEND.speed===v?'primary':''}" data-p="simSp" data-v="${v}">×${v}${v===1?' 실제':''}</button>`).join('')}
-        <span style="flex:1"></span><button class="btn primary" data-p="simGo">▶ 모든 코트 가상 경기 시작</button><button class="btn" data-p="simStop">⏸ 멈춤</button></div>
+        <span style="flex:1"></span><button class="btn primary" data-p="simGo">▶ 모든 코트 가상 경기 시작</button><button class="btn" data-p="simStop">⏸ 멈춤</button><button class="btn ${SEND.rstArm?'primary':''}" data-p="simReset" title="모든 코트의 가상 점수·결과를 지우고 처음부터 (명단·경기 규칙은 그대로)">${SEND.rstArm?'한 번 더 누르면 초기화':'🔄 가상 경기 초기화'}</button></div>
       ${SEND.simOn!=null?`<span class="small"><b>${SEND.simOn?'▶ 진행 중':'⏸ 멈춤'}</b> · ${esc(SEND.simMsg||'')}</span>`:''}</div>
   </div></div>`;}
 async function postJ(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j;}
@@ -1784,6 +1796,12 @@ async function sendAll(){
     SEND.res[L]=out.join(' · ');draw();}
   SEND.busy=false;draw();toast(bad?`보냄 ${ok}건 · 실패 ${bad}건 (표에서 확인)`:`모든 코트로 보냈습니다${SEND.sim?' · 코트 노트북 운영석에서 명단이 바로 바뀝니다':''}`);
 }
+async function simReset(){
+  if(!(window.KS_FIELD&&KS_FIELD.status))return toast('가상 경기는 현장 모드(본부 노트북 프로그램)에서만 됩니다');
+  try{const j=await postJ('/api/hq/sim',{on:false,speed:SEND.speed,reset:Date.now()});const c=Object.entries(j.courts||{});
+    SEND.simOn=false;SEND.simMsg=c.length?'초기화: '+c.map(([k,v])=>`${k}코트 ${v==='ok'?'✓':'✕'}`).join(' · ')+' · 「▶ 시작」을 누르면 처음부터 다시 진행합니다':'연결된 코트 노트북이 없습니다';
+    toast(c.length?'모든 코트의 가상 경기를 초기화했습니다 · 점수·결과를 지웠습니다':'연결된 코트 노트북이 없습니다');}
+  catch(e){toast('보내지 못했습니다: '+e.message);}draw();}
 async function simCtl(on){
   if(!(window.KS_FIELD&&KS_FIELD.status))return toast('가상 경기는 현장 모드(본부 노트북 프로그램)에서만 됩니다');
   try{const j=await postJ('/api/hq/sim',{on,speed:SEND.speed});const c=Object.entries(j.courts||{});

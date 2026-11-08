@@ -63,96 +63,133 @@ details.how[open]>summary::after{content:" ▴ 접기"}
 .bt .go{grid-row:2;grid-column:1/-1;justify-self:start}
 .bt .nm span{min-height:2.9em}
 @media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}main>#viewc,main>#role,main>#net{grid-column:1/-1}}
+</style><style>/* v1.4.54 코트 먼저 고르는 첫 화면 · 한 화면에 큰 글씨 */
+#home{display:flex;flex-direction:column;gap:14px;max-width:1280px;width:100%;box-sizing:border-box;margin:0 auto;min-height:calc(100vh - 64px);padding-bottom:10px}
+#home>*{grid-column:auto}
+#stage{flex:1;display:flex;flex-direction:column;min-height:0}
+.lux-hero{flex:none}
+.pk{display:flex;flex-direction:column;gap:12px}.pk h2{margin:0;font-size:30px;color:#F4EFE5}.pk .muted{margin:0;font-size:16px;color:#A39D91}
+.pk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.pk-c{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:170px;border-radius:22px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(160deg,#1B1F27,#101318);color:#F6F2E9;cursor:pointer;font:inherit}
+.pk-c b{font:900 76px/1 "Archivo",sans-serif;background:linear-gradient(180deg,#F6E3AE,#B8904E);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pk-c span{font-size:18px;font-weight:800;color:#CFC8B8}.pk-c:hover,.pk-c.on{border-color:#C9A262;box-shadow:0 0 0 2px rgba(201,162,98,.35)}
+.pk-c.hq{background:linear-gradient(160deg,#2A2519,#14110B);border-color:rgba(214,182,124,.45)}.pk-g{width:70px;height:70px;color:#C9A262}
+.lk{background:none;border:0;color:#A39D91;text-decoration:underline;cursor:pointer;font:inherit;font-size:15px}
+.ct{flex:1;display:flex;flex-direction:column;gap:14px;min-height:0}
+.ct-top{display:flex;align-items:center;gap:16px}.ct-badge{display:grid;place-items:center;min-width:92px;height:92px;border-radius:24px;background:linear-gradient(180deg,#EBD5A3,#B8904E);color:#1A1306;font:900 58px/1 "Archivo",sans-serif;position:relative}
+.ct-badge small{position:absolute;bottom:7px;font:800 12px/1 "Noto Sans KR",sans-serif;letter-spacing:.2em}.ct-badge.hq{background:linear-gradient(160deg,#2A2519,#14110B);border:1px solid rgba(214,182,124,.5)}
+.ct-t{flex:1;display:flex;flex-direction:column;gap:4px}.ct-t b{font-size:28px;color:#F4EFE5}.ct-t span{font-size:15px;color:#A39D91}
+.ct-main{flex:1;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:16px;min-height:0}
+.now{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr auto;column-gap:26px;row-gap:12px;align-items:center;text-align:left;padding:26px 30px;border-radius:26px;border:1px solid rgba(214,182,124,.5);background:radial-gradient(700px 300px at 15% 0,rgba(201,162,98,.18),transparent),linear-gradient(160deg,#1E1A12,#0F0D09);color:#F6F2E9;cursor:pointer;font:inherit;min-height:0}
+.now:hover{box-shadow:0 0 0 2px rgba(201,162,98,.5)}.now.none{cursor:default;border-color:rgba(255,255,255,.1);background:linear-gradient(160deg,#1B1F27,#101318)}
+.now-k{grid-column:1/-1;font:800 14px/1 "Archivo","Noto Sans KR",sans-serif;letter-spacing:.24em;color:#C9A262}
+.now-g{width:150px;height:150px;color:#E6CD97;grid-row:2/4}
+.now-n{display:flex;flex-direction:column;gap:6px;min-width:0}.now-n em{font:600 13px "Archivo",sans-serif;font-style:normal;letter-spacing:.3em;color:#C9A262;text-transform:uppercase}
+.now-n b{font-size:46px;font-weight:900;line-height:1.1}.now-n>span{font-size:18px;color:#D6CFC0}.now-d{color:#F2E6C8!important;font-weight:800}.now-w{color:#F2C46B!important;font-size:15px!important}
+.now-bar{display:block;height:10px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:6px}.now-bar i{display:block;height:100%;background:linear-gradient(90deg,#9A7A3C,#EBD5A3)}
+.now-p{font-size:14px!important;color:#A39D91!important}
+.now-go{grid-column:2;justify-self:start;background:linear-gradient(180deg,#EBD5A3,#B8904E);color:#1A1306;border-radius:14px;padding:14px 22px;font-size:20px;font-weight:900}
+.sq{border:1px solid rgba(255,255,255,.08);border-radius:22px;background:linear-gradient(160deg,#171A21,#0E1015);padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.sq h3{margin:0;font-size:18px;color:#EDE6D6}.sq ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
+.sq li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);cursor:pointer}
+.sq li span{flex:1;display:flex;flex-direction:column}.sq li b{font-size:18px;color:#F4EFE5}.sq li small{font-size:13px;color:#9C978C}.sq li em{font-style:normal;font-weight:900;font-size:14px;color:#9C978C}
+.sq li.cur{border-color:#C9A262;background:rgba(201,162,98,.12)}.sq li.cur em{color:#EBD5A3}.sq li.fin{opacity:.55}.sq li.fin em{color:#6BE0A4}.sq li.emp{cursor:default;color:#9C978C}
+.sq-g{width:40px;height:40px;color:#C9A262;flex:none}
+.spare{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px}.sp-k{font-size:13px;color:#7D7A72;font-weight:800;margin-right:4px}
+.sp{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(201,162,98,.35);color:#EAD7A8;border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none}.sp-g{width:20px;height:20px}
+@media (max-height:820px){.lux-hero{display:none}.now-g{width:120px;height:120px}.now-n b{font-size:38px}.pk-c{min-height:140px}}
+@media (max-width:900px){.ct-main{grid-template-columns:minmax(0,1fr)}.now{grid-template-columns:1fr}.now-g{grid-row:auto;width:90px;height:90px}.now-go{grid-column:1}}
 </style></head><body>
 <header><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#g)" d="M19 16h7.5v32H19z"/><path fill="url(#g)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#g)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#g)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="w">KICKSTART<b>UP</b></span><span class="t">현장 모드 · 중앙 통제</span><small>v__VERSION__</small></header>
-<main>
+<main id="home">
   <section class="lux-hero"><div class="lux-eyebrow">Taekwondo Competition Systems</div>
     <h1 class="lux-title">KICKSTART <i>UP</i></h1>
     <p class="lux-sub">품새 · 격파 · 겨루기 경기장과 대회 본부를 한 대의 노트북에서 정밀하게 다스립니다.</p>
     <div class="lux-stat" id="luxstat"></div><div class="lux-line"></div></section>
-  <div class="big" id="big"></div>
-  <div class="card" id="viewc"><div class="row" style="justify-content:space-between"><div><b style="font-size:17px">관람객 실시간 결과</b><div class="muted" style="font-size:14px">학부모·선수가 휴대폰으로 코트 진행 상황과 입상 결과를 봅니다. 본부 노트북에서 열면 모든 코트가 한 화면에 나옵니다.</div></div>
-    <div class="row"><a class="pill" href="/view" target="_blank" rel="noopener" style="text-decoration:none">관람객 화면 열기</a><a class="pill warn" href="/view#send" target="_blank" rel="noopener" style="text-decoration:none">인터넷으로 보내기</a></div></div></div>
-  <div class="card" id="role"><span class="pill">확인 중…</span></div>
-  <div class="card" id="net"><span class="pill">확인 중…</span></div>
-  <details class="card how"><summary>이렇게 씁니다 <span class="muted" style="font-size:14px;font-weight:500">· 버튼을 누르면 새 창으로 열리고, 이 첫 화면은 그대로 남습니다</span></summary>
-    <ol>
-      <li>코트 노트북은 운영할 종목(품새·격파·겨루기)을 누르고, 처음 한 번 <b>코트 이름(A·B·C…)</b>을 고릅니다.</li>
-      <li>본부 노트북은 <b>본부</b>를 누릅니다. 같은 와이파이의 코트 노트북을 자동으로 찾아 모읍니다.</li>
-      <li>심판·전광판 기기는 같은 공유기 와이파이에 연결하고, 운영석의 <b>「📱 QR 접속」</b>을 찍습니다.</li>
-    </ol>
-    <p class="muted" style="margin:10px 0 0;font-size:14px"><a class="lnk" href="/guide">사용 설명서</a> · 검은 창(현장 모드 프로그램)을 닫으면 멈춥니다.</p>
-  </details>
+  <div id="stage"></div>
   <div class="lux-foot"><span>KICKSTART UP · Field Edition</span><span>v__VERSION__</span></div>
 </main>
 <div id="dlg"></div>
+<script src="/courtseq.js"></script>
 <script>
 const APPS=__APPS__;
-const ICON={poomsae:'🥋',gyeokpa:'🪵',kyorugi:'🥊'},DESC={poomsae:'공인·자유 품새 · 태권체조 · 팀 대항 종합경연',gyeokpa:'격파 경기 운영석',kyorugi:'겨루기 경기 운영석'};
-let NODE=null;
+let NODE=null,PLAN=null,LIC=null,RUL=0,MORE=false;
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LOCAL=['localhost','127.0.0.1'].includes(location.hostname);
 async function setRole(role,court){
   const r=await fetch('/api/node',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role,court:court||''})});
-  const j=await r.json();if(j.error){alert(j.error);return false;}NODE=j;return true;
-}
+  const j=await r.json();if(j.error){alert(j.error);return false;}NODE=j;return true;}
+/* 종목 그림 (선 그림) — v1.4.54 자유 품새·태권체조·팀 대항 경연 새로 */
 const GLYPH={
- poomsae:'<circle cx="32" cy="12" r="5"/><path d="M32 18v18M32 24l-13 6M32 24l14-8M32 36l-11 18M32 36l12 18M16 58h32"/>',
+ recognized:'<circle cx="32" cy="12" r="5"/><path d="M32 18v18M32 24l-13 6M32 24l14-8M32 36l-11 18M32 36l12 18M16 58h32"/>',
+ freestyle:'<circle cx="22" cy="12" r="5"/><path d="M23 18l4 15M27 33l-13 11M27 33l22-7M25 23l-12-3M25 23l12-7"/><path d="M47 6v12a3.2 3.2 0 1 1-3.2-3.2M47 6l9-2.5v11a3.2 3.2 0 1 1-3.2-3.2"/><path d="M12 58h40"/>',
+ gym:'<circle cx="32" cy="12" r="5"/><path d="M32 18v18M32 23L20 10M32 23l12-13M32 36l-9 18M32 36l9 18"/><path d="M9 42c3.5-3.5 3.5-8 0-11.5M55 42c-3.5-3.5-3.5-8 0-11.5M14 38c1.8-1.8 1.8-4 0-5.8M50 38c-1.8-1.8-1.8-4 0-5.8"/>',
+ team100:'<circle cx="16" cy="17" r="4"/><circle cx="32" cy="12" r="5"/><circle cx="48" cy="17" r="4"/><path d="M16 22v13M16 26l-6 6M16 26l6 4M32 18v18M32 23l-9-7M32 23l9-7M48 22v13M48 26l6 6M48 26l-6 4M16 35l-4 15M16 35l4 15M32 36l-6 18M32 36l6 18M48 35l-4 15M48 35l4 15"/>',
  gyeokpa:'<path d="M10 22h44v7H10zM10 33h18l3 4-3 3H10zM36 33h18v7H36l-2-3zM10 44h44v7H10z"/><path d="M31 10v6M24 12l3 5M38 12l-3 5"/>',
  kyorugi:'<path d="M8 20l14 12-14 12M56 20L42 32l14 12"/><path d="M26 32h12M32 10v8M32 46v8"/>',
  hq:'<path d="M32 6l22 12.7v26.6L32 58 10 45.3V18.7z"/><circle cx="32" cy="32" r="5"/><path d="M32 13v14M32 37v14M15.5 22.5l12 7M36.5 34.5l12 7M48.5 22.5l-12 7M27.5 34.5l-12 7"/>'};
-const EN={poomsae:'Poomsae',gyeokpa:'Gyeokpa',kyorugi:'Kyorugi'};
-const glyph=k=>`<svg class="glyph" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPH[k]||GLYPH.hq}</svg>`;
-function drawBig(){
-  const court=NODE&&NODE.role==='court'?NODE.court:'';
-  document.getElementById('big').innerHTML=APPS.map((a,i)=>`<button class="bt" data-app="${a.key}">${court?`<span class="tag">${esc(court)}코트</span>`:''}<span class="no">0${i+1}</span>${glyph(a.key)}<span class="nm"><em>${EN[a.key]||'Court'}</em><b>${esc(a.title.replace(' 대회',''))}</b><span>${DESC[a.key]||'운영석'}</span></span><span class="go">열기 →</span></button>`).join('')
-    +`<button class="bt hq" data-hq>${NODE&&NODE.role==='hq'?'<span class="tag">이 노트북</span>':''}<span class="no">0${APPS.length+1}</span>${glyph('hq')}<span class="nm"><em>Headquarters</em><b>본부</b><span>여러 코트 모아 보기 · 호출 · 공지 · 통합 결과</span></span><span class="go">열기 →</span></button>`;
-  const st=document.getElementById('luxstat');
-  if(st)st.innerHTML=`<div><small>Station</small><b class="${NODE?'':'warn'}">${!NODE?'연결 안 됨':NODE.role==='hq'?'대회 본부':NODE.role==='court'?esc(NODE.court)+'코트':'미지정'}</b></div><div><small>Disciplines</small><b>${APPS.length}종목</b></div><div><small>Edition</small><b>현장판 v__VERSION__</b></div>`;
-}
-function draw(){
-  drawBig();
-  const el=document.getElementById('role');
-  if(!NODE){el.innerHTML='<span class="pill warn">현장 서버에 연결하지 못했습니다</span>';return;}
-  el.innerHTML=NODE.role==='hq'?`<div class="row"><span class="pill">● 이 노트북: 본부</span><span class="muted">같은 와이파이의 코트 노트북을 자동으로 찾습니다.</span>${LOCAL?'<button class="lk" data-pick style="margin-left:auto">코트로 바꾸기</button>':''}</div>`
-    :NODE.role==='court'?`<div class="row"><span class="pill">● 이 노트북: ${esc(NODE.court)}코트</span><span class="muted">운영석을 열어 두면 진행 상황이 본부로 자동 전달됩니다.</span>${LOCAL?'<button class="lk" data-pick style="margin-left:auto">코트 이름 바꾸기</button>':''}</div>`
-    :`<div class="row"><span class="pill warn">역할 미정</span><span class="muted">위에서 종목(코트 노트북) 또는 본부를 누르면 정해집니다.</span></div>`;
-}
-function pickCourt(next){
-  const cur=NODE&&NODE.role==='court'?NODE.court:'';
-  document.getElementById('dlg').innerHTML=`<div class="ov" data-ov><div class="dlg"><h2>이 노트북은 몇 코트인가요?</h2><p class="muted" style="margin:0">코트마다 노트북 한 대씩, 서로 다른 이름을 고르세요. 한 번 고르면 다음부터는 묻지 않습니다.</p>
-    <div class="letters">${'ABCDEF'.split('').map(c=>`<button data-c="${c}" class="${cur===c?'on':''}">${c}코트</button>`).join('')}</div>
-    <button class="lk" data-close>취소</button></div></div>`;
-  pickCourt.next=next;
-}
-/* 새 창으로 열기: 클릭하자마자 빈 창을 먼저 열어 두어야 팝업 차단에 걸리지 않습니다 */
-function openNew(){const w=window.open('about:blank','_blank');return w;}
-function go(w,url){if(w&&!w.closed){w.location.href=url;try{w.focus();}catch(e){}}else location.href=url;draw();}
-document.addEventListener('click',async e=>{
-  const c=e.target.closest('[data-c]');
-  if(c){const n=pickCourt.next;pickCourt.next=null;const w=n?openNew():null;
-    if(await setRole('court',c.dataset.c)){document.getElementById('dlg').innerHTML='';if(n)go(w,n);else draw();}else if(w)w.close();return;}
-  if(e.target.closest('[data-close]')||e.target.hasAttribute('data-ov')){document.getElementById('dlg').innerHTML='';return;}
-  const a=e.target.closest('[data-app]');
-  if(a){const url='/'+a.dataset.app+'/';
-    if((NODE&&NODE.role==='court')||!LOCAL){go(openNew(),url);return;}
-    pickCourt(url);return;}
-  if(e.target.closest('[data-hq]')){
-    if(NODE&&NODE.role!=='hq'&&LOCAL){if(NODE.role==='court'&&!confirm('이 노트북을 「본부」로 바꿀까요? 코트 운영은 다른 노트북에서 해 주세요.'))return;
-      const w=openNew();if(!(await setRole('hq'))){if(w)w.close();return;}go(w,'/hq/#admin');return;}
-    go(openNew(),'/hq/#admin');return;}
-  if(e.target.closest('[data-pick]'))pickCourt(null);
-});
-/* 다른 창에서 역할이 바뀌면 이 화면도 맞춤 */
-addEventListener('focus',()=>load());
+GLYPH.poomsae=GLYPH.recognized;
+const EVEN={recognized:'Recognized Poomsae',freestyle:'Freestyle Poomsae',gym:'Taekwon Gymnastics',team100:'Team Performance',gyeokpa:'Gyeokpa',kyorugi:'Kyorugi'};
+const glyph=(k,c)=>`<svg class="${c||'glyph'}" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPH[k]||GLYPH.hq}</svg>`;
+const two=n=>String(n).padStart(2,'0');
+function openNew(){return window.open('about:blank','_blank');}
+function go(w,url){if(w&&!w.closed){w.location.href=url;try{w.focus();}catch(e){}}else location.href=url;}
+function stat(){const st=document.getElementById('luxstat');if(!st)return;
+  st.innerHTML=`<div><small>Station</small><b class="${NODE?'':'warn'}">${!NODE?'연결 안 됨':NODE.role==='hq'?'대회 본부':NODE.role==='court'?esc(NODE.court)+'코트':'미지정'}</b></div>
+    <div><small>License</small><b class="${LIC&&LIC.code?'ok':'warn'}">${LIC&&LIC.code?'허가됨 ~'+esc(LIC.ends):'연습 모드'}</b></div>
+    <div><small>Rules</small><b class="${RUL?'ok':''}">${RUL?'본부 규칙 받음':'—'}</b></div>
+    <div><small>Address</small><b>${NODE&&NODE.ips&&NODE.ips.length?'http://'+esc(NODE.ips[0])+':'+NODE.port+'/':'와이파이 확인'}</b></div><div><small>Edition</small><b>v__VERSION__</b></div>`;}
+/* 1) 처음: 이 노트북의 역할 고르기 — 코트(A~H) 또는 본부 */
+function vPick(){const L=MORE?'ABCDEFGH':'ABCDE',cur=NODE&&NODE.role==='court'?NODE.court:'';
+  return `<div class="pk"><h2>이 노트북은 어디에 쓰나요?</h2><p class="muted">코트마다 노트북 한 대씩 서로 다른 코트를 고르세요. 한 번 고르면 기억합니다. 종목은 본부 운영표가 보낸 순서대로 저절로 열립니다.</p>
+    <div class="pk-grid">${L.split('').map(c=>`<button class="pk-c ${cur===c?'on':''}" data-court="${c}"><b>${c}</b><span>${c}코트</span></button>`).join('')}
+      <button class="pk-c hq" data-hqpick>${glyph('hq','pk-g')}<span>대회 본부</span></button></div>
+    ${MORE?'':'<button class="lk" data-more>F·G·H 코트 더 보기</button>'}${NODE&&NODE.role?'<button class="lk" data-cancel style="margin-left:14px">취소</button>':''}</div>`;}
+/* 2) 코트 노트북: 지금 할 종목 카드 + 오늘 이 코트 순서 */
+function vCourt(){const r=window.KS_SEQ&&PLAN?KS_SEQ.seq(PLAN):{B:[],cur:null},b=r.cur,c=NODE.court;
+  const nm=b&&b.divs.find(d=>!d.fin),act=r.active&&b&&r.active.app===b.app?r.active.now:null;
+  const pc=b&&b.games?Math.round(b.gdone/b.games*100):0;
+  const big=b?`<button class="now ev-${b.ev}" data-open="${b.app}">
+      <span class="now-k">${b.fin?'모두 끝남':act?'지금 진행 중':'지금 할 종목'}</span>${glyph(b.ev,'now-g')}
+      <span class="now-n"><em>${EVEN[b.ev]||''}</em><b>${esc(b.name)}</b><span>${two(b.divs[0].num<1000?b.divs[0].num:b.i+1)}${b.n>1?'~'+two(b.divs[b.n-1].num<1000?b.divs[b.n-1].num:b.i+b.n):''}번 순서 · ${b.n}부문${b.games?` · ${b.games}경기`:''}</span>
+        <span class="now-d">${act?`▶ ${esc(act.div||'')} · ${esc(act.label||'')}`:nm?`다음 부문 · ${esc(nm.name)}`:''}</span>
+        ${b.pending?'<span class="now-w">📥 본부가 보낸 명단이 있습니다 · 운영석을 열면 들어갑니다</span>':''}
+        <span class="now-bar"><i style="width:${pc}%"></i></span><span class="now-p">${b.done}/${b.n} 부문 끝 · ${pc}%</span></span>
+      <span class="now-go">${esc(b.name)} 운영석 열기 →</span></button>`
+    :`<div class="now none"><span class="now-k">아직 배정된 경기가 없습니다</span>${glyph('hq','now-g')}<span class="now-n"><b>본부를 기다리는 중</b><span>본부 노트북 「대회 운영표 → 📡 코트로 보내기」를 누르면 이 코트의 순서가 여기에 나옵니다. 급하면 아래 「예비 모드」로 종목을 직접 여세요.</span></span></div>`;
+  const list=r.B.length?r.B.map(x=>`<li class="${x.fin?'fin':x===b?'cur':''}" data-open="${x.app}">${glyph(x.ev,'sq-g')}<span><b>${esc(x.name)}</b><small>${x.divs[0].num<1000?two(x.divs[0].num)+(x.n>1?'~'+two(x.divs[x.n-1].num):'')+'번 · ':''}${x.n}부문</small></span><em>${x.fin?'✓ 끝':x===b?'● 지금':x.done?`${x.done}/${x.n}`:'대기'}</em></li>`).join(''):'<li class="emp">본부가 보낸 순서가 없습니다</li>';
+  return `<div class="ct"><div class="ct-top"><span class="ct-badge">${esc(c)}<small>코트</small></span><div class="ct-t"><b>${esc(c)}코트 노트북</b><span>본부 운영표의 순서대로 종목 운영석이 저절로 이어집니다 · 한 종목이 끝나면 다음 종목으로 넘어가라는 안내가 뜹니다</span></div>
+      <button class="lk" data-repick>코트 바꾸기</button></div>
+    <div class="ct-main">${big}<div class="sq"><h3>오늘 ${esc(c)}코트 순서</h3><ol>${list}</ol></div></div>
+    <div class="spare"><span class="sp-k">예비 모드 · 종목 직접 열기</span>${APPS.map(a=>`<button class="sp" data-open="${a.key}">${glyph(a.key,'sp-g')}${esc(a.title.replace(' 대회',''))}</button>`).join('')}
+      <a class="sp" href="/view" target="_blank" rel="noopener">관람객 화면</a><a class="sp" href="/guide">사용 설명서</a><button class="sp" data-hqpick>본부로 바꾸기</button></div></div>`;}
+/* 3) 본부 노트북 */
+function vHq(){return `<div class="ct"><div class="ct-top"><span class="ct-badge hq">${glyph('hq','pk-g')}</span><div class="ct-t"><b>대회 본부 노트북</b><span>같은 와이파이의 코트 노트북을 자동으로 찾아 모읍니다 · 종목 설정 → 대회 운영표 → 코트로 보내기 순서로 준비하세요</span></div><button class="lk" data-repick>코트로 바꾸기</button></div>
+    <div class="ct-main"><button class="now ev-hq" data-hqopen><span class="now-k">대회 본부</span>${glyph('hq','now-g')}<span class="now-n"><em>Headquarters</em><b>본부 운영 열기</b><span>종목별 경기 규칙 · 대회 운영표(관제탑) · 시작 전 점검 · 호출·방송 · 통합 결과</span></span><span class="now-go">본부 열기 →</span></button>
+      <div class="sq"><h3>바로 가기</h3><ol><li data-hqopen>${glyph('hq','sq-g')}<span><b>본부 운영</b><small>코트 연결 · 점검 · 운영표</small></span><em>→</em></li>
+        <li data-link="/hq/#board">${glyph('hq','sq-g')}<span><b>본부 모니터</b><small>전광판 · 방송</small></span><em>→</em></li>
+        <li data-link="/view">${glyph('recognized','sq-g')}<span><b>관람객 화면</b><small>실시간 결과</small></span><em>→</em></li></ol></div></div>
+    <div class="spare"><span class="sp-k">예비 모드 · 종목 직접 열기</span>${APPS.map(a=>`<button class="sp" data-open="${a.key}">${glyph(a.key,'sp-g')}${esc(a.title.replace(' 대회',''))}</button>`).join('')}<a class="sp" href="/guide">사용 설명서</a></div></div>`;}
+let PICK=false;
+function draw(){stat();const el=document.getElementById('stage');
+  if(!NODE){el.innerHTML='<div class="now none"><span class="now-k">현장 서버에 연결하지 못했습니다</span><span class="now-n"><b>검은 창(현장 모드 프로그램)이 켜져 있는지 확인해 주세요</b></span></div>';return;}
+  el.innerHTML=PICK||!NODE.role||NODE.role===''||NODE.role==='none'?vPick():NODE.role==='hq'?vHq():vCourt();}
+document.addEventListener('click',async e=>{const t=e.target.closest('[data-court],[data-hqpick],[data-more],[data-cancel],[data-repick],[data-open],[data-hqopen],[data-link]');if(!t)return;
+  if(t.dataset.court){if(!LOCAL&&!confirm('다른 기기에서 이 노트북의 코트를 바꿀까요?'))return;if(await setRole('court',t.dataset.court)){PICK=false;await load();}return;}
+  if(t.hasAttribute('data-hqpick')){if(NODE&&NODE.role==='court'&&!confirm('이 노트북을 「본부」로 바꿀까요? 코트 운영은 다른 노트북에서 해 주세요.'))return;const w=openNew();if(!(await setRole('hq'))){if(w)w.close();return;}PICK=false;draw();go(w,'/hq/#admin');return;}
+  if(t.hasAttribute('data-more')){MORE=true;draw();return;}
+  if(t.hasAttribute('data-cancel')){PICK=false;draw();return;}
+  if(t.hasAttribute('data-repick')){PICK=true;draw();return;}
+  if(t.hasAttribute('data-hqopen')){go(openNew(),'/hq/#admin');return;}
+  if(t.dataset.link){go(openNew(),t.dataset.link);return;}
+  if(t.dataset.open){go(openNew(),'/'+t.dataset.open+'/#admin-run');return;}});
 async function load(){
   try{NODE=await (await fetch('/api/node')).json();}catch(e){NODE=null;}
-  draw();
-  const el=document.getElementById('net');
-  if(!NODE)return;
-  if(!NODE.ips||!NODE.ips.length){el.innerHTML='<span class="pill warn">⚠ 공유기 와이파이에 연결되어 있지 않습니다</span><p class="muted" style="margin:8px 0 0">노트북을 공유기 와이파이(또는 랜선)에 연결한 뒤, 현장 모드 프로그램을 다시 실행해 주세요.</p>';return;}
-  el.innerHTML=`<div class="row"><span class="pill">● 현장 서버 실행 중</span><span>이 노트북 주소: <b>http://${NODE.ips[0]}:${NODE.port}/</b></span></div>`;
-}
-load();
+  try{PLAN=await (await fetch('/api/court/plan',{cache:'no-store'})).json();}catch(e){PLAN=null;}
+  try{LIC=(await (await fetch('/api/lic')).json()).lic;}catch(e){}
+  try{RUL=(await (await fetch('/api/rules')).json()).at||0;}catch(e){}
+  draw();}
+addEventListener('focus',()=>load());setInterval(()=>{if(!PICK)load();},5000);load();
 </script>
+
 </body></html>

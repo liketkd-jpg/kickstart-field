@@ -133,6 +133,7 @@ type simMsg struct {
 	On    bool    `json:"on"`
 	Speed float64 `json:"speed"`
 	At    int64   `json:"at"`
+	Reset int64   `json:"reset,omitempty"` // v1.4.54 가상 경기 초기화 (점수·결과를 지우고 처음부터)
 }
 
 func handleHQSim(w http.ResponseWriter, r *http.Request) {
@@ -177,7 +178,7 @@ func handleInboxSim(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, a := range apps {
 		if s := stores[a.Key]; s != nil {
-			s.setDoc("sim/main", map[string]any{"on": m.On, "speed": m.Speed, "at": m.At, "from": "본부"})
+			s.setDoc("sim/main", map[string]any{"on": m.On, "speed": m.Speed, "at": m.At, "from": "본부", "reset": m.Reset})
 		}
 	}
 	writeJSON(w, 200, map[string]any{"ok": true})

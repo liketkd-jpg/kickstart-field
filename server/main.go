@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.53" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.54" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -327,6 +327,15 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/api/lic":
 		handleLic(w, r)
 		return
+	case p == "/api/court/plan":
+		handleCourtPlan(w, r)
+		return
+	case p == "/courtseq.js":
+		serveAsset(w, "assets/courtseq.js", "application/javascript; charset=utf-8")
+		return
+	case p == "/next.js":
+		serveAsset(w, "assets/next.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/api/court/active":
 		writeJSON(w, 200, courtActive())
 		return
@@ -443,6 +452,8 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/room.js"></script>`) // 대기실 출석·불참·추가 대기 알림
 		out.WriteString(`<script src="/jauto.js"></script>`) // 코트 심판 링크: 종목 바뀌면 채점기 자동 전환
 		out.WriteString(`<script src="/rules.js"></script>`) // 본부 종목별 경기 규칙 받기
+		out.WriteString(`<script src="/courtseq.js"></script>`)
+		out.WriteString(`<script src="/next.js"></script>`) // 한 종목이 끝나면 다음 종목 운영석으로
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)
