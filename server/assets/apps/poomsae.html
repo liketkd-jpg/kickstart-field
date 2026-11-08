@@ -1716,7 +1716,7 @@ setInterval(tickTimers,90);
    - 전광판 링크: #display
    공유 권한이 "편집자"가 아닌 사람(기여자)은 어느 링크로 들어와도 채점 화면만 보입니다. */
 const APP_URL=(window.KS_FIELD&&window.KS_FIELD.base)||(window.KS_HOST&&window.KS_HOST.base)||'https://claude.ai/artifact/TbUqJKtGBM1q1ajaB8hWs7';
-const judgeUrl=n=>APP_URL+'#judge-'+n, DISPLAY_URL=APP_URL+'#display';
+const judgeUrl=n=>{/* v1.4.48 현장 모드: 코트 심판 링크(종목 자동 전환). 예전 링크(#judge-번호)는 예비로 그대로 쓸 수 있음 */try{if(window.KS_FIELD&&KS_FIELD.base)return new URL(APP_URL).origin+'/judge/'+n;}catch(e){}return APP_URL+'#judge-'+n;}, DISPLAY_URL=APP_URL+'#display';
 /* QR 접속 목록: 심판·전광판·보조 운영석 */
 window.KSQR_ITEMS=()=>({title:(SET().name||'품새 대회')+' · '+(window.KS_FIELD?'현장 모드':'온라인'),items:[...Array.from({length:SET().judges},(_,i)=>({label:(i+1)+'심',sub:'심판 채점기',url:judgeUrl(i+1)})),{label:'전광판',sub:'관중용 모니터',url:DISPLAY_URL},{label:'운영석',sub:'보조 운영 기기',url:APP_URL+'#admin-run'}]});
 const qrBtn=(cls)=>`<button class="btn sm ${cls||''}" data-ksm="qr" title="심판·전광판 QR 코드">📱 QR 접속</button>`;
@@ -6059,7 +6059,12 @@ async function rep(id,o){MVREP_LOCAL[id]={...o,at:Date.now()};MVREP={...MVREP,[i
 async function mvFlush(){if(!MVDIRTY)return;const st=g('store');
   const out={};for(const [k,v] of Object.entries(MVREP)){if(Date.now()-(v.at||0)>6*3600e3)continue;out[k]=v.state==='ready'?v:{...v,rows:undefined};}
   try{await st.put('hq/moves',JSON.parse(JSON.stringify(out)));MVDIRTY=false;}catch(e){console.warn('move report',e);}}
-const isOp=()=>{try{return !g('KIOSK')&&String(g('routeNow')()).startsWith('admin');}catch(e){return false;}};
+/* v1.4.48 옮기기 처리: 운영석 화면만이 아니라, 코트 노트북 자체에서 연 화면이면(전광판·채점 화면 포함) 어느 화면에서든 처리합니다.
+   같은 노트북에 이 앱 창이 여러 개 열려 있으면 한 창만 처리하도록 잠금을 씁니다 (두 번 옮기지 않게). */
+const MVTAB='t'+Math.random().toString(36).slice(2,8),MVLK='ks_mvlock_'+APPK;
+const onLaptop=()=>/^(localhost|127\.|\[?::1)/.test(location.hostname);
+function mvLock(){try{const v=JSON.parse(localStorage.getItem(MVLK)||'null');if(v&&v.id!==MVTAB&&Date.now()-v.at<6000)return false;localStorage.setItem(MVLK,JSON.stringify({id:MVTAB,at:Date.now()}));return true;}catch(e){return true;}}
+const isOp=()=>{try{if(g('KIOSK'))return false;const r=String(g('routeNow')());if(!(r.startsWith('admin')||(onLaptop()&&r==='display')))return false;const S=g('S');if(!S||!(S.roster||[]).length&&!(S.divs||[]).length)return false;return mvLock();}catch(e){return false;}};
 function started(d){try{const f=g('divHasResults');if(typeof f==='function'&&f(d))return true;}catch(e){}
   try{const B=window.KS_HQ&&KS_HQ.board();if(B){if(B.now&&B.now.div===d.name)return true;const x=(B.divs||[]).find(v=>v.name===d.name);if(x&&x.done>0)return true;}}catch(e){}
   try{const c=g('curOf');const cur=typeof c==='function'?c():null;if(cur&&cur.divId===d.id)return true;}catch(e){}

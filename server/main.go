@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.47" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.48" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -210,6 +210,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/" || p == "/index.html":
 		serveLanding(w, r)
 		return
+	case p == "/jauto.js":
+		serveAsset(w, "assets/jauto.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/room.js":
 		serveAsset(w, "assets/room.js", "application/javascript; charset=utf-8")
 		return
@@ -312,6 +315,12 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case strings.HasPrefix(p, "/live/"):
 		handleLive(w, r)
+		return
+	case p == "/api/court/active":
+		writeJSON(w, 200, courtActive())
+		return
+	case strings.HasPrefix(p, "/judge/"):
+		serveJudgeAuto(w, strings.Trim(strings.TrimPrefix(p, "/judge/"), "/"))
 		return
 	case p == "/guide" || p == "/guide/":
 		serveAsset(w, "assets/guide.html", "text/html; charset=utf-8")
@@ -421,6 +430,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 	if key != "hq" {
 		out.WriteString(`<script src="/sim.js"></script>`) // 운영표 「가상 경기」 (가상 심판)
 		out.WriteString(`<script src="/room.js"></script>`) // 대기실 출석·불참·추가 대기 알림
+		out.WriteString(`<script src="/jauto.js"></script>`) // 코트 심판 링크: 종목 바뀌면 채점기 자동 전환
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)

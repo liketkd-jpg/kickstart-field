@@ -17,6 +17,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .tabs a.on{background:linear-gradient(180deg,#2A2519,#1D1A12);color:var(--brass-1);box-shadow:inset 0 0 0 1px rgba(214,182,124,.35)}
 main{max-width:1240px;margin:0 auto;padding:18px 16px 60px;display:flex;flex-direction:column;gap:14px}
 .mvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.mvr.mvrec{background:rgba(217,164,65,.14);border-radius:8px;box-shadow:inset 3px 0 0 #D9A441;padding:2px 4px}.mvtip{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.mvgo{font-size:15px;padding:10px 16px}
 .mvc{background:var(--sunk);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .mvc.late{border-color:#D9A441;box-shadow:0 0 0 2px rgba(217,164,65,.25)}
 .mvl{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto}
@@ -102,6 +103,7 @@ body.mon #mon{display:grid;position:fixed;inset:0;grid-template-rows:auto minmax
 .full b{display:block;font-family:'Black Han Sans','Malgun Gothic',sans-serif;font-weight:400;font-size:min(6.6vw,11vh);line-height:1.28;letter-spacing:.01em;word-break:keep-all;white-space:pre-wrap;background:linear-gradient(180deg,#FFF6DE 0%,#F1D79A 55%,#C9A35C 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 24px rgba(0,0,0,.65))}
 .full span{display:block;margin-top:4vh;font-family:'Archivo','Malgun Gothic',sans-serif;font-size:min(1.6vw,2.6vh);color:#C9B48A;font-weight:800;letter-spacing:.3em}
 /* 호출·안내: 어두운 칠기 판 + 금빛 테두리 + 굵은 검은고딕(Black Han Sans) 금빛 글씨 — 멀리서도 또렷하게 */
+.ann b .al,.full b .al{display:block}.ann b .al+.al,.full b .al+.al{margin-top:.18em}.ann b .crt{font-size:1.18em;color:#F4E2B4}.ann b .div{font-size:.82em;opacity:.97}
 .ann{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:radial-gradient(1400px 800px at 50% 50%,rgba(20,16,8,.55),rgba(2,3,5,.82));backdrop-filter:blur(5px);animation:afade .3s ease-out}
 .ann>div{width:min(94vw,1700px);padding:5vh 4vw 6vh;border-radius:30px;text-align:center;background:linear-gradient(180deg,#1A160D,#0A0A0C 70%);border:2px solid rgba(230,205,151,.6);
   box-shadow:0 0 0 1px rgba(0,0,0,.7),0 50px 140px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,240,200,.28),0 0 120px rgba(214,182,124,.22);animation:apop .45s cubic-bezier(.2,.9,.25,1.15)}
@@ -326,18 +328,38 @@ const MVST={req:'원래 코트 확인 중',sending:'명단·음원 보내는 중
 function mvLine(m){const age=NOW()-(m.at||0),slow=m.state==='req'&&age>20000;
   const site=m.site==='ok'?' · 홈페이지 대진표도 고침':m.site==='local'?' · 본부 앱 코트 나누기 고침 (홈페이지에 올린 대진표 없음)':m.site==='err'?` · 홈페이지 대진표 다시 올리기 실패: ${m.siteErr||''}`:m.state==='done'||m.state==='sent'?' · 본부 노트북 경기 앱을 열면 코트 나누기·홈페이지 대진표가 고쳐집니다':'';
   return `<tr><td class="small muted" style="white-space:nowrap;width:1%">${hhmm(m.at)}</td><td><b>${esc(m.from)}→${esc(m.to)}코트</b> <span class="chip">${esc(APPN[m.app]||m.app)}</span> ${esc(m.div)}${m.n?` <span class="small muted">${m.n}건${m.music?` · 음원 ${m.music}곡`:''}</span>`:''}</td>
-    <td><span class="chip ${m.state==='done'?'ok':m.state==='err'?'bad':'warn'}"><i class="dot"></i>${MVST[m.state]||esc(m.state)}</span><div class="small ${m.state==='err'?'':'muted'}">${m.state==='err'?esc(m.err||''):slow?`${esc(m.from)}코트 노트북의 운영석(경기 진행) 화면이 열려 있어야 옮겨집니다`:m.state==='sent'?`${m.taken?'✓ ':''}${esc(m.to)}코트 받음 · ${m.removed?'✓ ':''}${esc(m.from)}코트에서 뺌`:''}${esc(site)}${m.musicErr?` · 음원 ${m.musicErr}곡 못 보냄`:''}</div></td></tr>`;}
+    <td><span class="chip ${m.state==='done'?'ok':m.state==='err'?'bad':'warn'}"><i class="dot"></i>${MVST[m.state]||esc(m.state)}</span><div class="small ${m.state==='err'?'':'muted'}">${m.state==='err'?esc(m.err||''):slow?`${esc(m.from)}코트 노트북에서 ${esc(APPN[m.app]||'')} 앱 화면(운영석 또는 전광판)이 열려 있어야 옮겨집니다 <button class="btn sm" data-a="mvCancel" data-id="${esc(m.id)}">이 옮기기 취소</button>`:m.state==='sent'?`${m.taken?'✓ ':''}${esc(m.to)}코트 받음 · ${m.removed?'✓ ':''}${esc(m.from)}코트에서 뺌${!m.taken&&NOW()-(m.updated||m.at)>20000?` · ${esc(m.to)}코트 노트북에서 ${esc(APPN[m.app]||'')} 앱 화면을 열어 주세요`:''}`:''}${esc(site)}${m.musicErr?` · 음원 ${m.musicErr}곡 못 보냄`:''}</div></td></tr>`;}
+/* v1.4.48 옮기기 추천: 코트마다 끝나는 시각(종목을 차례로 하면 모두 더함)을 어림하고,
+   가장 늦게 끝나는 코트의 「뒤쪽 시작 전 부문」을 가장 먼저 끝나는 코트로 하나씩 옮겨 보며 차이가 줄어드는 만큼만 추천합니다 */
+function mvPlan(L,busy){const now=NOW(),C={};
+  courtList().filter(c=>c.online).forEach(c=>{C[c.court]={court:c.court,end:now};});
+  L.forEach(x=>{const c=C[x.court]||(C[x.court]={court:x.court,end:now});c.end+=x.left*x.p.min*60000;});
+  const q={};L.forEach(x=>{q[x.court+'|'+x.app]=x.rem.filter(d=>d.fresh&&!busy.has(x.court+'|'+x.app+'|'+d.name)).slice();});
+  const plan=[];
+  for(let it=0;it<60;it++){const arr=Object.values(C).sort((a,b)=>a.end-b.end);if(arr.length<2)break;const lo=arr[0],hi=arr[arr.length-1];
+    if(hi.end-lo.end<10*60000)break;
+    let best=null;L.filter(x=>x.court===hi.court).forEach(x=>{const Q=q[x.court+'|'+x.app];if(!Q||!Q.length)return;const d=Q[Q.length-1];
+      const dur=d.total*x.p.min*60000,add=d.total*pace(lo.court,x.app).min*60000,gain=hi.end-Math.max(hi.end-dur,lo.end+add);if(!best||gain>best.gain)best={x,d,dur,add,gain};});
+    if(!best||best.gain<60000)break;
+    q[best.x.court+'|'+best.x.app].pop();hi.end-=best.dur;lo.end+=best.add;
+    plan.push({from:hi.court,app:best.x.app,div:best.d.name,to:lo.court,n:best.d.total,pos:best.x.rem.indexOf(best.d)+1});}
+  return {plan,ends:Object.values(C)};}
+function mvPlanText(plan){const g={};plan.forEach(p=>{const k=p.from+'|'+p.app+'|'+p.to;(g[k]=g[k]||[]).push(p);});
+  return Object.values(g).map(a=>{const ps=a.map(p=>p.pos).sort((x,y)=>x-y),n=a.reduce((t,p)=>t+p.n,0);
+    return `<b>${esc(a[0].from)}코트 ${esc(APPN[a[0].app]||'')}</b> ${ps.length>1&&ps[ps.length-1]-ps[0]===ps.length-1?`${ps[0]}~${ps[ps.length-1]}번째`:`${ps.join('·')}번째`} 부문 ${a.length}개(${n}경기) → <b>${esc(a[0].to)}코트</b>`;}).join('<br>');}
 function vMove(){const L=lanes();if(!L.length)return '';const MV=Object.values(S.moves||{}).sort((a,b)=>b.at-a.at);
   const busy=new Set(MV.filter(m=>['req','sending','sent'].includes(m.state)).map(m=>m.from+'|'+m.app+'|'+m.div));
   const act=L.filter(x=>x.left>0),late=act.length>1?act.reduce((a,b)=>b.end>a.end?b:a):null,early=act.length>1?L.reduce((a,b)=>b.end<a.end?b:a):null;
   const gap=late&&early?Math.round((late.end-early.end)/60000):0;
-  const tip=gap>=20&&late.rem.some(x=>x.fresh)?`<div class="alert warn">⏱ ${esc(late.court)}코트(${esc(APPN[late.app]||'')})가 가장 늦게 끝납니다 (약 ${hhmm(late.end)}). 시작 전 부문을 먼저 끝나는 ${esc(early.court)}코트(약 ${hhmm(early.end)})로 옮기면 약 ${gap}분 차이를 줄일 수 있습니다.</div>`:'';
+  const PL=mvPlan(L,busy),plan=PL.plan,pk=new Map(plan.map(p=>[p.from+'|'+p.app+'|'+p.div,p])),es=PL.ends.map(c=>c.end),before=es.length?Math.round((Math.max(...es)-Math.min(...es))/60000):0;
+  const tip=plan.length?`<div class="alert warn mvtip"><div>⏱ <b>옮기기 추천</b> — 남은 경기와 진행 속도로 계산했습니다. 불이 들어온 부문을 옮기면 코트들이 비슷하게 끝납니다.<div style="margin-top:6px">${mvPlanText(plan)}</div></div>
+      <button class="btn ${S.mvArm==='PLAN'?'primary':''} mvgo" data-a="mvPlan">${S.mvArm==='PLAN'?'한 번 더 누르면 옮김':`🔀 추천대로 옮기기 (${plan.length}개 부문)`}</button></div>`:'';
   return `<div class="panel"><div class="row between"><h2>🔀 코트 진행 · 부문 옮기기</h2><span class="small muted">끝나는 시각은 진행 속도로 어림합니다 · 점수가 들어간 부문은 옮기지 않습니다</span></div>${tip}
-    <div class="mvgrid">${L.map(x=>{const to=L.filter(y=>y.app===x.app&&y.court!==x.court).map(y=>y.court);
+    <div class="mvgrid">${L.map(x=>{const to=[...new Set(courtList().filter(c=>c.online&&c.court!==x.court).map(c=>c.court))].sort();
       return `<div class="mvc ${late&&x===late&&gap>=20?'late':''}"><div class="row between"><b style="font-size:18px">${esc(x.court)}코트 <span class="chip">${esc(APPN[x.app]||x.app)}</span></b>${x.left?`<span class="chip ${late&&x===late&&gap>=20?'warn':'ok'}">끝 약 ${hhmm(x.end)}</span>`:'<span class="chip ok">모두 끝</span>'}</div>
         <span class="small muted">남은 부문 ${x.rem.length}개 · 남은 경기 ${x.left} · 1경기 약 ${x.p.min.toFixed(1)}분${x.p.real?'':' (기본값)'}</span>
         <div class="mvl">${x.rem.map(d=>{const k=x.court+'|'+x.app+'|'+d.name,sid='mvto_'+btoa(unescape(encodeURIComponent(k))).replace(/[^A-Za-z0-9]/g,'');
-          return `<div class="mvr"><span class="mvn" title="${esc(d.name)}">${esc(d.name)}</span><span class="small muted">${d.done}/${d.total}</span>${d.live?'<span class="chip ok">진행 중</span>':d.fresh?(busy.has(k)?'<span class="chip warn">옮기는 중</span>':to.length?`<select id="${sid}" class="mvsel">${to.map(c=>`<option value="${esc(c)}">${esc(c)}코트로</option>`).join('')}</select><button class="btn sm ${S.mvArm===k?'primary':''}" data-a="mv" data-k="${esc(k)}" data-sel="${sid}">${S.mvArm===k?'한 번 더 누르면 옮김':'옮기기'}</button>`:'<span class="small muted">같은 종목 코트 없음</span>'):'<span class="chip">진행 중</span>'}</div>`;}).join('')||'<span class="small muted">남은 부문이 없습니다</span>'}</div></div>`;}).join('')}</div>
+          const rec=pk.get(k);return `<div class="mvr${rec?' mvrec':''}"><span class="small muted" style="width:18px;text-align:right">${x.rem.indexOf(d)+1}</span><span class="mvn" title="${esc(d.name)}">${esc(d.name)}</span>${rec?`<span class="chip warn">→ ${esc(rec.to)}코트 추천</span>`:''}<span class="small muted">${d.done}/${d.total}</span>${d.live?'<span class="chip ok">진행 중</span>':d.fresh?(busy.has(k)?'<span class="chip warn">옮기는 중</span>':to.length?`<select id="${sid}" class="mvsel">${to.map(c=>`<option value="${esc(c)}" ${rec&&rec.to===c?'selected':''}>${esc(c)}코트로</option>`).join('')}</select><button class="btn sm ${S.mvArm===k?'primary':''}" data-a="mv" data-k="${esc(k)}" data-sel="${sid}">${S.mvArm===k?'한 번 더 누르면 옮김':'옮기기'}</button>`:'<span class="small muted">옮길 코트 없음</span>'):'<span class="chip">진행 중</span>'}</div>`;}).join('')||'<span class="small muted">남은 부문이 없습니다</span>'}</div></div>`;}).join('')}</div>
     ${MV.length?`<div><span class="small muted">옮긴 기록</span><table>${MV.slice(0,8).map(mvLine).join('')}</table></div>`:''}</div>`;}
 
 /* ---------- 본부 운영 ---------- */
@@ -439,8 +461,8 @@ function vMon(){
     <div class="mf">${tk}<span class="ks"><svg class="ksm" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span>KICKSTART<b>UP</b></span><small>대회 본부</small></span></div>`;
   tick();
   let ov='';
-  if(n.mode==='full'&&n.text)ov+=`<div class="full"><div><b>${esc(n.text)}</b><span>${esc(comp)}</span></div></div>`;
-  const a=S.announce;if(a&&S.annAt&&NOW()-S.annAt<12000)ov+=`<div class="ann"><div><small>${a.auto?'선수 호출':a.room?'대기실 안내':'본부 안내'}</small><b>${esc(a.text)}</b></div></div>`;
+  if(n.mode==='full'&&n.text)ov+=`<div class="full"><div><b>${annHtml(n.text)}</b><span>${esc(comp)}</span></div></div>`;
+  const a=S.announce;if(a&&S.annAt&&NOW()-S.annAt<12000)ov+=`<div class="ann"><div><small>${a.auto?'선수 호출':a.room?'대기실 안내':'본부 안내'}</small><b>${annHtml(a.text)}</b></div></div>`;
   const needTap=navigator.userActivation&&!navigator.userActivation.hasBeenActive&&CFG().voice;
   if(needTap)ov+='<button class="tapv" data-a="unlock">🔊 화면을 한 번 눌러 호출 소리를 켜 주세요</button>';
   $('#ovl').innerHTML=ov;
@@ -492,6 +514,15 @@ setInterval(spkTick,5000);
 const maySpeak=()=>!LOCALWIN||amSpeaker()||spkStale();
 function say(text,times){if(!('speechSynthesis' in window)||!CFG().voice)return;speakKo(text,times);}
 try{speechSynthesis.addEventListener('voiceschanged',()=>{if(document.getElementById('hqVoice'))render();});}catch(e){}
+/* v1.4.48 전광판 글씨 줄 나누기: 「A코트」 / 부문 / 「선수는 준비해 주세요」, 문장마다 새 줄 */
+function annLines(t){t=String(t||'').replace(/\s+/g,' ').trim();if(!t)return [];
+  const out=[];t.split(/(?<=[.!?。])\s+/).forEach(sn=>{sn=sn.trim();if(!sn)return;
+    const m=sn.match(/^([A-Za-z0-9가-힣]{1,4}\s?코트)\s*[,，]\s*(.+?)\s*((?:선수|팀|참가자)\S*\s.+)$/);
+    if(m){out.push({t:m[1],c:'crt'});out.push({t:m[2],c:'div'});out.push({t:m[3]});return;}
+    const k=sn.indexOf(', ');if(k>1&&k<sn.length-4){out.push({t:sn.slice(0,k)});out.push({t:sn.slice(k+2)});return;}
+    out.push({t:sn});});
+  return out;}
+const annHtml=t=>annLines(t).map(x=>`<span class="al${x.c?' '+x.c:''}">${esc(x.t)}</span>`).join('');
 function chime(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C(),t=c.currentTime;[[880,0],[1175,.18],[1568,.36]].forEach(([f,d])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.5);o.connect(g).connect(c.destination);o.start(t+d);o.stop(t+d+.55);});}catch(e){}}
 let lastAnn=null;
 /* 새 호출이 오면 소리·화면. 보낸 기기(휴대폰·다른 노트북)의 시계가 달라도 되도록 「이 화면이 받은 시각」으로 판단 */
@@ -657,6 +688,11 @@ async function announce(text,extra){const id='m'+NOW().toString(36);const doc={i
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
   if(/^lv/.test(a)){e.preventDefault();try{await lvClick(a,b);}catch(err){toast(err.message||String(err));}return;}
   if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest|hqOpenEdge|annPhDelR)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
+  if(a==='mvCancel'){try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:b.dataset.id})});const j=await r.json().catch(()=>({}));toast(r.ok?'옮기기를 취소했습니다 · 부문은 원래 코트에 그대로 있습니다':(j.error||'취소하지 못했습니다'));}catch(err){toast('본부 프로그램에 연결하지 못했습니다');}schedule();return;}
+  if(a==='mvPlan'){if(S.mvArm!=='PLAN'){S.mvArm='PLAN';schedule();setTimeout(()=>{if(S.mvArm==='PLAN'){S.mvArm=null;schedule();}},5000);return;}
+    S.mvArm=null;b.disabled=true;const L=lanes(),busy=new Set(Object.values(S.moves||{}).filter(m=>['req','sending','sent'].includes(m.state)).map(m=>m.from+'|'+m.app+'|'+m.div)),P=mvPlan(L,busy).plan;let ok=0,bad=[];
+    for(const p of P){try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app:p.app,div:p.div,from:p.from,to:p.to})});if(r.ok)ok++;else{const j=await r.json().catch(()=>({}));bad.push(p.div+': '+(j.error||r.status));}}catch(err){bad.push(p.div);}}
+    toast(bad.length?`${ok}개 부문 옮기는 중 · ${bad.length}개는 보내지 못했습니다 (${bad[0]})`:`추천한 ${ok}개 부문을 옮기는 중입니다`);schedule();return;}
   if(a==='mv'){const k=b.dataset.k;if(S.mvArm!==k){S.mvArm=k;schedule();setTimeout(()=>{if(S.mvArm===k){S.mvArm=null;schedule();}},5000);return;}
     S.mvArm=null;const [from,app,...rest]=k.split('|'),div=rest.join('|'),sel=document.getElementById(b.dataset.sel),to=sel&&sel.value;if(!to)return toast('받을 코트를 골라 주세요');
     b.disabled=true;try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app,div,from,to})});const j=await r.json().catch(()=>({}));

@@ -93,12 +93,17 @@ func handleHQMove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var q struct {
-		App  string `json:"app"`
-		Div  string `json:"div"`
-		From string `json:"from"`
-		To   string `json:"to"`
+		App    string `json:"app"`
+		Div    string `json:"div"`
+		From   string `json:"from"`
+		To     string `json:"to"`
+		Cancel string `json:"cancel"`
 	}
-	if err := readBody(r, 1<<14, &q); err != nil || !validApp(q.App) || !validCourt(q.From) || !validCourt(q.To) || strings.TrimSpace(q.Div) == "" {
+	if err := readBody(r, 1<<14, &q); err == nil && q.Cancel != "" {
+		cancelMove(w, q.Cancel)
+		return
+	}
+	if !validApp(q.App) || !validCourt(q.From) || !validCourt(q.To) || strings.TrimSpace(q.Div) == "" {
 		writeJSON(w, 400, map[string]any{"error": "invalid_argument"})
 		return
 	}
@@ -349,4 +354,28 @@ func loadMoves() {
 			moves[m.ID] = &mm
 		}
 	}
+}
+
+// 본부 화면: 「원래 코트 확인 중」에서 멈춘 옮기기를 취소 (아직 명단을 보내기 전일 때만)
+func cancelMove(w http.ResponseWriter, id string) {
+	moveMu.Lock()
+	m := moves[id]
+	if m == nil {
+		moveMu.Unlock()
+		writeJSON(w, 404, map[string]any{"error": "옮기기 기록을 찾지 못했습니다"})
+		return
+	}
+	if m.State != "req" {
+		moveMu.Unlock()
+		writeJSON(w, 409, map[string]any{"error": "이미 명단을 보내는 중이라 취소할 수 없습니다"})
+		return
+	}
+	m.State, m.Err = "cancel", "본부에서 취소했습니다"
+	saveMove(m)
+	cp := *m
+	moveMu.Unlock()
+	if src := courtAddr(cp.From); src != "" {
+		_, _ = postJSON(src, "/api/inbox/move", map[string]any{"id": cp.ID, "app": cp.App, "div": cp.Div, "from": cp.From, "to": cp.To, "state": "cancel", "err": cp.Err}, 5*time.Second)
+	}
+	writeJSON(w, 200, map[string]any{"ok": true})
 }
