@@ -1474,7 +1474,9 @@ function pfixUnit(d,unit){
   const f=pfixFor(d,rk);return f?{list:f,fixed:1,at:0}:null;
 }
 /* 라운드별 품새 수 (지정 품새표가 있으면 그 개수, 없으면 부문 설정) */
-const pCountR=(d,rk)=>{const f=rk&&!isTeamType(d.type)?pfixFor(d,rk):null;return f?Math.min(2,f.length):pCount(d);};
+/* v1.4.53 본부 종목 설정 「예선 2개 · 결선 1개」처럼 단계마다 품새 수 (typePoomStage) — 결선(토너먼트 결승)이면 final, 그 앞은 pre */
+const pCountStage=(d,rk)=>{const ps=(SET().typePoomStage||{})[d.type];if(!ps||!rk||isTeamType(d.type))return 0;return pfRoundOf(d,rk)==='결선'?Number(ps.final)||0:Number(ps.pre)||0;};
+const pCountR=(d,rk)=>{const f=rk&&!isTeamType(d.type)?pfixFor(d,rk):null;if(f)return Math.min(2,f.length);const st=pCountStage(d,rk);return st?Math.min(2,st):pCount(d);};
 const ksR=(d,rk)=>pCountR(d,rk)===2?[1,2]:[1];
 /* ===================== 지정품새 추첨 (제8조 공인품새의 지정) =====================
    4.1 개인전 / 4.2 단체·복식전 부별 지정품새. 품새 2개면 앞쪽 그룹에서 1개, 뒤쪽 그룹에서 1개
@@ -2925,7 +2927,7 @@ async function callIt(callId){
   if(d.type==='recognized'&&(s.pdraw||'call')==='call'&&c.unit&&!pdrawOf(d.id,c.unit))await drawUnit(d,c).catch(()=>{});
   const timer=d.type==='freestyle'?{min:s.freeMin,max:s.freeMax,running:false,startedAt:0,elapsed:0}
     :d.type==='gym'?{min:s.gymMin??110,max:s.gymMax??120,running:false,startedAt:0,elapsed:0}
-    :d.type==='team100'?{min:0,max:s.teamMax??360,running:false,startedAt:0,elapsed:0}
+    :d.type==='team100'?{min:s.teamMin||0,max:s.teamMax??360,running:false,startedAt:0,elapsed:0}
     :{min:0,max:s.recMax,running:false,startedAt:0,elapsed:0};
   await saveState({status:'open',epoch:(st.epoch||0)+1,deduction:{},timer,calledAt:Date.now(),
     current:{callId:c.callId,divId:d.id,divName:d.name,label:c.label,type:d.type,judgeCount:JN(d.type),stage:c.stage||null,k:c.k||1,rm:c.rm||0,unit:c.unit||null,

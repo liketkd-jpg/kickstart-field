@@ -42,7 +42,10 @@
           if(js.length)p.judges=Math.max(...js);else if(P.judges)p.judges=num(P.judges,5);
           const rc=T.recognized||{};if(rc.format)p.format=rc.format;if(rc.poomsae)p.poomsae=num(rc.poomsae,1);if(rc.pdraw)p.pdraw=rc.pdraw;
           const fs=T.freestyle||{},gy=T.gym||{},tm=T.team100||{};
-          if(fs.min)p.freeMin=num(fs.min,90);if(fs.max)p.freeMax=num(fs.max,100);if(gy.min)p.gymMin=num(gy.min,110);if(gy.max)p.gymMax=num(gy.max,120);if(tm.max)p.teamMax=num(tm.max,360);}
+          if(fs.min)p.freeMin=num(fs.min,90);if(fs.max)p.freeMax=num(fs.max,100);if(gy.min)p.gymMin=num(gy.min,110);if(gy.max)p.gymMax=num(gy.max,120);if(tm.max)p.teamMax=num(tm.max,300);p.teamMin=Number(tm.min)||0;
+          /* 생활체육 기준: 공인 품새 「예선 2개·결선 1개」 등 단계마다 품새 수 */
+          const m=/^([12])-([12])$/.exec(String(rc.pstage||''));p.typePoomStage=C.std==='comm'&&m?{recognized:{pre:+m[1],final:+m[2]}}:{};
+          if(C.std==='comm'&&m)p.typePoom.recognized=+m[1];else if(C.std==='comm'&&/^[12]$/.test(String(rc.pstage||'')))p.typePoom.recognized=+rc.pstage;}
         else if(APPK==='gyeokpa'){const G=R.gyeokpa||{};['judges','preMin','grpSize','finalN'].forEach(k=>{if(G[k]!=null&&G[k]!=='')p[k]=num(G[k],set[k]);});}
         else if(APPK==='kyorugi'){const K=R.kyorugi||{};['refs','roundSec','restSec'].forEach(k=>{if(K[k]!=null&&K[k]!=='')p[k]=num(K[k],set[k]);});if(K.system)p.system=K.system;}
         const ns={...set,...p};await g('saveSettings')(ns);S.settings=ns;
