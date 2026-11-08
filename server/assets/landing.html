@@ -37,7 +37,33 @@ main{max-width:1100px;margin:0 auto;padding:22px 16px 40px;display:flex;flex-dir
 .lk{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;font-size:14px}
 ol{margin:6px 0 0;padding-left:20px}li{margin:3px 0}
 a.lnk{color:inherit}
-</style><link rel="stylesheet" href="/vendor/ks-lux.css"></head><body>
+</style><link rel="stylesheet" href="/vendor/ks-lux.css">
+<style>/* v1.4.49 첫 화면을 스크롤 없이 한 화면에: 제목을 한 줄로 줄이고, 상태 칸 3개를 나란히, 사용법은 접어 둠 (글씨 크기는 그대로) */
+main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding-top:14px;padding-bottom:16px;max-width:1240px}
+main>*{grid-column:1/-1}
+main>#viewc,main>#role,main>#net{grid-column:auto;display:flex;flex-direction:column;justify-content:center}
+#viewc .row{gap:8px}
+.lux-hero{padding:6px 4px 0;gap:6px;flex-direction:row;align-items:baseline;flex-wrap:wrap;column-gap:22px}
+.lux-title{font-size:clamp(30px,3.6vw,46px)}
+.lux-eyebrow{display:none}
+.lux-hero .lux-sub{font-size:15px}
+.lux-stat{margin-top:0}
+.lux-line{display:none}
+.big .bt{min-height:0!important}
+details.how>summary{cursor:pointer;font-weight:800;list-style:none}
+details.how>summary::-webkit-details-marker{display:none}
+details.how>summary::after{content:" ▾ 펼치기";color:var(--muted);font-weight:600;font-size:14px}
+details.how[open]>summary::after{content:" ▴ 접기"}
+.lux-foot{display:none}
+/* 카드: 번호는 숨기고 그림을 이름 옆으로 → 높이 줄임 */
+.bt{display:grid!important;grid-template-columns:auto 1fr;grid-template-rows:auto auto;align-items:center;column-gap:14px;row-gap:12px;padding:18px 20px!important}
+.bt .no{display:none}
+.bt .glyph{width:52px;height:52px;grid-row:1;grid-column:1}
+.bt .nm{grid-row:1;grid-column:2;gap:3px}
+.bt .go{grid-row:2;grid-column:1/-1;justify-self:start}
+.bt .nm span{min-height:2.9em}
+@media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}main>#viewc,main>#role,main>#net{grid-column:1/-1}}
+</style></head><body>
 <header><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#g)" d="M19 16h7.5v32H19z"/><path fill="url(#g)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#g)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#g)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="w">KICKSTART<b>UP</b></span><span class="t">현장 모드 · 중앙 통제</span><small>v__VERSION__</small></header>
 <main>
   <section class="lux-hero"><div class="lux-eyebrow">Taekwondo Competition Systems</div>
@@ -49,15 +75,14 @@ a.lnk{color:inherit}
     <div class="row"><a class="pill" href="/view" target="_blank" rel="noopener" style="text-decoration:none">관람객 화면 열기</a><a class="pill warn" href="/view#send" target="_blank" rel="noopener" style="text-decoration:none">인터넷으로 보내기</a></div></div></div>
   <div class="card" id="role"><span class="pill">확인 중…</span></div>
   <div class="card" id="net"><span class="pill">확인 중…</span></div>
-  <div class="card">
-    <b>이렇게 씁니다</b> <span class="muted" style="font-size:14px">· 버튼을 누르면 새 창으로 열리고, 이 첫 화면은 그대로 남습니다</span>
+  <details class="card how"><summary>이렇게 씁니다 <span class="muted" style="font-size:14px;font-weight:500">· 버튼을 누르면 새 창으로 열리고, 이 첫 화면은 그대로 남습니다</span></summary>
     <ol>
       <li>코트 노트북은 운영할 종목(품새·격파·겨루기)을 누르고, 처음 한 번 <b>코트 이름(A·B·C…)</b>을 고릅니다.</li>
       <li>본부 노트북은 <b>본부</b>를 누릅니다. 같은 와이파이의 코트 노트북을 자동으로 찾아 모읍니다.</li>
       <li>심판·전광판 기기는 같은 공유기 와이파이에 연결하고, 운영석의 <b>「📱 QR 접속」</b>을 찍습니다.</li>
     </ol>
     <p class="muted" style="margin:10px 0 0;font-size:14px"><a class="lnk" href="/guide">사용 설명서</a> · 검은 창(현장 모드 프로그램)을 닫으면 멈춥니다.</p>
-  </div>
+  </details>
   <div class="lux-foot"><span>KICKSTART UP · Field Edition</span><span>v__VERSION__</span></div>
 </main>
 <div id="dlg"></div>

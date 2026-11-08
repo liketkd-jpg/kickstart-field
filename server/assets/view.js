@@ -49,6 +49,12 @@ function results(F,q){const D=[];F.forEach(({c,a,r})=>(r&&r.divs||[]).forEach(d=
   const show=q?D.filter(({d})=>hit(q,d.div)||(d.podium||[]).some(p=>hit(q,p.name,p.team))):D;
   return `<div class="lv-res">${show.map(({c,a,d})=>`<article><header><b data-notr>${mark(d.div,q)}</b><small>${E(a.appName||APPN[a.app]||'')}${c.court?' · '+E(c.court)+'코트':''}${d.done?'':' · 진행 중'}</small></header>
     <ol>${(d.podium||[]).slice().sort((x,y)=>x.rank-y.rank).map(p=>`<li class="${hit(q,p.name,p.team)?'hit':''}"><span class="lv-m ${MD[p.rank]?MD[p.rank][1]:''}" aria-label="${p.rank}위">${p.rank}</span><b data-notr>${mark(p.name,q)}</b><small data-notr>${mark(p.team,q)}</small></li>`).join('')}</ol></article>`).join('')||'<div class="lv-empty">찾는 이름이 결과에 없습니다</div>'}</div>`;}
+/* v1.4.49 큰 화면(관중 TV)용: 「나란히」는 모든 코트를 한 줄에 나란히(스크롤 없이), 「넘기기」는 코트 4개씩 10초마다 저절로 넘김 */
+function wallCourts(F,q,st){const all=F.map(({c,a,b})=>court(c,a,b,q,st.my));const n=all.length;
+  if(st.wall==='side')return `<div class="lv-courts lv-side" style="--n:${Math.min(n,6)}">${all.join('')}</div>`;
+  if(st.wall==='rot'){const per=4,pages=Math.max(1,Math.ceil(n/per)),pg=Math.floor((st.pgAt||Date.now())/10000)%pages;
+    return `<div class="lv-courts lv-side" style="--n:${Math.min(per,n)}">${all.slice(pg*per,pg*per+per).join('')}</div>${pages>1?`<div class="lv-pg">${Array.from({length:pages},(_,i)=>`<i class="${i===pg?'on':''}"></i>`).join('')}<small>${pg*per+1}~${Math.min(n,pg*per+per)}번째 코트 · 10초마다 넘어갑니다</small></div>`:''}`;}
+  return `<div class="lv-courts">${all.join('')}</div>`;}
 function html(snap,st){st=st||{};const q=String(st.q||'').toLowerCase().replace(/\s+/g,''),tab=st.tab||'courts',now=st.now||Date.now();
   if(!snap||!(snap.courts||[]).length)return {head:snap&&snap.comp?`<div class="lv-top"><h2>${E(snap.comp)}</h2></div>`:'',body:`<div class="lv-empty lv-wait"><b>경기 소식을 기다리는 중입니다</b><br>대회가 시작되면 코트별 진행 상황과 입상 결과가 여기에 바로 나옵니다.</div>`};
   const F=flat(snap),T=teamTable(F),stale=snap.at&&now-snap.at>60000;
@@ -60,7 +66,7 @@ function html(snap,st){st=st||{};const q=String(st.q||'').toLowerCase().replace(
   return {head:`<div class="lv-top"><div class="lv-kpis"><span><b>${nCt}</b>코트</span><span><b>${nOn}</b>경기 중</span><span><b>${nRes}</b>입상 부문</span></div><div><span class="lv-live ${stale?'stale':''}"><i></i>${stale?'잠시 끊김':'LIVE'}</span> <small>${E(ago(snap.at,now))} 갱신</small></div>${snap.comp?`<h2 data-notr>${E(snap.comp)}</h2>`:''}</div>`,body:`
     ${myBox}${q?`<section class="lv-found"><h3>「${E(st.q)}」 찾은 곳 <small>${found.length}</small></h3>${found.length?`<ul>${found.map(f=>`<li class="lv-f-${f.k}">${f.k==='medal'?`<span class="lv-m ${MD[f.rank]?MD[f.rank][1]:''}">${f.rank}</span>`:`<span class="lv-tag">${f.k==='now'?'지금':'곧'}</span>`}<div><b data-notr>${mark(f.p.name,q)}</b> <small data-notr>${mark(f.p.team,q)}</small><div class="lv-sub">${E(f.where)} · <span data-notr>${E(f.div||'')}</span>${f.k==='next'?' · '+E(f.txt):f.k==='now'?' · '+E(f.txt):''}</div></div></li>`).join('')}</ul>`:'<div class="lv-empty">지금 진행·다음 순서·입상 결과에 없습니다</div>'}</section>`:''}
     <div class="lv-tabs" role="tablist">${[['courts','코트 현황'],['results',`입상 결과${nRes?` <small>${nRes}</small>`:''}`],['teams','도장 종합']].map(([k,l])=>`<button type="button" role="tab" aria-selected="${tab===k}" class="${tab===k?'on':''}" data-lv="tab" data-t="${k}">${l}</button>`).join('')}</div>
-    ${tab==='courts'?`<div class="lv-courts">${F.map(({c,a,b})=>court(c,a,b,q,st.my)).join('')}</div>`
+    ${tab==='courts'?wallCourts(F,q,st)
      :tab==='results'?results(F,q)
      :T.length?`<div class="lv-teams"><table><tr><th>순위</th><th>도장</th><th>금</th><th>은</th><th>동</th><th>점수</th></tr>${T.map((t,i)=>`<tr class="${hit(q,t.team)?'hit':''}"><td>${i&&T[i-1].pt===t.pt?'':i+1}</td><td><b data-notr>${mark(t.team,q)}</b></td><td>${t.g}</td><td>${t.s}</td><td>${t.b}</td><td><b>${t.pt}</b></td></tr>`).join('')}</table><p class="lv-sub">금 3점 · 은 2점 · 동 1점으로 더한 참고 순위입니다. 공식 종합 순위는 대회 본부 발표를 따릅니다.</p></div>`:'<div class="lv-empty">아직 입상한 도장이 없습니다</div>'}`};}
 const CSS=`.lv{--g1:#F3DFAE;--g2:#C9A262;--g3:#8E6A30;--bg:#0B0D12;--p1:#14171D;--p2:#1B1F27;--ln:rgba(255,255,255,.09);--tx:#F2EEE6;--mu:#A39C8E;display:flex;flex-direction:column;gap:14px;color:var(--tx);font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;word-break:keep-all}
@@ -103,12 +109,19 @@ const CSS=`.lv{--g1:#F3DFAE;--g2:#C9A262;--g3:#8E6A30;--bg:#0B0D12;--p1:#14171D;
 .lv-mybox .lv-f-now{border-color:rgba(67,201,133,.5)}.lv-mybox .lv-f-soon .lv-tag{background:#5B6577;color:#fff}
 .lv-me{position:relative}.lv-p.lv-me b,.lv-next span.lv-me{color:var(--g1)}.lv-p.lv-me b::after,.lv-next span.lv-me::after{content:" ⭐";font-size:.7em}
 .lv-eta{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px;color:var(--mu);border-top:1px dashed var(--ln);padding-top:8px}.lv-eta b{color:var(--g1);font-size:15px}.lv-t{color:var(--g1);font-weight:800}
-@media (max-width:420px){.lv-courts,.lv-res{grid-template-columns:minmax(0,1fr)}.lv-p b{font-size:20px}}`;
+@media (max-width:420px){.lv-courts,.lv-res{grid-template-columns:minmax(0,1fr)}.lv-p b{font-size:20px}}
+.lv-wallbar{display:none;gap:6px;align-items:center;justify-content:flex-end}.lv-wallbar small{margin-right:4px}.lv-wallbar button{background:var(--p1);border:1px solid var(--ln);color:var(--mu);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}.lv-wallbar button.on{color:#1A1306;background:linear-gradient(180deg,#EBD5A3,#B8904E);border-color:transparent}
+@media (min-width:1000px){.lv-wallbar{display:flex}}
+@media (min-width:1000px){.lv-side{grid-template-columns:repeat(var(--n),minmax(0,1fr))!important}.lv-side .lv-next li:nth-child(n+4){display:none}.lv-side .lv-p b{font-size:20px}}
+.lv-pg{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:2px}.lv-pg i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.18)}.lv-pg i.on{background:var(--g1)}
+.lv.lv-wall .lv-q,.lv.lv-wall .lv-myrow{display:none}`;
 /* 화면 붙이기: 찾기 칸은 다시 그리지 않음 (한글 입력이 끊기지 않게) */
 function mount(el,st0){const st=Object.assign({q:'',tab:'courts'},st0||{});let snap=null;
   if(!document.getElementById('lv-css')){const c=document.createElement('style');c.id='lv-css';c.textContent=CSS;document.head.appendChild(c);}
   el.innerHTML=`<div class="lv"><div data-lv="head"></div><label class="lv-q"><span aria-hidden="true">🔍</span><input type="search" data-lv="q" placeholder="선수 이름이나 도장 이름 찾기" aria-label="선수·도장 찾기" autocomplete="off" enterkeyhint="search"></label><div data-lv="body"></div></div>`;
-  try{st.my=st.my||localStorage.getItem('lv_my')||'';}catch(e){}
+  try{st.my=st.my||localStorage.getItem('lv_my')||'';st.wall=st.wall||localStorage.getItem('lv_wall')||'';}catch(e){}
+  el.querySelector('.lv').insertAdjacentHTML('afterbegin','<div class="lv-wallbar"><small>큰 화면</small><button type="button" data-lv="wall" data-w="">기본</button><button type="button" data-lv="wall" data-w="side">코트 나란히</button><button type="button" data-lv="wall" data-w="rot">저절로 넘기기</button></div>');
+  const wallUi=()=>{el.querySelectorAll('[data-lv=wall]').forEach(b=>b.classList.toggle('on',(b.dataset.w||'')===(st.wall||'')));el.querySelector('.lv').classList.toggle('lv-wall',!!st.wall&&innerWidth>=1000);};
   const qL=el.querySelector('.lv-q');qL.insertAdjacentHTML('afterend','<label class="lv-myrow"><span>⭐ 내 도장</span><select data-lv="my"><option value="">도장을 고르면 우리 선수만 위에 모아 보여 드려요</option></select></label>');
   const H=el.querySelector('[data-lv=head]'),B=el.querySelector('[data-lv=body]'),SEL=el.querySelector('[data-lv=my]');el.querySelector('[data-lv=q]').value=st.q||'';
   let teamsKey='';const fillTeams=()=>{const T=teamsOf(snap);if(st.my&&!T.includes(st.my))T.unshift(st.my);const k=T.join('|');if(k===teamsKey||document.activeElement===SEL)return;teamsKey=k;
@@ -116,7 +129,10 @@ function mount(el,st0){const st=Object.assign({q:'',tab:'courts'},st0||{});let s
   el.addEventListener('change',e=>{if(e.target.dataset.lv==='my'){st.my=e.target.value;try{localStorage.setItem('lv_my',st.my);}catch(x){}draw();}});
   const draw=()=>{fillTeams();const o=html(snap,st);if(H.innerHTML!==o.head)H.innerHTML=o.head;B.innerHTML=o.body;};
   el.addEventListener('input',e=>{if(e.target.dataset.lv==='q'){st.q=e.target.value;draw();}});
-  el.addEventListener('click',e=>{const b=e.target.closest('[data-lv=tab]');if(b){st.tab=b.dataset.t;draw();}});
+  el.addEventListener('click',e=>{const b=e.target.closest('[data-lv=tab]');if(b){st.tab=b.dataset.t;draw();}
+    const w=e.target.closest('[data-lv=wall]');if(w){st.wall=w.dataset.w||'';try{localStorage.setItem('lv_wall',st.wall);}catch(x){}wallUi();draw();}});
+  wallUi();
+  const rt=setInterval(()=>{if(!el.isConnected){clearInterval(rt);return;}if(st.wall==='rot'&&st.tab==='courts'){st.pgAt=Date.now();draw();}},10000);
   const tk=setInterval(()=>{if(!el.isConnected){clearInterval(tk);return;}H.innerHTML=html(snap,st).head;},5000);
   return {set(s){snap=s;draw();},get snap(){return snap;},st,draw};}
 window.LV={html,CSS,ago,teamTable,mount};

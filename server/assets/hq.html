@@ -18,6 +18,19 @@ button,input,select,textarea{font:inherit;color:inherit}
 main{max-width:1240px;margin:0 auto;padding:18px 16px 60px;display:flex;flex-direction:column;gap:14px}
 .mvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
 .mvr.mvrec{background:rgba(217,164,65,.14);border-radius:8px;box-shadow:inset 3px 0 0 #D9A441;padding:2px 4px}.mvtip{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.mvgo{font-size:15px;padding:10px 16px}
+/* v1.4.49 기능 화면을 열면 모니터 가로 폭 전체를 쓰고(글씨는 그대로), 칸을 옆으로 펼쳐 스크롤을 줄입니다 */
+main:has(.hqs-open){max-width:none;padding:12px 22px 16px}
+.hqs-open .hqs-head{padding-block:2px}
+.hqs-page[data-k="call"]>.panel{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:22px;row-gap:10px;align-content:start}
+.hqs-page[data-k="call"]>.panel>*{grid-column:1}
+.hqs-page[data-k="call"]>.panel>.row.between{grid-column:1/-1}
+.hqs-page[data-k="call"]>.panel>div:nth-last-child(2){grid-column:2;grid-row:2/span 5;align-self:start}
+.hqs-page[data-k="call"]>.panel>div:last-child{max-height:calc(100vh - 560px);min-height:110px;overflow:auto}
+.hqs-page[data-k="call"] .rmph .btn{font-size:15px}
+.hqs-page .mvgrid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.hqs-page .mvl{max-height:calc(100vh - 360px);min-height:180px}
+.hqs-page .mvr{font-size:15px;padding-block:2px}
+.hqs-page[data-k="court"] table td,.hqs-page[data-k="court"] table th{font-size:15px}
 .mvc{background:var(--sunk);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .mvc.late{border-color:#D9A441;box-shadow:0 0 0 2px rgba(217,164,65,.25)}
 .mvl{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto}
@@ -113,6 +126,9 @@ body.mon #mon{display:grid;position:fixed;inset:0;grid-template-rows:auto minmax
 @keyframes afade{from{opacity:0}to{opacity:1}}@keyframes apop{from{transform:scale(.86);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes ain{from{transform:translateY(-50%) scaleY(.2);opacity:0}to{transform:translateY(-50%) scaleY(1);opacity:1}}
 .tapv{position:fixed;left:50%;top:1.4vh;transform:translateX(-50%);z-index:40;border:2px solid #F0A64A;background:#000;color:#fff;border-radius:999px;padding:12px 20px;font-weight:800;font-size:16px;cursor:pointer}
+.idlecomp{display:grid;place-content:center;gap:3vh;text-align:center;min-height:60vh}
+.idlecomp b{font-family:'Black Han Sans','Malgun Gothic',sans-serif;font-weight:400;font-size:min(7vw,12vh);line-height:1.2;word-break:keep-all;background:linear-gradient(180deg,#FFF6DE 0%,#F1D79A 55%,#C9A35C 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 24px rgba(0,0,0,.6))}
+.idlecomp span{color:#A9AFB9;font-size:min(1.8vw,3vh);font-weight:700}
 .nocourt{display:grid;place-items:center;text-align:center;color:#A9AFB9;font-size:min(2vw,3.4vh);font-weight:700}
 
 /* ===== 기존 대회 앱과 같은 모습 (KICKSTART UP) ===== */
@@ -399,6 +415,8 @@ function vAdmin(){
   ${hqAutoPanels()}
   <div class="panel"><div class="row between"><h2>본부 모니터</h2><span class="row"><a class="btn primary" href="#board" target="_blank" style="text-decoration:none">본부 모니터 열기 ↗</a><button class="btn" data-a="qr">📱 QR (다른 TV·태블릿)</button></span></div>
     <div class="row"><span class="small muted">화면 디자인</span>${themePick('hqpick')}<span class="small muted">지금: <b>${esc((THEMES.find(x=>x[0]===hqTheme(courtList()))||['','기본 금빛'])[1])}</b> · 「따라가기」는 품새 코트 노트북에서 고른 전광판 디자인을 따릅니다</span></div>
+    <div class="row" style="flex-wrap:wrap"><b>대회명</b><input type="text" id="hqCompName" value="${esc(cf.compName||'')}" placeholder="예: 2026 KICKSTART UP 태권도 대회 (비우면 코트 노트북의 대회명)" style="flex:1;min-width:260px"><button class="btn" data-a="hqCompSave">저장</button></div>
+    <div class="row"><b>평소 화면</b><div class="seg"><button class="${cf.monIdle!=='comp'?'on':''}" data-a="hqMonIdle" data-v="">코트별 진행 상황</button><button class="${cf.monIdle==='comp'?'on':''}" data-a="hqMonIdle" data-v="comp">대회명 크게</button></div><span class="small muted">방송이 나올 때만 방송 글씨로 바뀌었다가 끝나면 돌아옵니다</span></div>
     <span class="small muted">선수 대기실 TV나 큰 모니터에 띄우세요. 새 창을 TV 쪽으로 옮긴 뒤 「전체 화면」을 누르면 됩니다. 소리를 내려면 그 화면을 한 번 눌러 주세요.</span></div>`;
 }
 
@@ -437,7 +455,7 @@ function exportXlsx(){
 function vMon(){
   const list=courtList(),cf=CFG(),n=cf.notice||{};
   const th=hqTheme(list);THEMES.forEach(([k])=>document.body.classList.toggle('hqt-'+k,k===th));
-  const comp=(list.find(c=>c.app&&c.app.board.comp)||{app:{board:{}}}).app.board.comp||'태권도 대회';
+  const comp=(cf.compName||'').trim()||(list.find(c=>c.app&&c.app.board.comp)||{app:{board:{}}}).app.board.comp||'태권도 대회';
   const col=c=>{const b=c.app&&c.app.board;
     const head=`<div class="ch"><span class="lt">${esc(c.court)}</span><span class="cn"><b>${esc(c.court)}코트</b><span>${esc(b?b.appName:'')}${b&&b.curDiv?' · '+esc(b.curDiv):''}</span></span>
       ${liveChip(c)}<span class="st ${!c.online?'off':c.stale?'idle':'live'}">${!c.online?'● 연결 끊김':c.stale?'● 대기':'● 진행 중'}</span></div>`;
@@ -452,8 +470,8 @@ function vMon(){
       <div class="sec">다음 경기</div><div class="nx">${nx.length?nx.map(x=>`<div><span class="lb2">${esc(x.label)}</span><span class="nn">${x.names.map(p=>esc(p.name)).join(' · ')}</span></div>`).join(''):'<div><span class="nn" style="color:#A9AFB9">남은 경기가 없습니다</span></div>'}</div>
       ${wt.length?`<div class="sec">대기 선수 · 곧 출전</div><div class="wt">${wt.slice(0,12).map(w=>`<span>${esc(w)}</span>`).join('')}</div>`:''}
       ${b.nextDiv?`<div class="nd">다음 부문 ▸ <b>${esc(b.nextDiv)}</b></div>`:''}</div>`;};
-  const cols=list.length?list.map(col).join(''):'<div class="nocourt">코트 노트북을 찾는 중입니다…</div>';
-  const nCols=Math.max(1,Math.min(list.length||1,4));
+  const cols=list.length&&cf.monIdle!=='comp'?list.map(col).join(''):`<div class="idlecomp"><b>${esc(comp)}</b><span>${list.length?'':'코트 노트북을 찾는 중입니다…'}</span></div>`;
+  const nCols=cf.monIdle==='comp'?1:Math.max(1,Math.min(list.length||1,4));
   const tk=n.mode==='banner'&&n.text?`<div class="ticker ${n.text.length<60?'fit':''}" style="--d:${Math.max(14,n.text.length*0.35)}s"><span>📢 ${esc(n.text)}</span></div>`:'<span style="flex:1"></span>';
   $('#mon').innerHTML=`<div class="mwm" aria-hidden="true"><svg class="ksw" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg></div><div class="mh"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><b>${esc(comp)}</b><span class="sp"></span>
       <span class="ctl">${themePick('hqpick mon')}<button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span><span class="clock" data-clock></span></div>
@@ -462,10 +480,10 @@ function vMon(){
   tick();
   let ov='';
   if(n.mode==='full'&&n.text)ov+=`<div class="full"><div><b>${annHtml(n.text)}</b><span>${esc(comp)}</span></div></div>`;
-  const a=S.announce;if(a&&S.annAt&&NOW()-S.annAt<12000)ov+=`<div class="ann"><div><small>${a.auto?'선수 호출':a.room?'대기실 안내':'본부 안내'}</small><b>${annHtml(a.text)}</b></div></div>`;
+  const a=S.announce;if(a&&S.annAt&&(AQBUSY||NOW()-S.annAt<12000))ov+=`<div class="ann"><div><small>${a.auto?'선수 호출':a.room?'대기실 안내':'본부 안내'}</small><b>${annHtml(a.text)}</b></div></div>`;
   const needTap=navigator.userActivation&&!navigator.userActivation.hasBeenActive&&CFG().voice;
   if(needTap)ov+='<button class="tapv" data-a="unlock">🔊 화면을 한 번 눌러 호출 소리를 켜 주세요</button>';
-  $('#ovl').innerHTML=ov;
+  {const o=$('#ovl');if(o&&o.__ov!==ov){o.innerHTML=ov;o.__ov=ov;}}
 }
 function tick(){const el=document.querySelector('[data-clock]');if(el){const d=new Date();el.textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;}}
 setInterval(tick,1000);
@@ -487,12 +505,13 @@ function koVoice(){const vs=koVoices(),online=navigator.onLine!==false;
   return [...pool].sort((x,y)=>vRank(x)-vRank(y))[0]||localVoice()||vs[0]||null;}
 window.KS_HQVOICE=()=>koVoice();
 const VRATE=()=>({slow:.88,fast:1.12}[CFG().voiceRate]||1);
-function speakKo(text,times){const ss=window.speechSynthesis;if(!ss||typeof SpeechSynthesisUtterance==='undefined')return;
+function speakKo(text,times,cb){const ss=window.speechSynthesis;if(!ss||typeof SpeechSynthesisUtterance==='undefined'){if(cb)cb();return;}
   /* 다른 소리를 먼저 멈추고 잠깐 기다렸다 읽습니다 (크롬은 멈춘 바로 뒤 읽기를 건너뛰는 일이 있음).
      인터넷 목소리가 「오류」를 낼 때만 기본 목소리로 다시 읽습니다 — 늦게 시작한다고 함께 읽지 않습니다(겹침 방지). */
   const run=(voice,canFall)=>{try{ss.cancel();}catch(e){}const my=++SPEAKN;
     setTimeout(()=>{if(my!==SPEAKN)return;let started=false,fell=false;
       for(let i=0;i<(times||1);i++){const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';if(voice)u.voice=voice;u.rate=VRATE();
+        if(i===(times||1)-1)u.onend=()=>{if(cb&&my===SPEAKN)cb();};
         if(i===0){u.onstart=()=>{started=true;};u.onerror=e=>{const er=(e&&e.error)||'';if(/interrupted|canceled/.test(er)||started||fell||!canFall||my!==SPEAKN)return;fell=true;const lv=localVoice();if(lv&&lv!==voice)run(lv,false);};}
         ss.speak(u);}},120);};
   const v=koVoice();run(v,VNET(v));}
@@ -512,7 +531,7 @@ function spkTick(){if(!LOCALWIN||route()!=='board')return;
 setInterval(spkTick,5000);
 /* 이 창이 방송 소리를 내도 되는지 */
 const maySpeak=()=>!LOCALWIN||amSpeaker()||spkStale();
-function say(text,times){if(!('speechSynthesis' in window)||!CFG().voice)return;speakKo(text,times);}
+function say(text,times,cb){if(!('speechSynthesis' in window)||!CFG().voice){if(cb)cb();return;}speakKo(text,times,cb);}
 try{speechSynthesis.addEventListener('voiceschanged',()=>{if(document.getElementById('hqVoice'))render();});}catch(e){}
 /* v1.4.48 전광판 글씨 줄 나누기: 「A코트」 / 부문 / 「선수는 준비해 주세요」, 문장마다 새 줄 */
 function annLines(t){t=String(t||'').replace(/\s+/g,' ').trim();if(!t)return [];
@@ -525,10 +544,19 @@ function annLines(t){t=String(t||'').replace(/\s+/g,' ').trim();if(!t)return [];
 const annHtml=t=>annLines(t).map(x=>`<span class="al${x.c?' '+x.c:''}">${esc(x.t)}</span>`).join('');
 function chime(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C(),t=c.currentTime;[[880,0],[1175,.18],[1568,.36]].forEach(([f,d])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.5);o.connect(g).connect(c.destination);o.start(t+d);o.stop(t+d+.55);});}catch(e){}}
 let lastAnn=null;
-/* 새 호출이 오면 소리·화면. 보낸 기기(휴대폰·다른 노트북)의 시계가 달라도 되도록 「이 화면이 받은 시각」으로 판단 */
-function onAnnounce(a){S.announce=a;if(!a||!a.id)return;if(lastAnn===null){lastAnn=a.id;S.annAt=0;return;}if(a.id===lastAnn)return;lastAnn=a.id;S.annAt=NOW();
-  if(route()==='board'){if(maySpeak()){chime();setTimeout(()=>{if(maySpeak())say(a.text,2);},900);}setTimeout(render,12100);}}
-
+/* v1.4.49 방송 줄 세우기: 여러 코트 호출이 거의 동시에 와도 앞 방송을 끊지 않고, 끝까지 읽은 뒤 다음 방송을 띄우고 읽습니다.
+   같은 문구가 30초 안에 또 오면 한 번만 읽습니다 (같은 호출이 겹쳐 오는 경우). */
+const AQ=[];let AQBUSY=false,AQLAST={};
+function onAnnounce(a){if(!a||!a.id)return;if(lastAnn===null){lastAnn=a.id;S.annAt=0;S.announce=a;return;}if(a.id===lastAnn)return;lastAnn=a.id;
+  const key=String(a.text||'').replace(/\s+/g,'');if(key&&AQLAST[key]&&NOW()-AQLAST[key]<30000)return;if(key)AQLAST[key]=NOW();
+  if(route()!=='board'){S.announce=a;S.annAt=NOW();return;}
+  if(AQ.length<8)AQ.push(a);aqNext();}
+function aqNext(){if(AQBUSY||!AQ.length)return;const a=AQ.shift();AQBUSY=true;S.announce=a;S.annAt=NOW();render();
+  const done=()=>{if(!AQBUSY||S.announce!==a)return;AQBUSY=false;/* 다음 방송이 있으면 잠깐 쉬고 바로, 없으면 화면은 12초 뒤에 내림 */
+    if(AQ.length)setTimeout(aqNext,700);else setTimeout(()=>{if(!AQBUSY)render();},Math.max(0,12000-(NOW()-S.annAt))+100);};
+  if(maySpeak()&&CFG().voice){chime();setTimeout(()=>{if(maySpeak())say(a.text,2,done);else done();},900);
+    setTimeout(done,Math.min(45000,4000+String(a.text||'').length*2*260));}  /* 소리가 안 끝나도 다음으로 (안전장치) */
+  else setTimeout(done,AQ.length?4000:0);}
 /* ---------- 그리기 ---------- */
 /* ---------- 상장 자동 출력 · Supabase 자동 백업 ----------
    코트 경기 앱이 부문(조)이 끝날 때마다 상장 그림(…상장….cert.json)을, 데이터가 바뀔 때마다 백업(…백업(자동저장).json)을 자동 저장하면
@@ -651,7 +679,7 @@ function hqShell(html){
   const tiles=document.createElement('div');tiles.className='hqs-tiles';if(HSEL)tiles.hidden=true;
   tiles.innerHTML=cards.map(c=>{const [st,cl]=hqTileState(c.key);return `<button class="hqs-tile ${cl}" data-a="hqOpen" data-k="${c.key}"><span class="hqs-ic">${c.ic}</span><b>${esc(c.title)}</b><span class="hqs-st">${esc(st||'열어서 보기')}</span>${cl==='warn'?'<i class="hqs-dot"></i>':''}</button>`;}).join('');
   out.appendChild(tiles);
-  cards.forEach(c=>{const w=document.createElement('div');w.className='hqs-page';if(HSEL!==c.key)w.hidden=true;
+  cards.forEach(c=>{const w=document.createElement('div');w.className='hqs-page';w.dataset.k=c.key;if(HSEL!==c.key)w.hidden=true;
     w.innerHTML=`<div class="hqs-head"><button class="btn" data-a="hqClose">← 본부 메뉴</button><span class="hqs-ic">${c.ic}</span><h2>${esc(c.title)}</h2><button class="btn primary" data-a="hqClose">닫기 ✕</button></div>`;
     w.appendChild(c.el);out.appendChild(w);});
   return out.outerHTML;
@@ -688,6 +716,8 @@ async function announce(text,extra){const id='m'+NOW().toString(36);const doc={i
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
   if(/^lv/.test(a)){e.preventDefault();try{await lvClick(a,b);}catch(err){toast(err.message||String(err));}return;}
   if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest|hqOpenEdge|annPhDelR)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
+  if(a==='hqCompSave'){saveCfg({compName:(($('#hqCompName')||{}).value||'').trim()});toast('대회명을 저장했습니다 · 본부 모니터에 바로 나옵니다');return;}
+  if(a==='hqMonIdle'){saveCfg({monIdle:b.dataset.v||''});return;}
   if(a==='mvCancel'){try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:b.dataset.id})});const j=await r.json().catch(()=>({}));toast(r.ok?'옮기기를 취소했습니다 · 부문은 원래 코트에 그대로 있습니다':(j.error||'취소하지 못했습니다'));}catch(err){toast('본부 프로그램에 연결하지 못했습니다');}schedule();return;}
   if(a==='mvPlan'){if(S.mvArm!=='PLAN'){S.mvArm='PLAN';schedule();setTimeout(()=>{if(S.mvArm==='PLAN'){S.mvArm=null;schedule();}},5000);return;}
     S.mvArm=null;b.disabled=true;const L=lanes(),busy=new Set(Object.values(S.moves||{}).filter(m=>['req','sending','sent'].includes(m.state)).map(m=>m.from+'|'+m.app+'|'+m.div)),P=mvPlan(L,busy).plan;let ok=0,bad=[];
@@ -1731,7 +1761,7 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
   const app=document.getElementById('app');if(!app||!window.MutationObserver)return;
   const hash=()=>location.hash.replace('#','').split('?')[0];
   function on(){if(MODE==='hq'){const h=hash();return !h||h==='admin';}const c=document.body.classList;return c.contains('jfit')||c.contains('jmax');}
-  const MIN=MODE==='hq'?.66:.55;
+  const MIN=MODE==='hq'?1:.55; /* v1.4.49 본부는 글씨를 줄이지 않음 (넓게 펼친 배치로 한 화면) */
   function over(){let b=0;[...app.children].forEach(c=>{const r=c.getBoundingClientRect();if(r.height)b=Math.max(b,r.bottom+scrollY);});const sc=/(auto|scroll)/.test(getComputedStyle(app).overflowY)?app.scrollHeight-app.clientHeight:0;return Math.max(b+(MODE==='hq'?14:6)-innerHeight,sc,0);}
   function setZ(z){[...app.children].forEach(c=>{c.style.zoom=z===1?'':String(z);});}
   function fit(){setZ(1);if(MODE==='hq')app.style.paddingBottom='';document.documentElement.dataset.fit='1';if(!on())return;let o=over();if(o>1){
