@@ -1552,8 +1552,10 @@ async function drawUnit(div,c,{force}={}){
 
 function firstStage(n){return n>=22?'pre':n>=12?'semi':'final';}
 /* 컷오프 진출 방식: rule = 규정 자동(예선 50% → 본선 8 → 결선), two = 예선 → 결선(상위 N명), final = 결선만. 부문마다 바꿀 수 있고 비우면 대회 기본값 */
-const cutMode=d=>d.cutMode||SET().cutMode||'rule';
-const cutAdv=d=>Math.max(1,Number(d.advN)||Number(SET().advN)||3);
+/* v1.4.52 본부 「종목 설정」의 종목별 진행 단계·진출 인원·심판 수 (typeCut·typeAdv·typeJudges). 부문에 따로 정한 값이 있으면 그것이 먼저 */
+const cutMode=d=>d.cutMode||(SET().typeCut||{})[d.type]||SET().cutMode||'rule';
+const cutAdv=d=>Math.max(1,Number(d.advN)||Number((SET().typeAdv||{})[d.type])||Number(SET().advN)||3);
+const JN=t=>Number((SET().typeJudges||{})[t])||SET().judges;
 function firstStageD(d){const n=(d.order||[]).length,m=cutMode(d);if(m==='final')return 'final';if(m==='two')return n>cutAdv(d)?'pre':'final';return firstStage(n);}
 function nextStage(d,k){if(cutMode(d)==='two')return k==='pre'?'final':null;return NEXT_STAGE[k]||null;}
 function stagesOf(d){return d.stages&&d.stages.length?d.stages:[{key:firstStageD(d),order:d.order||[]}];}
@@ -2926,7 +2928,7 @@ async function callIt(callId){
     :d.type==='team100'?{min:0,max:s.teamMax??360,running:false,startedAt:0,elapsed:0}
     :{min:0,max:s.recMax,running:false,startedAt:0,elapsed:0};
   await saveState({status:'open',epoch:(st.epoch||0)+1,deduction:{},timer,calledAt:Date.now(),
-    current:{callId:c.callId,divId:d.id,divName:d.name,label:c.label,type:d.type,judgeCount:s.judges,stage:c.stage||null,k:c.k||1,rm:c.rm||0,unit:c.unit||null,
+    current:{callId:c.callId,divId:d.id,divName:d.name,label:c.label,type:d.type,judgeCount:JN(d.type),stage:c.stage||null,k:c.k||1,rm:c.rm||0,unit:c.unit||null,
       entries:c.entries.map(e=>{const a=athlete(e.athleteId);return {...e,name:a?a.name:'',team:a?a.team:'',members:a&&a.members?a.members:''};})}});
 }
 /* 심판 자리(번호) 잡기: 다른 기기가 쓰고 있으면 'taken' */

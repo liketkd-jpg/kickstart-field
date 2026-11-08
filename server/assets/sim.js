@@ -124,7 +124,10 @@ async function tick(){
   }catch(e){console.warn('sim',e);}
   finally{BUSY=false;draw();}
 }
-setInterval(tick,400);
+/* v1.4.52 운영석 창이 뒤에 가려져 있거나 다른 창을 보고 있어도 가상 경기가 멈추지 않게:
+   크롬은 안 보이는 창의 타이머를 1분에 한 번으로 늦추므로(2명 조 등에서 멈춘 것처럼 보임), 늦춰지지 않는 작업자(Worker) 타이머로 진행 */
+(function(){try{const w=new Worker(URL.createObjectURL(new Blob(['setInterval(function(){postMessage(0)},400)'],{type:'text/javascript'})));w.onmessage=()=>{tick();};}
+  catch(e){setInterval(tick,400);}})();
 
 /* ---------- 운영석 표시 ---------- */
 function draw(){

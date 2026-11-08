@@ -35,6 +35,13 @@ main:has(.hqs-open){max-width:none;padding:12px 22px 16px}
 .seg button{background:transparent;border:0;border-right:1px solid var(--line);color:var(--muted,#A39D91);font:inherit;font-weight:800;font-size:14px;padding:7px 12px;cursor:pointer}
 .seg button:last-child{border-right:0}
 .seg button.on{background:linear-gradient(180deg,#EBD5A3,#B8904E);color:#1A1306}
+.rchk{background:var(--sunk,transparent);border:1px solid var(--line);color:var(--muted,#A39D91);border-radius:999px;padding:7px 14px;font:inherit;font-weight:800;font-size:14.5px;cursor:pointer}
+.rchk.on{color:#1A1306;background:linear-gradient(180deg,#EBD5A3,#B8904E);border-color:transparent}
+.rtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.rtile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(201,162,98,.10),rgba(201,162,98,.02));color:inherit;font:inherit;cursor:pointer}
+.rtile:hover{border-color:#C9A262}.rtile .ic{font-size:30px}.rtile b{font-size:19px}.rtile .sm{font-size:13px;color:var(--muted,#A39D91);line-height:1.45}.rtile .go{margin-top:auto;font-size:13px;font-weight:800;color:#EAD7A8}
+.rdet{border:1px solid rgba(201,162,98,.45);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(160deg,rgba(201,162,98,.08),transparent)}
+.rfoot{border-top:1px solid var(--line);padding-top:10px}
 .rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
 .rbox{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:var(--sunk,transparent)}
 .rbox h3{margin:0;font-size:17px}.rrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.rrow>b{min-width:110px;font-size:15px}
@@ -396,42 +403,75 @@ function stallAlerts(list){const out=[],now=NOW(),lim=(window.KSPLAN&&KSPLAN.sim
     if(!o||o.sig!==sig){STALL[k]={sig,at:now};return;}
     if(left>0&&now-o.at>lim)out.push(['bad',`⏸ ${k}코트가 ${Math.round((now-o.at)/60000)}분째 멈춰 있습니다 (남은 경기 ${left}). 운영석에서 다음 경기를 호출했는지, 심판 점수가 다 들어왔는지 확인해 주세요.`]);});
   return out;}
-/* v1.4.51 본부 「종목별 경기 규칙」: 정하면 모든 코트 노트북에 똑같이 적용 (아직 점수 없는 부문부터) */
+/* v1.4.52 본부 「종목 설정」: 이번 대회 종목을 체크로 고르고, 공인 품새·자유 품새·태권체조·팀 대항 경연·격파(·겨루기)를 종목마다 따로 정함.
+   종목 타일을 누르면 그 종목 설정이 크게 열리고, 「종목 목록」을 누르면 돌아옴. 저장하면 모든 코트 노트북에 똑같이 적용 (아직 점수 없는 부문부터) */
 let RULES={at:0,r:null};
 async function loadRules(){try{const j=await (await fetch('/api/rules',{cache:'no-store'})).json();RULES={at:j.at||0,r:j.rules?(typeof j.rules==='string'?JSON.parse(j.rules):j.rules):null};}catch(e){}}
-const RULEDEF={poomsae:{judges:5,types:{recognized:{format:'cutoff',poomsae:1},freestyle:{format:'cutoff'},gym:{format:'cutoff'},team100:{format:'cutoff'}}},gyeokpa:{judges:5,grpSize:10,finalN:8},kyorugi:{refs:3,system:'bo3',roundSec:120,restSec:60}};
-function rulesNow(){const r=RULES.r||{};return {poomsae:{...RULEDEF.poomsae,...(r.poomsae||{}),types:{...RULEDEF.poomsae.types,...((r.poomsae||{}).types||{})}},gyeokpa:{...RULEDEF.gyeokpa,...(r.gyeokpa||{})},kyorugi:{...RULEDEF.kyorugi,...(r.kyorugi||{})}};}
-let RDRAFT=null;
-function vRules(){const R=RDRAFT||rulesNow(),list=courtList().filter(c=>c.online);
+const REV=[['recognized','🥋','공인 품새'],['freestyle','🎵','자유 품새'],['gym','🤸','태권체조'],['team100','👥','팀 대항 종합경연'],['gyeokpa','🪵','격파'],['kyorugi','🥊','겨루기']];
+const RULEDEF={events:{recognized:true,freestyle:true,gym:true,team100:true,gyeokpa:true,kyorugi:false},common:{std:'kta',sep:true},
+  poomsae:{types:{recognized:{format:'cutoff',poomsae:1,judges:5,cut:'rule',adv:3,pdraw:'call'},freestyle:{format:'cutoff',judges:5,cut:'rule',adv:3,min:90,max:100},
+    gym:{format:'cutoff',judges:5,cut:'rule',adv:3,min:110,max:120},team100:{format:'cutoff',judges:5,cut:'rule',adv:3,max:360}}},
+  gyeokpa:{judges:5,preMin:16,grpSize:10,finalN:8},kyorugi:{refs:3,system:'bo3',roundSec:120,restSec:60}};
+function rMerge(a,b){if(!b||typeof b!=='object'||Array.isArray(b))return b===undefined?a:b;const o={...a};Object.keys(b).forEach(k=>{o[k]=a&&typeof a[k]==='object'&&!Array.isArray(a[k])?rMerge(a[k],b[k]):b[k];});return o;}
+function rulesNow(){const r=RULES.r||{},o=rMerge(JSON.parse(JSON.stringify(RULEDEF)),r);
+  /* v1.4.51 형식(품새 심판 수 하나)으로 저장된 것도 읽음 */
+  if(r.poomsae&&r.poomsae.judges&&!(r.poomsae.types&&r.poomsae.types.recognized&&r.poomsae.types.recognized.judges))Object.values(o.poomsae.types).forEach(t=>t.judges=r.poomsae.judges);
+  return o;}
+let RDRAFT=null,RSEL=null;
+const CUTL={rule:'규정 자동 (예선·본선·결선)',two:'예선 → 결선',final:'결선만'};
+function rSum(k,R){const T=R.poomsae.types,t=T[k];
+  if(k==='gyeokpa'){const G=R.gyeokpa;return `${G.judges}심 · ${G.preMin}명 이상 예선 · 조당 ${G.grpSize}명 · 결선 ${G.finalN}명`;}
+  if(k==='kyorugi'){const K=R.kyorugi;return `${K.refs}부심 · ${K.system==='sum'?'점수 합산':'3전 다승제'} · ${K.roundSec}초`;}
+  const fm=(t.format||'cutoff')==='tournament'?'토너먼트':'컷오프';
+  return `${fm}${fm==='컷오프'?' · '+(t.cut==='two'?`예선→결선 ${t.adv}명`:CUTL[t.cut||'rule'].split(' ')[0]):''} · ${t.judges}심${k==='recognized'?` · 품새 ${t.poomsae||1}개`:''}${t.max?` · ${t.min?t.min+'~':''}${t.max}초`:''}`;}
+function vRules(){const R=RDRAFT||rulesNow(),list=courtList().filter(c=>c.online),E=R.events,C=R.common;
   const seg=(k,opts,v)=>`<div class="seg">${opts.map(([x,l])=>`<button class="${String(v)===String(x)?'on':''}" data-a="rSet" data-k="${k}" data-v="${x}">${l}</button>`).join('')}</div>`;
-  const P=R.poomsae,T=P.types,G=R.gyeokpa,K=R.kyorugi;
+  const numIn=(k,v,w)=>`<input type="number" min="1" max="999" data-rk="${k}" value="${esc(v)}" style="width:${w||80}px">`;
   const got=list.map(c=>`<span class="chip ${RULES.at&&c.rulesAt===RULES.at?'ok':'warn'}">${esc(c.court)}코트 ${RULES.at&&c.rulesAt===RULES.at?'✓ 받음':'아직'}</span>`).join('')||'<span class="small muted">연결된 코트 노트북이 없습니다</span>';
+  const foot=`<div class="row rfoot" style="flex-wrap:wrap"><button class="btn primary" data-a="rSave">💾 저장하고 모든 코트에 보내기</button>${RDRAFT?'<span class="chip warn">저장하지 않은 변경 있음</span><button class="btn" data-a="rUndo">되돌리기</button>':''}<span class="small muted">받은 코트:</span>${got}</div>`;
+  let body='';
+  if(RSEL){const [k,ic,nm]=REV.find(x=>x[0]===RSEL)||REV[0];const P='poomsae.types.'+k,t=R.poomsae.types[k]||{};
+    const stepRows=()=>`<div class="rrow"><b>진행 단계</b>${seg(P+'.cut',Object.entries(CUTL),t.cut||'rule')}</div>
+      ${(t.cut||'rule')==='two'?`<div class="rrow"><b>결선 진출 인원</b>${seg(P+'.adv',[1,2,3,4,5,6,8,10].map(x=>[x,x+'명']),t.adv||3)}</div>`:''}
+      <div class="small muted">${C.std==='comm'?'생활체육 기준에서는 4명 1조로 나누어 조별로 진행합니다 (조 인원이 적으면 바로 결선).':(t.cut||'rule')==='rule'?'규정 자동: 22명 이상 예선(상위 50%) → 본선 8명 → 결선, 12~21명 본선 → 결선, 11명 이하 결선만.':(t.cut==='two'?`예선 점수 순위대로 위에서 ${t.adv||3}명이 결선에 오릅니다. 그보다 적은 부문은 바로 결선.`:'예선 없이 결선 한 번으로 순위를 정합니다.')}</div>`;
+    let f='';
+    if(k==='recognized')f=`<div class="rrow"><b>경기 방식</b>${seg(P+'.format',[['cutoff','컷오프'],['tournament','토너먼트']],t.format)}</div>${t.format!=='tournament'?stepRows():''}
+      <div class="rrow"><b>품새 수</b>${seg(P+'.poomsae',[[1,'품새 1개'],[2,'품새 2개']],t.poomsae||1)}</div>
+      <div class="rrow"><b>심판 수</b>${seg(P+'.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],t.judges)}</div>
+      <div class="rrow"><b>지정 품새 추첨</b>${seg(P+'.pdraw',[['call','매 경기 현장 추첨'],['pre','경기 당일 일괄 추첨']],t.pdraw||'call')}</div>`;
+    else if(k==='freestyle')f=`<div class="rrow"><b>경기 방식</b>${seg(P+'.format',[['cutoff','컷오프'],['tournament','토너먼트']],t.format)}</div>${t.format!=='tournament'?stepRows():''}
+      <div class="rrow"><b>심판 수</b>${seg(P+'.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],t.judges)}</div>
+      <div class="rrow"><b>연기 시간</b>${numIn(P+'.min',t.min)} 초 ~ ${numIn(P+'.max',t.max)} 초</div>`;
+    else if(k==='gym'||k==='team100')f=`<div class="rrow"><b>경기 방식</b><span class="chip ok">컷오프 · 경연 1회 (고정)</span></div>${stepRows()}
+      <div class="rrow"><b>심판 수</b>${seg(P+'.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],t.judges)}</div>
+      <div class="rrow"><b>연기 시간</b>${k==='gym'?`${numIn(P+'.min',t.min)} 초 ~ `:'최대 '}${numIn(P+'.max',t.max)} 초 <span class="small muted">넘거나 모자란 시간은 10초마다 감점</span></div>`;
+    else if(k==='gyeokpa'){const G=R.gyeokpa;f=`<div class="rrow"><b>심판 수</b>${seg('gyeokpa.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],G.judges)}</div>
+      <div class="rrow"><b>예선을 치르는 인원</b>${numIn('gyeokpa.preMin',G.preMin)} 명 이상 <span class="small muted">그보다 적으면 예선 없이 결선만</span></div>
+      <div class="rrow"><b>예선 조당 최대 인원</b>${numIn('gyeokpa.grpSize',G.grpSize)} 명</div>
+      <div class="rrow"><b>결선 인원</b>${numIn('gyeokpa.finalN',G.finalN)} 명 <span class="small muted">조 수로 나눠 조별 진출 인원을 정합니다</span></div>
+      <div class="small muted">${C.std==='comm'?'생활체육 기준에서는 4명 1조로 나누어 조별로 진행합니다.':''}</div>`;}
+    else if(k==='kyorugi'){const K=R.kyorugi;f=`<div class="rrow"><b>부심 수</b>${seg('kyorugi.refs',[[1,'1부심'],[2,'2부심'],[3,'3부심']],K.refs)}</div>
+      <div class="rrow"><b>경기 방식</b>${seg('kyorugi.system',[['bo3','3전 다승제'],['sum','3회전 점수 합산']],K.system)}</div>
+      <div class="rrow"><b>회전 시간</b>${numIn('kyorugi.roundSec',K.roundSec)} 초 · 휴식 ${numIn('kyorugi.restSec',K.restSec,70)} 초</div>`;}
+    body=`<div class="rdet"><div class="row between"><h3 style="margin:0;font-size:22px">${ic} ${nm}</h3><button class="btn" data-a="rBack">← 종목 목록</button></div>${f}</div>`;}
+  else body=`<div class="rrow"><b>이번 대회 종목</b>${REV.map(([k,ic,nm])=>`<button class="rchk ${E[k]?'on':''}" data-a="rEv" data-k="${k}">${E[k]?'☑':'☐'} ${ic} ${nm}</button>`).join('')}</div>
+    <div class="rrow"><b>대회 기준</b>${seg('common.std',[['comm','생활체육 (4명 1조)'],['kta','협회 국내 부별'],['wt','세계연맹']],C.std)}<span class="small muted">모든 종목 공통</span></div>
+    <div class="rrow"><b>같은 도장 떨어뜨리기</b>${seg('common.sep',[['true','켜기'],['false','끄기']],C.sep!==false)}<span class="small muted">조 편성·출전 순서·대진표 추첨</span></div>
+    <div class="rtiles">${REV.filter(([k])=>E[k]).map(([k,ic,nm])=>`<button class="rtile" data-a="rOpen" data-k="${k}"><span class="ic">${ic}</span><b>${nm}</b><span class="sm">${esc(rSum(k,R))}</span><span class="go">설정 열기 →</span></button>`).join('')||'<div class="empty">위에서 이번 대회 종목을 골라 주세요</div>'}</div>`;
   return `<div class="panel"><div class="row between"><h2>📋 종목별 경기 규칙</h2><span class="row">${RULES.at?`<span class="chip ok">마지막 저장 ${hhmm(RULES.at)}</span>`:'<span class="chip warn">아직 정하지 않음</span>'}</span></div>
-    <span class="small muted">여기서 정하면 모든 코트 노트북의 경기 앱이 똑같이 따릅니다. 부문을 다른 코트로 옮겨도 같은 규칙입니다. 이미 점수가 들어간 부문은 그대로 두고, 시작 전 부문부터 적용됩니다.</span>
-    <div class="rgrid">
-      <div class="rbox"><h3>🥋 품새</h3>
-        <div class="rrow"><b>심판 수</b>${seg('poomsae.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],P.judges)}</div>
-        <div class="rrow"><b>공인 품새</b>${seg('poomsae.types.recognized.format',[['cutoff','컷오프'],['tournament','토너먼트']],T.recognized.format)}${seg('poomsae.types.recognized.poomsae',[[1,'품새 1개'],[2,'품새 2개']],T.recognized.poomsae||1)}</div>
-        <div class="rrow"><b>자유 품새</b>${seg('poomsae.types.freestyle.format',[['cutoff','컷오프'],['tournament','토너먼트']],T.freestyle.format)}</div>
-        <div class="rrow"><b>태권체조</b><span class="chip ok">컷오프 · 경연 1회 (고정)</span></div>
-        <div class="rrow"><b>팀 대항 종합경연</b><span class="chip ok">컷오프 · 경연 1회 (고정)</span></div></div>
-      <div class="rbox"><h3>🪵 격파</h3>
-        <div class="rrow"><b>심판 수</b>${seg('gyeokpa.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],G.judges)}</div>
-        <div class="rrow"><b>예선 한 조 인원</b><input type="number" min="2" max="40" data-rk="gyeokpa.grpSize" value="${esc(G.grpSize)}" style="width:80px"> 명</div>
-        <div class="rrow"><b>결선 진출</b><input type="number" min="2" max="40" data-rk="gyeokpa.finalN" value="${esc(G.finalN)}" style="width:80px"> 명</div></div>
-      <div class="rbox"><h3>🥊 겨루기</h3>
-        <div class="rrow"><b>부심 수</b>${seg('kyorugi.refs',[[1,'1부심'],[2,'2부심'],[3,'3부심']],K.refs)}</div>
-        <div class="rrow"><b>경기 방식</b>${seg('kyorugi.system',[['bo3','3전 다승제'],['sum','3회전 점수 합산']],K.system)}</div>
-        <div class="rrow"><b>회전 시간</b><input type="number" min="30" max="300" step="10" data-rk="kyorugi.roundSec" value="${esc(K.roundSec)}" style="width:80px"> 초 · 휴식 <input type="number" min="10" max="120" step="5" data-rk="kyorugi.restSec" value="${esc(K.restSec)}" style="width:70px"> 초</div></div>
-    </div>
-    <div class="row" style="flex-wrap:wrap"><button class="btn primary" data-a="rSave">💾 저장하고 모든 코트에 보내기</button>${RDRAFT?'<span class="chip warn">저장하지 않은 변경 있음</span><button class="btn" data-a="rUndo">되돌리기</button>':''}<span class="small muted">받은 코트:</span>${got}</div></div>`;}
+    <span class="small muted">이번 대회 종목을 고르고 종목마다 경기 규칙을 정하세요. 저장하면 모든 코트 노트북이 똑같이 따르고, 부문을 다른 코트로 옮겨도 같은 규칙입니다. 이미 점수가 들어간 부문은 그대로 두고 시작 전 부문부터 적용됩니다.</span>
+    ${body}${foot}</div>`;}
 function rPath(o,p,v){const ks=p.split('.');let x=o;ks.slice(0,-1).forEach(k=>{x[k]=x[k]||{};x=x[k];});x[ks[ks.length-1]]=v;}
+const rDraft=()=>{RDRAFT=RDRAFT||JSON.parse(JSON.stringify(rulesNow()));return RDRAFT;};
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
-  if(a==='rSet'){RDRAFT=RDRAFT||JSON.parse(JSON.stringify(rulesNow()));const v=b.dataset.v;rPath(RDRAFT,b.dataset.k,/^\d+$/.test(v)?Number(v):v);render();}
+  if(a==='rSet'){const v=b.dataset.v;rPath(rDraft(),b.dataset.k,v==='true'?true:v==='false'?false:/^\d+$/.test(v)?Number(v):v);render();}
+  else if(a==='rEv'){const D=rDraft();D.events[b.dataset.k]=!D.events[b.dataset.k];render();}
+  else if(a==='rOpen'){RSEL=b.dataset.k;render();}
+  else if(a==='rBack'){RSEL=null;render();}
   else if(a==='rUndo'){RDRAFT=null;render();}
   else if(a==='rSave'){const R=RDRAFT||rulesNow();document.querySelectorAll('[data-rk]').forEach(i=>{const n=Number(i.value);if(n>0)rPath(R,i.dataset.rk,n);});
-    const doc={...R,at:NOW()};try{const r=await fetch('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)});if(!r.ok)throw 0;RDRAFT=null;await loadRules();toast('경기 규칙을 저장했습니다 · 모든 코트 노트북에 보냅니다');render();}catch(x){toast('저장하지 못했습니다 (본부 노트북에서 저장해 주세요)');}}});
-document.addEventListener('change',e=>{const i=e.target.closest&&e.target.closest('[data-rk]');if(!i)return;RDRAFT=RDRAFT||JSON.parse(JSON.stringify(rulesNow()));const n=Number(i.value);if(n>0)rPath(RDRAFT,i.dataset.rk,n);});
+    const doc={...R,at:NOW()};try{const r=await fetch('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)});if(!r.ok)throw 0;RDRAFT=null;await loadRules();toast('종목 설정을 저장했습니다 · 모든 코트 노트북에 보냅니다');render();}catch(x){toast('저장하지 못했습니다 (본부 노트북에서 저장해 주세요)');}}});
+document.addEventListener('change',e=>{const i=e.target.closest&&e.target.closest('[data-rk]');if(!i)return;const n=Number(i.value);if(n>0)rPath(rDraft(),i.dataset.rk,n);});
 loadRules();setInterval(loadRules,15000);
 /* v1.4.51 시작 전 점검표: 코트마다 연결·허가 코드·경기 규칙·명단·심판이 다 맞는지 */
 function ckRow(c){const today=new Date(NOW()+9*3600e3).toISOString().slice(0,10),apps=Object.values(c.apps||{}).map(v=>v&&v.board).filter(Boolean);
@@ -729,7 +769,7 @@ function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
     case 'backup':{const b=S.bk||{};return [`${cf.backupAuto?'켜짐':'꺼짐'}${b.at?' · '+ago(b.at):''}${BK.err?' · 오류':''}`,BK.err?'warn':cf.backupAuto&&b.at?'ok':''];}
     case 'mon':return ['대기실 TV·태블릿',''];
     case 'check':{const R=list.map(ckRow),n=R.filter(r=>r.ok).length;return [R.length?`${n}/${R.length} 코트 준비됨`:'코트 없음',R.length&&n===R.length?'ok':R.length?'warn':''];}
-    case 'rules':{const on=list.filter(c=>c.online),got=on.filter(c=>RULES.at&&c.rulesAt===RULES.at).length;return [RULES.at?`정함 · ${got}/${on.length} 코트 받음`:'아직 정하지 않음',RULES.at?(got===on.length?'ok':'warn'):'warn'];}
+    case 'rules':{const on=list.filter(c=>c.online),got=on.filter(c=>RULES.at&&c.rulesAt===RULES.at).length,ne=Object.values(rulesNow().events).filter(Boolean).length;return [RULES.at?`종목 ${ne}개 · ${got}/${on.length} 코트 받음`:'아직 정하지 않음',RULES.at?(got===on.length?'ok':'warn'):'warn'];}
     case 'plan':return window.KSPLAN?KSPLAN.tileState():['열어서 짜기',''];
     case 'live':return !cf.lvOn?['인터넷 보내기 꺼짐 · 링크·QR','']:LVS.err?['보내기 실패 · 인터넷 확인','warn']:[`보내는 중 · ${LVS.lastAt?hhmm(LVS.lastAt):'시작'}`,'ok'];
     case 'room':{const M=msgs(),n=M.filter(m=>m.dir==='up'&&m.st==='new').length,e=M.some(m=>m.dir==='up'&&m.kind==='emg'&&m.st==='new');return [e?'🚨 긴급 알림':`${rooms().length}곳 · ${cf.roomAuto?'자동':'수동'}${n?` · 새 요청 ${n}`:''}`,n?'warn':'ok'];}
