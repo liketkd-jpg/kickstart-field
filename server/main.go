@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.44" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.45" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -291,6 +291,14 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		}
 		how := openPrintWindow(u, filepath.Join(dataDir, "자동출력창"))
 		writeJSON(w, 200, map[string]any{"ok": true, "how": how, "url": u, "printer": pn})
+		return
+	case p == "/api/hq/openedge" && r.Method == http.MethodPost:
+		if !isLocalReq(r) {
+			writeJSON(w, 403, map[string]any{"error": "local_only"})
+			return
+		}
+		u := fmt.Sprintf("http://127.0.0.1:%d/hq/", port)
+		writeJSON(w, 200, map[string]any{"ok": openEdge(u), "url": u})
 		return
 	case p == "/api/hq/printer":
 		pn := defaultPrinter()

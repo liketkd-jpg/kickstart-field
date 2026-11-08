@@ -447,16 +447,32 @@ function tick(){const el=document.querySelector('[data-clock]');if(el){const d=n
 setInterval(tick,1000);
 
 /* ---------- 음성 ---------- */
-const OFFLINE_VOICE=()=>true;
-function koVoice(){const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));
-  /* 본부 설정에서 고른 목소리가 이 노트북에 있으면 그 목소리 */const want=(S.cfg&&S.cfg.voiceName)||'';if(want){const w=vs.find(v=>v.name===want);if(w)return w;}
-  const male=v=>/InJoon|Hyunsu|male|남자/i.test(v.name)&&!/female|여자/i.test(v.name);const local=vs.filter(v=>v.localService!==false&&!/Online|Google|Natural/i.test(v.name));
-  /* 인터넷이 없으면(현장 모드) 노트북 안 목소리만: 「Google·Online」 목소리는 인터넷이 있어야 소리가 납니다 */
-  /* 여자 목소리 먼저 · 남자 목소리는 마지막 */
-  if(OFFLINE_VOICE())return local.find(v=>/female|여|Heami|Yuna/i.test(v.name))||local.find(v=>!male(v))||local[0]||null;
-  return vs.find(v=>/female|여|Heami|SunHi|Yuna/i.test(v.name))||local.find(v=>!male(v))||vs.find(v=>!male(v))||local[0]||vs[0]||null;}
+/* v1.4.45 자연스러운 AI 목소리
+   엣지: Microsoft 선히·인준·현수 (Online Natural · 인터넷 필요) / 크롬: Google 한국의 (인터넷 필요) / 윈도우 기본: Heami (인터넷 없이)
+   인터넷 목소리가 끊기거나 5초 안에 소리가 나지 않으면 노트북 기본 목소리로 자동으로 다시 읽습니다. */
+const VNET=v=>!!v&&(v.localService===false||/Online|Natural|Neural|Google/i.test(v.name));
+const VMALE=v=>!!v&&/InJoon|Hyunsu|Gookmin|Bongjin|male|남자|남성/i.test(v.name)&&!/female|여자|여성/i.test(v.name);
+function koVoices(){try{return speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));}catch(e){return [];}}
+function vRank(v){return (/Natural|Neural/i.test(v.name)?0:/Online/i.test(v.name)?1:/Google/i.test(v.name)?2:3)*2+(VMALE(v)?1:0);}
+function localVoice(){const L=koVoices().filter(v=>!VNET(v));return L.find(v=>!VMALE(v))||L[0]||null;}
+function koVoice(){const vs=koVoices(),online=navigator.onLine!==false;
+  /* 본부 설정에서 고른 목소리가 이 노트북에 있으면 그 목소리 (인터넷 목소리는 인터넷이 있을 때만) */
+  const want=(S.cfg&&S.cfg.voiceName)||'';if(want){const w=vs.find(v=>v.name===want);if(w&&(online||!VNET(w)))return w;}
+  /* 자동: 가장 자연스러운 여자 목소리 먼저 */
+  const pool=online?vs:vs.filter(v=>!VNET(v));
+  return [...pool].sort((x,y)=>vRank(x)-vRank(y))[0]||localVoice()||vs[0]||null;}
 window.KS_HQVOICE=()=>koVoice();
-function say(text,times){if(!('speechSynthesis' in window)||!CFG().voice)return;try{speechSynthesis.cancel();for(let i=0;i<(times||1);i++){const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';const v=koVoice();if(v)u.voice=v;u.rate=.95;speechSynthesis.speak(u);}}catch(e){}}
+const VRATE=()=>({slow:.88,fast:1.12}[CFG().voiceRate]||1);
+function speakKo(text,times){const ss=window.speechSynthesis;if(!ss||typeof SpeechSynthesisUtterance==='undefined')return;
+  const run=(voice,canFall)=>{try{ss.cancel();}catch(e){}let started=false,fell=false;
+    const fall=()=>{if(fell||started||!canFall)return;fell=true;const lv=localVoice();if(lv&&lv!==voice)run(lv,false);};
+    for(let i=0;i<(times||1);i++){const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';if(voice)u.voice=voice;u.rate=(VNET(voice)?1:.95)*VRATE();
+      if(i===0){u.onstart=()=>{started=true;};u.onerror=e=>{if(e&&/interrupted|canceled/.test(e.error||''))return;fall();};}
+      ss.speak(u);}
+    if(canFall)setTimeout(()=>{if(!started)fall();},5000);};
+  const v=koVoice();run(v,VNET(v));}
+function say(text,times){if(!('speechSynthesis' in window)||!CFG().voice)return;speakKo(text,times);}
+try{speechSynthesis.addEventListener('voiceschanged',()=>{if(document.getElementById('hqVoice'))render();});}catch(e){}
 function chime(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C(),t=c.currentTime;[[880,0],[1175,.18],[1568,.36]].forEach(([f,d])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.5);o.connect(g).connect(c.destination);o.start(t+d);o.stop(t+d+.55);});}catch(e){}}
 let lastAnn=null;
 /* 새 호출이 오면 소리·화면. 보낸 기기(휴대폰·다른 노트북)의 시계가 달라도 되도록 「이 화면이 받은 시각」으로 판단 */
@@ -735,8 +751,15 @@ const RT={
 const tileBtn=(k,ic,title,sub,cls,act)=>`<button class="rmt ${cls||''}" data-a="${act||'rmView'}" data-k="${k}"><span class="rmti">${ic}</span><b>${esc(title)}</b>${sub?`<span class="rmts">${sub}</span>`:''}</button>`;
 
 /* ----- 본부: 대기실 연결 (타일 → 누르면 그 기능만) ----- */
-function voiceOpts(){let vs=[];try{vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));}catch(e){}const cur=CFG().voiceName||'';
-  return `<option value="" ${!cur?'selected':''}>자동 (여자 목소리 먼저)</option>${vs.map(v=>`<option value="${esc(v.name)}" ${cur===v.name?'selected':''}>${esc(v.name)}${/InJoon|Hyunsu|male|남/i.test(v.name)&&!/female/i.test(v.name)?' (남자)':''}</option>`).join('')}`;}
+const VNICK={SunHi:'선히',InJoon:'인준',Hyunsu:'현수',Heami:'헤아미',Yuna:'유나',Gookmin:'국민',Bongjin:'봉진',JiMin:'지민',SeoHyeon:'서현',SoonBok:'순복',YuJin:'유진'};
+function vLabel(v){const k=Object.keys(VNICK).find(k=>v.name.includes(k));const who=k?VNICK[k]:(/Google/i.test(v.name)?'구글':v.name.replace(/^Microsoft\s*/,'').split(/[ -]/)[0]);
+  const kind=/Natural|Neural/i.test(v.name)?'자연스러운 AI':VNET(v)?'인터넷 목소리':'기본';return `${who} · ${VMALE(v)?'남자':'여자'} · ${kind}`;}
+function voiceOpts(){const vs=koVoices().sort((x,y)=>vRank(x)-vRank(y)),cur=CFG().voiceName||'';
+  const o=v=>`<option value="${esc(v.name)}" ${cur===v.name?'selected':''}>${esc(vLabel(v))}</option>`,net=vs.filter(VNET),loc=vs.filter(v=>!VNET(v));
+  return `<option value="" ${!cur?'selected':''}>자동 (가장 자연스러운 여자 목소리)</option>${net.length?`<optgroup label="⭐ AI 목소리 · 인터넷 필요">${net.map(o).join('')}</optgroup>`:''}${loc.length?`<optgroup label="기본 목소리 · 인터넷 없이">${loc.map(o).join('')}</optgroup>`:''}`;}
+function voiceHint(){const vs=koVoices();
+  if(vs.some(v=>/Natural|Neural/i.test(v.name)))return navigator.onLine===false?'<span class="small muted">지금 인터넷이 끊겨 기본 목소리로 방송합니다. 다시 연결되면 AI 목소리로 돌아옵니다.</span>':'<span class="small muted">⭐ 자연스러운 AI 목소리를 쓸 수 있습니다. 인터넷이 끊기면 자동으로 기본 목소리로 바꿔 읽습니다.</span>';
+  return `<span class="small muted">가장 자연스러운 AI 목소리(선히·인준·현수)는 엣지(Microsoft Edge)에서 나옵니다. 엣지로 연 본부 창을 전광판으로 쓰시면 됩니다.</span> <button class="btn sm" data-a="hqOpenEdge">엣지로 본부 화면 열기</button>`;}
 function vRoomPanel(){
   const cf=CFG(),R=rooms(),M=msgs(),pend=M.filter(m=>m.dir==='up'&&m.st==='new'),ph=cf.phHQ||PH_HQ,att=Object.values(S.att||{}).filter(a=>NOW()-(a.at||0)<6*3600e3).sort((a,b)=>b.at-a.at);
   const unread=M.filter(m=>m.dir==='down'&&m.st!=='ack').length,absent=att.reduce((n,a)=>n+(a.list||[]).filter(p=>p.st==='out').length,0);
@@ -770,6 +793,8 @@ function vRoomPanel(){
         <div class="row"><button class="btn primary" data-a="hqRmSave">대기실 설정 저장</button></div>
         <span class="small muted">맡을 앱 + 부문 이름 낱말로 대기실 화면에 보일 부문을 고릅니다. 예) 팀 대항 대기실: 모든 앱 · 「체조,경연,단체」 / 품새 대기실: 품새 앱 · 「-체조,-경연」</span></div>
       <div class="rmc"><label class="row">🔊 본부 모니터 목소리 <select id="hqVoice">${voiceOpts()}</select><button class="btn sm" data-a="hqVoiceTest">들어 보기</button></label>
+        <label class="row">말 빠르기 <select id="hqVoiceRate">${(r=>`<option value="slow" ${r==='slow'?'selected':''}>조금 느리게</option><option value="" ${!r?'selected':''}>보통</option><option value="fast" ${r==='fast'?'selected':''}>조금 빠르게</option>`)(CFG().voiceRate||'')}</select></label>
+        <div>${voiceHint()}</div>
         <span class="small muted">목록은 이 노트북에 깔린 목소리입니다. 본부 모니터를 다른 노트북에서 열면 같은 이름이 있어야 하고, 없으면 여자 목소리를 먼저 고릅니다.</span></div>`;}
   return `<div class="panel"><div class="row between"><h2>🚪 대기실 연결</h2><span class="row"><button class="btn sm ${cf.roomAuto?'on':''}" data-a="roomAuto" title="대기실의 「부문 호출」을 바로 전광판으로 보낼지">📣 호출 ${cf.roomAuto?RT.auto:RT.manual}</button><button class="btn sm primary" data-a="hqRmQR">📱 대기실 QR</button></span></div>
     <span class="small muted">${cf.roomAuto?`<b>${RT.auto}</b>: 대기실이 「부문 호출」을 누르면 바로 본부 모니터·음성으로 나갑니다.`:`<b>${RT.manual}</b>: 대기실 호출은 「📥 받은 요청」에서 「전광판 보내기」를 눌러야 나갑니다.`} 대기실 휴대폰도 대회장 와이파이에 연결해 주세요.</span>
@@ -871,6 +896,7 @@ async function roomClick(a,b){
     case 'hqRmSave':{const R=rooms().map((x,i)=>({name:(($('#rmName_'+i)||{}).value||x.name).trim()||x.name,app:($('#rmApp_'+i)||{}).value??x.app,kw:(($('#rmKw_'+i)||{}).value??x.kw).trim()}));
       const sv=[...(cf.rooms||[])];R.forEach((x,i)=>sv[i]=x);await saveCfg({rooms:sv});toast('대기실 설정을 저장했습니다');return true;}
     case 'hqRmQR':{if(window.KSQR){const base=(window.KS_FIELD&&KS_FIELD.base)||location.href.split('#')[0];KSQR.open({title:'대기실 휴대폰',items:rooms().map(x=>({label:x.name,sub:'진행 요원 휴대폰으로 찍기',url:base+'#room-'+x.id}))});}return true;}
+    case 'hqOpenEdge':{try{const j=await (await fetch('/api/hq/openedge',{method:'POST'})).json();toast(j.ok?'엣지로 본부 화면을 열었습니다 · 그 창을 전광판으로 써 주세요':'이 노트북에서 엣지를 찾지 못했습니다');}catch(e){toast('본부 노트북(현장 프로그램)에서만 열 수 있습니다');}return true;}
     case 'hqVoiceTest':{const v=($('#hqVoice')||{}).value||'';if(v!==(cf.voiceName||''))await saveCfg({voiceName:v});sayTest('본부 모니터 목소리 시험입니다. B코트, 중등부 3학년 선수는 준비해 주세요.');return true;}
   }
   return false;
@@ -878,9 +904,10 @@ async function roomClick(a,b){
 document.addEventListener('change',e=>{const el=e.target;if(!el||!el.id)return;
   if(el.id==='hqRmN'){saveCfg({roomN:Number(el.value)||3});}
   else if(el.id==='hqVoice'){saveCfg({voiceName:el.value||''});}
+  else if(el.id==='hqVoiceRate'){saveCfg({voiceRate:el.value||''});}
   else if(el.id==='rmDiv'&&route().startsWith('room-')){RS.div=el.value;el.blur();render();}
   else if(el.id==='rmAnnDiv'&&el.value){const r=roomOf(route().slice(5)),[court,app,...rest]=el.value.split('|'),t=$('#rmAnnTxt');if(r&&t){t.value=callText({court,div:rest.join('|')},r);t.focus();}el.value='';}});
-function sayTest(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';const v=koVoice();if(v)u.voice=v;u.rate=.95;speechSynthesis.speak(u);}catch(e){}}
+function sayTest(t){try{speakKo(t,1);}catch(e){}}
 
 /* ---------- 📱 지도자용 진행 상황 (인터넷) ----------
    본부 노트북이 인터넷에 연결되어 있으면, 코트 진행 상황·입상 결과(+ 코트별 예상 시각)를 접수 홈페이지 「실시간 결과」로 올립니다.

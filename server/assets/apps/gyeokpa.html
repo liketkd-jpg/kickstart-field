@@ -1607,7 +1607,7 @@ function regenerateDivs(){
       const order=[...keep,...shuffle(added)],changed=added.length||keep.length!==(prev.order||[]).length;
       return changed&&!divHasResults(prev)?{...prev,...base,order,stages:null}:{...prev,...base,order:changed?order:prev.order};
     }
-    return {id,key:g.key,name:g.key,...base,order:shuffle(g.ids),G:null,adv:null,tech:null,stages:null};
+    {const nd={id,key:g.key,name:g.key,...base,order:g.ids,G:null,adv:null,tech:null,stages:null};nd.order=COMM()?g.ids:gyDraw(nd);return nd;}
   }).sort((x,y)=>(EV_KEYS.indexOf(x.ev)-EV_KEYS.indexOf(y.ev))||(LEVELS.indexOf(x.level)-LEVELS.indexOf(y.level))||x.name.localeCompare(y.name,'ko',{numeric:true}));
   return saveDivs(list).then(async()=>{const cur=curOf();if(cur&&!list.some(d=>d.id===cur.divId)){await saveState({...ST(),status:'idle',current:null,epoch:(ST().epoch||0)+1,timer:null,prep:null,readyAt:null});}
     const um=list.filter(d=>/부별 미정|종목 미정/.test(d.name)).length;toast(`부문 ${list.length}개를 편성했습니다${um?` · 부별·종목을 알 수 없는 부문 ${um}개가 있습니다 (선수 등록에서 확인)`:''}`);});
@@ -1628,6 +1628,15 @@ function planOf(d){
   const adv=Math.max(1,Number(d.adv)||(s.adv==='auto'?autoAdv:Number(s.adv)||autoAdv));
   return {pre,G,adv,finalN:Math.min(n,G*adv)};
 }
+/* 격파: 예선 조가 있으면 조마다 고르게 나누고 조 안에서 연달아 하지 않게, 없으면 연달아만 피합니다 */
+function gyDraw(d){const ids=d.order||[];if(!SEP())return shuffle(ids);const p=planOf(d);
+  if(!p.pre)return sepOrder(ids);return commDeal(ids,splitGroups(ids,p.G).map(g=>g.length)).flat();}
+function gyChip(d){const ids=d.order||[];if(!SEP()||!ids.length)return '';const p=planOf(d);if(!p.pre)return sepChip(ids,false);
+  const gs=splitGroups(ids,p.G);let dup=0,adj=0;gs.forEach(g=>{const c=new Map();g.forEach(id=>{const t=sepT(id);if(t)c.set(t,(c.get(t)||0)+1);});
+    const mx=new Map();ids.forEach(id=>{const t=sepT(id);if(t)mx.set(t,(mx.get(t)||0)+1);});
+    c.forEach((v,t)=>{dup+=Math.max(0,v-Math.ceil(mx.get(t)/gs.length));});adj+=sepCount(g,false);});
+  if(!dup&&!adj)return `<span class="chip ok">같은 도장 떨어뜨리기 ✓ 조마다 고르게 · 연달아 없음</span>`;
+  return `<span class="chip warn" style="white-space:normal">같은 도장 ${dup?`한 조에 몰림 ${dup}명`:''}${dup&&adj?' · ':''}${adj?`연달아 ${adj}곳`:''} · 「출전 순서 다시 추첨」을 누르면 다시 나눕니다</span>`;}
 function splitGroups(order,G){const out=Array.from({length:G},()=>[]);const base=Math.floor(order.length/G),extra=order.length%G;let i=0;
   for(let g=0;g<G;g++){const size=base+(g<extra?1:0);out[g]=order.slice(i,i+size);i+=size;}return out;}
 function stagesOf(d){
@@ -1925,7 +1934,7 @@ function aSettings(){
   <div class="stack"><div class="panel">
     <h2>대회 기본 정보</h2>
     <label class="field"><span class="label">대회명</span><input type="text" id="setName" value="${esc(s.name)}" placeholder="예: 제1회 경민대학교 총장배 격파대회" data-on="setName"></label>
-    ${commPanel()}
+    ${commPanel()}${sepPanel()}
     <div class="field"><span class="label">심판 수</span>${seg('setJudges',[[1,'1심제'],[3,'3심제'],[5,'5심제'],[7,'7심제']],s.judges)}
       <span class="small muted">규정은 5인 심판입니다. 5심제 이상은 심판 점수 중 최고·최저를 빼고 평균합니다. 3심제는 소규모 대회용으로 세 심판 평균입니다.</span></div>
     <div class="field"><span class="label">점수 공개</span>${seg('setAutoReveal',[[true,'모든 심판 점수가 오면 자동 공개'],[false,'운영석에서 눌러 공개']],s.autoReveal!==false)}</div>
@@ -2087,7 +2096,7 @@ function divDetail(d){
     <div class="field"><span class="label">예선</span>${seg('divPre',[['','자동 ('+SET().preMin+'명 이상)'],['on','예선 치름'],['off','결선만']],d.forcePre===true?'on':d.forcePre===false?'off':'','data-id="'+d.id+'"')}</div>
     ${p.pre?`<div class="row"><label class="field" style="max-width:150px"><span class="label">조 수</span><input type="number" id="dG_${d.id}" min="1" max="${n}" value="${p.G}" data-on="divG" data-id="${d.id}"></label>
       <div class="field"><span class="label">조별 결선 진출 인원</span>${seg('divAdv',advOpts,d.adv||'','data-id="'+d.id+'"')}</div></div>`:''}
-    <div class="row"><button class="btn" data-act="armed" data-do="redraw" data-id="${d.id}">출전 순서 다시 추첨</button></div>`}</div>`;
+    <div class="row"><button class="btn" data-act="armed" data-do="redraw" data-id="${d.id}">출전 순서 다시 추첨</button></div>`}${gyChip(d)}</div>`;
   let techBox='';
   if(k==='tech'){const t=d.tech||techDefault(d.ev,d.level,d.gender);
     techBox=`<div class="panel" style="background:var(--sunk)"><div class="row between"><b>세부 지정 종목 (실시 순서)</b>${d.tech?`<button class="btn sm" data-act="techReset" data-id="${d.id}">규정대로</button>`:''}</div>
@@ -2659,14 +2668,71 @@ const COMM_RE=/ · (\d+)조$/;
 function commSizes(n,rem){rem=rem||SET().commRem||'small';if(n<=4)return n?[n]:[];const q=Math.floor(n/4),r=n%4,s=Array(q).fill(4);
   if(r===1){if(rem==='merge')s[q-1]=5;else{s[q-1]=3;s.push(2);}}else if(r)s.push(r);return s;}
 const commTeam=id=>{const a=S.roster.find(x=>x.id===id);return a?String(a.team||'').trim():'';};
+/* ===== 같은 도장 떨어뜨리기 (v1.4.45) — 설정 하나로 조 편성·출전 순서·대진표 추첨에 모두 적용 =====
+   켜면: ① 같은 도장(팀)은 여러 조로 고르게 나누고 ② 컷오프는 같은 도장이 연달아 나오지 않게
+   ③ 대진표는 같은 도장이 되도록 늦게(대진표 양쪽 끝) 만나게 합니다. 끄면 완전 무작위입니다. */
+const SEP=()=>SET().sepDojang!==false;
+const sepT=id=>commTeam(id);
+/* 연달아 같은 도장이 최소가 되도록 섞습니다 (매번 무작위, 인원 구성상 꼭 필요할 때만 붙음) */
+function sepOrder(ids){
+  ids=ids||[];
+  const by=new Map();shuffle(ids).forEach(id=>{const t=sepT(id)||'\u0000'+id;if(!by.has(t))by.set(t,[]);by.get(t).push(id);});
+  const L=[...by.entries()].map(([t,a])=>({t,a}));const out=[];let last=null,n=ids.length;
+  while(n>0){
+    const live=L.filter(x=>x.a.length);let best=[],bs=1e9;
+    live.forEach(x=>{const rest=n-1;let mm=0;live.forEach(y=>{const c=y.a.length-(y===x?1:0);if(c>mm)mm=c;});
+      const sc=(x.t===last?1:0)+Math.max(0,2*mm-rest-1);
+      if(sc<bs){bs=sc;best=[x];}else if(sc===bs)best.push(x);});
+    const p=best[Math.floor(Math.random()*best.length)];out.push(p.a.pop());last=p.t;n--;
+  }
+  return out;
+}
+/* 대진표(토너먼트): buildRound1 자리 기준으로 같은 도장이 가장 늦게 만나는 자리에 넣습니다 */
+function sepBracket(ids){
+  ids=ids||[];const n=ids.length;if(n<3)return sepOrder(ids);
+  const idx=[...Array(n).keys()],leaf=new Array(n);
+  buildRound1(idx).forEach((p,i)=>p.forEach((x,s)=>{if(x!==null&&x!==undefined)leaf[x]=2*i+s;}));
+  const dist=(a,b)=>{const x=a^b;return x?Math.floor(Math.log2(x))+1:0;};
+  const by=new Map(),solo=[];shuffle(ids).forEach(id=>{const t=sepT(id);if(!t){solo.push(id);return;}if(!by.has(t))by.set(t,[]);by.get(t).push(id);});
+  const teams=shuffle([...by.entries()]).sort((a,b)=>b[1].length-a[1].length);
+  const free=new Set(idx),order=new Array(n);
+  teams.forEach(([t,list])=>{const placed=[];
+    list.forEach(id=>{let best=[],b1=-1,b2=-1e9;
+      free.forEach(c=>{let mn=99,sum=0;placed.forEach(L=>{const d=dist(leaf[c],L);if(d<mn)mn=d;sum-=Math.pow(2,-d);});
+        if(mn>b1||(mn===b1&&sum>b2+1e-12)){b1=mn;b2=sum;best=[c];}else if(mn===b1&&Math.abs(sum-b2)<1e-12)best.push(c);});
+      const c=best[Math.floor(Math.random()*best.length)];free.delete(c);order[c]=id;placed.push(leaf[c]);});});
+  const rest=shuffle([...free]);solo.forEach((id,i)=>{order[rest[i]]=id;});
+  return order;
+}
+/* 추첨: 스위치가 꺼져 있으면 완전 무작위 */
+function sepDraw(ids,bracket){ids=ids||[];if(!SEP())return shuffle(ids);return bracket?sepBracket(ids):sepOrder(ids);}
+/* 겹친 곳 세기: 대진표는 첫 경기 같은 도장 맞대결, 컷오프는 연달아 */
+function sepCount(order,bracket){order=order||[];let c=0;
+  if(bracket){buildRound1(order).forEach(p=>{if(p[0]&&p[1]){const t=sepT(p[0]);if(t&&t===sepT(p[1]))c++;}});return c;}
+  for(let i=0;i+1<order.length;i++){const t=sepT(order[i]);if(t&&t===sepT(order[i+1]))c++;}return c;}
+function sepChip(order,bracket,extra){
+  if(!SEP()||!(order||[]).length)return '';
+  const c=sepCount(order,bracket)+(extra||0);
+  return c?`<span class="chip warn" style="white-space:normal">같은 도장 ${bracket?'첫 경기 맞대결':'연달아'} ${c}곳 · 한 도장 인원이 많아 모두 떨어뜨리지 못했습니다. 「추첨」을 다시 누르면 다른 순서로 나옵니다</span>`
+    :`<span class="chip ok">같은 도장 떨어뜨리기 ✓ 겹침 없음</span>`;
+}
+function sepPanel(){
+  const on=SEP();
+  return `<div class="field"><span class="label">같은 도장 떨어뜨리기</span>
+    <div class="seg"><button class="${on?'':'on'}" data-act="sepSet" data-v="0">끄기</button><button class="${on?'on':''}" data-act="sepSet" data-v="1">켜기</button></div>
+    <span class="small muted">켜면 추첨할 때 같은 도장(팀)을 여러 조로 고르게 나누고, 컷오프는 연달아 하지 않게, 대진표는 첫 경기에서 만나지 않게 최대한 떨어뜨립니다(팀 경연·태권체조 포함). 끄면 완전 무작위로 추첨합니다. 이미 정한 순서는 그대로 두고, 다음 추첨부터 적용됩니다.</span>
+  </div>`;
+}
+async function sepSet(on){S.settings={...SET(),sepDojang:on};await saveSettings(S.settings);render();toast(on?'같은 도장 떨어뜨리기를 켰습니다':'같은 도장 떨어뜨리기를 껐습니다 · 완전 무작위로 추첨합니다');}
 /* 같은 도장(소속)이 한 조에 몰리지 않게, 1·2번과 3·4번이 같은 도장끼리 붙지 않게 나눕니다 */
 function commDeal(ids,sizes){
+  if(!SEP()){const s0=shuffle(ids);let i=0;return sizes.map(n=>s0.slice(i,i+=n));}
   const by=new Map();shuffle(ids).forEach(id=>{const t=commTeam(id)||'\u0000'+id;if(!by.has(t))by.set(t,[]);by.get(t).push(id);});
   const gs=sizes.map(n=>({n,ids:[]}));
   [...by.values()].sort((a,b)=>b.length-a.length).flat().forEach(id=>{const t=commTeam(id);let best=null,bs=null;
     gs.forEach(g=>{if(g.ids.length>=g.n)return;const sc=[t?g.ids.filter(x=>commTeam(x)===t).length:0,g.ids.length/g.n];if(!best||sc[0]<bs[0]||(sc[0]===bs[0]&&sc[1]<bs[1])){best=g;bs=sc;}});
     (best||gs[gs.length-1]).ids.push(id);});
-  return gs.map(g=>{const o=shuffle(g.ids);for(let i=0;i+1<o.length;i+=2){const t=commTeam(o[i]);if(t&&t===commTeam(o[i+1])){const j=o.findIndex((x,k)=>k>i+1&&commTeam(x)!==t);if(j>0)[o[i+1],o[j]]=[o[j],o[i+1]];}}return o;});
+  return gs.map(g=>sepOrder(g.ids));
 }
 /* regenerateDivs 안에서 부문(그룹)을 조로 펼칩니다. getIds: 그룹 → 선수 id, make: (그룹, 새 키, id들) → 새 그룹 */
 function commApply(groups,getIds,make){
@@ -2708,6 +2774,7 @@ function commPanel(){
   </div>`;
 }
 const ACT={
+  sepSet:b=>sepSet(b.dataset.v==='1'),
   commSet:b=>commSet({[b.dataset.k]:b.dataset.k==='comm'?b.dataset.v==='1':b.dataset.v}),
   go:b=>go(b.dataset.r),
   back:()=>back(),
@@ -2750,14 +2817,14 @@ const ACT={
   divPre:b=>{const d=divById(b.dataset.id);if(!d)return;const v=b.dataset.v;return changePlan(d,{forcePre:v==='on'?true:v==='off'?false:null});},
   divAdv:b=>{const d=divById(b.dataset.id);if(!d)return;return changePlan(d,{adv:b.dataset.v?Number(b.dataset.v):null});},
   divTwo:b=>{const d=divById(b.dataset.id);if(!d)return;return changePlan(d,{forcePre:true,G:1,adv:Number(b.dataset.v)||null,noAutoAdv:false});},
-  drawAll:async()=>{const L=S.divs.filter(d=>!divHasResults(d));if(!L.length)return toast('추첨할 부문이 없습니다 (모든 부문에 점수가 있습니다)');const ids=new Set(L.map(d=>d.id));await saveDivs(S.divs.map(d=>ids.has(d.id)?{...d,order:shuffle(d.order||[]),stages:null}:d));addLog('전체 출전 순서 추첨',L.length+'개 부문','');toast(`${L.length}개 부문의 출전 순서를 추첨했습니다${L.length<S.divs.length?' (점수가 있는 부문은 그대로)':''}`);},
-  redraw:b=>{const d=divById(b.dataset.id);if(!d||divHasResults(d))return;saveDiv({...d,order:shuffle(d.order||[]),stages:null});addLog('출전 순서 추첨',d.name,'');toast('출전 순서를 다시 추첨했습니다');},
+  drawAll:async()=>{const L=S.divs.filter(d=>!divHasResults(d));if(!L.length)return toast('추첨할 부문이 없습니다 (모든 부문에 점수가 있습니다)');const ids=new Set(L.map(d=>d.id));await saveDivs(S.divs.map(d=>ids.has(d.id)?{...d,order:gyDraw(d),stages:null}:d));addLog('전체 출전 순서 추첨',L.length+'개 부문','');toast(`${L.length}개 부문의 출전 순서를 추첨했습니다${L.length<S.divs.length?' (점수가 있는 부문은 그대로)':''}`);},
+  redraw:b=>{const d=divById(b.dataset.id);if(!d||divHasResults(d))return;saveDiv({...d,order:gyDraw(d),stages:null});addLog('출전 순서 추첨',d.name,'');toast('출전 순서를 다시 추첨했습니다');},
   techReset:b=>{const d=divById(b.dataset.id);if(d)saveDiv({...d,tech:null});},
   toFinal:async b=>{const d=divById(b.dataset.id);if(!d)return;const ap=advancePlan(d);if(!ap||!ap.done||(ap.tie&&ap.need))return;
     await advanceTo(d,ap,false);},
   stageDraw:async b=>{const d=divById(b.dataset.id);if(!d)return;const sts=stagesOf(d),st=sts[sts.length-1];if(sts.length<2)return;
     if(Object.values(S.results).some(r=>r.divId===d.id&&r.stage===st.key))return toast('이미 결선이 시작되어 순서를 바꿀 수 없습니다');
-    const order=shuffle(stIds(st));await saveDiv({...d,stages:[...sts.slice(0,-1),{key:st.key,order,drawnAt:Date.now()}]});
+    const order=sepDraw(stIds(st),false);await saveDiv({...d,stages:[...sts.slice(0,-1),{key:st.key,order,drawnAt:Date.now()}]});
     addLog('결선 순서 추첨',d.name,order.map((id,i)=>`${i+1}. ${aName(id)}`).join(', '));toast('결선 순서를 추첨했습니다 · 진행 순서에 올라갔습니다');},
   stageBack:async b=>{const d=divById(b.dataset.id);if(!d)return;const sts=stagesOf(d);if(sts.length<2)return;const st=sts[sts.length-1];
     if(Object.values(S.results).some(r=>r.divId===d.id&&r.stage===st.key))return toast('이미 결선 점수가 있어 취소할 수 없습니다');
@@ -2880,7 +2947,7 @@ const ON={
   resDiv:el=>{ui.resDiv=el.value;render();},
   xlsFile:el=>readExcel(el.files&&el.files[0]),
   restoreFile:el=>readBackup(el.files&&el.files[0]),
-  divG:el=>{const d=divById(el.dataset.id);if(!d||divHasResults(d))return;const v=Math.max(1,Math.min((d.order||[]).length||1,Number(el.value)||1));saveDiv({...d,G:v,stages:null});},
+  divG:el=>{const d=divById(el.dataset.id);if(!d||divHasResults(d))return;const v=Math.max(1,Math.min((d.order||[]).length||1,Number(el.value)||1));{const nd={...d,G:v,stages:null};if(SEP()&&!COMM())nd.order=gyDraw(nd);saveDiv(nd);}},
   techIn:el=>{clearTimeout(ON._t);ON._t=setTimeout(()=>{const d=divById(el.dataset.id);if(!d)return;const t=d.tech||techDefault(d.ev,d.level,d.gender);
     const list=el.value.split('\n').map(x=>x.trim()).filter(Boolean);saveDiv({...d,tech:{...t,[el.dataset.k]:list}});},700);},
   recIn:el=>{clearTimeout(ON._r);ON._r=setTimeout(()=>{const st=ST();const v=el.value===''?null:Math.max(0,Number(el.value)||0);patchState({rec:{...(st.rec||{}),[el.dataset.k]:v}});},350);},

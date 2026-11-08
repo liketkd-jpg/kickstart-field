@@ -21,6 +21,9 @@ func openBrowser(url string) {
 	}
 }
 
+// 윈도우가 아니면 엣지를 따로 찾지 않습니다
+func openEdge(url string) bool { return false }
+
 func pause() {}
 
 func openFolder(dir string) error {

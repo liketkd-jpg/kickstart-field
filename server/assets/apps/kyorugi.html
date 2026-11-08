@@ -1076,7 +1076,7 @@ function aSettings(){
   <div class="grid2">
   <div class="panel"><h2>경기 방식</h2>
     <label class="field"><span class="label">대회명</span><input type="text" id="setName" value="${esc(s.name)}" placeholder="예: 제1회 경민대학교 총장배 태권도대회" data-on="setName"></label>
-    ${commPanel()}
+    ${commPanel()}${sepPanel()}
     <div class="field"><span class="label">호구 (제13조)</span>${segBtns('hogu',[['manual','일반호구'],['pss','전자호구']],s.hogu)}
       <span class="small muted">${s.hogu==='pss'?'전자호구: 몸통·머리 점수는 전자호구가 표시한 대로 운영석(기록원)이 누르고, 부심은 주먹 1점과 회전 추가점(몸통 +2, 머리 +3)만 누릅니다.':'일반호구: 부심이 주먹 1, 몸통 2, 머리 3, 회전 몸통 4, 회전 머리 6점을 모두 누릅니다.'} 이 앱은 전자호구 장비와 직접 연결되지 않습니다.</span></div>
     <div class="field"><span class="label">부심 수 (제13조 6·7항)</span>${segBtns('refs',[[1,'1부심'],[2,'2부심'],[3,'3부심']],s.refs)}
@@ -1163,6 +1163,7 @@ function aDraw(){
   <div class="panel"><div class="row between"><h3>${esc(d.name)} <span class="small muted">${(d.order||[]).length}명</span></h3>
     <div class="row"><button class="btn" data-act="pdfDiv" data-id="${d.id}">📄 이 체급 PDF</button><button class="btn" data-act="${has?'armed':'drawDiv'}" data-do="drawDiv" data-id="${d.id}">랜덤 추첨</button><button class="btn" data-act="${has?'armed':'orderDiv'}" data-do="orderDiv" data-id="${d.id}">등록순</button></div></div>
     ${(d.order||[]).length<4?'<span class="chip warn">4명 미만 · 공식 결과로 인정되지 않습니다 (제6조 4항)</span>':''}
+    ${sepChip(d.order||[],true)}
     ${has?'<span class="small" style="color:var(--warn)">이미 결과가 있는 체급입니다. 대진을 바꾸면 버튼을 두 번 눌러야 합니다.</span>':''}
     ${vBracket(d)}</div></div>`;
 }
@@ -1674,14 +1675,71 @@ const COMM_RE=/ · (\d+)조$/;
 function commSizes(n,rem){rem=rem||SET().commRem||'small';if(n<=4)return n?[n]:[];const q=Math.floor(n/4),r=n%4,s=Array(q).fill(4);
   if(r===1){if(rem==='merge')s[q-1]=5;else{s[q-1]=3;s.push(2);}}else if(r)s.push(r);return s;}
 const commTeam=id=>{const a=S.roster.find(x=>x.id===id);return a?String(a.team||'').trim():'';};
+/* ===== 같은 도장 떨어뜨리기 (v1.4.45) — 설정 하나로 조 편성·출전 순서·대진표 추첨에 모두 적용 =====
+   켜면: ① 같은 도장(팀)은 여러 조로 고르게 나누고 ② 컷오프는 같은 도장이 연달아 나오지 않게
+   ③ 대진표는 같은 도장이 되도록 늦게(대진표 양쪽 끝) 만나게 합니다. 끄면 완전 무작위입니다. */
+const SEP=()=>SET().sepDojang!==false;
+const sepT=id=>commTeam(id);
+/* 연달아 같은 도장이 최소가 되도록 섞습니다 (매번 무작위, 인원 구성상 꼭 필요할 때만 붙음) */
+function sepOrder(ids){
+  ids=ids||[];
+  const by=new Map();shuffle(ids).forEach(id=>{const t=sepT(id)||'\u0000'+id;if(!by.has(t))by.set(t,[]);by.get(t).push(id);});
+  const L=[...by.entries()].map(([t,a])=>({t,a}));const out=[];let last=null,n=ids.length;
+  while(n>0){
+    const live=L.filter(x=>x.a.length);let best=[],bs=1e9;
+    live.forEach(x=>{const rest=n-1;let mm=0;live.forEach(y=>{const c=y.a.length-(y===x?1:0);if(c>mm)mm=c;});
+      const sc=(x.t===last?1:0)+Math.max(0,2*mm-rest-1);
+      if(sc<bs){bs=sc;best=[x];}else if(sc===bs)best.push(x);});
+    const p=best[Math.floor(Math.random()*best.length)];out.push(p.a.pop());last=p.t;n--;
+  }
+  return out;
+}
+/* 대진표(토너먼트): buildRound1 자리 기준으로 같은 도장이 가장 늦게 만나는 자리에 넣습니다 */
+function sepBracket(ids){
+  ids=ids||[];const n=ids.length;if(n<3)return sepOrder(ids);
+  const idx=[...Array(n).keys()],leaf=new Array(n);
+  buildRound1(idx).forEach((p,i)=>p.forEach((x,s)=>{if(x!==null&&x!==undefined)leaf[x]=2*i+s;}));
+  const dist=(a,b)=>{const x=a^b;return x?Math.floor(Math.log2(x))+1:0;};
+  const by=new Map(),solo=[];shuffle(ids).forEach(id=>{const t=sepT(id);if(!t){solo.push(id);return;}if(!by.has(t))by.set(t,[]);by.get(t).push(id);});
+  const teams=shuffle([...by.entries()]).sort((a,b)=>b[1].length-a[1].length);
+  const free=new Set(idx),order=new Array(n);
+  teams.forEach(([t,list])=>{const placed=[];
+    list.forEach(id=>{let best=[],b1=-1,b2=-1e9;
+      free.forEach(c=>{let mn=99,sum=0;placed.forEach(L=>{const d=dist(leaf[c],L);if(d<mn)mn=d;sum-=Math.pow(2,-d);});
+        if(mn>b1||(mn===b1&&sum>b2+1e-12)){b1=mn;b2=sum;best=[c];}else if(mn===b1&&Math.abs(sum-b2)<1e-12)best.push(c);});
+      const c=best[Math.floor(Math.random()*best.length)];free.delete(c);order[c]=id;placed.push(leaf[c]);});});
+  const rest=shuffle([...free]);solo.forEach((id,i)=>{order[rest[i]]=id;});
+  return order;
+}
+/* 추첨: 스위치가 꺼져 있으면 완전 무작위 */
+function sepDraw(ids,bracket){ids=ids||[];if(!SEP())return shuffle(ids);return bracket?sepBracket(ids):sepOrder(ids);}
+/* 겹친 곳 세기: 대진표는 첫 경기 같은 도장 맞대결, 컷오프는 연달아 */
+function sepCount(order,bracket){order=order||[];let c=0;
+  if(bracket){buildRound1(order).forEach(p=>{if(p[0]&&p[1]){const t=sepT(p[0]);if(t&&t===sepT(p[1]))c++;}});return c;}
+  for(let i=0;i+1<order.length;i++){const t=sepT(order[i]);if(t&&t===sepT(order[i+1]))c++;}return c;}
+function sepChip(order,bracket,extra){
+  if(!SEP()||!(order||[]).length)return '';
+  const c=sepCount(order,bracket)+(extra||0);
+  return c?`<span class="chip warn" style="white-space:normal">같은 도장 ${bracket?'첫 경기 맞대결':'연달아'} ${c}곳 · 한 도장 인원이 많아 모두 떨어뜨리지 못했습니다. 「추첨」을 다시 누르면 다른 순서로 나옵니다</span>`
+    :`<span class="chip ok">같은 도장 떨어뜨리기 ✓ 겹침 없음</span>`;
+}
+function sepPanel(){
+  const on=SEP();
+  return `<div class="field"><span class="label">같은 도장 떨어뜨리기</span>
+    <div class="seg"><button class="${on?'':'on'}" data-act="sepSet" data-v="0">끄기</button><button class="${on?'on':''}" data-act="sepSet" data-v="1">켜기</button></div>
+    <span class="small muted">켜면 추첨할 때 같은 도장(팀)을 여러 조로 고르게 나누고, 컷오프는 연달아 하지 않게, 대진표는 첫 경기에서 만나지 않게 최대한 떨어뜨립니다(팀 경연·태권체조 포함). 끄면 완전 무작위로 추첨합니다. 이미 정한 순서는 그대로 두고, 다음 추첨부터 적용됩니다.</span>
+  </div>`;
+}
+async function sepSet(on){S.settings={...SET(),sepDojang:on};await saveSettings(S.settings);render();toast(on?'같은 도장 떨어뜨리기를 켰습니다':'같은 도장 떨어뜨리기를 껐습니다 · 완전 무작위로 추첨합니다');}
 /* 같은 도장(소속)이 한 조에 몰리지 않게, 1·2번과 3·4번이 같은 도장끼리 붙지 않게 나눕니다 */
 function commDeal(ids,sizes){
+  if(!SEP()){const s0=shuffle(ids);let i=0;return sizes.map(n=>s0.slice(i,i+=n));}
   const by=new Map();shuffle(ids).forEach(id=>{const t=commTeam(id)||'\u0000'+id;if(!by.has(t))by.set(t,[]);by.get(t).push(id);});
   const gs=sizes.map(n=>({n,ids:[]}));
   [...by.values()].sort((a,b)=>b.length-a.length).flat().forEach(id=>{const t=commTeam(id);let best=null,bs=null;
     gs.forEach(g=>{if(g.ids.length>=g.n)return;const sc=[t?g.ids.filter(x=>commTeam(x)===t).length:0,g.ids.length/g.n];if(!best||sc[0]<bs[0]||(sc[0]===bs[0]&&sc[1]<bs[1])){best=g;bs=sc;}});
     (best||gs[gs.length-1]).ids.push(id);});
-  return gs.map(g=>{const o=shuffle(g.ids);for(let i=0;i+1<o.length;i+=2){const t=commTeam(o[i]);if(t&&t===commTeam(o[i+1])){const j=o.findIndex((x,k)=>k>i+1&&commTeam(x)!==t);if(j>0)[o[i+1],o[j]]=[o[j],o[i+1]];}}return o;});
+  return gs.map(g=>sepOrder(g.ids));
 }
 /* regenerateDivs 안에서 부문(그룹)을 조로 펼칩니다. getIds: 그룹 → 선수 id, make: (그룹, 새 키, id들) → 새 그룹 */
 function commApply(groups,getIds,make){
@@ -1723,6 +1781,7 @@ function commPanel(){
   </div>`;
 }
 const ACT={
+  sepSet:b=>sepSet(b.dataset.v==='1'),
   commSet:b=>commSet({[b.dataset.k]:b.dataset.k==='comm'?b.dataset.v==='1':b.dataset.v}),
   go:b=>go(b.dataset.r),
   armed:b=>{
@@ -1768,9 +1827,9 @@ const ACT={
     try{rosterSnap(`${a.name} 수정`);await setRoster(S.roster.map(x=>x.id===id?n:x));addLog('선수 정보 수정',a.name,`${a.name} (${a.team}) ${k0} → ${name} (${n.team}) ${k1}`);
       ui.editAth=null;toast(k0!==k1?'저장했습니다 · 체급을 다시 편성합니다':'저장했습니다');if(k0!==k1)await regenAfterRoster([k0]);render();}catch(e){b.disabled=false;}},
   regen:()=>regenerateDivs(),
-  drawDiv:b=>{const d=S.divs.find(x=>x.id===b.dataset.id);const order=shuffle(d.order||[]);saveDivs(S.divs.map(x=>x.id===d.id?{...x,order,round1:buildRound1(order)}:x));addLog('대진 추첨',d.name,'랜덤');},
+  drawDiv:b=>{const d=S.divs.find(x=>x.id===b.dataset.id);const order=sepDraw(d.order||[],true);saveDivs(S.divs.map(x=>x.id===d.id?{...x,order,round1:buildRound1(order)}:x));addLog('대진 추첨',d.name,'랜덤');},
   orderDiv:b=>{const d=S.divs.find(x=>x.id===b.dataset.id);const order=S.roster.filter(a=>(d.order||[]).includes(a.id)).map(a=>a.id);saveDivs(S.divs.map(x=>x.id===d.id?{...x,order,round1:buildRound1(order)}:x));},
-  drawAll:()=>{saveDivs(S.divs.map(d=>divHasResults(d)?d:(o=>({...d,order:o,round1:buildRound1(o)}))(shuffle(d.order||[]))));addLog('대진 추첨','전체','결과 없는 체급 랜덤');toast('결과가 없는 체급을 모두 추첨했습니다');},
+  drawAll:()=>{saveDivs(S.divs.map(d=>divHasResults(d)?d:(o=>({...d,order:o,round1:buildRound1(o)}))(sepDraw(d.order||[],true))));addLog('대진 추첨','전체','결과 없는 체급 랜덤');toast('결과가 없는 체급을 모두 추첨했습니다');},
   // 경기
   pdfDiv:b=>{const d=S.divs.find(x=>x.id===b.dataset.id);if(d){toast('PDF 만드는 중…');makeBracketPdf([d],`${SET().name||'겨루기대회'}_대진표_${d.name}.pdf`);}},
   pdfAll:()=>{if(!S.divs.length)return toast('체급이 없습니다');toast('PDF 만드는 중…');makeBracketPdf(S.divs,`${SET().name||'겨루기대회'}_전체대진표.pdf`);},

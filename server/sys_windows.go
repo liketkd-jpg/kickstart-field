@@ -72,6 +72,26 @@ func openBrowser(url string) {
 	fmt.Println("브라우저를 열지 못했습니다. 크롬을 켜고 주소창에 직접 넣어 주세요:", url)
 }
 
+// 엣지로 본부 화면 열기: 엣지에는 자연스러운 한국어 AI 목소리(선히·인준·현수, 인터넷 필요)가 있어 전광판 방송이 훨씬 자연스럽습니다.
+func openEdge(url string) bool {
+	pf := os.Getenv("ProgramFiles")
+	pf86 := os.Getenv("ProgramFiles(x86)")
+	for _, c := range []string{
+		filepath.Join(pf86, "Microsoft", "Edge", "Application", "msedge.exe"),
+		filepath.Join(pf, "Microsoft", "Edge", "Application", "msedge.exe"),
+	} {
+		if c == "" || strings.HasPrefix(c, string(filepath.Separator)) {
+			continue
+		}
+		if st, err := os.Stat(c); err == nil && !st.IsDir() {
+			if exec.Command(c, "--no-default-browser-check", "--no-first-run", "--disable-features=PdfInfoBar,DefaultBrowserPromptRefresh", "--new-window", url).Start() == nil {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func pause() {
 	fmt.Println("엔터 키를 누르면 창이 닫힙니다.")
 	var s string
