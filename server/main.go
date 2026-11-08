@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.49" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.50" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -68,6 +68,7 @@ func main() {
 	_ = os.MkdirAll(dataDir, 0o755)
 	_ = os.MkdirAll(resultsDir, 0o755)
 	setupVoiceDir()
+	loadLic()
 	logf, _ := os.OpenFile(filepath.Join(dataDir, "기록.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 	if logf != nil {
 		log.SetOutput(io.MultiWriter(logf, io.Discard))
@@ -315,6 +316,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case strings.HasPrefix(p, "/live/"):
 		handleLive(w, r)
+		return
+	case p == "/api/lic":
+		handleLic(w, r)
 		return
 	case p == "/api/court/active":
 		writeJSON(w, 200, courtActive())

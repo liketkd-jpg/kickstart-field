@@ -1187,6 +1187,15 @@ button.pl-kpi{cursor:pointer}button.pl-kpi:hover{border-color:var(--gold)}
 .pl-tlh{display:flex;flex-direction:column;justify-content:center;padding:6px 10px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(160deg,rgba(214,182,124,.12),rgba(214,182,124,.02))}
 .pl-tlh b{color:var(--gold);font-size:16px}.pl-tlh small{color:var(--muted);font-weight:700;font-size:11.5px;font-variant-numeric:tabular-nums}
 .pl-tlr.ax .pl-tlh{border:0;background:none}
+.pl-blk.pg-done{filter:saturate(.35) brightness(.62)}
+.pl-blk.pg-done::before{content:"✓";margin-right:3px;color:#7CF0B2}
+.pl-blk.pg-cur{box-shadow:0 0 0 2px #fff inset;background-image:linear-gradient(90deg,rgba(124,240,178,.55) var(--p,0%),transparent 0)}
+.pl-pos{position:absolute;top:-6px;bottom:-6px;width:0;border-left:3px solid #43C985;z-index:4;text-decoration:none;transition:left .8s ease}
+.pl-pos b{position:absolute;top:-14px;left:-11px;width:20px;height:16px;border-radius:5px;background:#43C985;color:#06210F;font:900 11px/16px "Archivo",sans-serif;text-align:center;animation:plpos 1.4s infinite}
+.pl-pos.warn{border-color:#E3A64A}.pl-pos.warn b{background:#E3A64A;color:#2A1A02}.pl-pos.bad{border-color:#FF5A62}.pl-pos.bad b{background:#FF5A62;color:#fff}
+@keyframes plpos{50%{opacity:.45}}
+.pl-tlh .pl-pgt{display:block;font-weight:800;color:#6BE0A4}.pg-warn .pl-tlh .pl-pgt{color:#E3A64A}.pg-bad .pl-tlh .pl-pgt{color:#FF8A8A}
+.pl-leg i.pd{background:#5a5f66}.pl-leg i.pp{background:#43C985;width:3px}
 .pl-tlr.late .pl-tlh{border-color:rgba(255,107,107,.7)}.pl-tlr.late .pl-tlh small{color:#FF8A8A}
 .pl-tlt{position:relative;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);overflow:hidden}
 .pl-tlr.ax .pl-tlt{border:0;background:none;height:20px;overflow:visible}
@@ -1406,18 +1415,29 @@ function liveHtml(TL){const R=liveRows(TL);if(!R)return '';const act=R.filter(r=
   return `<div class="pl-live"><span class="pl-cap">📡 실제 진행 (대회 중 속도로 다시 계산)</span>${R.map(r=>{const df=r.plan!=null&&r.left?Math.round(r.em-r.plan):null;
       return `<span class="chip ${!r.left?'ok':df>10?'bad':df<-10?'ok':''}"><b>${esc(r.court)}코트</b> ${r.left?`예상 ${hm(r.em)}${df!=null?` <small>(계획 ${hm(r.plan)} · ${df>0?'+':''}${df}분)</small>`:''}${r.real?'':' <small>기본 속도</small>'}`:'모두 끝'}</span>`;}).join('')}
     ${gapm>=20?`<span class="pl-tip">⏱ <b>${esc(late.court)}코트</b>가 가장 늦습니다 (약 ${hm(late.em)}). 시작 전 부문을 <b>${esc(early.court)}코트</b>(약 ${hm(early.em)})로 옮기면 약 ${Math.round(gapm/2)}분 줄일 수 있습니다. <button class="btn sm primary" data-p="goMove">🔀 옮기러 가기</button></span>`:''}</div>`;}
-function timelineHtml(TL,O,tgt,lateEnd,earlyEnd){
+/* v1.4.50 타임라인에 실제 진행 위치: 코트마다 끝난 경기 비율만큼 계획 막대를 칠하고, 지금 위치 눈금을 움직임.
+   계획보다 10분 넘게 늦으면 노란색, 25분 넘게 늦으면 빨간색 */
+let TLLAST=null;
+function liveProg(TL){let L=[];try{L=window.KS_HQLANES?KS_HQLANES():[];}catch(e){}if(!L.length)return [];
+  const by={};L.forEach(x=>{const o=by[x.court]||(by[x.court]={done:0,total:0});(x.divs||[]).forEach(v=>{o.done+=v.done||0;o.total+=v.total||0;});});
+  const nd=new Date(),nm=nd.getHours()*60+nd.getMinutes();
+  return TL.map((x,i)=>{const o=by[L8[i]];if(!o||!o.total||!x.items.length)return null;const f=Math.min(1,o.done/o.total);
+    const dur=x.items.reduce((a,it)=>a+(it.e-it.s),0);let need=f*dur,pos=x.items[0].s,ci=x.items.length,part=0;
+    for(let k=0;k<x.items.length;k++){const it=x.items[k],d=it.e-it.s;if(need<d||k===x.items.length-1&&need<=d){pos=it.s+need;ci=k;part=d?need/d:0;break;}need-=d;pos=it.e;}
+    return {f,done:o.done,total:o.total,pos,ci,part,late:f>=1?0:Math.round(nm-pos),court:L8[i]};});}
+function timelineHtml(TL,O,tgt,lateEnd,earlyEnd){TLLAST=[O,tgt,lateEnd,earlyEnd];const PG=liveProg(TL);
   const st=toMin(P.start),B=breaks(),end=Math.max(tgt,...TL.map(x=>x.end),...B.map(b=>b.e),st+60)+15,span=end-st;
   const X=v=>((v-st)/span*100).toFixed(3)+'%',W=d=>(d/span*100).toFixed(3)+'%',ticks=[];for(let v=Math.ceil(st/30)*30;v<=end;v+=30)ticks.push(v);
   const nd=new Date(),nm=nd.getHours()*60+nd.getMinutes(),showNow=nm>st&&nm<end;
   return `<div class="pl-tl"><div class="pl-tlr ax"><span class="pl-tlh"></span><div class="pl-tlt">${ticks.map(v=>`<i style="left:${X(v)}" class="${v%60?'':'h'}">${hm(v)}</i>`).join('')}</div></div>
     ${TL.map((x,i)=>{const isLate=x.items.length&&TL.filter(y=>y.items.length).length>1&&(x.end>tgt||(x.end===lateEnd&&lateEnd-earlyEnd>=30));
-      return `<div class="pl-tlr ${isLate?'late':''}"><span class="pl-tlh"><b>${i+1}코트</b><small>${x.items.length?`~${hm(x.end)} · ${x.people}명`:'비어 있음'}</small></span><div class="pl-tlt">
+      const g=PG[i],lv=g?(g.late>25?'bad':g.late>10?'warn':'ok'):'';
+      return `<div class="pl-tlr ${isLate?'late':''} ${g?'pg-'+lv:''}"><span class="pl-tlh"><b>${i+1}코트</b><small>${x.items.length?`~${hm(x.end)} · ${x.people}명`:'비어 있음'}</small>${g?`<small class="pl-pgt">진행 ${g.done}/${g.total}${g.f>=1?' · 끝':g.late>10?` · ${g.late}분 늦음`:g.late<-10?` · ${-g.late}분 빠름`:' · 계획대로'}</small>`:''}</span><div class="pl-tlt">
         ${ticks.map(v=>`<em style="left:${X(v)}" class="${v%60?'':'h'}"></em>`).join('')}
         ${B.map(b=>`<u style="left:${X(b.s)};width:${W(b.e-b.s)}" title="${b.l} ${hm(b.s)}~${hm(b.e)}"><span>${b.ic}</span></u>`).join('')}
-        ${x.items.map(it=>`<a class="pl-blk ${O.by[it.g.id]?'ovl':''}" style="left:${X(it.s)};width:${W(Math.max(1,it.e-it.s))};--c:${evColor(it.g.ev)}" title="${hm(it.s)}~${hm(it.e)} · ${esc(it.g.ev)} ${esc(it.g.div)} ${esc(it.g.grp)} ${esc(it.g.sex)} · ${isTeam(it.g.ev)?it.g.units+'팀':it.g.people+'명'}${O.by[it.g.id]?' · ⚠ 선수 겹침':''}">${esc(shortDiv(it.g))}</a>`).join('')}
-        <s class="pl-tgt" style="left:${X(tgt)}" title="목표 종료 ${hm(tgt)}"></s>${showNow?`<s class="pl-now" style="left:${X(nm)}" title="지금 ${hm(nm)}"></s>`:''}</div></div>`;}).join('')}
-    <div class="pl-tlleg">${events().map(e=>`<span class="pl-leg" style="--c:${evColor(e)}"><i></i>${esc(e)}</span>`).join('')}<span class="pl-leg"><i class="hatch"></i>쉬는 시간</span><span class="pl-leg"><i class="tg"></i>목표 종료 ${hm(tgt)}</span>${showNow?'<span class="pl-leg"><i class="nw"></i>지금</span>':''}<span class="pl-leg"><i class="ov"></i>선수 겹침</span><span class="small muted">· 순서를 바꾸려면 「🗂 카드」 보기에서 끌어 옮기세요</span></div></div>`;
+        ${x.items.map((it,k)=>`<a class="pl-blk ${O.by[it.g.id]?'ovl':''} ${g?(k<g.ci?'pg-done':k===g.ci?'pg-cur':''):''}" style="left:${X(it.s)};width:${W(Math.max(1,it.e-it.s))};--c:${evColor(it.g.ev)};${g&&k===g.ci?`--p:${(g.part*100).toFixed(1)}%`:''}" title="${hm(it.s)}~${hm(it.e)} · ${esc(it.g.ev)} ${esc(it.g.div)} ${esc(it.g.grp)} ${esc(it.g.sex)} · ${isTeam(it.g.ev)?it.g.units+'팀':it.g.people+'명'}${O.by[it.g.id]?' · ⚠ 선수 겹침':''}">${esc(shortDiv(it.g))}</a>`).join('')}
+        <s class="pl-tgt" style="left:${X(tgt)}" title="목표 종료 ${hm(tgt)}"></s>${g&&g.f<1?`<s class="pl-pos ${lv}" style="left:${X(g.pos)}" title="${esc(g.court)}코트 지금 여기 · ${g.done}/${g.total}경기"><b>${esc(g.court)}</b></s>`:''}${showNow?`<s class="pl-now" style="left:${X(nm)}" title="지금 ${hm(nm)}"></s>`:''}</div></div>`;}).join('')}
+    <div class="pl-tlleg">${events().map(e=>`<span class="pl-leg" style="--c:${evColor(e)}"><i></i>${esc(e)}</span>`).join('')}<span class="pl-leg"><i class="hatch"></i>쉬는 시간</span><span class="pl-leg"><i class="tg"></i>목표 종료 ${hm(tgt)}</span>${showNow?'<span class="pl-leg"><i class="nw"></i>지금</span>':''}<span class="pl-leg"><i class="ov"></i>선수 겹침</span>${PG.some(Boolean)?'<span class="pl-leg"><i class="pd"></i>끝난 경기</span><span class="pl-leg"><i class="pp"></i>지금 위치 (초록 계획대로 · 노랑 10분↑ 늦음 · 빨강 25분↑)</span>':''}<span class="small muted">· 순서를 바꾸려면 「🗂 카드」 보기에서 끌어 옮기세요</span></div></div>`;
 }
 function ovlHtml(O){return `<div class="pl-mask"><div class="pl-modal"><div class="row between"><h3>⚠ 선수 겹침 ${O.list.length}건</h3><button class="btn" data-p="ovlX">닫기 ✕</button></div>
   <span class="small muted">한 선수가 여러 종목에 나갈 때, 예상 출전 시각 차이가 「경기 시간 + 겹침 여유 ${Math.max(0,Number(P.buf)||0)}분」보다 짧으면 표시합니다 (같은 이름·도장·부별을 같은 선수로 봄). 카드를 끌어 한쪽 부문을 앞이나 뒤로 옮기면 사라집니다.</span>
@@ -1464,7 +1484,8 @@ function draw(){
   if(fe){const el=r.querySelector(`[data-f="${fe}"]`);if(el)el.focus();}
 }
 /* 대회 중: 실제 진행 줄만 10초마다 새로 */
-setInterval(()=>{if(!OPEN||(D&&D.on))return;const slot=document.querySelector('#ksplan .pl-live-slot');if(slot){const h=liveHtml(timeline());if(slot.innerHTML!==h)slot.innerHTML=h;}},10000);
+setInterval(()=>{if(!OPEN||(D&&D.on))return;const TL=timeline();const slot=document.querySelector('#ksplan .pl-live-slot');if(slot){const h=liveHtml(TL);if(slot.innerHTML!==h)slot.innerHTML=h;}
+  const tl=document.querySelector('#ksplan .pl-tl');if(tl&&TLLAST){const w=document.createElement('div');w.innerHTML=timelineHtml(TL,...TLLAST);const n=w.firstElementChild;if(n&&n.outerHTML!==tl.outerHTML)tl.replaceWith(n);}},5000);
 
 /* ---------- 조작 ---------- */
 function bind(r){

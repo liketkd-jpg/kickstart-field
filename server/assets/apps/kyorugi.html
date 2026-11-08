@@ -4507,7 +4507,15 @@ async function check(code){let r;try{r=await fetch(URL_+'/rest/v1/rpc/check_lice
   const j=await r.json().catch(()=>null);if(!r.ok||!j)throw new Error(/check_license/.test(JSON.stringify(j||''))?'홈페이지 데이터베이스에 허가 코드 기능이 아직 없습니다':'코드를 확인하지 못했습니다');return j;}
 async function save(L){const S=g('S'),sv=g('saveSettings');if(!S||!sv)throw new Error('대회 설정을 저장하지 못했습니다');await sv({...(S.settings||{}),lic:L});S.settings={...(S.settings||{}),lic:L};}
 async function apply(code){const j=await check(code);if(!j.ok)throw new Error(j.reason||'쓸 수 없는 코드입니다');
-  const L={code:j.code,kind:j.kind,holder:j.holder,starts:j.starts,ends:j.ends,checked:j.today||today()};await save(L);refresh();return L;}
+  const L={code:j.code,kind:j.kind,holder:j.holder,starts:j.starts,ends:j.ends,checked:j.today||today()};await save(L);refresh();shareLic(L);return L;}
+/* v1.4.50 현장 모드: 코드를 한 번 넣으면 이 노트북의 모든 종목 앱과(본부를 거쳐) 다른 코트 노트북도 함께 풀림 */
+function shareLic(L){try{if(window.KS_FIELD&&L&&L.code)fetch('/api/lic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(L)}).catch(()=>{});}catch(e){}}
+let LSYNC=false;
+async function syncLic(){if(LSYNC||!window.KS_FIELD||!isAdmin())return;const S=g('S');if(!S||!S.settings||typeof S.settings!=='object')return;LSYNC=true; /* 대회 설정을 다 읽은 뒤에만 (기본값으로 덮어쓰지 않게) */
+  try{const mine=lic(),j=await (await fetch('/api/lic',{cache:'no-store'})).json(),srv=j&&j.lic;
+    if(srv&&srv.code&&state(srv)==='ok'&&(state(mine)!=='ok'||(mine.ends||'')<srv.ends)){await save(srv);refresh();say('이 노트북에 저장된 허가 코드로 풀었습니다');}
+    else if(mine&&mine.code&&state(mine)==='ok'&&(!srv||!srv.code||(srv.ends||'')<mine.ends))shareLic(mine);}catch(e){}finally{LSYNC=false;}}
+setInterval(syncLic,8000);setTimeout(syncLic,2500);
 /* 관리자 화면을 열 때 인터넷이 되면 다시 확인 (중지된 코드 반영, 1년권 확인 날짜 갱신) */
 let RECHECKED=false;
 async function recheck(){if(RECHECKED||!isAdmin())return;const L=lic();if(!L||!L.code)return;RECHECKED=true;

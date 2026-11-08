@@ -151,7 +151,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 			out[a.Key] = m
 		}
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "time": time.Now().UnixMilli()})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "time": time.Now().UnixMilli()})
 }
 
 // ---------------- 코트: 신호 보내기 ----------------
@@ -397,6 +397,7 @@ type feedMsg struct {
 	Court string                     `json:"court"`
 	Apps  map[string]json.RawMessage `json:"apps"`
 	Saves []fileInfo                 `json:"saves"`
+	Lic   json.RawMessage            `json:"lic"`
 	Live  struct {
 		On    bool   `json:"on"`
 		State string `json:"state"`
@@ -497,6 +498,17 @@ func pollCourt(addr string) {
 	}
 	if ok && len(fm.Saves) > 0 {
 		collectSaves(addr, fm.Court, fm.Saves)
+	}
+	if ok && len(fm.Lic) > 0 && string(fm.Lic) != "null" {
+		adoptCourtLic(fm.Lic)
+	}
+	// 본부에 있는 코드를 이 코트가 아직 모르면 나눠 줌 (새로 켜진 코트 노트북 포함)
+	if hl := getLic(); ok && hl != nil && getConfig().Role == "hq" {
+		var cl licDoc
+		_ = json.Unmarshal(fm.Lic, &cl)
+		if cl.Code == "" || cl.Ends < hl.Ends {
+			go func(a string, l *licDoc) { _, _ = postJSON(a, "/api/lic", l, 4*time.Second) }(addr, hl)
+		}
 	}
 }
 
