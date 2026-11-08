@@ -11,7 +11,7 @@ const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
 const say=m=>{try{(g('toast'))(m);}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const TAB='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-let SIM=null,INB=null,WATCHED=false,TAKING=false,BUSY=false,LAST={},DONE=false,PANEL=null,COUNT=0,STALL={};
+let WD={sig:'',at:0,n:0};let SIM=null,INB=null,WATCHED=false,TAKING=false,BUSY=false,LAST={},DONE=false,PANEL=null,COUNT=0,STALL={};
 
 /* ---------- 준비: 앱 저장소 감시 ---------- */
 function watch(){const st=g('store');if(WATCHED||!st||!st.watchDoc||!st.watchColl)return;WATCHED=true;
@@ -101,6 +101,19 @@ async function tick(){
   BUSY=true;
   try{
     const st=ST(),cur=curOf(),now=Date.now(),store=g('store'),SET=g('SET')();
+    /* v1.4.55 멈춤 지킴이: 같은 상태로 20초(배속 반영) 넘게 그대로면 막힌 곳을 건너뜀 — 점수가 덜 들어왔으면 모든 심판 점수를 채워 공개,
+       공개된 채로 서 있으면 다음 경기를 직접 부름 (심판 기기 끊김·자동 호출 대기 등으로 멈추던 문제) */
+    {const sig=[st.status,cur&&cur.callId,st.epoch||0,(g('curScores')()||[]).length,COUNT].join('|');
+      if(WD.sig!==sig){WD.sig=sig;WD.at=now;WD.n=0;}
+      else if(now-WD.at>Math.max(20000,perfSec(cur||{})*4000/speed())){WD.at=now;WD.n++;
+        say(`가상 경기: ${cur?cur.label:'다음 경기'}에서 멈춰 있어 다시 진행합니다`);console.warn('sim watchdog',sig);
+        if(cur&&st.status==='open'){const have=g('curScores')(),ents=APP==='poomsae'?cur.entries:[{perfId:cur.perfId}];
+          for(const e of ents)for(let j=1;j<=(cur.judgeCount||3);j++){if(have.some(x=>x.perfId===e.perfId&&x.judge===j))continue;
+            await store.put(`scores/${e.perfId}__j${j}`,APP==='poomsae'?poomsaeScore(cur,e,j,st):gyeokpaScore(cur,j,st));}
+          await new Promise(r=>setTimeout(r,300));
+          if(APP==='gyeokpa'&&!g('JUDGED')(cur.kind)){await g('saveState')({...st,rec:{...(st.rec||{}),...record(cur)}});await new Promise(r=>setTimeout(r,150));await g('confirmRecord')();}
+          else await g('doReveal')(true);return;}
+        if(cur&&st.status==='revealed'){Object.keys(AUTOW).forEach(k=>delete AUTOW[k]);STALL={};const n=findNext(cur);if(n.call){await g('callIt')(n.call.callId);COUNT++;return;}}}}
     if(cur&&st.status==='open'){
       const wait=perfSec(cur)*1000/speed();if(now-(st.calledAt||now)<wait)return;
       if(APP==='gyeokpa'&&!g('JUDGED')(cur.kind)){                    /* 기록·위력: 기록원이 기록 넣고 확정 */

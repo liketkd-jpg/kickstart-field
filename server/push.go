@@ -181,6 +181,13 @@ func handleInboxSim(w http.ResponseWriter, r *http.Request) {
 			s.setDoc("sim/main", map[string]any{"on": m.On, "speed": m.Speed, "at": m.At, "from": "본부", "reset": m.Reset})
 		}
 	}
+	if m.Reset > 0 {
+		for _, a := range apps {
+			if s := stores[a.Key]; s != nil {
+				zeroBoard(s, m.At)
+			}
+		}
+	}
 	writeJSON(w, 200, map[string]any{"ok": true})
 }
 
@@ -251,4 +258,45 @@ func handleInboxRoom(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, 200, map[string]any{"ok": true})
+}
+
+// v1.4.55 가상 경기 초기화: 운영석이 열려 있지 않은 종목도 본부 진행 표시(hq/board · hq/results)를 바로 처음으로 돌림.
+// 그 종목 운영석이 열리면 sim.js 가 점수를 지우고 진행 상황을 다시 올림.
+func zeroBoard(s *Store, at int64) {
+	s.mu.Lock()
+	raw, ok := s.docs["hq/board"]
+	s.mu.Unlock()
+	if ok {
+		var b map[string]any
+		if json.Unmarshal(raw, &b) == nil {
+			if dv, ok := b["divs"].([]any); ok {
+				for _, x := range dv {
+					if d, ok := x.(map[string]any); ok {
+						d["done"] = 0
+					}
+				}
+				if len(dv) > 0 {
+					if d0, ok := dv[0].(map[string]any); ok {
+						b["curDiv"] = d0["name"]
+						if t, ok := d0["total"]; ok {
+							b["progress"] = map[string]any{"done": 0, "total": t}
+						}
+					}
+				}
+			}
+			if t, ok := b["totals"].(map[string]any); ok {
+				t["doneDivs"] = 0
+			}
+			b["now"] = nil
+			b["next"] = []any{}
+			b["at"] = at
+			s.setDoc("hq/board", b)
+		}
+	}
+	s.mu.Lock()
+	_, okr := s.docs["hq/results"]
+	s.mu.Unlock()
+	if okr {
+		s.setDoc("hq/results", map[string]any{"v": 1, "divs": []any{}, "at": at})
+	}
 }
