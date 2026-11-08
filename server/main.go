@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.45" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.46" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -297,7 +297,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, 403, map[string]any{"error": "local_only"})
 			return
 		}
-		u := fmt.Sprintf("http://127.0.0.1:%d/hq/", port)
+		u := fmt.Sprintf("http://127.0.0.1:%d/hq/#board", port)
 		writeJSON(w, 200, map[string]any{"ok": openEdge(u), "url": u})
 		return
 	case p == "/api/hq/printer":
