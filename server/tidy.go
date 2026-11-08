@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var tidyKeep = map[string]int{"logs/": 3000, "calllog/": 800}
+var tidyKeep = map[string]int{"logs/": 20000, "calllog/": 3000} // 실제 대회 하루치(800명)보다 넉넉하게
 
 // 접두어로 시작하는 문서를 「at」이 최근인 순으로 keep 개만 남기고 지움. 지운 개수를 돌려줌
 func (s *Store) pruneDocs(prefix string, keep int) int {
