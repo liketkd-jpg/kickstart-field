@@ -7529,4 +7529,28 @@ body:not(.disp):not(.jdg):not(.brdv) .ss-phead{top:var(--ss-navh,64px)}
 .ss-more>.ss-body{display:flex;flex-direction:column;gap:14px;padding-bottom:12px}
 `;document.head.appendChild(css);
 })();
-</script><!--@@END-->
+</script><script>
+/* v1.4.47 한 화면 맞춤: 화면보다 내용이 길면 스크롤 대신 전체를 알맞게 줄여 한눈에 다 보이게 합니다 (노트북·태블릿·휴대폰 크기에 맞춰 자동) */
+(function(){
+  const MODE='app';
+  const app=document.getElementById('app');if(!app||!window.MutationObserver)return;
+  const hash=()=>location.hash.replace('#','').split('?')[0];
+  function on(){if(MODE==='hq'){const h=hash();return !h||h==='admin';}const c=document.body.classList;return c.contains('jfit')||c.contains('jmax');}
+  const MIN=MODE==='hq'?.66:.55;
+  function over(){let b=0;[...app.children].forEach(c=>{const r=c.getBoundingClientRect();if(r.height)b=Math.max(b,r.bottom+scrollY);});const sc=/(auto|scroll)/.test(getComputedStyle(app).overflowY)?app.scrollHeight-app.clientHeight:0;return Math.max(b+(MODE==='hq'?14:6)-innerHeight,sc,0);}
+  function setZ(z){[...app.children].forEach(c=>{c.style.zoom=z===1?'':String(z);});}
+  function fit(){setZ(1);if(MODE==='hq')app.style.paddingBottom='';document.documentElement.dataset.fit='1';if(!on())return;let o=over();if(o>1){
+    /* 가장 크게 보이면서 한 화면에 다 들어가는 크기를 찾습니다 */
+    let lo=MIN,hi=1;setZ(lo);o=over();if(o<=1){for(let i=0;i<7;i++){const m=(lo+hi)/2;setZ(m);if(over()<=1)lo=m;else hi=m;}setZ(lo);o=over();}
+    const z=lo;
+    document.documentElement.dataset.fit=String(o>1&&MODE==='hq'?1:Math.round(z*100)/100);}
+    /* 본부: 내용이 화면에 다 들어오면 아래 빈 여백 때문에 생기는 스크롤도 없앱니다 */
+    if(MODE==='hq'&&o<=1){const d=document.documentElement,ex=d.scrollHeight-innerHeight;if(ex>0){const pb=parseFloat(getComputedStyle(app).paddingBottom)||0;app.style.paddingBottom=Math.max(0,pb-ex)+'px';}}}
+  let q=false;const run=()=>{if(q)return;q=true;queueMicrotask(()=>{q=false;try{fit();}catch(e){}});};
+  new MutationObserver(run).observe(app,{childList:true,subtree:true});
+  new MutationObserver(run).observe(document.body,{attributes:true,attributeFilter:['class']});
+  addEventListener('resize',run);addEventListener('hashchange',run);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(run);run();
+})();
+</script>
+<!--@@END-->
