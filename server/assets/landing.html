@@ -63,6 +63,7 @@ details.how[open]>summary::after{content:" ▴ 접기"}
 .bt .go{grid-row:2;grid-column:1/-1;justify-self:start}
 .bt .nm span{min-height:2.9em}
 @media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}main>#viewc,main>#role,main>#net{grid-column:1/-1}}
+.disk{margin-left:auto;font:700 13px/1.2 "Noto Sans KR",sans-serif;color:#CFC6B4;border:1px solid rgba(214,182,124,.3);border-radius:999px;padding:5px 12px;white-space:nowrap}.disk.bad{color:#fff;background:#B3261E;border-color:#B3261E}
 </style><style>/* v1.4.54 코트 먼저 고르는 첫 화면 · 한 화면에 큰 글씨 */
 #home{display:flex;flex-direction:column;gap:14px;max-width:1280px;width:100%;box-sizing:border-box;margin:0 auto;min-height:calc(100vh - 64px);padding-bottom:10px}
 #home>*{grid-column:auto}
@@ -100,7 +101,7 @@ details.how[open]>summary::after{content:" ▴ 접기"}
 @media (max-height:820px){.lux-hero{display:none}.now-g{width:120px;height:120px}.now-n b{font-size:38px}.pk-c{min-height:140px}}
 @media (max-width:900px){.ct-main{grid-template-columns:minmax(0,1fr)}.now{grid-template-columns:1fr}.now-g{grid-row:auto;width:90px;height:90px}.now-go{grid-column:1}}
 </style></head><body>
-<header><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#g)" d="M19 16h7.5v32H19z"/><path fill="url(#g)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#g)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#g)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="w">KICKSTART<b>UP</b></span><span class="t">현장 모드 · 중앙 통제</span><small>v__VERSION__</small></header>
+<header><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#g)" d="M19 16h7.5v32H19z"/><path fill="url(#g)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#g)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#g)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="w">KICKSTART<b>UP</b></span><span class="t">현장 모드 · 중앙 통제</span><small>v__VERSION__</small><span id="disk" class="disk" hidden></span></header>
 <main id="home">
   <section class="lux-hero"><div class="lux-eyebrow">Taekwondo Competition Systems</div>
     <h1 class="lux-title">KICKSTART <i>UP</i></h1>
@@ -189,6 +190,12 @@ async function load(){
   try{LIC=(await (await fetch('/api/lic')).json()).lic;}catch(e){}
   try{RUL=(await (await fetch('/api/rules')).json()).at||0;}catch(e){}
   draw();}
+/* v1.4.55 하드 남은 공간 · 현장 프로그램 폴더 크기 */
+async function disk(){try{const j=await (await fetch('/api/disk',{cache:'no-store'})).json(),el=document.getElementById('disk');if(!el||!j.total)return;
+  const gb=v=>(v/1073741824).toFixed(v<10737418240?1:0)+'GB',mb=v=>v<1073741824?Math.round(v/1048576)+'MB':gb(v),low=j.free<3*1073741824;
+  el.hidden=false;el.className='disk'+(low?' bad':'');el.textContent=`💾 남은 공간 ${gb(j.free)} · 현장 프로그램 ${mb(j.used)}`+(low?' · 하드 공간이 부족합니다':'');
+  el.title=Object.entries(j.parts||{}).sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+': '+mb(v)).join('\n');}catch(e){}}
+disk();setInterval(disk,60000);
 addEventListener('focus',()=>load());setInterval(()=>{if(!PICK)load();},5000);load();
 </script>
 

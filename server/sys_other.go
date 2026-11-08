@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"syscall"
 )
 
 func setupConsole() {}
@@ -42,3 +43,11 @@ func openPrintWindow(url, profile string) string {
 
 // 윈도우가 아니면 기본 프린터를 확인하지 않습니다
 func defaultPrinter() string { return "" }
+
+func diskFree(path string) (int64, int64) {
+	var st syscall.Statfs_t
+	if syscall.Statfs(path, &st) != nil {
+		return 0, 0
+	}
+	return int64(st.Bavail) * int64(st.Bsize), int64(st.Blocks) * int64(st.Bsize)
+}

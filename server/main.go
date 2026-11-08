@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.55" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.56" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -70,6 +70,7 @@ func main() {
 	setupVoiceDir()
 	loadLic()
 	loadRules()
+	startTidy()
 	logf, _ := os.OpenFile(filepath.Join(dataDir, "기록.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 	if logf != nil {
 		log.SetOutput(io.MultiWriter(logf, io.Discard))
@@ -239,6 +240,8 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/api/view":
 		handleView(w, r)
 		return
+	case p == "/api/disk" && r.Method == http.MethodGet:
+		handleDisk(w, r)
 	case p == "/api/hqfeed":
 		handleFeed(w, r)
 		return
@@ -448,8 +451,8 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 	out.WriteString(`<script>window.KS_FIELD=` + string(cj) + `;</script><script src="/field.js"></script>`)
 	out.WriteString(`<link rel="stylesheet" href="/vendor/ks-fields.css">`) // 입력·선택 칸 공통 색 (흰 바탕 → 진한 남색)
 	if key != "hq" {
-		out.WriteString(`<script src="/sim.js"></script>`) // 운영표 「가상 경기」 (가상 심판)
-		out.WriteString(`<script src="/room.js"></script>`) // 대기실 출석·불참·추가 대기 알림
+		out.WriteString(`<script src="/sim.js"></script>`)   // 운영표 「가상 경기」 (가상 심판)
+		out.WriteString(`<script src="/room.js"></script>`)  // 대기실 출석·불참·추가 대기 알림
 		out.WriteString(`<script src="/jauto.js"></script>`) // 코트 심판 링크: 종목 바뀌면 채점기 자동 전환
 		out.WriteString(`<script src="/rules.js"></script>`) // 본부 종목별 경기 규칙 받기
 		out.WriteString(`<script src="/courtseq.js"></script>`)

@@ -182,6 +182,7 @@ func handleInboxSim(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if m.Reset > 0 {
+		tidyStores(true) // 가상 경기 기록(경기 기록·호출 기록)도 지움
 		for _, a := range apps {
 			if s := stores[a.Key]; s != nil {
 				zeroBoard(s, m.At)

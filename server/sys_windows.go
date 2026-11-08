@@ -142,3 +142,18 @@ func defaultPrinter() string {
 	}
 	return strings.TrimSpace(string(out))
 }
+
+// 하드 남은 공간·전체 크기 (바이트)
+func diskFree(path string) (int64, int64) {
+	k := syscall.NewLazyDLL("kernel32.dll").NewProc("GetDiskFreeSpaceExW")
+	p, err := syscall.UTF16PtrFromString(path)
+	if err != nil {
+		return 0, 0
+	}
+	var free, total, all uint64
+	r, _, _ := k.Call(uintptr(unsafe.Pointer(p)), uintptr(unsafe.Pointer(&free)), uintptr(unsafe.Pointer(&total)), uintptr(unsafe.Pointer(&all)))
+	if r == 0 {
+		return 0, 0
+	}
+	return int64(free), int64(total)
+}
