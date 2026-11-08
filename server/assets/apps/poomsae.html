@@ -1643,7 +1643,7 @@ function regenerateDivs(){
       return changed?{...prev,type:g.type,event:g.event,order,round1:buildRound1(order),stages:null,...fixT}:{...prev,type:g.type,event:g.event,...fixT};
     }
     /* v1.4.50 태권체조·팀 대항 종합경연은 어느 코트에서든 컷오프 · 경연 1회로 고정 */
-    const tm=isTeamType(g.type);return {id,key:g.key,name:g.key,type:g.type,event:g.event,format:tm?'cutoff':SET().format,poomsae:tm?1:SET().poomsae,order:g.ids,round1:buildRound1(g.ids),stages:null};
+    const tm=isTeamType(g.type),tf=SET().typeFormat||{},tp=SET().typePoom||{};return {id,key:g.key,name:g.key,type:g.type,event:g.event,format:tm?'cutoff':(tf[g.type]||SET().format),poomsae:tm?1:(tp[g.type]||SET().poomsae),order:g.ids,round1:buildRound1(g.ids),stages:null};
   }).sort((a,b)=>((a.src??1e9)-(b.src??1e9))||a.name.localeCompare(b.name,'ko',{numeric:true}));
   return saveDivs(list).then(async()=>{const cur=curOf();if(cur&&!list.some(d=>d.id===cur.divId))await saveState({...ST(),status:'idle',current:null,epoch:(ST().epoch||0)+1,timer:null});toast(`부문 ${list.length}개를 편성했습니다`);});
 }
@@ -3135,7 +3135,7 @@ const ACT={
   courtFile:b=>courtFile(b.dataset.c),
   courtSend:async b=>{ui.courtOpen=true;const c=b.dataset.c;b.disabled=true;try{const r=await KS_COURT.push(c,S.divs.filter(d=>d.court===c));toast(`${c}코트 노트북으로 ${r.n}건${r.mus?` · 음원 ${r.mus}곡`:''}을 보냈습니다${r.musFail?` (음원 ${r.musFail}곡 실패)`:''}`);}catch(e){toast(e.message);}b.disabled=false;},
   courtSendAll:async b=>{ui.courtOpen=true;b.disabled=true;const out=await KS_COURT.pushAll(COURT_L.slice(0,SET().courts||4).split(''));toast(out.join(' · '));b.disabled=false;},
-  divFormat:async b=>{const id=b.dataset.id,v=b.dataset.v;{const d0=S.divs.find(x=>x.id===id);if(d0&&isTeamType(d0.type)&&v==='tournament')return toast('태권체조·팀 대항 종합경연은 컷오프로만 진행합니다');}await saveDivs(S.divs.map(d=>d.id===id?{...d,format:v,stages:null}:d));
+  divFormat:async b=>{const id=b.dataset.id,v=b.dataset.v;if(SET().hqRulesAt)return toast('본부의 「종목별 경기 규칙」으로 정해져 있습니다 · 바꾸려면 본부에서 고쳐 주세요');{const d0=S.divs.find(x=>x.id===id);if(d0&&isTeamType(d0.type)&&v==='tournament')return toast('태권체조·팀 대항 종합경연은 컷오프로만 진행합니다');}await saveDivs(S.divs.map(d=>d.id===id?{...d,format:v,stages:null}:d));
     const cur=curOf();if(cur&&cur.divId===id)await saveState({...ST(),status:'idle',current:null,epoch:(ST().epoch||0)+1,timer:null});toast(v==='cutoff'?'컷오프로 바꿨습니다. 이제 한 명씩 호출됩니다':'토너먼트로 바꿨습니다');},
   setPdraw:b=>saveSettings({...SET(),pdraw:b.dataset.v}),
   pdrawDiv:async b=>{const d=S.divs.find(x=>x.id===b.dataset.id);if(!d)return;let n=0;
@@ -3155,7 +3155,7 @@ const ACT={
     if(pfixUnit(d,c.unit))return toast('지정 품새표로 정해진 경기입니다');
     if(!plistOf(d))return toast('대진표 탭에서 이 부문의 지정품새 부를 골라 주세요');
     await drawUnit(d,c,{force:b.dataset.force==='1'});render();},
-  divPoomsae:b=>saveDivs(S.divs.map(d=>d.id===b.dataset.id?{...d,poomsae:Number(b.dataset.v)}:d)),
+  divPoomsae:b=>SET().hqRulesAt?toast('본부의 「종목별 경기 규칙」으로 정해져 있습니다 · 바꾸려면 본부에서 고쳐 주세요'):saveDivs(S.divs.map(d=>d.id===b.dataset.id?{...d,poomsae:Number(b.dataset.v)}:d)),
   drawDiv:b=>saveDivs(S.divs.map(d=>{if(d.id!==b.dataset.id)return d;const order=sepDraw(d.order||[],d.format==='tournament');return {...d,order,round1:buildRound1(order),stages:null,matchNo:null};})).then(()=>toast('랜덤 추첨을 마쳤습니다')),
   orderDiv:b=>saveDivs(S.divs.map(d=>{if(d.id!==b.dataset.id)return d;const order=S.roster.filter(a=>(d.order||[]).includes(a.id)).map(a=>a.id);return {...d,order,round1:buildRound1(order),stages:null,matchNo:null};})),
   drawAll:()=>saveDivs(S.divs.map(d=>{if(d.matchNo)return d;const order=sepDraw(d.order||[],d.format==='tournament');return {...d,order,round1:buildRound1(order),stages:null};})).then(()=>toast('전체 부문을 랜덤 추첨했습니다')),

@@ -67,6 +67,7 @@ function record(cur){const q=clamp(skillOf(cur.athleteId||cur.perfId)+noise(.15)
 /* 한 경기에 걸리는 실제 시간(초) → 속도로 나눔 */
 function perfSec(cur){if(APP==='poomsae')return {recognized:90,freestyle:90,gym:115,team100:360}[cur.type]||90;
   return {tech:50,comp:60,team:300,height:30,count:30,power:30,powerc:60}[cur.kind]||50;}
+const AUTOW={},DRAWN={};
 const speed=()=>Math.max(1,Number(SIM&&SIM.speed)||10);
 
 /* ---------- 다음 경기 찾기 (부문 이름 순서 = 운영표 순서) ---------- */
@@ -109,11 +110,14 @@ async function tick(){
       return;}
     if(cur&&st.status==='revealed'){
       if(now-(st.revealedAt||now)<Math.max(450,8000/speed()))return;
-      if(APP==='poomsae'){const inf=g('autoNextInfo')();if(inf)return;}   /* 2품새 자동 호출을 기다림 */
+      /* 2품새 자동 호출을 기다림 — v1.4.51: 6초(배속 반영) 넘게 안 오면 직접 다음 경기를 부름 (결선에서 멈추던 문제) */
+      if(APP==='poomsae'){const inf=g('autoNextInfo')();const k='an#'+cur.callId+'#'+(st.epoch||0);
+        if(inf){AUTOW[k]=AUTOW[k]||now;if(now-AUTOW[k]<Math.max(1500,6000*10/speed()/10))return;}}
     }
     const n=findNext(cur);
     if(n.wait)return;
-    if(n.draw){await g('ACT').stageDraw({dataset:{id:n.draw.id},disabled:false});say(`가상 경기: 「${n.draw.name}」 다음 단계 순서를 추첨했습니다`);return;}
+    if(n.draw){const dk='dr#'+n.draw.id;DRAWN[dk]=(DRAWN[dk]||0)+1;if(DRAWN[dk]>5){DRAWN[dk]=0;say(`가상 경기: 「${n.draw.name}」 순서 추첨이 되지 않아 잠시 기다립니다`);}
+      await g('ACT').stageDraw({dataset:{id:n.draw.id},disabled:false});say(`가상 경기: 「${n.draw.name}」 다음 단계 순서를 추첨했습니다`);return;}
     if(n.call){await g('callIt')(n.call.callId);COUNT++;return;}
     if(n.done&&cur&&st.status!=='revealed')return;
     DONE=true;const p=progress();say(`가상 경기를 모두 마쳤습니다 · ${p.dd}/${p.divs}개 부문 · ${p.dn}경기`);

@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.50" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.51" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -69,6 +69,7 @@ func main() {
 	_ = os.MkdirAll(resultsDir, 0o755)
 	setupVoiceDir()
 	loadLic()
+	loadRules()
 	logf, _ := os.OpenFile(filepath.Join(dataDir, "기록.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 	if logf != nil {
 		log.SetOutput(io.MultiWriter(logf, io.Discard))
@@ -317,6 +318,12 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case strings.HasPrefix(p, "/live/"):
 		handleLive(w, r)
 		return
+	case p == "/api/rules":
+		handleRules(w, r)
+		return
+	case p == "/rules.js":
+		serveAsset(w, "assets/rules.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/api/lic":
 		handleLic(w, r)
 		return
@@ -435,6 +442,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/sim.js"></script>`) // 운영표 「가상 경기」 (가상 심판)
 		out.WriteString(`<script src="/room.js"></script>`) // 대기실 출석·불참·추가 대기 알림
 		out.WriteString(`<script src="/jauto.js"></script>`) // 코트 심판 링크: 종목 바뀌면 채점기 자동 전환
+		out.WriteString(`<script src="/rules.js"></script>`) // 본부 종목별 경기 규칙 받기
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)

@@ -151,7 +151,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 			out[a.Key] = m
 		}
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "time": time.Now().UnixMilli()})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "time": time.Now().UnixMilli()})
 }
 
 // ---------------- 코트: 신호 보내기 ----------------
@@ -210,6 +210,8 @@ type courtEntry struct {
 	curDiv    map[string]string // app -> 현재 부문
 	announced map[string]time.Time
 	written   bool
+	rulesAt   int64  // 이 코트가 받은 본부 경기 규칙 (v1.4.51 시작 전 점검표)
+	licEnds   string // 이 코트 노트북의 허가 코드 끝나는 날
 }
 
 var (
@@ -392,13 +394,14 @@ func pollLoop() {
 }
 
 type feedMsg struct {
-	Sig   string                     `json:"sig"`
-	Role  string                     `json:"role"`
-	Court string                     `json:"court"`
-	Apps  map[string]json.RawMessage `json:"apps"`
-	Saves []fileInfo                 `json:"saves"`
-	Lic   json.RawMessage            `json:"lic"`
-	Live  struct {
+	Sig     string                     `json:"sig"`
+	Role    string                     `json:"role"`
+	Court   string                     `json:"court"`
+	Apps    map[string]json.RawMessage `json:"apps"`
+	Saves   []fileInfo                 `json:"saves"`
+	Lic     json.RawMessage            `json:"lic"`
+	RulesAt int64                      `json:"rulesAt"`
+	Live    struct {
 		On    bool   `json:"on"`
 		State string `json:"state"`
 		App   string `json:"app"`
@@ -439,6 +442,17 @@ func pollCourt(addr string) {
 			changed = true
 		}
 		c.court = fm.Court
+		le := ""
+		if len(fm.Lic) > 4 {
+			var l licDoc
+			if json.Unmarshal(fm.Lic, &l) == nil {
+				le = l.Ends
+			}
+		}
+		if fm.RulesAt != c.rulesAt || le != c.licEnds {
+			changed = true
+			c.rulesAt, c.licEnds = fm.RulesAt, le
+		}
 		lv, _ := json.Marshal(fm.Live)
 		if !bytes.Equal(lv, c.lastLive) {
 			changed = true
@@ -484,7 +498,7 @@ func pollCourt(addr string) {
 	if !c.lastSeen.IsZero() {
 		ls = c.lastSeen.UnixMilli()
 	}
-	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive))}
+	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive)), "rulesAt": c.rulesAt, "licEnds": c.licEnds}
 	hqMu.Unlock()
 	s := stores["hq"]
 	if changed {
@@ -501,6 +515,10 @@ func pollCourt(addr string) {
 	}
 	if ok && len(fm.Lic) > 0 && string(fm.Lic) != "null" {
 		adoptCourtLic(fm.Lic)
+	}
+	// 본부의 경기 규칙이 더 새로우면 이 코트에 보냄
+	if _, at := getRules(); ok && at > 0 && fm.RulesAt < at && getConfig().Role == "hq" {
+		go pushRulesTo(addr)
 	}
 	// 본부에 있는 코드를 이 코트가 아직 모르면 나눠 줌 (새로 켜진 코트 노트북 포함)
 	if hl := getLic(); ok && hl != nil && getConfig().Role == "hq" {
