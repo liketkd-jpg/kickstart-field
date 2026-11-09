@@ -31,9 +31,17 @@ type nodeConfig struct {
 	// 유튜브 생중계: 스트림 키(이 노트북에만 저장)와 송출 주소(비우면 유튜브 기본)
 	LiveKey string `json:"liveKey,omitempty"`
 	LiveURL string `json:"liveUrl,omitempty"`
+	// v1.4.64 대회 모드: "live"(실제 대회) · 그 밖은 시험 모드
+	Mode   string `json:"mode,omitempty"`
+	ModeAt int64  `json:"modeAt,omitempty"`
 }
 
 func (c nodeConfig) autoUpdate() bool {
+	v := strings.ToLower(strings.TrimSpace(c.AutoUpdate))
+	return !(v == "꺼짐" || v == "off" || v == "false" || v == "no") && c.Mode != "live" // 실제 대회 모드에서는 업데이트하지 않음
+}
+
+func (c nodeConfig) updateSwitch() bool {
 	v := strings.ToLower(strings.TrimSpace(c.AutoUpdate))
 	return !(v == "꺼짐" || v == "off" || v == "false" || v == "no")
 }
@@ -102,6 +110,7 @@ func handleNode(w http.ResponseWriter, r *http.Request) {
 		old := getConfig()
 		req.AutoUpdate = old.AutoUpdate // 업데이트 설정은 그대로 둠
 		req.LiveKey, req.LiveURL = old.LiveKey, old.LiveURL
+		req.Mode, req.ModeAt = old.Mode, old.ModeAt
 		setConfig(req)
 		fmt.Printf("\n  역할을 바꿨습니다: %s\n", roleLabel(req))
 	}

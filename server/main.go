@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.63" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.64" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -280,6 +280,15 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/api/hq/sim" && r.Method == http.MethodPost:
 		handleHQSim(w, r)
 		return
+	case p == "/api/mode":
+		handleMode(w, r)
+		return
+	case p == "/api/inbox/mode" && r.Method == http.MethodPost:
+		handleInboxMode(w, r)
+		return
+	case p == "/mode.js":
+		serveAsset(w, "assets/mode.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/api/inbox/sim" && r.Method == http.MethodPost:
 		handleInboxSim(w, r)
 		return
@@ -478,6 +487,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/courtseq.js"></script>`)
 		out.WriteString(`<script src="/next.js"></script>`) // 한 종목이 끝나면 다음 종목 운영석으로
 		out.WriteString(`<script src="/bat.js"></script>`)  // 심판 태블릿 배터리 → 본부
+		out.WriteString(`<script src="/mode.js"></script>`) // 시험 모드 표시 · 실제 대회 모드 잠금
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)
