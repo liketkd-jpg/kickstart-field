@@ -1380,6 +1380,8 @@ button.pl-kpi{cursor:pointer}button.pl-kpi:hover{border-color:var(--gold)}
 .pl-tlleg{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:6px 0 0 128px}
 .pl-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0B0D12;color:#F4EFE4;border:1px solid rgba(214,182,124,.45);padding:11px 18px;border-radius:999px;font-weight:700;z-index:90;max-width:92vw;text-align:center}
 .pl-repbox{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line2);border-radius:12px;padding:12px}.pl-rep ul{margin:4px 0 0;padding-left:18px;max-height:160px;overflow:auto;font-size:13px}.pl-rep.warn b{color:#F2B544}.pl-rep.bad b{color:#FF8A80}.pl-rep.ok b{color:#7BD88F}
+.pl-swap{cursor:grab;user-select:none;touch-action:none;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;border:1px solid var(--line2);margin-right:6px;font-weight:900;color:var(--gold,#E8C77D)}.pl-swap.on{background:#E8C77D;color:#111}
+.pl-lane.swover{outline:3px dashed #E8C77D;outline-offset:-3px}.pl-lane.dragging{opacity:.55}.pl-swgh{position:fixed;z-index:90;pointer-events:none;background:#E8C77D;color:#111;font-weight:900;padding:8px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .pl-mask{position:fixed;inset:0;z-index:75;background:rgba(3,4,6,.7);display:grid;place-items:center;padding:16px;backdrop-filter:blur(3px)}
 .pl-modal{width:min(860px,100%);max-height:calc(100vh - 32px);overflow:auto;background:linear-gradient(180deg,#171A21,#111318);border:1px solid var(--line2);border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.6);padding:20px;display:flex;flex-direction:column;gap:12px}
 .pl-modal h3{margin:0;font-size:20px;color:var(--gold)}.pl-modal table{font-size:14px;width:100%}.pl-modal td,.pl-modal th{vertical-align:middle;border-color:var(--line)}
@@ -1681,7 +1683,7 @@ function draw(){
       <span class="pl-seg"><button class="${UNDO.length?'':'off'}" data-p="undo" ${UNDO.length?'':'disabled'} title="되돌리기 (Ctrl+Z)">↶</button><button data-p="redo" ${REDO.length?'':'disabled'} title="다시 실행 (Ctrl+Y)">↷</button></span>
       <span class="pl-seg"><button class="${VIEW.mode==='tower'?'on':''}" data-p="vTower">🛫 관제탑</button><button class="${VIEW.mode==='card'?'on':''}" data-p="vCard">🗂 카드</button><button class="${VIEW.mode==='time'?'on':''}" data-p="vTime">📊 타임라인</button></span>
       <button class="btn ${VIEW.set?'on':''}" data-p="vSet" title="설정 줄 보이기·숨기기">⚙️ 설정</button>
-      <span class="sp"></span><button class="btn" data-p="send" ${has?'':'disabled'}>📡 코트로 보내기 · 🧪 가상 경기</button><button class="btn" data-p="assoc" ${has?'':'disabled'} title="협회에 보낼 일정 요청 시트 내보내기 · 채운 시트 불러오기">📨 협회 시트</button><button class="btn" data-p="printDay" ${has?'':'disabled'} title="A4 한 장에 A~E 코트를 나란히">🖨 하루 일정표</button><button class="btn" data-p="dojang" ${has?'':'disabled'}>🏫 도장별 시간표</button><button class="btn primary" data-p="xlsx" ${has?'':'disabled'}>📊 엑셀</button><button class="btn" data-p="close" title="닫기">✕</button></div>
+      <span class="sp"></span><button class="btn" data-p="send" ${has?'':'disabled'}>📡 코트로 보내기 · 🧪 가상 경기</button><button class="btn" data-p="swapOpen" ${has?'':'disabled'} title="두 코트의 순서 전체를 통째로 맞바꿉니다">⇄ 코트 바꾸기</button><button class="btn" data-p="assoc" ${has?'':'disabled'} title="협회에 보낼 일정 요청 시트 내보내기 · 채운 시트 불러오기">📨 협회 시트</button><button class="btn" data-p="printDay" ${has?'':'disabled'} title="A4 한 장에 A~E 코트를 나란히">🖨 하루 일정표</button><button class="btn" data-p="dojang" ${has?'':'disabled'}>🏫 도장별 시간표</button><button class="btn primary" data-p="xlsx" ${has?'':'disabled'}>📊 엑셀</button><button class="btn" data-p="close" title="닫기">✕</button></div>
     <div class="pl-top">${VIEW.set?`<div class="pl-g" title="시간"><span class="pl-cap">⏱</span><label>코트 <select data-f="courts">${Array.from({length:10},(_,i)=>`<option ${P.courts===i+1?'selected':''}>${i+1}</option>`).join('')}</select></label>
         <label>시작 <input type="time" data-f="start" value="${esc(P.start)}"></label><label>목표 <input type="time" data-f="target" value="${esc(P.target)}"></label>
         <label title="부문과 부문 사이 준비 시간">사이 <input type="number" min="0" max="15" step="0.5" data-f="gap" value="${esc(P.gap)}">분</label><label title="여러 종목에 나가는 선수의 두 출전 사이에 둘 최소 시간">겹침 여유 <input type="number" min="0" max="60" step="1" data-f="buf" value="${esc(P.buf)}">분</label></div>
@@ -1700,7 +1702,7 @@ function draw(){
     VIEW.mode==='tower'?towerHtml(TL,tgt):VIEW.mode==='time'?timelineHtml(TL,O,tgt,late,early):
     `<div class="pl-board ${P.courts>6?'dense':''}" style="grid-template-columns:repeat(${P.courts},minmax(0,1fr))">${((PGC=liveProg(TL)),'')}${TL.map((x,i)=>{const isLate=x.items.length&&act.length>1&&(x.end>tgt||(x.end===late&&late-early>=30));
         const g=PGC[i],lv=g?(g.late>25?'bad':g.late>10?'warn':'ok'):'';
-        return `<div class="pl-lane ${isLate?'late':''} ${g?'pg-'+lv:''}" data-i="${i}"><div class="pl-lh"><div class="r"><b>${i+1}코트</b><span class="pl-end">${x.items.length?'~'+hm(x.end):'비어 있음'}</span></div>
+        return `<div class="pl-lane ${isLate?'late':''} ${g?'pg-'+lv:''}" data-i="${i}"><div class="pl-lh"><div class="r"><span class="pl-swap ${SW.pick===i?'on':''}" data-swap="${i}" title="잡고 다른 코트로 끌면 두 코트 순서 전체가 통째로 자리를 바꿉니다 (눌러서 고른 뒤 다른 코트의 ⇄를 눌러도 됩니다)">⇄</span><b>${L8[i]||i+1}코트</b><span class="pl-end">${x.items.length?'~'+hm(x.end):'비어 있음'}</span></div>
           ${g?`<div class="pl-pgbar" title="${g.done}/${g.total}경기"><i style="width:${(g.f*100).toFixed(1)}%"></i></div><small class="pl-pgt">진행 ${g.done}/${g.total}${g.f>=1?' · 끝':g.late>10?` · ${g.late}분 늦음`:g.late<-10?` · ${-g.late}분 빠름`:' · 계획대로'}</small>`:''}
           <select data-f="cev" data-i="${i}" title="이 코트가 맡을 종목"><option value="">자동 (남는 종목)</option>${evs.map(e=>`<option ${P.courtEv[i]===e?'selected':''}>${esc(e)}</option>`).join('')}</select>
           <span class="pl-meta">${x.items.length}부문 · ${x.people}명${x.evs.length>1?' · 종목 섞임':''}</span></div>
@@ -1710,6 +1712,7 @@ function draw(){
   if(SEND.open&&has)r.insertAdjacentHTML('beforeend',sendHtml(TL));
   if(OVL&&has)r.insertAdjacentHTML('beforeend',ovlHtml(O));
   if(ASSOC.open&&has)r.insertAdjacentHTML('beforeend',assocHtml());
+  if(SW.open&&has)r.insertAdjacentHTML('beforeend',swapHtml(TL));
   r.querySelectorAll('.pl-list').forEach((l,i)=>{if(keep[i])l.scrollTop=keep[i];});
   if(fe){const el=r.querySelector(`[data-f="${fe}"]`);if(el)el.focus();}
 }
@@ -1731,6 +1734,8 @@ function bind(r){
     else if(a==='assocBlank')exportAssoc(false);else if(a==='assocNow')exportAssoc(true);
     else if(a==='assocIn')r.querySelector('[data-p="afile"]').click();
     else if(a==='printDay')printDay();
+    else if(a==='swapOpen'){SW.open=true;SW.a=0;SW.b=Math.min(1,P.courts-1);draw();}else if(a==='swapX'){SW.open=false;draw();}
+    else if(a==='swapGo'){const x=Number(r.querySelector('[data-p="swA"]').value),y=Number(r.querySelector('[data-p="swB"]').value);if(x===y)return toast('서로 다른 코트를 골라 주세요');SW.open=false;swapCourts(x,y);}
     else if(a==='virt'){if(P.roster.length&&!confirmTwice(b))return;commit(()=>{P.roster=virtualRoster();P.src='가상 명단 800명';rebuild();plan(recommendEv());});toast('가상 명단 800명을 넣고 자동으로 배정했습니다');}
     else if(a==='imp')r.querySelector('[data-p="file"]').click();
     else if(a==='vCard'||a==='vTime'||a==='vTower'){VIEW.mode=a==='vCard'?'card':a==='vTime'?'time':'tower';saveView();draw();}
@@ -1768,8 +1773,15 @@ function bind(r){
     else if(['start','lunchS','lunchE','target','openS','openE','awardS','awardE'].includes(f)&&el.value)commit(()=>{P[f]=el.value;});
   });
   /* 끌어서 옮기기 (마우스·터치 공통) */
-  r.addEventListener('pointerdown',e=>{const c=e.target.closest('.pl-card');if(!c||e.button>0)return;D={id:c.dataset.id,el:c,x:e.clientX,y:e.clientY,on:false,to:null};});
-  addEventListener('pointermove',e=>{if(!D)return;
+  r.addEventListener('pointerdown',e=>{const w=e.target.closest('.pl-swap');if(w&&e.button<=0){D={sw:Number(w.dataset.swap),el:w.closest('.pl-lane'),x:e.clientX,y:e.clientY,on:false,to:null};e.preventDefault();return;}
+    const c=e.target.closest('.pl-card');if(!c||e.button>0)return;D={id:c.dataset.id,el:c,x:e.clientX,y:e.clientY,on:false,to:null};});
+  addEventListener('pointermove',e=>{if(D&&D.sw!=null){if(!D.on){if(Math.hypot(e.clientX-D.x,e.clientY-D.y)<6)return;D.on=true;
+        D.gh=document.createElement('div');D.gh.className='pl-ghost pl-swgh';D.gh.textContent=`⇄ ${L8[D.sw]||D.sw+1}코트 전체`;document.body.appendChild(D.gh);D.el.classList.add('dragging');}
+      e.preventDefault();D.gh.style.left=(e.clientX+12)+'px';D.gh.style.top=(e.clientY+8)+'px';
+      const under=document.elementFromPoint(e.clientX,e.clientY),lane=under&&under.closest('#ksplan .pl-lane');
+      r.querySelectorAll('.pl-lane.swover').forEach(l=>{if(l!==lane)l.classList.remove('swover');});
+      D.to=lane&&Number(lane.dataset.i)!==D.sw?Number(lane.dataset.i):null;if(lane&&D.to!=null)lane.classList.add('swover');return;}
+    if(!D)return;
     if(!D.on){if(Math.hypot(e.clientX-D.x,e.clientY-D.y)<6)return;D.on=true;const rc=D.el.getBoundingClientRect();
       D.gh=D.el.cloneNode(true);D.gh.classList.add('pl-ghost');D.gh.style.width=rc.width+'px';D.dx=D.x-rc.left;D.dy=D.y-rc.top;document.body.appendChild(D.gh);
       D.el.classList.add('dragging');D.ph=document.createElement('div');D.ph.className='pl-ph';}
@@ -1783,14 +1795,20 @@ function bind(r){
     D.to={lane:Number(lane.dataset.i),idx};
     const lb=list.getBoundingClientRect();if(e.clientY<lb.top+30)list.scrollTop-=12;else if(e.clientY>lb.bottom-30)list.scrollTop+=12;
   },{passive:false});
-  const end=()=>{if(!D)return;const d=D;D=null;if(!d.on)return;d.gh.remove();d.ph.remove();d.el.classList.remove('dragging');r.querySelectorAll('.pl-lane.over').forEach(l=>l.classList.remove('over'));
+  const end=()=>{if(!D)return;const d=D;D=null;
+    if(d.sw!=null){if(d.gh)d.gh.remove();d.el&&d.el.classList.remove('dragging');r.querySelectorAll('.pl-lane.swover').forEach(l=>l.classList.remove('swover'));
+      if(d.on){if(d.to!=null)swapCourts(d.sw,d.to);return;}
+      /* 끌지 않고 눌렀으면: 첫 번째는 고르기, 두 번째(다른 코트)는 바꾸기 */
+      if(SW.pick==null||SW.pick===d.sw){SW.pick=SW.pick===d.sw?null:d.sw;draw();if(SW.pick!=null)toast(`${L8[d.sw]}코트를 골랐습니다 · 바꿀 코트의 ⇄를 누르세요`);}
+      else{const a=SW.pick;SW.pick=null;swapCourts(a,d.sw);}return;}
+    if(!d.on)return;d.gh.remove();d.ph.remove();d.el.classList.remove('dragging');r.querySelectorAll('.pl-lane.over').forEach(l=>l.classList.remove('over'));
     if(!d.to)return;const from=P.lanes.findIndex(l=>l.includes(d.id));if(from<0)return;
     const cur=P.lanes[from].filter(id=>G[id]).indexOf(d.id);if(from===d.to.lane&&cur===d.to.idx)return;
     commit(()=>{const L=P.lanes.map(l=>l.filter(id=>G[id]&&id!==d.id));L[d.to.lane].splice(d.to.idx,0,d.id);P.lanes=L;});
-    const g=G[d.id];toast(`${g.div} ${g.grp} ${g.sex} (${g.ev}) → ${d.to.lane+1}코트 ${d.to.idx+1}번째`);};
+    const g=G[d.id];toast(`${g.div} ${g.grp} ${g.sex} (${g.ev}) → ${L8[d.to.lane]||d.to.lane+1}코트 ${d.to.idx+1}번째`);};
   addEventListener('pointerup',end);addEventListener('pointercancel',()=>{if(D&&D.on){D.to=null;}end();});
   addEventListener('keydown',e=>{if(!OPEN)return;const typing=/^(INPUT|SELECT|TEXTAREA)$/.test((e.target||{}).tagName||'');
-    if(e.key==='Escape'&&!typing){e.stopImmediatePropagation();if(OVL){OVL=false;draw();}else if(SEND.open){SEND.open=false;draw();}else close();}
+    if(e.key==='Escape'&&!typing){e.stopImmediatePropagation();if(SW.open||SW.pick!=null){SW.open=false;SW.pick=null;draw();}else if(ASSOC.open){ASSOC.open=false;draw();}else if(OVL){OVL=false;draw();}else if(SEND.open){SEND.open=false;draw();}else close();}
     else if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();}
     else if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='y'){e.preventDefault();redo();}},true);
 }
@@ -2051,6 +2069,18 @@ function printDay(){const D=daySched(),cf=(window.KS_HQS&&KS_HQS().cfg)||{},titl
     <div class="g">${D.courts.map(c=>`<div class="c"><h2><span>${esc(c.c)}코트</span><small>${esc(c.ev)}</small></h2>${c.rows.map(r=>r.b?`<div class="r b"><span>${esc(r.t)}</span><span>${r.s}~${r.e}</span></div>`:`<div class="r"><span class="t">${r.s}</span><span>${esc(r.t)}</span><span class="n">${esc(r.n)}</span></div>`).join('')}${c.end?`<div class="end">끝 약 ${c.end}</div>`:''}</div>`).join('')}</div>
     <script>window.onload=()=>{const b=document.body,H=190*3.78;let z=1;for(let i=0;i<20&&b.scrollHeight*z>H+40;i++)z-=.04;if(z<1)document.querySelector('.g').style.zoom=z;}<\/script></body></html>`);
   w.document.close();}
+
+/* ---------- v1.4.59 코트 통째로 자리 바꾸기 (순서·맡은 종목 전체) ---------- */
+const SW={open:false,pick:null,a:0,b:1};
+function swapCourts(a,b){if(a===b||a<0||b<0||a>=P.courts||b>=P.courts)return;
+  commit(()=>{const L=P.lanes.slice(),C=P.courtEv.slice();while(L.length<P.courts)L.push([]);while(C.length<P.courts)C.push('');
+    [L[a],L[b]]=[L[b],L[a]];[C[a],C[b]]=[C[b],C[a]];P.lanes=L;P.courtEv=C;});
+  toast(`${L8[a]}코트 ⇄ ${L8[b]}코트 자리를 통째로 바꿨습니다 · 시간을 다시 계산했습니다 (↶ 되돌리기 가능)`);}
+function swapHtml(TL){const opt=sel=>TL.map((x,i)=>`<option value="${i}" ${i===sel?'selected':''}>${L8[i]||i+1}코트 · ${x.evs.map(e=>ELBL[e]||e).join('·')||'비어 있음'} (${x.items.length}부문${x.items.length?' · ~'+hm(x.end):''})</option>`).join('');
+  return `<div class="pl-mask"><div class="pl-modal" style="width:min(620px,100%)"><div class="row between"><h3>⇄ 코트 통째로 바꾸기</h3><button class="btn" data-p="swapX">닫기 ✕</button></div>
+    <p class="small muted" style="margin:0">두 코트의 순서 전체(맡은 종목까지)를 그대로 맞바꿉니다. 예: A코트 품새 ↔ E코트 팀 경연. 시간은 다시 계산되고, ↶로 되돌릴 수 있습니다.<br>카드 화면에서는 코트 이름 앞 <b>⇄</b>를 잡고 다른 코트로 끌어도 됩니다.</p>
+    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:center"><select data-p="swA" style="flex:1;min-width:220px">${opt(SW.a)}</select><b style="font-size:22px">⇄</b><select data-p="swB" style="flex:1;min-width:220px">${opt(SW.b)}</select></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" data-p="swapGo">바꾸기</button></div></div></div>`;}
 
 /* ---------- 열기 · 닫기 · 타일 ---------- */
 function open(){OPEN=true;root().hidden=false;document.documentElement.classList.add('pl-lock');draw();}
