@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.66" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.67" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -99,6 +99,9 @@ func main() {
 		return
 	}
 	port = p
+	mainLn = ln
+	exePath = exe
+	startUpdateWatch()
 	keepAwake()
 	startNode()
 
@@ -109,7 +112,7 @@ func main() {
 	printBanner()
 	go func() {
 		time.Sleep(600 * time.Millisecond)
-		if os.Getenv("KS_NO_BROWSER") == "" {
+		if os.Getenv("KS_NO_BROWSER") == "" && os.Getenv("KS_RESTART_PORT") == "" {
 			openBrowser(fmt.Sprintf("http://localhost:%d/", port))
 		}
 	}()
@@ -132,7 +135,9 @@ func main() {
 			}
 		}
 	}()
-	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := srv.Serve(ln); restarting.Load() {
+		select {} // 새 버전으로 넘어가는 중: 곧 끝납니다
+	} else if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		fmt.Println("서버 오류:", err)
 		pause()
 	}
@@ -144,6 +149,17 @@ func listen() (net.Listener, int, bool) {
 	if v := os.Getenv("KS_FIELD_PORT"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			start = n
+		}
+	}
+	// v1.4.67 화면에서 「지금 업데이트」로 다시 켜진 경우: 예전 프로그램이 포트를 놓을 때까지 같은 포트를 기다림
+	if v := os.Getenv("KS_RESTART_PORT"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			for i := 0; i < 100; i++ {
+				if ln, err := net.Listen("tcp", fmt.Sprintf(":%d", n)); err == nil {
+					return ln, n, false
+				}
+				time.Sleep(200 * time.Millisecond)
+			}
 		}
 	}
 	for p := start; p < start+20; p++ {
@@ -279,6 +295,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/hq/sim" && r.Method == http.MethodPost:
 		handleHQSim(w, r)
+		return
+	case p == "/api/update":
+		handleUpdate(w, r)
 		return
 	case p == "/api/mode":
 		handleMode(w, r)

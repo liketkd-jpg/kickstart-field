@@ -24,7 +24,46 @@
   document.addEventListener('click',e=>{if(M.mode!=='live')return;const t=e.target.closest&&e.target.closest('[data-act],[data-do],[data-p]');if(!t)return;
     const k=[t.dataset.act,t.dataset.do,t.dataset.p].find(x=>x&&LOCK[x]);if(!k)return;
     e.preventDefault();e.stopImmediatePropagation();note(`🔒 실제 대회 모드에서는 「${LOCK[k]}」이(가) 잠겨 있습니다 · 꼭 필요하면 본부 첫 화면에서 「시험 모드」로 바꾼 뒤 하세요`);},true);
-  async function poll(){try{const j=await (await fetch('/api/mode',{cache:'no-store'})).json();if(j&&j.mode){M=j;ok=true;}}catch(e){}paint();}
-  poll();setInterval(poll,5000);document.addEventListener('DOMContentLoaded',paint);
+  /* v1.4.67 프로그램이 새 버전으로 바뀌면 열려 있던 화면을 저절로 새로 고침 (심판 채점 화면은 제외) */
+  let V0='';
+  function verCheck(v){if(!v)return;if(!V0){V0=v;return;}if(v!==V0&&!/^#judge/.test(location.hash||'')){V0=v;setTimeout(()=>location.reload(),400);}}
+  async function poll(){try{const j=await (await fetch('/api/mode',{cache:'no-store'})).json();if(j&&j.mode){M=j;ok=true;verCheck(j.version);}}catch(e){}paint();}
+  poll();setInterval(poll,5000);
+  /* v1.4.67 「새 버전이 있습니다 · 지금 업데이트」 띠 — 그 노트북 화면(첫 화면·본부 운영)에서만 */
+  const LOCAL=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  const UPG=()=>LOCAL&&(location.pathname==='/'||/^\/hq\/?$/.test(location.pathname))&&!/^#board/.test(location.hash||'');
+  const ucss=document.createElement('style');ucss.textContent=`
+#ksup{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:2147483002;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
+  background:#0B1530;color:#fff;border:2px solid #D4AF37;border-radius:14px;padding:10px 12px 10px 16px;box-shadow:0 12px 34px rgba(0,0,0,.45);font:700 16px/1.35 "Noto Sans KR",system-ui,sans-serif;max-width:min(860px,94vw)}
+#ksup b{color:#F2D27A}#ksup small{display:block;font-weight:500;font-size:13px;opacity:.8}
+#ksup button{font:900 16px/1 "Noto Sans KR",system-ui,sans-serif;padding:11px 16px;border-radius:10px;border:0;background:#D4AF37;color:#14110A;cursor:pointer}
+#ksup button.x{background:transparent;color:#fff;opacity:.7;padding:8px 10px;font-size:18px}
+#ksup button.arm{background:#E5484D;color:#fff}
+#ksup.busy button{display:none}`;
+  (document.head||document.documentElement).appendChild(ucss);
+  let U=null,hide='',arm=false,going=false;try{hide=sessionStorage.getItem('ksup_hide')||'';}catch(e){}
+  function upPaint(){let el=document.getElementById('ksup');
+    const show=U&&UPG()&&(going||U.busy||U.error||(U.newer&&hide!==U.latest));
+    if(!show){if(el)el.remove();return;}
+    if(!el){el=document.createElement('div');el.id='ksup';el.className='notranslate';el.setAttribute('translate','no');el.setAttribute('data-notr','');document.body.appendChild(el);
+      el.addEventListener('click',onUp);}
+    const busy=going||U.busy;el.classList.toggle('busy',busy);
+    let h;
+    if(busy)h=`<div>⏳ <b>새 버전 ${U.latest||''}</b>을(를) 받는 중입니다…<small>약 30초~1분 뒤 프로그램이 저절로 다시 켜지고, 이 화면도 새로 고침됩니다. 검은 창을 닫지 마세요.</small></div>`;
+    else if(U.error&&!U.newer)h=`<div>⚠️ ${U.error}</div><button class="x" data-up="x">✕</button>`;
+    else h=`<div>⬆️ <b>새 버전 ${U.latest}</b>이(가) 있습니다 <span style="opacity:.75">(지금 v${U.version})</span>`+
+      `<small>${U.error?'⚠️ '+U.error+' · ':''}${U.live?'실제 대회 모드입니다. 꼭 <b>경기와 경기 사이</b>에만 하세요 · ':''}경기 데이터는 그대로 남습니다</small></div>`+
+      `<button data-up="go" class="${arm?'arm':''}">${arm?'한 번 더 누르면 업데이트':'지금 업데이트'}</button><button class="x" data-up="x" title="나중에">✕</button>`;
+    if(el.dataset.h!==h){el.innerHTML=h;el.dataset.h=h;}}
+  async function onUp(e){const b=e.target.closest('[data-up]');if(!b)return;
+    if(b.dataset.up==='x'){hide=U&&U.latest||'';try{sessionStorage.setItem('ksup_hide',hide);}catch(e){}if(U)U.error='';upPaint();return;}
+    if(!arm){arm=true;upPaint();setTimeout(()=>{arm=false;upPaint();},6000);return;}
+    arm=false;going=true;upPaint();
+    try{const r=await fetch('/api/update',{method:'POST'});const j=await r.json();if(!r.ok){going=false;U=Object.assign(U||{},{error:j.error||'업데이트를 시작하지 못했습니다'});}else U=j;}catch(e){}
+    upPaint();upLoop();}
+  let ut=0;async function upLoop(){clearTimeout(ut);if(!UPG())return;
+    try{const j=await (await fetch('/api/update',{cache:'no-store'})).json();if(j&&j.version){U=j;if(!j.busy&&going&&j.error)going=false;verCheck(j.version);}}catch(e){}
+    upPaint();ut=setTimeout(upLoop,(going||(U&&U.busy))?2000:60000);}
+  if(UPG())setTimeout(upLoop,1500);document.addEventListener('DOMContentLoaded',paint);
   window.KS_MODE={get:()=>M,refresh:poll,LOCK};
 })();
