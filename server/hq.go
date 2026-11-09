@@ -218,6 +218,7 @@ type courtEntry struct {
 	lastLive  []byte
 	curDiv    map[string]string // app -> 현재 부문
 	announced map[string]time.Time
+	stageAt   map[string]int64
 	written   bool
 	rulesAt   int64  // 이 코트가 받은 본부 경기 규칙 (v1.4.51 시작 전 점검표)
 	licEnds   string // 이 코트 노트북의 허가 코드 끝나는 날
@@ -237,7 +238,7 @@ func addCourt(addr, via string) {
 	if _, ok := courts[addr]; ok {
 		return
 	}
-	courts[addr] = &courtEntry{addr: addr, via: via, curDiv: map[string]string{}, announced: map[string]time.Time{}}
+	courts[addr] = &courtEntry{addr: addr, via: via, curDiv: map[string]string{}, announced: map[string]time.Time{}, stageAt: map[string]int64{}}
 	go pollCourt(addr) // 바로 한 번
 }
 
@@ -503,13 +504,32 @@ func pollCourt(addr string) {
 						CurDiv  string `json:"curDiv"`
 						NextDiv string `json:"nextDiv"`
 						AppName string `json:"appName"`
+						Seq     string `json:"seq"`
+						Stage   *struct {
+							Text string `json:"text"`
+							At   int64  `json:"at"`
+						} `json:"stage"`
 					} `json:"board"`
 				}
 				if json.Unmarshal(raw, &a) != nil {
 					continue
 				}
+				// v1.4.72 겨루기 라운드 전환 안내 (「이제부터 8강 경기를 시작합니다」)
+				if _, ok := c.stageAt[app+"#stage"]; !ok && a.Board.Stage == nil {
+					c.stageAt[app+"#stage"] = 0 // 아직 안내가 없던 코트: 첫 안내부터 방송
+				}
+				if st := a.Board.Stage; st != nil && st.Text != "" {
+					k := app + "#stage"
+					if old, ok := c.stageAt[k]; ok && st.At > old && time.Now().UnixMilli()-st.At < 60000 {
+						calls = append(calls, map[string]any{"court": c.court, "app": app, "text": c.court + "코트, " + st.Text + ".", "auto": true})
+					}
+					c.stageAt[k] = st.At
+				}
 				prev, seen := c.curDiv[app]
 				c.curDiv[app] = a.Board.CurDiv
+				if a.Board.Seq == "round" { // 라운드별 진행은 체급이 경기마다 바뀌므로 체급 호출은 하지 않음
+					continue
+				}
 				if seen && a.Board.CurDiv != "" && prev != a.Board.CurDiv && a.Board.NextDiv != "" && now.Sub(c.announced[app]) > 20*time.Second {
 					c.announced[app] = now
 					calls = append(calls, map[string]any{"court": c.court, "app": app, "appName": a.Board.AppName, "div": a.Board.NextDiv, "auto": true})
@@ -585,6 +605,9 @@ func autoCall(cl map[string]any) {
 		return
 	}
 	text := fmt.Sprintf("%s코트, %s 선수는 준비해 주세요.", cl["court"], cl["div"])
+	if t, ok := cl["text"].(string); ok && t != "" {
+		text = t
+	}
 	id := fmt.Sprintf("a%d", time.Now().UnixNano())
 	s.setDoc("hq/announce", map[string]any{"id": id, "text": text, "court": cl["court"], "div": cl["div"], "app": cl["app"], "auto": true, "at": time.Now().UnixMilli()})
 	s.setDoc("calllog/"+id, map[string]any{"text": text, "court": cl["court"], "auto": true, "at": time.Now().UnixMilli()})
@@ -665,7 +688,7 @@ func startNode() {
 				b, _ := json.Marshal(m)
 				s.docs[k] = b
 				if a, ok := m["addr"].(string); ok {
-					courts[a] = &courtEntry{addr: a, via: fmt.Sprint(m["via"]), court: fmt.Sprint(m["court"]), curDiv: map[string]string{}, announced: map[string]time.Time{}}
+					courts[a] = &courtEntry{addr: a, via: fmt.Sprint(m["via"]), court: fmt.Sprint(m["court"]), curDiv: map[string]string{}, announced: map[string]time.Time{}, stageAt: map[string]int64{}}
 				}
 			}
 		}

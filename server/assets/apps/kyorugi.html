@@ -719,6 +719,9 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
 .jbtn .jv{line-height:1.08}
 /* 전광판: 구령(준비·시작·바로·호출) 글씨는 띄우지 않고 소리만 냅니다 */
 .cmdov{display:none!important}
+.stageov{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;background:rgba(4,8,20,.78);z-index:99990}
+.stageov span{color:#fff;font-weight:900;font-family:"Noto Sans KR",sans-serif}
+.stageov span{font-size:min(7vw,12vh)!important;line-height:1.2;text-align:center;padding:4vh 5vw;border-top:4px solid #D4AF37;border-bottom:4px solid #D4AF37;text-shadow:none!important;word-break:keep-all}
 /* 전광판 소리 켜기 단추 */
 .ksaudio{position:fixed;left:max(14px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:50;border:2px solid #E2C27A;background:#14110B;color:#F3DFA8;border-radius:999px;padding:12px 20px;font:800 18px/1.2 "Noto Sans KR",system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:ksaudp 1.6s ease-in-out infinite}
 @keyframes ksaudp{50%{box-shadow:0 0 0 8px rgba(226,194,122,.25),0 8px 30px rgba(0,0,0,.5)}}
@@ -904,11 +907,31 @@ function bracketRounds(div){
   return rounds;
 }
 /* 진행할 경기: 청·홍이 모두 정해진 경기 */
-function matchesOf(div){
+function matchesOf(div){return allMatchesOf(div).filter(m=>m.ready);}
+/* 열릴 경기 모두 (선수가 아직 안 정해진 경기 포함, ready=false) */
+function allMatchesOf(div){
   const rounds=bracketRounds(div),R=rounds.length,out=[],nums=bkNumbers(div,rounds);
-  rounds.forEach(ms=>ms.forEach(m=>{if(m.blue&&m.red){const n=nums[m.id]||0;out.push({...m,divId:div.id,no:n,label:`${roundName(m.r,R)} · ${n}경기`});}}));
+  rounds.forEach(ms=>ms.forEach(m=>{if(!m.real)return;const n=nums[m.id]||0,rn=roundName(m.r,R);
+    out.push({...m,divId:div.id,divName:div.name,no:n,rn,size:2**(R-m.r+1),ready:!!(m.blue&&m.red),label:`${rn} · ${n}경기`});}));
   return out.sort((a,b)=>a.no-b.no);
 }
+/* v1.4.72 코트 경기 순서
+   라운드별(기본, 협회 방식): 모든 체급의 16강을 체급 순서대로 → 모든 체급의 8강 → 준결승 → 결승
+   체급별: 한 체급을 결승까지 마치고 다음 체급 */
+function courtSeq(){
+  const mode=SET().order==='div'?'div':'round',out=[];
+  S.divs.forEach((d,di)=>allMatchesOf(d).forEach(m=>out.push({...m,di})));
+  out.sort(mode==='round'?(a,b)=>b.size-a.size||a.di-b.di||a.no-b.no:(a,b)=>a.di-b.di||a.no-b.no);
+  out.forEach((m,i)=>m.seq=i+1);return out;
+}
+const stageName=(m,mode)=>mode==='div'?m.divName:m.rn;
+window.KS_COURTSEQ=courtSeq;
+/* 라운드 전환 안내: 전광판(어떤 디자인이든) 위에 9초 동안 크게 */
+setInterval(()=>{try{const on=/^#display/.test(location.hash||'')||(typeof KIOSK!=='undefined'&&KIOSK);let el=document.getElementById('ksStage');
+  const st=ST&&ST(),sg=st&&st.stage,show=on&&sg&&sg.text&&Date.now()-sg.at<9000&&Date.now()-sg.at>-5000;
+  if(!show){if(el)el.remove();return;}
+  if(!el){el=document.createElement('div');el.id='ksStage';el.className='stageov notranslate';el.setAttribute('translate','no');document.body.appendChild(el);}
+  if(el.dataset.t!==sg.text){el.dataset.t=sg.text;el.innerHTML=`<span>${esc(sg.text)}</span>`;}}catch(e){}},400);
 function regenerateDivs(){
   const groups=new Map();
   S.roster.forEach(a=>{const k=divKey(a);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(a.id);});
@@ -1102,6 +1125,10 @@ function aSettings(){
       <span class="small muted">소년체전·전국체전·국가대표최종선발전의 준결승·결승처럼 점수차승을 쓰지 않는 경기는 "적용 안 함"으로 바꾸세요.</span></div>
   </div>
   <div class="stack">
+  <div class="panel"><h2>경기 진행 순서</h2>
+    <div class="field">${segBtns('order',[['round','라운드별 (협회 방식)'],['div','체급별']],s.order==='div'?'div':'round')}
+      <span class="small muted"><b>라운드별</b>: 모든 체급의 16강을 체급 순서대로 마친 뒤 → 모든 체급의 8강 → 준결승 → 결승. 라운드가 바뀔 때 전광판·본부에 「이제부터 8강 경기를 시작합니다」가 나옵니다.<br><b>체급별</b>: 한 체급을 결승까지 마치고 다음 체급으로 넘어갑니다.</span></div>
+  </div>
   <div class="panel"><h2>경기 시간</h2>
     <div class="field"><span class="label">회전 시간</span>${segBtns('roundSec',[[60,'1분'],[90,'1분 30초'],[120,'2분']],s.roundSec)}</div>
     <div class="field"><span class="label">회전 간 휴식</span>${segBtns('restSec',[[30,'30초'],[60,'1분']],s.restSec)}</div>
@@ -1164,6 +1191,14 @@ function undoClear(){UNDO_MEM=null;try{localStorage.removeItem(UNDO_KEY);}catch(
 /* 명단이 바뀐 뒤: 경기 결과가 없는 체급만 자동으로 다시 편성 (결과가 있는 체급이 바뀌면 안내만) */
 async function regenAfterRoster(keys){const hit=S.divs.filter(d=>keys.includes(d.key)&&divHasResults(d));if(hit.length){toast(`경기 결과가 있는 체급(${hit[0].name}${hit.length>1?` 외 ${hit.length-1}개`:''})이 바뀌었습니다. 확인 후 「체급별 대진 편성」을 눌러 주세요`);return;}await regenerateDivs();}
 async function setRoster(list){await saveRoster(list);S.roster=list;S.athIdx=null;}
+/* v1.4.72 코트 전체 순서 목록: 라운드(체급)가 바뀌는 곳에 제목, 선수가 아직 안 정해진 경기는 「앞 경기 승자」 */
+function seqList(L){const q=courtSeq(),mode=SET().order==='div'?'div':'round';if(!q.length)return '<div class="empty">진행할 경기가 없습니다.</div>';
+  let last='',h='';q.forEach(m=>{const st=stageName(m,mode);if(st!==last){last=st;h+=`<div class="small" style="margin:10px 2px 2px;font-weight:900;color:var(--gold,#B8904E)">▸ ${esc(st)}</div>`;}
+    const isCur=L&&L.matchId===m.id,nm=id=>id?esc(aName(id)):'<span class="muted">앞 경기 승자</span>';
+    h+=`<div class="bitem ${isCur?'cur':''} ${m.res?'done':''}"><div class="bmain"><span class="small muted">${m.seq}. ${esc(mode==='div'?m.label:m.divName+' · '+m.label)}${m.res?' · '+esc(m.res.how):''}</span>
+      <b class="blue">청 ${nm(m.blue)}${m.res?` ${m.res.score.blue}`:''}</b><b class="red">홍 ${nm(m.red)}${m.res?` ${m.res.score.red}`:''}</b></div>
+      ${isCur?'<span class="chip live">진행</span>':m.ready?`<button class="btn sm" data-act="${L&&L.phase!=='end'?'armed':'callMatch'}" data-do="callMatch" data-id="${m.id}">${m.res?'다시':'호출'}</button>`:'<span class="small muted">대기</span>'}</div>`;});
+  return h;}
 function divOptions(sel){return S.divs.map(d=>`<option value="${d.id}" ${d.id===sel?'selected':''}>${esc(d.name)} · ${(d.order||[]).length}명</option>`).join('');}
 function aDraw(){
   if(!S.divs.length)return `<div class="empty">체급이 없습니다. 선수 등록 화면에서 "체급별 대진 편성"을 눌러 주세요.</div>`;
@@ -1195,7 +1230,7 @@ function aRun(){
     ${qrBtn()}${fieldPill()}<span class="bh-now" data-now></span><button class="btn ${BMAX?'':'primary'}" data-act="bFull">${BMAX?'⤡ 기본 화면':'⤢ 전체 화면'}</button></div>`;
   const left=`<div class="col"><div class="panel bp"><label class="field"><span class="label">체급</span><select data-on="runDiv">${divOptions(ui.div)}</select></label>
       <span class="small muted">경기 ${ms.filter(m=>m.res).length}/${ms.length} 완료</span></div>
-    <div class="panel bp grow"><div class="row between"><h3>경기 순서</h3></div><div class="scroll"><div class="blist">${ms.length?ms.map(m=>{const isCur=L&&L.matchId===m.id;
+    <div class="panel bp grow"><div class="row between"><h3>경기 순서</h3>${(()=>{const all=ui.seqAll!==false;return `<div class="seg"><button class="${all?'on':''}" data-act="seqAll" data-v="1">코트 전체 순서</button><button class="${all?'':'on'}" data-act="seqAll" data-v="0">이 체급만</button></div>`;})()}</div><div class="scroll"><div class="blist">${ui.seqAll!==false?seqList(L):ms.length?ms.map(m=>{const isCur=L&&L.matchId===m.id;
       return `<div class="bitem ${isCur?'cur':''} ${m.res?'done':''}"><div class="bmain"><span class="small muted">${esc(m.label)}${m.res?' · '+esc(m.res.how):''}</span>
         <b class="blue">청 ${esc(aName(m.blue))}${m.res?` ${m.res.score.blue}`:''}</b><b class="red">홍 ${esc(aName(m.red))}${m.res?` ${m.res.score.red}`:''}</b></div>
         ${isCur?'<span class="chip live">진행</span>':`<button class="btn sm" data-act="${L&&L.phase!=='end'?'armed':'callMatch'}" data-do="callMatch" data-id="${m.id}">${m.res?'다시':'호출'}</button>`}</div>`;}).join(''):'<div class="empty">진행할 경기가 없습니다.</div>'}</div></div></div></div>`;
@@ -1448,9 +1483,13 @@ function onVoiceState(st){const v=st&&st.voice;if(!v||!v.at||v.at<=VOICE_SEEN)re
 function findMatch(id){for(const d of S.divs){const m=matchesOf(d).find(x=>x.id===id);if(m)return {m,d};}return null;}
 async function callMatch(id){
   const f=findMatch(id);if(!f)return;const {m,d}=f,set=SET(),st=ST(),ep=(st.epoch||0)+1;
+  /* v1.4.72 라운드(체급별 진행이면 체급)가 바뀌면 「이제부터 8강 경기를 시작합니다」 안내 */
+  let stage=st.stage||null;try{const mode=set.order==='div'?'div':'round',q=courtSeq(),me=q.find(x=>x.id===m.id),pv=st.matchId&&q.find(x=>x.id===st.matchId);
+    const nm=me?stageName(me,mode):'',pn=pv?stageName(pv,mode):'';
+    if(nm&&nm!==pn){const text=mode==='div'?`이제부터 ${nm} 경기를 시작합니다`:`이제부터 ${nm} 경기를 시작합니다`;stage={text,name:nm,at:Date.now()};toast('📣 '+text);}}catch(e){}
   const P=a=>({id:a,name:aName(a),team:aTeam(a)});
   await saveState({matchId:m.id,divId:d.id,divName:d.name,label:m.label,blue:P(m.blue),red:P(m.red),epoch:ep,mid:m.id+'~'+ep,round:1,phase:'ready',
-    timer:{dur:set.roundSec,elapsed:0,running:false,startedAt:0},roundWins:{blue:0,red:0},roundLog:[],cards:{blue:set.cards,red:set.cards},hits:{},result:null,voice:st.voice||null});
+    timer:{dur:set.roundSec,elapsed:0,running:false,startedAt:0},roundWins:{blue:0,red:0},roundLog:[],cards:{blue:set.cards,red:set.cards},hits:{},result:null,voice:st.voice||null,stage});
   ui.div=d.id;
 }
 const runTimer=t=>({...t,running:true,startedAt:Date.now()});
@@ -1534,10 +1573,16 @@ function autoRules(){
    부전승 선수는 다음 라운드 경기에 바로 연결합니다. 이긴 선수 쪽 선은 초록으로 굵게 그립니다. */
 const bkTeam=id=>{const a=athlete(id);return a?(a.team||''):'';};
 /* 경기 번호: 공식 대진표에서 불러온 번호가 있으면 그대로, 없으면 라운드 순서대로 1번부터 */
+/* v1.4.72 대한태권도협회 방식: 번호는 대진표 모양으로 미리 정해 두고(실제로 열릴 경기만), 라운드 순서대로 1번부터.
+   예전에는 「지금 두 선수가 정해진 경기」만 번호를 매겨, 경기가 진행될수록 번호가 바뀌고 8강이 16강 사이에 끼어들었음 */
+function bkReal(rounds){rounds.forEach((ms,r)=>ms.forEach((m,i)=>{
+  if(r===0){m.ca=m.blue!=null?1:0;m.cb=m.red!=null?1:0;}
+  else{const A=rounds[r-1][2*i],B=rounds[r-1][2*i+1];m.ca=A?A.ca+A.cb:0;m.cb=B?B.ca+B.cb:0;}
+  m.real=m.ca>0&&m.cb>0;}));return rounds;}
 function bkNumbers(div,rounds){
-  const out={};
+  const out={};bkReal(rounds);
   if(div.matchNo){rounds.forEach(ms=>ms.forEach(m=>{const n=div.matchNo[`r${m.r}_m${m.i}`];if(n)out[m.id]=n;}));return out;}
-  let n=0;rounds.forEach(ms=>ms.forEach(m=>{if(m.blue!==null&&m.red!==null)out[m.id]=++n;}));return out;
+  let n=0;rounds.forEach(ms=>ms.forEach(m=>{if(m.real)out[m.id]=++n;}));return out;
 }
 function bkTree(div){
   const rounds=bracketRounds(div),R=rounds.length;if(!R)return null;
@@ -1855,8 +1900,10 @@ const ACT={
   pdfDiv:b=>{const d=S.divs.find(x=>x.id===b.dataset.id);if(d){toast('PDF 만드는 중…');makeBracketPdf([d],`${SET().name||'겨루기대회'}_대진표_${d.name}.pdf`);}},
   pdfAll:()=>{if(!S.divs.length)return toast('체급이 없습니다');toast('PDF 만드는 중…');makeBracketPdf(S.divs,`${SET().name||'겨루기대회'}_전체대진표.pdf`);},
   callMatch:b=>callMatch(b.dataset.id),
-  nextMatch:()=>{const L=live();if(!L)return;const d=S.divs.find(x=>x.id===L.divId);const ms=d?matchesOf(d):[];const i=ms.findIndex(m=>m.id===L.matchId);
-    const nx=ms.slice(i+1).find(m=>!m.res)||ms.find(m=>!m.res);if(nx)callMatch(nx.id);else toast('이 체급의 경기를 모두 마쳤습니다');},
+  seqAll:b=>{ui.seqAll=b.dataset.v==='1';schedule();},
+  nextMatch:()=>{const L=live();if(!L)return;const q=courtSeq(),i=q.findIndex(m=>m.id===L.matchId);
+    const nx=q.slice(i+1).find(m=>!m.res&&m.ready)||q.find(m=>!m.res&&m.ready);
+    if(nx)callMatch(nx.id);else toast(q.some(m=>!m.res)?'다음 경기 선수가 아직 정해지지 않았습니다 (앞 경기 결과를 확인하세요)':'이 코트의 경기를 모두 마쳤습니다');},
   cmd:b=>{const L=live();if(!L)return;actx();const vm=voiceMark(b.dataset.k);if(vm)saveState({...L,voice:vm});},
   startRound:()=>{const L=live();if(!L||L.phase!=='ready')return;saveState({...L,phase:'fight',timer:runTimer(L.timer),voice:voiceMark('start1')});},
   kal:()=>{const L=live();if(!L||L.phase!=='fight')return;saveState({...L,phase:'break',timer:stopTimer(L.timer),voice:voiceMark('kal')});},
@@ -2967,8 +3014,13 @@ function board(){
   let nextDiv=null;
   for(let k=1;k<info.length;k++){const x=info[(ci+k)%info.length];if(x&&x.total>x.done&&x.done===0){nextDiv=x.d.name;break;}}
   if(!nextDiv)for(let k=1;k<info.length;k++){const x=info[(ci+k)%info.length];if(x&&x.total>x.done){nextDiv=x.d.name;break;}}
+  /* v1.4.72 겨루기: 다음 경기는 코트 순서(라운드별)대로, 라운드가 바뀌면 안내(stage) */
+  let stage=null,seqMode='';
+  if(APP==='kyorugi'&&g('KS_COURTSEQ')){try{const q=g('KS_COURTSEQ')(),i=now?q.findIndex(m=>m.id===now.id):-1;seqMode=(SET&&SET().order)==='div'?'div':'round';
+    next.length=0;q.slice(i+1).concat(i>=0?[]:[]).filter(m=>!m.res).slice(0,10).forEach(m=>next.push({div:m.divName,label:m.label,names:[{...person(m.blue),side:'blue'},{...person(m.red),side:'red'}]}));
+    const st=(g('ST')||(()=>null))();stage=st&&st.stage||null;}catch(e){}}
   const c=info[ci];
-  return {v:1,app:APP,appName:APPNAME,court:F.court||'',comp:(SET&&SET().name)||'',theme:(()=>{try{return window.KS_THEME?KS_THEME.themeOf():'';}catch(e){return '';}})(),
+  return {v:1,app:APP,appName:APPNAME,stage,seq:seqMode,court:F.court||'',comp:(SET&&SET().name)||'',theme:(()=>{try{return window.KS_THEME?KS_THEME.themeOf():'';}catch(e){return '';}})(),
     now,curDiv:c?c.d.name:'',progress:c?{done:c.done,total:c.total}:null,next,nextDiv,
     divs:info.map(x=>({name:x.d.name,done:x.done,total:x.total})),
     /* 대기실 연결: 지금·다음 부문 선수 명단 (출석 체크용) */
