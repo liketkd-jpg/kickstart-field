@@ -551,7 +551,7 @@ function vAdmin(){
   <div class="panel"><div class="row between"><h2>본부 모니터</h2><span class="row"><a class="btn primary" href="#board" target="_blank" style="text-decoration:none">본부 모니터 열기 ↗</a><button class="btn" data-a="qr">📱 QR (다른 TV·태블릿)</button></span></div>
     <div class="row"><span class="small muted">화면 디자인</span>${themePick('hqpick')}<span class="small muted">지금: <b>${esc((THEMES.find(x=>x[0]===hqTheme(courtList()))||['','기본 금빛'])[1])}</b> · 「따라가기」는 품새 코트 노트북에서 고른 전광판 디자인을 따릅니다</span></div>
     <div class="row" style="flex-wrap:wrap"><b>대회명</b><input type="text" id="hqCompName" value="${esc(cf.compName||'')}" placeholder="예: 2026 KICKSTART UP 태권도 대회 (비우면 코트 노트북의 대회명)" style="flex:1;min-width:260px"><button class="btn" data-a="hqCompSave">저장</button></div>
-    <div class="row"><b>평소 화면</b><div class="seg"><button class="${cf.monIdle!=='comp'?'on':''}" data-a="hqMonIdle" data-v="">코트별 진행 상황</button><button class="${cf.monIdle==='comp'?'on':''}" data-a="hqMonIdle" data-v="comp">대회명 크게</button></div><span class="small muted">방송이 나올 때만 방송 글씨로 바뀌었다가 끝나면 돌아옵니다</span></div>
+    <div class="row"><b>평소 화면</b><div class="seg"><button class="${!cf.monIdle?'on':''}" data-a="hqMonIdle" data-v="">글로벌 (로고·도장 순위)</button><button class="${cf.monIdle==='courts'?'on':''}" data-a="hqMonIdle" data-v="courts">코트별 진행 상황</button><button class="${cf.monIdle==='comp'?'on':''}" data-a="hqMonIdle" data-v="comp">대회명 크게</button></div><span class="small muted">방송이 나올 때만 방송 글씨로 바뀌었다가 끝나면 돌아옵니다</span></div>
     <span class="small muted">선수 대기실 TV나 큰 모니터에 띄우세요. 새 창을 TV 쪽으로 옮긴 뒤 「전체 화면」을 누르면 됩니다. 소리를 내려면 그 화면을 한 번 눌러 주세요.</span></div>`;
 }
 
@@ -605,10 +605,13 @@ function vMon(){
       <div class="sec">다음 경기</div><div class="nx">${nx.length?nx.map(x=>`<div><span class="lb2">${esc(x.label)}</span><span class="nn">${x.names.map(p=>esc(p.name)).join(' · ')}</span></div>`).join(''):'<div><span class="nn" style="color:#A9AFB9">남은 경기가 없습니다</span></div>'}</div>
       ${wt.length?`<div class="sec">대기 선수 · 곧 출전</div><div class="wt">${wt.slice(0,12).map(w=>`<span>${esc(w)}</span>`).join('')}</div>`:''}
       ${b.nextDiv?`<div class="nd">다음 부문 ▸ <b>${esc(b.nextDiv)}</b></div>`:''}</div>`;};
-  const cols=list.length&&cf.monIdle!=='comp'?list.map(col).join(''):`<div class="idlecomp"><b>${esc(comp)}</b><span>${list.length?'':'코트 노트북을 찾는 중입니다…'}</span></div>`;
-  const nCols=cf.monIdle==='comp'?1:Math.max(1,Math.min(list.length||1,4));
+  const cols=list.length&&cf.monIdle==='courts'?list.map(col).join(''):`<div class="idlecomp"><b>${esc(comp)}</b><span>${list.length?'':'코트 노트북을 찾는 중입니다…'}</span></div>`;
+  const nCols=cf.monIdle!=='courts'?1:Math.max(1,Math.min(list.length||1,4));
   const tk=n.mode==='banner'&&n.text?`<div class="ticker ${n.text.length<60?'fit':''}" style="--d:${Math.max(14,n.text.length*0.35)}s"><span>📢 ${esc(n.text)}</span></div>`:'<span style="flex:1"></span>';
-  $('#mon').innerHTML=`<div class="mwm" aria-hidden="true"><svg class="ksw" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg></div><div class="mh"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><b>${esc(comp)}</b><span class="sp"></span>
+  /* v1.4.65 평소 화면 「글로벌」(기본): 올림픽·F1 중계처럼 — 로고·대회명·시각 · 오른쪽 도장 순위 5위 · 코트별 지금 종목 한 줄 · 공지 띠 */
+  const G=(cf.monIdle||'')==='';document.body.classList.toggle('monG',G);
+  if(G){$('#mon').innerHTML=monG(list,cf,n,comp);}
+  else $('#mon').innerHTML=`<div class="mwm" aria-hidden="true"><svg class="ksw" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg></div><div class="mh"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><b>${esc(comp)}</b><span class="sp"></span>
       <span class="ctl">${themePick('hqpick mon')}<button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span><span class="clock" data-clock></span></div>
     <div class="cols" style="grid-template-columns:repeat(${nCols},minmax(0,1fr))">${cols}</div>
     <div class="mf">${tk}<span class="ks"><svg class="ksm" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span>KICKSTART<b>UP</b></span><small>대회 본부</small></span></div>`;
@@ -620,6 +623,27 @@ function vMon(){
   if(needTap)ov+='<button class="tapv" data-a="unlock">🔊 화면을 한 번 눌러 호출 소리를 켜 주세요</button>';
   {const o=$('#ovl');if(o&&o.__ov!==ov){o.innerHTML=ov;o.__ov=ov;}}
 }
+
+/* ---------- v1.4.65 본부 전광판 「글로벌」 ---------- */
+const MONG_EV=(app,div)=>{const d=String(div||'');if(app==='gyeokpa')return /경연|종합/.test(d)?'팀 경연':'격파';if(app==='kyorugi')return '겨루기';return /자유/.test(d)?'자유 품새':/체조/.test(d)?'태권체조':/경연|종합|시범/.test(d)?'팀 경연':'공인 품새';};
+const MONG_EN={'공인 품새':'Recognized Poomsae','자유 품새':'Freestyle Poomsae','태권체조':'Taekwon Aerobics','팀 경연':'Team Showcase','격파':'Breaking','겨루기':'Kyorugi'};
+function monG(list,cf,n,comp){
+  const d=new Date(),wd='일월화수목금토'[d.getDay()],date=`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()} (${wd})`;
+  const T=teamTally(allResults()).sort((a,b)=>b.g-a.g||b.s-a.s||b.b-a.b||a.team.localeCompare(b.team,'ko')).slice(0,5);
+  const courts=list.map(c=>{const b=c.app&&c.app.board,app=c.app&&c.app.key||'';const dv=b&&(b.curDiv||(b.now&&b.now.div))||'';const ev=b?MONG_EV(app||((b.appName||'').includes('격파')?'gyeokpa':''),dv):'';
+    const sub=String(dv).replace(/^\d{1,3}\s+/,'').replace(/^(품새|자유 품새|개인 격파|팀 태권체조|팀 종합경연|종합시범)\s*/,'');
+    const st=!c.online?'off':c.stale||!b||!b.now?'idle':'live';
+    return `<div class="g-ct ${st}"><span class="g-cl">${esc(c.court)}</span><span class="g-ce"><b>${esc(ev||'대기')}</b><small>${esc(sub||(c.online?'준비 중':'연결 끊김'))}</small></span><i></i></div>`;}).join('');
+  const rows=T.length?T.map((t,i)=>`<li><span class="g-pos">${i+1}</span><span class="g-tm" data-notr>${esc(t.team)}</span><span class="g-md"><i class="g">${t.g}</i><i class="s">${t.s}</i><i class="b">${t.b}</i></span></li>`).join('')
+    :'<li class="g-emp">첫 메달이 나오면 순위가 표시됩니다</li>';
+  const tk=n.mode==='banner'&&n.text?`<div class="g-tk"><span class="g-tkl">공지 · NOTICE</span><div class="g-tkw"><span style="--d:${Math.max(16,n.text.length*0.38)}s">${esc(n.text)}</span></div></div>`:'';
+  return `<div class="g-wrap">
+    <div class="g-top"><span class="g-brand">${KSLOGO('g-lg')}<b>KICKSTART<i> UP</i></b></span><span class="g-live"><i></i>LIVE · 실시간</span><span class="ctl">${themePick('hqpick mon')}<button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span><span class="g-clock" data-clock></span></div>
+    <div class="g-main"><div class="g-hero">${KSLOGO('g-hl')}<div class="g-ey">TAEKWONDO CHAMPIONSHIP · 태권도 대회</div><h1>${esc(comp)}</h1><div class="g-date">${esc(date)}</div>
+        ${courts?`<div class="g-cts"><div class="g-cth">지금 경기 · NOW ON COURT</div><div class="g-ctr" style="--n:${Math.min(list.length,8)}">${courts}</div></div>`:''}</div>
+      <aside class="g-rk"><div class="g-rkh"><b>도장 순위</b><span>DOJANG RANKING</span></div><div class="g-rks">금 · 은 · 동 순 &nbsp;<i class="g"></i><i class="s"></i><i class="b"></i></div><ol>${rows}</ol></aside></div>
+    ${tk}</div>`;}
+const KSLOGO=c=>`<svg class="${c}" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg>`;
 function tick(){const el=document.querySelector('[data-clock]');if(el){const d=new Date();el.textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;}}
 setInterval(tick,1000);
 
@@ -2332,4 +2356,54 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
 })();
 </script>
 <script src="/mode.js"></script>
+<style>/* v1.4.65 본부 전광판 「글로벌」 — 올림픽·F1 중계 화면 느낌: 짙은 남색 · 흰 글씨 · 금색 하나 */
+body.monG #mon{--gd:#D4AF37;--gd2:#F1D78A;--nv:#070D1C;--nv2:#0E1830;--wt:#F4F6FA;--mu:#8C97AD;padding:0!important;background:radial-gradient(1200px 700px at 30% 30%,#13213F 0,transparent 60%),linear-gradient(160deg,#0A1226,#04070F)!important;color:var(--wt);font-family:"Noto Sans KR","Archivo",system-ui,sans-serif}
+body.monG .g-wrap{position:fixed;inset:0;width:100vw;height:100vh;z-index:5;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
+body.monG .g-top{display:flex;align-items:center;gap:2vw;padding:1.6vh 2.4vw;border-bottom:1px solid rgba(212,175,55,.35)}
+body.monG .g-brand{display:flex;align-items:center;gap:.8vw}body.monG .g-brand b{font:800 clamp(14px,1.5vw,30px)/1 "Archivo",sans-serif;letter-spacing:.32em}body.monG .g-brand i{font-style:normal;color:var(--gd)}
+body.monG .g-lg{width:clamp(26px,2.4vw,46px);height:clamp(26px,2.4vw,46px)}
+body.monG .g-live{display:flex;align-items:center;gap:.5vw;font:800 clamp(11px,.9vw,18px)/1 "Archivo",sans-serif;letter-spacing:.2em;color:var(--mu)}body.monG .g-live i{width:.7vw;height:.7vw;min-width:8px;min-height:8px;border-radius:50%;background:#E5483D;animation:gblink 1.6s infinite}
+@keyframes gblink{50%{opacity:.25}}
+body.monG .g-top .ctl{margin-left:auto;opacity:0!important;transition:opacity .3s}body.monG .g-top:hover .ctl{opacity:1!important}
+body.mon .batb{display:none!important}
+body.monG .g-clock{font:700 clamp(22px,2.8vw,56px)/1 "Archivo",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--wt)}
+body.monG .g-main{display:grid;grid-template-columns:minmax(0,1fr) clamp(280px,27vw,560px);min-height:0}
+body.monG .g-hero{display:flex;flex-direction:column;justify-content:center;padding:0 4vw;gap:1.6vh;min-height:0}
+body.monG .g-hl{width:clamp(70px,8vw,160px);height:clamp(70px,8vw,160px);filter:drop-shadow(0 0 30px rgba(212,175,55,.25))}
+body.monG .g-ey{font:800 clamp(12px,1.05vw,22px)/1 "Archivo",sans-serif;letter-spacing:.34em;color:var(--gd)}
+body.monG .g-hero h1{margin:0;font:900 clamp(34px,4.6vw,104px)/1.08 "Noto Sans KR",sans-serif;letter-spacing:-.01em;max-width:58vw}
+body.monG .g-date{font:600 clamp(14px,1.5vw,30px)/1.2 "Noto Sans KR",sans-serif;color:#C8CFDD}
+body.monG .g-cts{margin-top:3vh;border-top:1px solid rgba(255,255,255,.1);padding-top:1.6vh}
+body.monG .g-cth{font:800 clamp(10px,.8vw,16px)/1 "Archivo","Noto Sans KR",sans-serif;letter-spacing:.24em;color:var(--mu);margin-bottom:1.2vh}
+body.monG .g-ctr{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:.8vw}
+body.monG .g-ct{position:relative;display:flex;align-items:center;gap:.7vw;padding:1.1vh .8vw;border-radius:.6vw;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);min-width:0}
+body.monG .g-cl{display:grid;place-items:center;flex:none;width:clamp(28px,2.4vw,50px);height:clamp(28px,2.4vw,50px);border-radius:.4vw;background:var(--gd);color:#0A0F1C;font:900 clamp(16px,1.5vw,30px)/1 "Archivo",sans-serif}
+body.monG .g-ce{display:flex;flex-direction:column;min-width:0}body.monG .g-ce b{font-size:clamp(13px,1.15vw,24px);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}body.monG .g-ce small{font-size:clamp(10px,.8vw,16px);color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.monG .g-ct>i{position:absolute;top:.6vh;right:.5vw;width:.55vw;height:.55vw;min-width:7px;min-height:7px;border-radius:50%;background:#4B5568}body.monG .g-ct.live>i{background:#3FD27F;box-shadow:0 0 10px #3FD27F}body.monG .g-ct.off{opacity:.45}
+body.monG .g-rk{display:flex;flex-direction:column;justify-content:center;padding:3vh 2.2vw;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));border-left:1px solid rgba(212,175,55,.3)}
+body.monG .g-rkh{display:flex;flex-direction:column;gap:.5vh;padding-bottom:1.4vh;border-bottom:3px solid var(--gd)}body.monG .g-rkh b{font:900 clamp(20px,2vw,42px)/1.1 "Noto Sans KR",sans-serif}body.monG .g-rkh span{font:800 clamp(10px,.85vw,17px)/1 "Archivo",sans-serif;letter-spacing:.3em;color:var(--gd)}
+body.monG .g-rks{margin:1.2vh 0 .4vh;font-size:clamp(10px,.8vw,15px);color:var(--mu);display:flex;align-items:center;gap:.3vw}
+body.monG .g-rk ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+body.monG .g-rk li{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1vw;padding:1.7vh 0;border-bottom:1px solid rgba(255,255,255,.08)}
+body.monG .g-pos{display:grid;place-items:center;width:clamp(28px,2.3vw,48px);height:clamp(28px,2.3vw,48px);font:900 clamp(15px,1.4vw,30px)/1 "Archivo",sans-serif;color:var(--wt);border:2px solid rgba(255,255,255,.25);border-radius:.35vw}
+body.monG .g-rk li:first-child .g-pos{background:var(--gd);border-color:var(--gd);color:#0A0F1C}
+body.monG .g-tm{font:800 clamp(15px,1.45vw,32px)/1.15 "Noto Sans KR",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.monG .g-md{display:flex;gap:.6vw}body.monG .g-md i{display:flex;align-items:center;gap:.25vw;font:800 clamp(13px,1.15vw,26px)/1 "Archivo",sans-serif;font-style:normal;color:#E7EBF2}
+body.monG .g-md i::before,body.monG .g-rks i{content:"";display:inline-block;width:.75vw;height:.75vw;min-width:9px;min-height:9px;border-radius:50%}
+body.monG .g-md i.g::before,body.monG .g-rks i.g{background:#E8C24A}body.monG .g-md i.s::before,body.monG .g-rks i.s{background:#C9CED6}body.monG .g-md i.b::before,body.monG .g-rks i.b{background:#C98B5A}
+body.monG .g-emp{color:var(--mu);font-size:clamp(13px,1vw,20px);padding:2vh 0;grid-template-columns:1fr!important}
+body.monG .g-tk{display:flex;align-items:stretch;border-top:1px solid rgba(212,175,55,.35);background:rgba(0,0,0,.35);height:clamp(40px,5.4vh,70px)}
+body.monG .g-tkl{display:flex;align-items:center;padding:0 1.6vw;background:var(--gd);color:#0A0F1C;font:900 clamp(12px,1vw,20px)/1 "Noto Sans KR",sans-serif;letter-spacing:.08em;white-space:nowrap}
+body.monG .g-tkw{flex:1;overflow:hidden;display:flex;align-items:center}body.monG .g-tkw span{white-space:nowrap;padding-left:100%;font:700 clamp(15px,1.5vw,30px)/1 "Noto Sans KR",sans-serif;animation:gtk var(--d) linear infinite}
+@keyframes gtk{to{transform:translateX(-100%)}}
+/* 방송: 올림픽 자막처럼 아래에서 올라왔다가 사라짐 */
+body.monG #ovl .ann{position:fixed;inset:auto 0 0 0;display:block;background:none!important;backdrop-filter:none;padding:0 3vw 9vh;animation:gup .6s cubic-bezier(.2,.9,.25,1) both}
+body.monG #ovl .ann>div{display:flex;flex-direction:column;gap:1vh;max-width:none;margin:0;padding:2.4vh 2.6vw;border-radius:.4vw;background:linear-gradient(90deg,rgba(7,13,28,.97),rgba(14,24,48,.95));border-left:.6vw solid #D4AF37;box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:left}
+body.monG #ovl .ann small{font:900 clamp(13px,1.1vw,22px)/1 "Noto Sans KR",sans-serif!important;letter-spacing:.12em;color:#D4AF37!important;background:none!important;padding:0!important;margin:0!important;box-shadow:none!important;border:0!important;border-radius:0!important;display:block!important;width:auto!important;text-align:left!important}
+body.monG #ovl .ann{z-index:40}
+body.monG #ovl .ann b{font:900 clamp(26px,3.4vw,72px)/1.2 "Noto Sans KR",sans-serif;color:#fff}
+@keyframes gup{from{transform:translateY(60%);opacity:0}to{transform:none;opacity:1}}
+body.monG .mwm{display:none}
+@media (max-width:900px){body.monG .g-main{grid-template-columns:1fr}body.monG .g-rk{border-left:0;border-top:1px solid rgba(212,175,55,.3)}body.monG .g-ctr{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
 <!--@@END-AF-->
