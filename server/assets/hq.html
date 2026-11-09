@@ -523,6 +523,7 @@ function vAdmin(){
   <div class="panel"><div class="row between"><h2>📋 대회 운영표</h2><button class="btn primary" data-a="hqOpen" data-k="plan">운영표 열기</button></div><span class="small muted">코트 수·종목별 경기 시간으로 코트 배정과 예상 시각을 짜고 엑셀로 내보냅니다</span></div>
   ${vRoomPanel()}
   ${vCheck()}
+  <div class="panel" id="batpanel"><div class="row between"><h2>🔋 태블릿 배터리</h2></div>${window.KS_BAT?KS_BAT.inner():''}</div>
   ${vRules()}
   ${vLvPanel()}
   <div class="panel"><div class="row between"><h2>코트 연결 ${checkSummary(list,al)}</h2><span class="row"><span class="small muted">같은 와이파이의 코트 노트북을 자동으로 찾습니다</span><button class="btn sm" data-a="scan">🔎 지금 다시 찾기</button></span></div>
@@ -783,7 +784,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
 setInterval(()=>{try{const n=document.getElementById('hqtabs');if(n)document.documentElement.style.setProperty('--hq-navh',(n.getBoundingClientRect().height+4)+'px');}catch(e){}},1000);
 let HSEL=null,HLISTY=0; /* 다시 열면 늘 타일 목록부터 (열려 있던 화면을 기억하지 않음) */
 const HQ_T=[[/대회 운영표/,'plan','📋','대회 운영표'],[/대기실 연결/,'room','🚪','대기실 연결'],[/지도자용 진행/,'live','📱','지도자용 진행 상황'],[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
-  [/시작 전 점검/,'check','✅','시작 전 점검'],[/종목별 경기 규칙/,'rules','📐','종목별 경기 규칙'],[/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터']];
+  [/시작 전 점검/,'check','✅','시작 전 점검'],[/종목별 경기 규칙/,'rules','📐','종목별 경기 규칙'],[/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터'],[/태블릿 배터리/,'bat','🔋','태블릿 배터리']];
 function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
   switch(k){
     case 'court':{const on=list.filter(c=>c.online).length,bad=list.filter(c=>!c.online||c.stale).length;return [list.length?`${on}/${list.length}곳 연결`:'아직 코트 없음',list.length&&!bad?'ok':list.length?'warn':''];}
@@ -793,6 +794,7 @@ function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
     case 'cert':{const q=certFiles().filter(needPrint).length;return [`${cf.certAuto?'켜짐':'꺼짐'}${q?` · 대기 ${q}`:''}`,cf.certAuto?(q?'warn':'ok'):''];}
     case 'backup':{const b=S.bk||{};return [`${cf.backupAuto?'켜짐':'꺼짐'}${b.at?' · '+ago(b.at):''}${BK.err?' · 오류':''}`,BK.err?'warn':cf.backupAuto&&b.at?'ok':''];}
     case 'mon':return ['대기실 TV·태블릿',''];
+    case 'bat':return window.KS_BAT?KS_BAT.tile():['정보 없음',''];
     case 'check':{const R=list.map(ckRow),n=R.filter(r=>r.ok).length;return [R.length?`${n}/${R.length} 코트 준비됨`:'코트 없음',R.length&&n===R.length?'ok':R.length?'warn':''];}
     case 'rules':{const on=list.filter(c=>c.online),got=on.filter(c=>RULES.at&&c.rulesAt===RULES.at).length,ne=Object.values(rulesNow().events).filter(Boolean).length;return [RULES.at?`종목 ${ne}개 · ${got}/${on.length} 코트 받음`:'아직 정하지 않음',RULES.at?(got===on.length?'ok':'warn'):'warn'];}
     case 'plan':return window.KSPLAN?KSPLAN.tileState():['열어서 짜기',''];
@@ -2033,6 +2035,8 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
 .batb{margin-left:auto;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(214,182,124,.35);background:rgba(255,255,255,.04);color:#E9E2D2;border-radius:999px;padding:7px 14px;font:800 15px/1 "Noto Sans KR",sans-serif;cursor:pointer;white-space:nowrap}
 .batb.ok{border-color:rgba(76,175,80,.5);color:#BFE8C1}.batb.low{background:#B3261E;border-color:#B3261E;color:#fff;animation:batblink 1s steps(2) infinite}.batb.warn{background:#8A5A00;border-color:#C98A12;color:#fff}
 @keyframes batblink{50%{background:#5E1410}}
+.batb.batfloat{position:fixed;top:10px;right:14px;z-index:55;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+#batpanel .batnone{color:var(--mute,#9C968A)}#batpanel .batct{background:rgba(0,0,0,.25)}
 .batov{position:fixed;inset:0;z-index:60;background:rgba(5,6,9,.72);display:flex;align-items:center;justify-content:center;padding:16px}
 .batpn{width:min(1180px,100%);max-height:92vh;overflow:auto;background:linear-gradient(170deg,#191C23,#0E1015);border:1px solid rgba(214,182,124,.4);border-radius:26px;padding:22px 24px;color:#F3EEE3;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .batpn h2{margin:0;font:900 26px/1.2 "Noto Sans KR",sans-serif}.batpn .x{margin-left:auto;font:800 18px/1 "Noto Sans KR",sans-serif;background:#2A2D35;color:#fff;border:0;border-radius:12px;padding:10px 16px;cursor:pointer}
@@ -2053,10 +2057,14 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
     const L=out[ct]||(out[ct]={court:ct,online:!!doc.online,list:[]});if(doc.online)L.online=true;b.forEach(x=>L.list.push(x));});}catch(e){}
     return Object.values(out).sort((a,b)=>a.court.localeCompare(b.court));}
   const cls=x=>!x.charging&&x.level<LOW?'l':!x.charging&&x.level<WARN?'w':'';
-  function badge(){const bar=document.querySelector('header.bar');if(!bar)return;let el=document.getElementById('batb');
-    if(!el){el=document.createElement('button');el.id='batb';el.type='button';el.addEventListener('click',()=>{OPEN=true;panel();});bar.appendChild(el);}
+  function badge(){const bar=document.querySelector('header.bar'),barOk=bar&&bar.getBoundingClientRect().height>0;let el=document.getElementById('batb');
+    if(!el){el=document.createElement('button');el.id='batb';el.type='button';el.addEventListener('click',()=>{OPEN=true;panel();});}
+    /* 맨 위 줄이 보이면 그 오른쪽 끝, 안 보이면 화면 오른쪽 위에 떠 있게 */
+    if(barOk&&el.parentNode!==bar){bar.appendChild(el);el.classList.remove('batfloat');}else if(!barOk&&el.parentNode!==document.body){document.body.appendChild(el);}
+    el.dataset.float=barOk?'':'1';
+    const bp=document.getElementById('batpanel');if(bp&&bp.offsetParent){const h=inner();if(bp.dataset.h!==h){bp.dataset.h=h;const t=bp.querySelector('.batin')||bp.appendChild(Object.assign(document.createElement('div'),{className:'batin'}));bp.querySelectorAll(':scope>.batnone,:scope>.batgrid').forEach(x=>x.remove());t.innerHTML=h;}}
     const D=data(),all=D.flatMap(c=>c.list.map(x=>({...x,court:c.court}))),low=all.filter(x=>cls(x)==='l'),warn=all.filter(x=>cls(x)==='w');
-    el.className='batb '+(low.length?'low':warn.length?'warn':'ok');
+    el.className='batb '+(low.length?'low':warn.length?'warn':'ok')+(el.dataset.float?' batfloat':'');
     el.textContent=!all.length?'🔋 태블릿 정보 없음':low.length?`🪫 ${low.slice(0,2).map(x=>`${x.court}코트 ${x.seat?x.seat+'심':'심판'} ${Math.round(x.level*100)}%`).join(' · ')}${low.length>2?` 외 ${low.length-2}대`:''}`
       :warn.length?`🔋 ${warn.length}대 35% 아래`:`🔋 태블릿 ${all.length}대 정상`;
     el.title='누르면 코트별 심판 태블릿 배터리를 크게 봅니다';
@@ -2065,15 +2073,17 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
     if(OPEN)panel();}
   function panel(){let ov=document.getElementById('batov');if(!OPEN){if(ov)ov.remove();return;}
     if(!ov){ov=document.createElement('div');ov.id='batov';ov.className='batov';ov.addEventListener('click',e=>{if(e.target===ov||e.target.closest('[data-batx]')){OPEN=false;panel();}});document.body.appendChild(ov);}
-    const D=data();
-    ov.innerHTML=`<div class="batpn"><div style="display:flex;align-items:center;gap:12px"><h2>🔋 심판 태블릿 배터리</h2><button class="x" data-batx>닫기</button></div>
-      <div class="batnone" style="margin-top:6px">20% 아래는 빨강, 35% 아래는 노랑 · ⚡는 충전 중 · 1분마다 새로 받습니다. 안드로이드 크롬으로 심판 화면을 연 태블릿만 보입니다.</div>
+    ov.innerHTML=`<div class="batpn"><div style="display:flex;align-items:center;gap:12px"><h2>🔋 심판 태블릿 배터리</h2><button class="x" data-batx>닫기</button></div>${inner()}</div>`;}
+  function inner(){const D=data();
+    return `<div class="batnone" style="margin-top:6px">20% 아래는 빨강, 35% 아래는 노랑 · ⚡는 충전 중 · 1분마다 새로 받습니다. 안드로이드 크롬으로 심판 화면을 연 태블릿만 보입니다.</div>
       <div class="batgrid">${D.length?D.map(c=>`<div class="batct"><h3>${esc(c.court)}코트${c.online?'':' <span style="font-size:14px;color:#FF8A80">연결 끊김</span>'}</h3>
         ${c.list.length?c.list.map(x=>{const p=Math.round(x.level*100);return `<div class="batrow ${cls(x)}"><span>${x.seat?x.seat+'심':'심판'}${Object.keys(APPN).length&&c.list.some(y=>y.app!==x.app)?`<small style="display:block;font-size:11px;color:#9C968A">${APPN[x.app]||''}</small>`:''}</span><span class="batbar"><i style="width:${Math.max(3,p)}%"></i></span><span class="pc">${x.charging?'⚡':''}${p}%</span></div>`;}).join('')
-          :'<div class="batnone">배터리 정보를 보낸 태블릿이 없습니다</div>'}</div>`).join(''):'<div class="batnone">연결된 코트가 없습니다</div>'}</div></div>`;}
+          :'<div class="batnone">배터리 정보를 보낸 태블릿이 없습니다</div>'}</div>`).join(''):'<div class="batnone">연결된 코트가 없습니다</div>'}</div>`;}
+  function tile(){const all=data().flatMap(c=>c.list),low=all.filter(x=>cls(x)==='l').length,warn=all.filter(x=>cls(x)==='w').length;
+    return [!all.length?'아직 정보 없음':low?`🪫 ${low}대 20% 아래`:warn?`${warn}대 35% 아래`:`${all.length}대 정상`,low?'warn':all.length?'ok':''];}
   addEventListener('keydown',e=>{if(e.key==='Escape'&&OPEN){OPEN=false;panel();}});
   setInterval(badge,3000);setTimeout(badge,1200);
-  window.KS_BAT={data,open:()=>{OPEN=true;panel();}};
+  window.KS_BAT={data,inner,tile,open:()=>{OPEN=true;panel();}};
 })();
 </script>
 <!--@@END-AF-->
