@@ -1473,7 +1473,17 @@ function breaks(){return BRK.map(([k,ic,l])=>({k,ic,l,on:!!P[k+'On'],s:toMin(P[k
 /* v1.4.59 유치부·실버부는 개회식 뒤 「○○시 이후」에 시작 (설정에서 끄고 켬) */
 const isLateG=g=>/유치|유아|실버/.test(g.div||'');
 const lateMin=()=>P.lateOn===false?0:toMin(P.lateAt||'11:00');
-function place(ids){const st=toMin(P.start),B=breaks(),LM=lateMin();let t=st;const items=[],marks=[],used=new Set();
+/* v1.4.68 유치·실버부가 코트 앞쪽에 있어도 오전을 비우지 않음: 「○○시 이후」가 되기 전에는 뒤의 초등부 등을 먼저 당겨 진행하고,
+   그 시각이 되면 미뤄 둔 유치·실버부를 이어서 넣음 (코트 순서도 그렇게 바로잡음) */
+function lateOrder(ids){const LM=lateMin();if(!LM||!ids.some(id=>G[id]&&isLateG(G[id])))return ids;
+  const B=breaks();let t=toMin(P.start);const out=[],D=[];
+  const put=id=>{const g=G[id];const d=dur(g);if(isLateG(g)&&t<LM)t=LM;
+    for(let k=0;k<6;k++){const b=B.find(b=>t<b.e&&t+d>b.s);if(!b)break;t=Math.max(t,b.e);}t+=d+gap();out.push(id);};
+  ids.forEach(id=>{const g=G[id];if(!g){out.push(id);return;}
+    if(isLateG(g)&&t<LM){D.push(id);return;}put(id);
+    if(D.length&&t>=LM)D.splice(0).forEach(put);});
+  D.forEach(put);return out;}
+function place(ids){ids=lateOrder(ids);const st=toMin(P.start),B=breaks(),LM=lateMin();let t=st;const items=[],marks=[],used=new Set();
   ids.forEach(id=>{const g=G[id];if(!g)return;const d=dur(g);if(LM&&isLateG(g)&&t<LM)t=LM;
     for(let k=0;k<6;k++){const b=B.find(b=>t<b.e&&t+d>b.s);if(!b)break;if(!used.has(b.k)){used.add(b.k);marks.push({at:items.length,b});}t=Math.max(t,b.e);}
     items.push({g,s:t,e:t+d});t+=d+gap();});
@@ -1698,7 +1708,7 @@ function ovlHtml(O){return `<div class="pl-mask"><div class="pl-modal"><div clas
     return `<tr><td><b>${esc(a.r.name)}</b> <span class="small muted">${esc(a.r.dojang||'')} · ${esc(a.r.div||'')}</span></td><td>${esc(a.ev)} · ${a.court+1}코트 · ${hm(a.t)}</td><td>${esc(b.ev)} · ${b.court+1}코트 · ${hm(b.t)}</td><td><span class="chip ${o.gap<Math.max(a.per,b.per)?'bad':'warn'}">${Math.round(o.gap)}분</span></td></tr>`;}).join('')}</table></div>`:'<div class="empty">겹치는 선수가 없습니다 👍</div>'}</div></div>`;}
 
 function draw(){
-  if(!OPEN)return;const r=root(),TL=timeline(),evs=events(),has=P.roster.length>0,O=has?overlaps(TL):{list:[],by:{}};
+  if(!OPEN)return;P.lanes=(P.lanes||[]).map(lateOrder);const r=root(),TL=timeline(),evs=events(),has=P.roster.length>0,O=has?overlaps(TL):{list:[],by:{}};
   const act=TL.filter(x=>x.items.length),late=act.length?Math.max(...act.map(x=>x.end)):0,early=act.length?Math.min(...act.map(x=>x.end)):0,tgt=toMin(P.target);
   const keep={};r.querySelectorAll('.pl-list').forEach((l,i)=>keep[i]=l.scrollTop);
   const fe=document.activeElement&&r.contains(document.activeElement)?document.activeElement.dataset.f:null;
@@ -1873,7 +1883,7 @@ function sendHtml(TL){
       ${SEND.simOn!=null?`<span class="small"><b>${SEND.simOn?'▶ 진행 중':'⏸ 멈춤'}</b> · ${esc(SEND.simMsg||'')}</span>`:''}</div>
   </div></div>`;}
 async function postJ(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j;}
-async function sendAll(){
+async function sendAll(){P.lanes=(P.lanes||[]).map(lateOrder);
   if(!(window.KS_FIELD&&KS_FIELD.status))return toast('코트로 보내기는 현장 모드(본부 노트북 프로그램)에서만 됩니다');
   SEND.busy=true;SEND.res={};draw();const TL=timeline();let ok=0,bad=0;
   for(let i=0;i<TL.length&&i<8;i++){const L=L8[i],apps=laneApps(TL[i]);const out=[];
