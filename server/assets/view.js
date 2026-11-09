@@ -55,7 +55,14 @@ function wallCourts(F,q,st){const all=F.map(({c,a,b})=>court(c,a,b,q,st.my));con
   if(st.wall==='rot'){const per=4,pages=Math.max(1,Math.ceil(n/per)),pg=Math.floor((st.pgAt||Date.now())/10000)%pages;
     return `<div class="lv-courts lv-side" style="--n:${Math.min(per,n)}">${all.slice(pg*per,pg*per+per).join('')}</div>${pages>1?`<div class="lv-pg">${Array.from({length:pages},(_,i)=>`<i class="${i===pg?'on':''}"></i>`).join('')}<small>${pg*per+1}~${Math.min(n,pg*per+per)}번째 코트 · 10초마다 넘어갑니다</small></div>`:''}`;}
   return `<div class="lv-courts">${all.join('')}</div>`;}
+/* v1.4.59 하루 일정표 (본부 운영표에서 보냄): 코트를 나란히, 찾는 말이 있으면 그 부문을 밝게 */
+function schedHtml(S,q){if(!S||!(S.courts||[]).length)return '<div class="lv-empty">아직 일정표가 없습니다</div>';
+  return `<p class="lv-sub" style="margin:0">시작 ${E(S.start||'')} · 예상 시각이며 진행에 따라 앞당겨지거나 늦어질 수 있습니다 · 30분 먼저 대기해 주세요</p>
+  <div class="lv-sched" style="--n:${Math.min(S.courts.length,6)}">${S.courts.map(c=>`<section><h3><span>${E(c.c)}코트</span><small>${E(c.ev||'')}</small></h3>
+    ${(c.rows||[]).map(r=>r.b?`<div class="lv-sr lv-sb"><span>${E(r.t)}</span><span>${E(r.s)}~${E(r.e)}</span></div>`:`<div class="lv-sr ${q&&hit(q,r.t)?'hit':''}"><span class="lv-st2">${E(r.s)}</span><span data-notr>${q?mark(r.t,q):E(r.t)}</span><small>${E(r.n||'')}</small></div>`).join('')}
+    ${c.end?`<div class="lv-se">끝 약 ${E(c.end)}</div>`:''}</section>`).join('')}</div>`;}
 function html(snap,st){st=st||{};const q=String(st.q||'').toLowerCase().replace(/\s+/g,''),tab=st.tab||'courts',now=st.now||Date.now();
+  if(snap&&snap.sched&&!(snap.courts||[]).length)return {head:snap.comp?`<div class="lv-top"><h2 data-notr>${E(snap.comp)}</h2></div>`:'',body:`<div class="lv-tabs"><button type="button" class="on">일정표</button></div>${schedHtml(snap.sched,q)}`};
   if(!snap||!(snap.courts||[]).length)return {head:snap&&snap.comp?`<div class="lv-top"><h2>${E(snap.comp)}</h2></div>`:'',body:`<div class="lv-empty lv-wait"><b>경기 소식을 기다리는 중입니다</b><br>대회가 시작되면 코트별 진행 상황과 입상 결과가 여기에 바로 나옵니다.</div>`};
   const F=flat(snap),T=teamTable(F),stale=snap.at&&now-snap.at>60000;
   const found=find(F,q);
@@ -65,8 +72,8 @@ function html(snap,st){st=st||{};const q=String(st.q||'').toLowerCase().replace(
     ${MY.length?`<ul>${MY.map(f=>`<li class="lv-f-${f.k}">${f.k==='medal'?`<span class="lv-m ${MD[f.rank]?MD[f.rank][1]:''}">${f.rank}</span>`:`<span class="lv-tag">${f.k==='now'?'지금':f.k==='next'?'곧':'예정'}</span>`}<div><b data-notr>${E(f.p.name)}</b><span class="lv-sub" data-notr>${E(f.where)} · ${E(f.div)}</span></div>${f.txt?`<em>${E(f.txt)}</em>`:''}</li>`).join('')}</ul>`:''}</section>`:'';
   return {head:`<div class="lv-top"><div class="lv-kpis"><span><b>${nCt}</b>코트</span><span><b>${nOn}</b>경기 중</span><span><b>${nRes}</b>입상 부문</span></div><div><span class="lv-live ${stale?'stale':''}"><i></i>${stale?'잠시 끊김':'LIVE'}</span> <small>${E(ago(snap.at,now))} 갱신</small></div>${snap.comp?`<h2 data-notr>${E(snap.comp)}</h2>`:''}</div>`,body:`
     ${myBox}${q?`<section class="lv-found"><h3>「${E(st.q)}」 찾은 곳 <small>${found.length}</small></h3>${found.length?`<ul>${found.map(f=>`<li class="lv-f-${f.k}">${f.k==='medal'?`<span class="lv-m ${MD[f.rank]?MD[f.rank][1]:''}">${f.rank}</span>`:`<span class="lv-tag">${f.k==='now'?'지금':'곧'}</span>`}<div><b data-notr>${mark(f.p.name,q)}</b> <small data-notr>${mark(f.p.team,q)}</small><div class="lv-sub">${E(f.where)} · <span data-notr>${E(f.div||'')}</span>${f.k==='next'?' · '+E(f.txt):f.k==='now'?' · '+E(f.txt):''}</div></div></li>`).join('')}</ul>`:'<div class="lv-empty">지금 진행·다음 순서·입상 결과에 없습니다</div>'}</section>`:''}
-    <div class="lv-tabs" role="tablist">${[['courts','코트 현황'],['results',`입상 결과${nRes?` <small>${nRes}</small>`:''}`],['teams','도장 종합']].map(([k,l])=>`<button type="button" role="tab" aria-selected="${tab===k}" class="${tab===k?'on':''}" data-lv="tab" data-t="${k}">${l}</button>`).join('')}</div>
-    ${tab==='courts'?wallCourts(F,q,st)
+    <div class="lv-tabs" role="tablist">${[['courts','코트 현황'],['results',`입상 결과${nRes?` <small>${nRes}</small>`:''}`],['teams','도장 종합'],...(snap.sched?[['sched','일정표']]:[])].map(([k,l])=>`<button type="button" role="tab" aria-selected="${tab===k}" class="${tab===k?'on':''}" data-lv="tab" data-t="${k}">${l}</button>`).join('')}</div>
+    ${tab==='sched'?schedHtml(snap.sched,q):tab==='courts'?wallCourts(F,q,st)
      :tab==='results'?results(F,q)
      :T.length?`<div class="lv-teams"><table><tr><th>순위</th><th>도장</th><th>금</th><th>은</th><th>동</th><th>점수</th></tr>${T.map((t,i)=>`<tr class="${hit(q,t.team)?'hit':''}"><td>${i&&T[i-1].pt===t.pt?'':i+1}</td><td><b data-notr>${mark(t.team,q)}</b></td><td>${t.g}</td><td>${t.s}</td><td>${t.b}</td><td><b>${t.pt}</b></td></tr>`).join('')}</table><p class="lv-sub">금 3점 · 은 2점 · 동 1점으로 더한 참고 순위입니다. 공식 종합 순위는 대회 본부 발표를 따릅니다.</p></div>`:'<div class="lv-empty">아직 입상한 도장이 없습니다</div>'}`};}
 const CSS=`.lv{--g1:#F3DFAE;--g2:#C9A262;--g3:#8E6A30;--bg:#0B0D12;--p1:#14171D;--p2:#1B1F27;--ln:rgba(255,255,255,.09);--tx:#F2EEE6;--mu:#A39C8E;display:flex;flex-direction:column;gap:14px;color:var(--tx);font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;word-break:keep-all}
@@ -114,7 +121,11 @@ const CSS=`.lv{--g1:#F3DFAE;--g2:#C9A262;--g3:#8E6A30;--bg:#0B0D12;--p1:#14171D;
 @media (min-width:1000px){.lv-wallbar{display:flex}}
 @media (min-width:1000px){.lv-side{grid-template-columns:repeat(var(--n),minmax(0,1fr))!important}.lv-side .lv-next li:nth-child(n+4){display:none}.lv-side .lv-p b{font-size:20px}}
 .lv-pg{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:2px}.lv-pg i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.18)}.lv-pg i.on{background:var(--g1)}
-.lv.lv-wall .lv-q,.lv.lv-wall .lv-myrow{display:none}`;
+.lv.lv-wall .lv-q,.lv.lv-wall .lv-myrow{display:none}
+.lv-sched{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:10px}.lv-sched section{background:var(--p1);border:1px solid var(--ln);border-radius:14px;overflow:hidden}
+.lv-sched h3{margin:0;padding:10px 12px;display:flex;justify-content:space-between;align-items:baseline;background:var(--p2);font-size:18px}.lv-sr{display:grid;grid-template-columns:auto 1fr auto;gap:8px;padding:7px 12px;border-top:1px solid var(--ln);font-size:14px;align-items:baseline}
+.lv-st2{font-variant-numeric:tabular-nums;color:var(--g1);font-weight:800}.lv-sb{grid-template-columns:1fr auto;background:rgba(201,162,98,.1);font-weight:800;color:var(--g1)}.lv-sr.hit{background:rgba(201,162,98,.22)}.lv-se{padding:8px 12px;border-top:1px solid var(--ln);text-align:right;color:var(--mu);font-weight:700;font-size:13px}
+@media (max-width:900px){.lv-sched{grid-template-columns:minmax(0,1fr)}}`;
 /* 화면 붙이기: 찾기 칸은 다시 그리지 않음 (한글 입력이 끊기지 않게) */
 function mount(el,st0){const st=Object.assign({q:'',tab:'courts'},st0||{});let snap=null;
   if(!document.getElementById('lv-css')){const c=document.createElement('style');c.id='lv-css';c.textContent=CSS;document.head.appendChild(c);}

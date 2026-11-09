@@ -1178,7 +1178,7 @@ const AGE_SCHEMES={
     team:[[0,9,'초등 저학년부'],[10,12,'초등 고학년부'],[13,15,'중등부'],[16,18,'고등부'],[19,30,'성인부'],[31,40,'장년 1부'],[41,200,'장년 2부']],
     freestyle:[[0,12,'초등부'],[13,15,'중등부'],[16,18,'고등부'],[19,200,'일반(대학)부']]},
   comm:{label:'생활체육 대회 기준',
-    recognized:[[0,4,'유치부 1부'],[5,6,'유치부 2부'],[7,7,'초등부 1학년'],[8,8,'초등부 2학년'],[9,9,'초등부 3학년'],[10,10,'초등부 4학년'],[11,11,'초등부 5학년'],[12,12,'초등부 6학년'],[13,15,'중등부'],[16,18,'고등부'],[19,54,'일반부'],[55,64,'실버1부'],[65,200,'실버2부']],
+    recognized:[[0,6,'유치부 통합'],[7,7,'초등부 1학년'],[8,8,'초등부 2학년'],[9,9,'초등부 3학년'],[10,10,'초등부 4학년'],[11,11,'초등부 5학년'],[12,12,'초등부 6학년'],[13,15,'중등부'],[16,18,'고등부'],[19,54,'일반부'],[55,200,'실버부 통합']],
     team:[[0,6,'유치부'],[7,9,'초등 저학년부'],[10,12,'초등 고학년부'],[13,15,'중등부'],[16,18,'고등부'],[19,54,'일반부'],[55,64,'실버1부'],[65,200,'실버2부']],
     freestyle:[[0,6,'유치부'],[7,12,'초등부'],[13,15,'중등부'],[16,18,'고등부'],[19,54,'일반부'],[55,200,'실버부']]},
   wt:{label:'세계연맹 기준',
@@ -1361,7 +1361,7 @@ function ageGroup(age,type,event){
   for(const [lo,hi,n] of sch)if(a>=lo&&a<=hi)return n;return '연령 미상';
 }
 /* 실력별 A조·B조: 부문 이름 끝에 붙임 (접수 홈페이지 「실력조」 칸) */
-function divKey(a){const k=divKey0(a);return a.cls&&!a.division?k+' '+a.cls:k;}
+function divKey(a){const k=divKey0(a),all=/(유치부|실버부) 통합/.test(k)&&(COMMBU()||!!SET().comm);return a.cls&&!a.division&&!all?k+' '+a.cls:k;}
 function divKey0(a){
   if(a.division)return a.division;
   /* 새 양식: 공인/자유 + 종목 + 부별 + 학년 + 성별 (예: 공인 개인전 중등부 1학년 남자) */
@@ -3472,8 +3472,9 @@ const BU_LIST=["유치부 1부", "유치부 2부", "초등부 저학년", "초�
 /* ===== 생활체육 대회 기준 부별: 유치부 1부(3~5세)·2부(6~7세), 초등부는 학년별, 실버1부(55~64세)·2부(65세 이상) =====
    접수 홈페이지·엑셀의 원래 부별·학년(rawGroup·rawGrade)을 보관해 두고, 기준을 바꾸면 부문 이름을 그에 맞춰 다시 만듭니다. */
 function commBu(g,r){g=String(g??'').replace(/\s+/g,' ').trim();r=String(r??'').trim();const t=g+' '+r,n=+((r.match(/\d+/)||g.match(/\d+/)||[])[0]||0);
-  if(/유치|유아/.test(g)||(/^\d\s*세/.test(r)&&!g)){if(/1\s*부/.test(t))return '유치부 1부';if(/2\s*부/.test(t))return '유치부 2부';return n?(n<=5?'유치부 1부':'유치부 2부'):'유치부';}
-  if(/실버/.test(g)){if(/1\s*부/.test(g))return '실버1부';if(/2\s*부/.test(g))return '실버2부';return '실버부';}
+  /* v1.4.59 생활체육 대회: 유치부·실버부는 나이·띠(실력조) 상관없이 통합 (접수 홈페이지에서 바로 가져와도 같게) */
+  if(/유치|유아/.test(g)||(/^\d\s*세/.test(r)&&!g))return '유치부 통합';
+  if(/실버/.test(g))return '실버부 통합';
   if(/초등/.test(g)&&n>=1&&n<=6&&!/[저중고]학년/.test(t))return `초등부 ${n}학년`;
   return null;}
 function buEff(a){if(a.rawGroup==null)return {group:a.group||'',grade:a.grade||''};
@@ -3481,6 +3482,8 @@ function buEff(a){if(a.rawGroup==null)return {group:a.group||'',grade:a.grade||'
 function buNorm(group,grade){return {...buNorm0(group,grade),rawGroup:String(group??''),rawGrade:String(grade??'')};}
 function buNorm0(group,grade){let g=String(group??'').replace(/\s+/g,' ').trim(),r=String(grade??'').trim();
   if(!g)return {group:'',grade:r};
+  if(/^통합$/.test(r))return {group:/통합/.test(g)?g:g+' 통합',grade:''};
+  if(/^실버/.test(g)&&/^실버\s*[12]$/.test(r))return {group:'실버'+r.match(/[12]/)[0]+'부',grade:''};
   if(/\d\s*학년|[저중고]학년|·/.test(g))return {group:g,grade:''};
   const n=(r.match(/\d/)||[])[0];
   if(/[저중고]학년/.test(r)&&/초/.test(g))return {group:'초등부 '+r.match(/[저중고]학년/)[0],grade:''};

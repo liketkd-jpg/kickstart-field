@@ -1586,7 +1586,7 @@ function athlete(id){if(!S.athIdx){S.athIdx=new Map(S.roster.map(a=>[a.id,a]));}
 const aName=id=>athlete(id)?.name||'(삭제됨)';
 function genderLabel(a,e){if(e.kind==='team')return '';if(SET().elemMix&&famOf(a.level)==='elem'&&e.kind!=='power'&&e.kind!=='powerc')return '남녀';return (a.gender==='여'?'여':'남')+'자';}
 /* 실력별 A조·B조: 부문 이름 끝에 붙임 (접수 홈페이지 「실력조」 칸) */
-function divKey(a){const k=divKey0(a);return a.cls&&!a.division?k+' '+a.cls:k;}
+function divKey(a){const k=divKey0(a),all=COMM()&&/(유치|실버) 통합부/.test(k);return a.cls&&!a.division&&!all?k+' '+a.cls:k;}
 function divKey0(a){
   if(a.division)return a.division;
   const e=EV[a.ev];if(!e)return '종목 미정';
@@ -2662,8 +2662,8 @@ function undoClear(){UNDO_MEM=null;try{localStorage.removeItem(UNDO_KEY);}catch(
    조마다 1등 금, 2등 은, 3~5등 동메달(3위). 점수가 있는 조는 다시 나누지 않습니다. */
 const COMM=()=>!!SET().comm;
 /* 생활체육 대회 기준: 유치 3~5세부 → 유치부 1부, 6~7세부 → 유치부 2부 (실버1부·2부는 그대로) */
-function gpLevel(a){const l=String(a.level||'');if(!COMM()||!/유치|유아/.test(l))return a.level;if(/1\s*부/.test(l))return '유치부 1부';if(/2\s*부/.test(l))return '유치부 2부';
-  const n=+((l.match(/(\d)\s*세/)||[])[1]||0);return n?(n<=5?'유치부 1부':'유치부 2부'):'유치부';}
+/* v1.4.59 생활체육 대회: 유치부·실버부는 나이·띠 통합 */
+function gpLevel(a){const l=String(a.level||'');if(!COMM())return a.level;if(/유치|유아/.test(l))return '유치 통합부';if(/실버/.test(l))return '실버 통합부';return a.level;}
 const COMM_RE=/ · (\d+)조$/;
 function commSizes(n,rem){rem=rem||SET().commRem||'small';if(n<=4)return n?[n]:[];const q=Math.floor(n/4),r=n%4,s=Array(q).fill(4);
   if(r===1){if(rem==='merge')s[q-1]=5;else{s[q-1]=3;s.push(2);}}else if(r)s.push(r);return s;}
