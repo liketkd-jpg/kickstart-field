@@ -557,7 +557,8 @@ function vAdmin(){
   ${hqAutoPanels()}
   <div class="panel"><div class="row between"><h2>본부 모니터</h2><span class="row"><a class="btn primary" href="#board" target="_blank" style="text-decoration:none">본부 모니터 열기 ↗</a><button class="btn" data-a="qr">📱 QR (다른 TV·태블릿)</button></span></div>
     <div class="row"><span class="small muted">화면 디자인</span>${themePick('hqpick')}<span class="small muted">지금: <b>${esc((THEMES.find(x=>x[0]===hqTheme(courtList()))||['','기본 금빛'])[1])}</b> · 「따라가기」는 품새 코트 노트북에서 고른 전광판 디자인을 따릅니다</span></div>
-    <div class="row" style="flex-wrap:wrap"><b>대회명</b><input type="text" id="hqCompName" value="${esc(cf.compName||'')}" placeholder="예: 2026 KICKSTART UP 태권도 대회 (비우면 코트 노트북의 대회명)" style="flex:1;min-width:260px"><button class="btn" data-a="hqCompSave">저장</button></div>
+    <div class="row" style="flex-wrap:wrap"><b>대회명</b><textarea id="hqCompName" rows="2" placeholder="예: 제9회 세계태권도문화예술협회장대&#10;태권도 대회   ← 엔터로 두 줄 (비우면 코트 노트북의 대회명)" style="flex:1;min-width:260px;font-size:17px;line-height:1.4;resize:vertical">${esc(cf.compName||'')}</textarea><button class="btn primary" data-a="hqCompSave">저장</button></div>
+    <div class="small muted" style="margin-top:-4px">줄을 바꾸고 싶은 곳에서 <b>엔터</b>를 누르면 본부 모니터에 그대로 두 줄로 나옵니다.</div>
     <div class="row"><b>평소 화면</b><div class="seg"><button class="${!cf.monIdle?'on':''}" data-a="hqMonIdle" data-v="">글로벌 (로고·도장 순위)</button><button class="${cf.monIdle==='courts'?'on':''}" data-a="hqMonIdle" data-v="courts">코트별 진행 상황</button><button class="${cf.monIdle==='comp'?'on':''}" data-a="hqMonIdle" data-v="comp">대회명 크게</button></div><span class="small muted">방송이 나올 때만 방송 글씨로 바뀌었다가 끝나면 돌아옵니다</span></div>
     <span class="small muted">선수 대기실 TV나 큰 모니터에 띄우세요. 새 창을 TV 쪽으로 옮긴 뒤 「전체 화면」을 누르면 됩니다. 소리를 내려면 그 화면을 한 번 눌러 주세요.</span></div>`;
 }
@@ -597,6 +598,7 @@ function exportXlsx(){
 function vMon(){
   const list=courtList(),cf=CFG(),n=noticeNow(cf);
   const th=hqTheme(list);THEMES.forEach(([k])=>document.body.classList.toggle('hqt-'+k,k===th));
+  const escBr=t=>esc(t).replace(/\n/g,'<br>'),one=t=>String(t||'').replace(/\s*\n\s*/g,' ');
   const comp=(cf.compName||'').trim()||(list.find(c=>c.app&&c.app.board.comp)||{app:{board:{}}}).app.board.comp||'태권도 대회';
   const col=c=>{const b=c.app&&c.app.board;
     const head=`<div class="ch"><span class="lt">${esc(c.court)}</span><span class="cn"><b>${esc(c.court)}코트</b><span>${esc(b?b.appName:'')}${b&&b.curDiv?' · '+esc(b.curDiv):''}</span></span>
@@ -612,19 +614,19 @@ function vMon(){
       <div class="sec">다음 경기</div><div class="nx">${nx.length?nx.map(x=>`<div><span class="lb2">${esc(x.label)}</span><span class="nn">${x.names.map(p=>esc(p.name)).join(' · ')}</span></div>`).join(''):'<div><span class="nn" style="color:#A9AFB9">남은 경기가 없습니다</span></div>'}</div>
       ${wt.length?`<div class="sec">대기 선수 · 곧 출전</div><div class="wt">${wt.slice(0,12).map(w=>`<span>${esc(w)}</span>`).join('')}</div>`:''}
       ${b.nextDiv?`<div class="nd">다음 부문 ▸ <b>${esc(b.nextDiv)}</b></div>`:''}</div>`;};
-  const cols=list.length&&cf.monIdle==='courts'?list.map(col).join(''):`<div class="idlecomp"><b>${esc(comp)}</b><span>${list.length?'':'코트 노트북을 찾는 중입니다…'}</span></div>`;
+  const cols=list.length&&cf.monIdle==='courts'?list.map(col).join(''):`<div class="idlecomp"><b>${escBr(comp)}</b><span>${list.length?'':'코트 노트북을 찾는 중입니다…'}</span></div>`;
   const nCols=cf.monIdle!=='courts'?1:Math.max(1,Math.min(list.length||1,4));
   const tk=n.mode==='banner'&&n.text?`<div class="ticker ${n.text.length<60?'fit':''}" style="--d:${Math.max(14,n.text.length*0.35)}s"><span>📢 ${esc(n.text)}</span></div>`:'<span style="flex:1"></span>';
   /* v1.4.65 평소 화면 「글로벌」(기본): 올림픽·F1 중계처럼 — 로고·대회명·시각 · 오른쪽 도장 순위 5위 · 코트별 지금 종목 한 줄 · 공지 띠 */
   const G=(cf.monIdle||'')==='';document.body.classList.toggle('monG',G);
   if(G){$('#mon').innerHTML=monG(list,cf,n,comp);}
-  else $('#mon').innerHTML=`<div class="mwm" aria-hidden="true"><svg class="ksw" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg></div><div class="mh"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><b>${esc(comp)}</b><span class="sp"></span>
+  else $('#mon').innerHTML=`<div class="mwm" aria-hidden="true"><svg class="ksw" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg></div><div class="mh"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><b>${esc(one(comp))}</b><span class="sp"></span>
       <span class="ctl">${themePick('hqpick mon')}<button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span><span class="clock" data-clock></span></div>
     <div class="cols" style="grid-template-columns:repeat(${nCols},minmax(0,1fr))">${cols}</div>
     <div class="mf">${tk}<span class="ks"><svg class="ksm" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span>KICKSTART<b>UP</b></span><small>대회 본부</small></span></div>`;
   tick();
   let ov='';
-  if(n.mode==='full'&&n.text)ov+=`<div class="full"><div><b>${annHtml(n.text)}</b><span>${esc(comp)}</span></div></div>`;
+  if(n.mode==='full'&&n.text)ov+=`<div class="full"><div><b>${annHtml(n.text)}</b><span>${esc(one(comp))}</span></div></div>`;
   const a=S.announce;if(a&&S.annAt&&(AQBUSY||NOW()-S.annAt<12000))ov+=`<div class="ann"><div><small>${a.auto?'선수 호출':a.room?'대기실 안내':'본부 안내'}</small><b>${annHtml(a.text)}</b></div></div>`;
   const needTap=navigator.userActivation&&!navigator.userActivation.hasBeenActive&&CFG().voice;
   if(needTap)ov+='<button class="tapv" data-a="unlock">🔊 화면을 한 번 눌러 호출 소리를 켜 주세요</button>';
@@ -646,7 +648,9 @@ function monG(list,cf,n,comp){
   const tk=n.mode==='banner'&&n.text?`<div class="g-tk"><span class="g-tkl">공지 · NOTICE</span><div class="g-tkw"><span style="--d:${Math.max(16,n.text.length*0.38)}s">${esc(n.text)}</span></div></div>`:'';
   return `<div class="g-wrap">
     <div class="g-top"><span class="g-brand">${KSLOGO('g-lg')}<b>KICKSTART<i> UP</i></b></span><span class="g-live"><i></i>LIVE · 실시간</span><span class="ctl">${themePick('hqpick mon')}<button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span><span class="g-clock" data-clock></span></div>
-    <div class="g-main"><div class="g-hero">${KSLOGO('g-hl')}<div class="g-ey">TAEKWONDO CHAMPIONSHIP · 태권도 대회</div><h1>${esc(comp)}</h1><div class="g-date">${esc(date)}</div>
+    <div class="g-main"><div class="g-hero">${KSLOGO('g-hl')}<div class="g-ey">TAEKWONDO CHAMPIONSHIP · 태권도 대회</div>${(()=>{const L=String(comp).split('\n'),N=Math.max(...L.map(x=>[...x].reduce((a,c)=>a+(c===' '?.35:/[A-Za-z0-9.·-]/.test(c)?.62:1),0)));
+      /* v1.4.70 엔터로 나눈 대회명은 그 줄 그대로 (한 줄이 화면에 들어가게 글씨 크기를 맞춤) */
+      return L.length>1?`<h1 style="white-space:nowrap;font-size:max(30px,min(4.6vw,calc(56vw / ${N.toFixed(2)})))">${L.map(esc).join('<br>')}</h1>`:`<h1>${esc(comp)}</h1>`;})()}<div class="g-date">${esc(date)}</div>
         ${courts?`<div class="g-cts"><div class="g-cth">지금 경기 · NOW ON COURT</div><div class="g-ctr" style="--n:${Math.min(list.length,8)}">${courts}</div></div>`:''}</div>
       <aside class="g-rk"><div class="g-rkh"><b>도장 순위</b><span>DOJANG RANKING</span></div><div class="g-rks">금 · 은 · 동 순 &nbsp;<i class="g"></i><i class="s"></i><i class="b"></i></div><ol>${rows}</ol></aside></div>
     ${tk}</div>`;}
@@ -885,7 +889,7 @@ async function announce(text,extra){const id='m'+NOW().toString(36);const doc={i
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
   if(/^lv/.test(a)){e.preventDefault();try{await lvClick(a,b);}catch(err){toast(err.message||String(err));}return;}
   if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest|hqOpenEdge|annPhDelR)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
-  if(a==='hqCompSave'){saveCfg({compName:(($('#hqCompName')||{}).value||'').trim()});toast('대회명을 저장했습니다 · 본부 모니터에 바로 나옵니다');return;}
+  if(a==='hqCompSave'){saveCfg({compName:(($('#hqCompName')||{}).value||'').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,3).join('\n')});toast('대회명을 저장했습니다 · 본부 모니터에 바로 나옵니다');return;}
   if(a==='hqMonIdle'){saveCfg({monIdle:b.dataset.v||''});return;}
   if(a==='mvCancel'){try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:b.dataset.id})});const j=await r.json().catch(()=>({}));toast(r.ok?'옮기기를 취소했습니다 · 부문은 원래 코트에 그대로 있습니다':(j.error||'취소하지 못했습니다'));}catch(err){toast('본부 프로그램에 연결하지 못했습니다');}schedule();return;}
   if(a==='mvPlan'){if(S.mvArm!=='PLAN'){S.mvArm='PLAN';schedule();setTimeout(()=>{if(S.mvArm==='PLAN'){S.mvArm=null;schedule();}},5000);return;}
@@ -2100,7 +2104,7 @@ function assocHtml(){const R=ASSOC.rep,li=(t,a,c)=>a.length?`<div class="pl-rep 
 /* ---------- 하루 일정표: A4 가로 한 장에 코트를 나란히 ---------- */
 function daySched(){const TL=timeline();return {start:P.start,courts:TL.map((x,i)=>({c:L8[i]||String(i+1),ev:x.evs.map(e=>ELBL[e]||e).join('·'),end:x.items.length?hm(x.end):'',
   rows:[].concat(...x.items.map((it,k)=>[...x.marks.filter(m=>m.at===k).map(m=>({b:1,t:`${m.b.ic} ${m.b.l}`,s:hm(m.b.s),e:hm(m.b.e)})),{s:hm(it.s),e:hm(it.e),t:glabel(it.g),n:gcount(it.g),ev:it.g.ev}]))}))};}
-function printDay(){const D=daySched(),cf=(window.KS_HQS&&KS_HQS().cfg)||{},title=(cf.compName||'').trim(),n=D.courts.length;
+function printDay(){const D=daySched(),cf=(window.KS_HQS&&KS_HQS().cfg)||{},title=(cf.compName||'').trim().replace(/\s*\n\s*/g,' '),n=D.courts.length;
   const most=Math.max(1,...D.courts.map(c=>c.rows.length)),fs=Math.max(7,Math.min(12,Math.floor(560/(most+3)/1.55)));
   const w=window.open('','_blank');if(!w)return toast('새 창을 열지 못했습니다 (팝업 차단을 풀어 주세요)');
   w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(title||'경기')} 일정표</title><style>
@@ -2393,7 +2397,7 @@ body.monG .g-main{display:grid;grid-template-columns:minmax(0,1fr) clamp(280px,2
 body.monG .g-hero{display:flex;flex-direction:column;justify-content:center;padding:0 4vw;gap:1.6vh;min-height:0}
 body.monG .g-hl{width:clamp(70px,8vw,160px);height:clamp(70px,8vw,160px);filter:drop-shadow(0 0 30px rgba(212,175,55,.25))}
 body.monG .g-ey{font:800 clamp(12px,1.05vw,22px)/1 "Archivo",sans-serif;letter-spacing:.34em;color:var(--gd)}
-body.monG .g-hero h1{margin:0;font:900 clamp(34px,4.6vw,104px)/1.08 "Noto Sans KR",sans-serif;letter-spacing:-.01em;max-width:58vw}
+body.monG .g-hero h1{margin:0;word-break:keep-all;overflow-wrap:break-word;font:900 clamp(34px,4.6vw,104px)/1.08 "Noto Sans KR",sans-serif;letter-spacing:-.01em;max-width:58vw}
 body.monG .g-date{font:600 clamp(14px,1.5vw,30px)/1.2 "Noto Sans KR",sans-serif;color:#C8CFDD}
 body.monG .g-cts{margin-top:3vh;border-top:1px solid rgba(255,255,255,.1);padding-top:1.6vh}
 body.monG .g-cth{font:800 clamp(10px,.8vw,16px)/1 "Archivo","Noto Sans KR",sans-serif;letter-spacing:.24em;color:var(--mu);margin-bottom:1.2vh}
