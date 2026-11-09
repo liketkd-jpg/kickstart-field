@@ -130,7 +130,7 @@ body.mon #mon{display:grid;position:fixed;inset:0;grid-template-rows:auto minmax
 .mf .ks{font-stretch:125%;font-weight:800;font-size:min(1vw,1.7vh);letter-spacing:.1em;color:rgba(244,239,228,.5)}
 .full{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:radial-gradient(1200px 700px at 50% 30%,#1D1A12,#050608 70%);text-align:center;padding:6vh 6vw}
 .full b{display:block;font-family:'Black Han Sans','Malgun Gothic',sans-serif;font-weight:400;font-size:min(6.6vw,11vh);line-height:1.28;letter-spacing:.01em;word-break:keep-all;white-space:pre-wrap;background:linear-gradient(180deg,#FFF6DE 0%,#F1D79A 55%,#C9A35C 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 24px rgba(0,0,0,.65))}
-.full span{display:block;margin-top:4vh;font-family:'Archivo','Malgun Gothic',sans-serif;font-size:min(1.6vw,2.6vh);color:#C9B48A;font-weight:800;letter-spacing:.3em}
+.full>div>span{display:block;margin-top:4vh;font-family:'Archivo','Malgun Gothic',sans-serif;font-size:min(1.6vw,2.6vh);color:#C9B48A;font-weight:800;letter-spacing:.3em}
 /* 호출·안내: 어두운 칠기 판 + 금빛 테두리 + 굵은 검은고딕(Black Han Sans) 금빛 글씨 — 멀리서도 또렷하게 */
 .ann b .al,.full b .al{display:block}.ann b .al+.al,.full b .al+.al{margin-top:.18em}.ann b .crt{font-size:1.18em;color:#F4E2B4}.ann b .div{font-size:.82em;opacity:.97}
 .ann{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:radial-gradient(1400px 800px at 50% 50%,rgba(20,16,8,.55),rgba(2,3,5,.82));backdrop-filter:blur(5px);animation:afade .3s ease-out}
@@ -2404,6 +2404,11 @@ body.monG #ovl .ann{z-index:40}
 body.monG #ovl .ann b{font:900 clamp(26px,3.4vw,72px)/1.2 "Noto Sans KR",sans-serif;color:#fff}
 @keyframes gup{from{transform:translateY(60%);opacity:0}to{transform:none;opacity:1}}
 body.monG .mwm{display:none}
+/* 전체 화면 공지도 글로벌 화면 색으로 */
+body.monG #ovl .full{background:radial-gradient(1200px 700px at 30% 30%,#13213F 0,transparent 60%),linear-gradient(160deg,#0A1226,#04070F);z-index:35}
+body.monG #ovl .full>div{display:flex;flex-direction:column;align-items:center;gap:3vh;border-top:3px solid #D4AF37;border-bottom:3px solid #D4AF37;padding:5vh 4vw}
+body.monG #ovl .full b{font-family:"Noto Sans KR",sans-serif;font-weight:900;background:none;-webkit-text-fill-color:#fff;color:#fff}
+body.monG #ovl .full>div>span{color:#D4AF37;margin-top:0}
 @media (max-width:900px){body.monG .g-main{grid-template-columns:1fr}body.monG .g-rk{border-left:0;border-top:1px solid rgba(212,175,55,.3)}body.monG .g-ctr{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 <!--@@END-AF-->
