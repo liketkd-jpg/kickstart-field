@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.61" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.62" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -772,7 +772,17 @@ func (s *Store) api(w http.ResponseWriter, r *http.Request, op string) {
 			writeJSON(w, 500, map[string]any{"error": "write"})
 			return
 		}
-		writeJSON(w, 200, map[string]any{"ok": true, "path": full, "dir": dir})
+		// v1.4.62 내려받기 버튼으로 저장한 파일은 「다운로드」 폴더에도 함께 둠 (영상 판독은 크기가 커서 제외)
+		dl := ""
+		if r.URL.Query().Get("folder") != "video" {
+			if dd := downloadsDir(); dd != "" {
+				p := uniqueName(filepath.Join(dd, name))
+				if os.WriteFile(p, b, 0o644) == nil {
+					dl = p
+				}
+			}
+		}
+		writeJSON(w, 200, map[string]any{"ok": true, "path": full, "dir": dir, "dl": dl})
 	case "info":
 		writeJSON(w, 200, map[string]any{"version": version, "ips": lanIPs(), "port": port, "dataDir": dataDir, "results": resultsDir, "time": time.Now().UnixMilli()})
 	case "ping":
@@ -938,4 +948,19 @@ func realPrinter(name string) bool {
 		}
 	}
 	return true
+}
+
+// 이 노트북 사용자의 「다운로드」 폴더 (없으면 빈 값)
+func downloadsDir() string {
+	h, err := os.UserHomeDir()
+	if err != nil || h == "" {
+		return ""
+	}
+	for _, n := range []string{"Downloads", "다운로드"} {
+		p := filepath.Join(h, n)
+		if fi, err := os.Stat(p); err == nil && fi.IsDir() {
+			return p
+		}
+	}
+	return ""
 }

@@ -1913,7 +1913,7 @@ function exportX(){
 }
 function saveWb(wb,prefix){const d=new Date(),data=XLSX.write(wb,{bookType:'xlsx',type:'array'}),p2=n=>String(n).padStart(2,'0');
   const fn=`${prefix}_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}.xlsx`;
-  Promise.resolve(DL?DL.save({filename:fn,data:new Uint8Array(data)}):null).then(r=>{if(!r){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=fn;a.click();}toast(`엑셀을 저장했습니다: ${fn}`);}).catch(()=>toast('저장하지 못했습니다'));}
+  Promise.resolve(DL?DL.save({filename:fn,data:new Uint8Array(data)}):null).then(r=>{if(!r){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=fn;a.click();toast(`엑셀을 저장했습니다: ${fn}`);}}).catch(()=>toast('저장하지 못했습니다'));}
 /* 도장별 출전 시간표: 첫 장 「목차」 + 도장마다 한 장 → 지도자에게 그 장만 보내면 됨 */
 function exportDojang(){
   if(typeof XLSX==='undefined')return toast('엑셀 도구를 불러오지 못했습니다');
@@ -2017,7 +2017,7 @@ function exportAssoc(fill){
       x=x.slice(0,at)+dv+x.slice(at);f.content=new TextEncoder().encode(x);f.size=f.content.length;});
     data=XLSX.CFB.write(cfb,{fileType:'zip',type:'array'});}catch(e){console.warn('dv',e);toast('고르기 목록을 넣지 못했습니다 · 칸에 직접 적어도 불러올 수 있습니다');}
   const d=new Date(),p2=v=>String(v).padStart(2,'0'),fn=`${fill?'경기일정_조정본':'경기일정_협회요청시트'}_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}.xlsx`;
-  Promise.resolve(DL?DL.save({filename:fn,data:new Uint8Array(data)}):null).then(r=>{if(!r){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=fn;a.click();}toast(`저장했습니다: ${fn}`);}).catch(()=>toast('저장하지 못했습니다'));}
+  Promise.resolve(DL?DL.save({filename:fn,data:new Uint8Array(data)}):null).then(r=>{if(!r){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=fn;a.click();toast(`저장했습니다: ${fn}`);}}).catch(()=>toast('저장하지 못했습니다'));}
 async function importAssoc(f){
   try{if(typeof XLSX==='undefined')throw new Error('엑셀 도구를 불러오지 못했습니다');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
     const norm=v=>String(v||'').replace(/\s*\(\s*\d+\s*(명|팀)\s*\)\s*$/,'').replace(/\s+/g,' ').trim();

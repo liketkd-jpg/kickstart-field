@@ -159,7 +159,7 @@ const downloads={
     if(F.local){
       const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),20000);
       try{const r=await fetch(API+'save?name='+encodeURIComponent(filename),{method:'POST',body:blob,signal:ctl.signal});const j=await r.json();
-        if(j&&j.ok){setTimeout(()=>note(`노트북 「대회결과」 폴더에 저장했습니다: ${filename}`),50);return {saved:true,path:j.path};}}
+        if(j&&j.ok){setTimeout(()=>note(j.dl?`「다운로드」 폴더에 저장했습니다: ${filename} (「대회결과」 폴더에도 한 부)`:`노트북 「대회결과」 폴더에 저장했습니다: ${filename}`),50);return {saved:true,path:j.dl||j.path};}}
       catch(e){}finally{clearTimeout(t);}
     }
     browserDownload(blob,filename);return {saved:true};
