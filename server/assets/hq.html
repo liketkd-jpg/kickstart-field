@@ -279,6 +279,11 @@ const CFGDEF={autoCall:true,voice:true,notice:{text:'',mode:'off'},manual:[],poi
 const CFG=()=>({...CFGDEF,...(S.cfg||{})});
 const saveCfg=p=>DB.doc('hqcfg/main').set({...CFG(),...p}).catch(()=>toast('저장하지 못했습니다'));
 const NOW=()=>Date.now();
+/* v1.4.69 공지 표시 시간: 정한 시간이 지나면 모니터에서 저절로 내려감 (until). 「계속」이면 직접 내릴 때까지 */
+const NDUR=[[60,'1분'],[180,'3분'],[300,'5분'],[600,'10분'],[0,'계속']];
+function noticeNow(cf){const n=(cf&&cf.notice)||{};if(!n.text||!n.mode||n.mode==='off')return {mode:'off',text:''};if(n.until&&NOW()>=n.until)return {mode:'off',text:'',ended:n.text};return n;}
+let NDRAFT='';document.addEventListener('input',e=>{if(e.target&&e.target.id==='noticeText')NDRAFT=e.target.value;});
+const mmss=ms=>{const t=Math.max(0,Math.ceil(ms/1000));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
 /* 전광판 디자인: 「따라가기」면 품새 코트 노트북의 전광판 디자인을 그대로 씁니다 */
 const THEMES=[['follow','코트 전광판 따라가기'],['gold','기본 금빛'],['ed','매거진'],['ch','시계'],['tm','데이터'],['ink','한지와 먹'],['st','스트리트']];
 function hqTheme(list){const t=CFG().theme||'follow';if(t!=='follow')return t==='classic'?'gold':t;
@@ -512,7 +517,7 @@ function vCheck(){const list=courtList(),R=list.map(ckRow),nok=R.filter(r=>r.ok)
     ${hqDevRow()}
     ${R.length?`<div style="overflow-x:auto"><table class="cktab"><tr><th>코트</th>${R[0].it.map(x=>`<th>${x[0]}</th>`).join('')}</tr>${R.map(r=>`<tr><td><b style="font-size:17px">${esc(r.c.court)}코트</b></td>${r.it.map(x=>`<td><span class="chip ${x[1]?'ok':'bad'}">${x[1]?'✓':'✕'} ${esc(x[2])}</span></td>`).join('')}</tr>`).join('')}</table></div>`:'<div class="empty">아직 연결된 코트 노트북이 없습니다</div>'}</div>`;}
 function vAdmin(){
-  const list=courtList(),cf=CFG(),al=alerts(list),n=cf.notice||{};
+  const list=courtList(),cf=CFG(),al=alerts(list),n=noticeNow(cf),nd=cf.noticeDur==null?180:cf.noticeDur;
   const rows=list.length?list.map(c=>{const b=c.app&&c.app.board;
     return `<tr><td><b style="font-size:18px">${esc(c.court)}코트</b><div class="small muted">${esc(c.addr)} · ${VIA[c.via]||esc(c.via)}</div></td>
       <td>${c.online?(c.stale?'<span class="chip warn"><i class="dot"></i>운영석 꺼짐</span>':'<span class="chip ok"><i class="dot"></i>연결됨</span>'):`<span class="chip bad"><i class="dot"></i>끊김 · ${ago(c.lastSeen)}</span>`}${liveChip(c)}</td>
@@ -539,8 +544,10 @@ function vAdmin(){
     <div><span class="small muted">저장한 방송 문구 — 누르면 바로 본부 모니터·음성으로 나갑니다 (대기실 휴대폰 「📢 방송」에도 같은 목록)</span>
       <div class="rmphs">${(cf.annPh||PH_ANN).map((p,i)=>`<span class="rmph"><button class="btn" data-a="annPh" data-i="${i}">📣 ${esc(p)}</button><button class="rmx" data-a="annPhDel" data-i="${i}" title="지우기">×</button></span>`).join('')}</div></div>
     <div><span class="small muted">최근 호출</span>${S.log.length?`<table>${S.log.slice(0,8).map(l=>`<tr><td class="small muted" style="white-space:nowrap;width:1%">${new Date(l.at).toTimeString().slice(0,5)}</td><td>${esc(l.text)}${l.auto?' <span class="chip">자동</span>':''}</td></tr>`).join('')}</table>`:'<div class="small muted">아직 없습니다.</div>'}</div></div>
-  <div class="panel"><div class="row between"><h2>📢 공지</h2><span class="chip ${n.mode==='off'||!n.text?'':'ok'}">${n.mode==='full'?'전체 화면 표시 중':n.mode==='banner'&&n.text?'아래 띠 표시 중':'표시 안 함'}</span></div>
-    <textarea id="noticeText" rows="3" placeholder="본부 모니터에 띄울 공지">${esc(n.text||'')}</textarea>
+  <div class="panel"><div class="row between"><h2>📢 공지</h2><span class="chip ${n.mode==='off'||!n.text?'':'ok'}">${n.mode==='full'?'전체 화면 표시 중':n.mode==='banner'&&n.text?'아래 띠 표시 중':'표시 안 함'}${n.mode!=='off'&&n.until?' · '+mmss(n.until-NOW())+' 뒤 내려감':''}</span></div>
+    ${n.mode!=='off'?`<div class="small" style="padding:8px 10px;border-radius:10px;background:rgba(212,175,55,.12)">지금 띄운 공지: <b>${esc(n.text)}</b></div>`:''}
+    <textarea id="noticeText" rows="3" placeholder="본부 모니터에 띄울 공지 (띄우면 이 칸은 비워집니다)">${esc(NDRAFT)}</textarea>
+    <div class="row"><span class="small muted">표시 시간</span>${NDUR.map(([v,l])=>`<button class="btn sm ${nd===v?'primary':''}" data-a="noticeDur" data-v="${v}">${l}</button>`).join('')}<span class="small muted">· 시간이 지나면 모니터에서 저절로 내려갑니다</span></div>
     <div class="row">${presets.map((p,i)=>`<button class="btn sm" data-a="preset" data-i="${i}">${esc(p.split('.')[0])}</button>`).join('')}</div>
     <div class="row"><button class="btn primary" data-a="notice" data-m="banner">아래 띠로 띄우기</button><button class="btn primary" data-a="notice" data-m="full">전체 화면으로 띄우기</button><button class="btn" data-a="notice" data-m="off">공지 내리기</button><button class="btn" data-a="noticeSay">🔊 소리로 읽기</button></div></div>
   </div>
@@ -588,7 +595,7 @@ function exportXlsx(){
 
 /* ---------- 본부 모니터 ---------- */
 function vMon(){
-  const list=courtList(),cf=CFG(),n=cf.notice||{};
+  const list=courtList(),cf=CFG(),n=noticeNow(cf);
   const th=hqTheme(list);THEMES.forEach(([k])=>document.body.classList.toggle('hqt-'+k,k===th));
   const comp=(cf.compName||'').trim()||(list.find(c=>c.app&&c.app.board.comp)||{app:{board:{}}}).app.board.comp||'태권도 대회';
   const col=c=>{const b=c.app&&c.app.board;
@@ -810,7 +817,7 @@ setInterval(()=>{try{const n=document.getElementById('hqtabs');if(n)document.doc
 let HSEL=null,HLISTY=0; /* 다시 열면 늘 타일 목록부터 (열려 있던 화면을 기억하지 않음) */
 const HQ_T=[[/대회 운영표/,'plan','📋','대회 운영표'],[/대기실 연결/,'room','🚪','대기실 연결'],[/지도자용 진행/,'live','📱','지도자용 진행 상황'],[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
   [/시작 전 점검/,'check','✅','시작 전 점검'],[/종목별 경기 규칙/,'rules','📐','종목별 경기 규칙'],[/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터'],[/태블릿 배터리/,'bat','🔋','태블릿 배터리']];
-function hqTileState(k){const cf=CFG(),list=courtList(),n=cf.notice||{};
+function hqTileState(k){const cf=CFG(),list=courtList(),n=noticeNow(cf);
   switch(k){
     case 'court':{const on=list.filter(c=>c.online).length,bad=list.filter(c=>!c.online||c.stale).length;return [list.length?`${on}/${list.length}곳 연결`:'아직 코트 없음',list.length&&!bad?'ok':list.length?'warn':''];}
     case 'call':return [`자동 호출 ${cf.autoCall?'켜짐':'꺼짐'}${S.log[0]?' · 최근 '+new Date(S.log[0].at).toTimeString().slice(0,5):''}`,''];
@@ -902,9 +909,14 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   else if(a==='annSave'){const v=($('#annText').value||'').trim();if(!v)return toast('저장할 문구를 위 칸에 써 주세요');await saveCfg({annPh:[...(cf.annPh||PH_ANN),v].slice(0,30)});$('#annText').value='';toast('방송 문구를 저장했습니다');}
   else if(a==='annPhDel'){if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='지울까요?';setTimeout(()=>{b.dataset.arm='';b.textContent='×';},3000);return;}const L=[...(cf.annPh||PH_ANN)];L.splice(Number(b.dataset.i),1);await saveCfg({annPh:L});}
   else if(a==='callNext'){const c=courtList().find(x=>x.id===b.dataset.id);const bd=c&&c.app&&c.app.board;if(bd&&bd.nextDiv)await announce(`${c.court}코트, ${bd.nextDiv} 선수는 준비해 주세요.`,{court:c.court});}
-  else if(a==='preset'){const p=['점심시간입니다. 13시에 경기가 다시 시작됩니다.','시상식을 시작합니다. 입상 선수는 시상대 앞으로 모여 주세요.','잠시 후 오후 경기가 시작됩니다. 선수들은 준비해 주세요.','대회장 안에서는 음식물 섭취를 삼가 주세요.'][Number(b.dataset.i)];$('#noticeText').value=p;}
-  else if(a==='notice'){const t=($('#noticeText').value||'').trim();const m=b.dataset.m;if(m!=='off'&&!t)return toast('공지 내용을 넣어 주세요');await saveCfg({notice:{text:m==='off'?(cf.notice||{}).text||'':t,mode:m,at:NOW()}});toast(m==='off'?'공지를 내렸습니다':'본부 모니터에 공지를 띄웠습니다');}
-  else if(a==='noticeSay'){const t=($('#noticeText').value||'').trim();if(t)await announce(t);}
+  else if(a==='preset'){const p=['점심시간입니다. 13시에 경기가 다시 시작됩니다.','시상식을 시작합니다. 입상 선수는 시상대 앞으로 모여 주세요.','잠시 후 오후 경기가 시작됩니다. 선수들은 준비해 주세요.','대회장 안에서는 음식물 섭취를 삼가 주세요.'][Number(b.dataset.i)];$('#noticeText').value=p;NDRAFT=p;}
+  else if(a==='notice'){const m=b.dataset.m;let t=($('#noticeText').value||'').trim();const cur=noticeNow(cf);
+    if(m!=='off'&&!t&&cur.mode!=='off')t=cur.text; /* 칸이 비었으면 지금 띄운 공지를 다른 방식으로 */
+    if(m!=='off'&&!t)return toast('공지 내용을 넣어 주세요');const d=cf.noticeDur==null?180:cf.noticeDur;
+    await saveCfg({notice:m==='off'?{text:'',mode:'off',at:NOW()}:{text:t,mode:m,at:NOW(),until:d?NOW()+d*1000:0}});$('#noticeText').value='';NDRAFT='';
+    toast(m==='off'?'공지를 내렸습니다':`본부 모니터에 공지를 띄웠습니다${d?' · '+(NDUR.find(x=>x[0]===d)||[0,''])[1]+' 뒤 저절로 내려갑니다':''}`);}
+  else if(a==='noticeDur'){await saveCfg({noticeDur:Number(b.dataset.v)||0});}
+  else if(a==='noticeSay'){const t=($('#noticeText').value||'').trim()||noticeNow(cf).text;if(t)await announce(t);}
   else if(a==='xlsx')exportXlsx();
   else if(a==='print')window.print();
   else if(a==='qr'){if(window.KSQR)KSQR.open({title:'본부 모니터',items:[{label:'본부 모니터',sub:'대기실 TV·태블릿',url:(window.KS_FIELD.base||location.href.split('#')[0])+'#board'}]});}

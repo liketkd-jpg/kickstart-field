@@ -160,7 +160,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 			out[a.Key] = m
 		}
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "bat": batList(), "disk": diskNow(), "time": time.Now().UnixMilli()})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "bat": batList(), "disk": diskNow(), "mode": modeName(c), "time": time.Now().UnixMilli()})
 }
 
 // ---------------- 코트: 신호 보내기 ----------------
@@ -414,6 +414,7 @@ type feedMsg struct {
 	RulesAt int64                      `json:"rulesAt"`
 	Bat     json.RawMessage            `json:"bat"`
 	Disk    json.RawMessage            `json:"disk"`
+	Mode    string                     `json:"mode"`
 	Live    struct {
 		On    bool   `json:"on"`
 		State string `json:"state"`
@@ -436,6 +437,12 @@ func pollCourt(addr string) {
 		body, _ = io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 		resp.Body.Close()
 		ok = resp.StatusCode == 200 && json.Unmarshal(body, &fm) == nil && fm.Sig == "KICKSTART" && fm.Role == "court"
+	}
+	// v1.4.69 시험/실제 대회 모드를 본부에 맞춤 (본부에서 바꿀 때 꺼져 있던 코트 노트북도 켜지면 따라옴)
+	if ok && fm.Mode != "" {
+		if hm := modeName(getConfig()); fm.Mode != hm && modeSyncOK(addr) {
+			go postJSON(addr, "/api/inbox/mode", modeMsg{Mode: hm}, 5*time.Second)
+		}
 	}
 	hqMu.Lock()
 	c, exists := courts[addr]

@@ -24,6 +24,7 @@ function leader(){try{const k='ks_sim_lead_'+APP,v=JSON.parse(localStorage.getIt
 
 /* ---------- 가상 명단 받기 ---------- */
 async function take(doc){TAKING=true;
+  window.KS_SIM_IMPORT=true; /* v1.4.69 연습 모드(허가 코드 없음)에서도 가상 경기 명단은 모두 넣음 — 격파 코트가 20명에서 끝나던 문제 */
   try{const RI=window.KS_REGIMPORT,ACT=g('ACT'),st=g('store');if(!RI||!ACT||!st)throw new Error('앱 준비 중');
     say(`본부 운영표에서 가상 경기 명단 ${doc.rows.length-1}건이 왔습니다. 점수를 지우고 명단을 바꿉니다…`);
     await ACT.resetScores();
@@ -35,7 +36,7 @@ async function take(doc){TAKING=true;
     const {_id,_pending,...rest}=doc;await st.put('inbox/roster',{...rest,done:true,takenAt:Date.now(),simTaken:true});
     DONE=false;COUNT=0;STALL={};say(`가상 경기 명단 ${rows.length}건으로 바꿨습니다. 본부에서 「가상 경기 시작」을 누르면 자동으로 진행합니다`);}
   catch(e){console.warn('sim take',e);say('가상 경기 명단을 넣지 못했습니다: '+(e.message||e));}
-  finally{TAKING=false;draw();}}
+  finally{TAKING=false;window.KS_SIM_IMPORT=false;draw();}}
 
 /* ---------- 점수 만들기 ---------- */
 function hash(s){let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0)/4294967296;}

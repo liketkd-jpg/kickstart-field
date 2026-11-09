@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -162,4 +163,27 @@ func handleInboxMode(w http.ResponseWriter, r *http.Request) {
 	v := modeState()
 	v["backup"] = bk
 	writeJSON(w, 200, v)
+}
+
+func modeName(c nodeConfig) string {
+	if c.Mode == "live" {
+		return "live"
+	}
+	return "test"
+}
+
+var (
+	modeSyncMu sync.Mutex
+	modeSyncAt = map[string]time.Time{}
+)
+
+// 같은 코트에 10초에 한 번까지만
+func modeSyncOK(addr string) bool {
+	modeSyncMu.Lock()
+	defer modeSyncMu.Unlock()
+	if time.Since(modeSyncAt[addr]) < 10*time.Second {
+		return false
+	}
+	modeSyncAt[addr] = time.Now()
+	return true
 }

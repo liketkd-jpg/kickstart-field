@@ -4546,7 +4546,7 @@ const isDisp=()=>document.body&&document.body.classList.contains('disp');
 const isJudge=()=>document.body&&document.body.classList.contains('jdg');
 /* 연습 모드 선수 수 제한: 명단 저장을 감쌈 (이미 20명 넘게 있던 명단은 줄이지 않음) */
 function hookRoster(){const f=window.saveRoster;if(typeof f!=='function'||f.__lic)return;
-  const w=async function(list){if(!ok()&&Array.isArray(list)){const S=g('S'),prev=S&&S.roster?S.roster.length:0,cap=Math.max(LIMIT,prev);
+  const w=async function(list){if(!ok()&&!window.KS_SIM_IMPORT&&Array.isArray(list)){ /* v1.4.69 본부 가상 경기 명단은 제한 없이 (시험용) */const S=g('S'),prev=S&&S.roster?S.roster.length:0,cap=Math.max(LIMIT,prev);
       if(list.length>cap){list=list.slice(0,cap);setTimeout(()=>{say(`연습 모드는 선수 ${LIMIT}명까지입니다. 허가 코드를 넣으면 모두 등록됩니다`);open_();},50);}}
     return f.apply(this,[list,...[].slice.call(arguments,1)]);};
   w.__lic=1;window.saveRoster=w;}
