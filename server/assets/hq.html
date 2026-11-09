@@ -488,10 +488,27 @@ function ckRow(c){const today=new Date(NOW()+9*3600e3).toISOString().slice(0,10)
   const it=[['연결',c.online,c.online?'연결됨':'끊김'],['허가 코드',!!c.licEnds&&c.licEnds>=today,c.licEnds?(c.licEnds>=today?`~${c.licEnds}`:'기간 끝'):'없음 (연습 모드)'],
     ['경기 규칙',!RULES.at||c.rulesAt===RULES.at,!RULES.at?'본부 규칙 없음':c.rulesAt===RULES.at?'받음':'아직 못 받음'],['명단',divs>0,divs?`부문 ${divs} · 경기 ${ppl}`:'명단 없음'],
     ['심판',jl.length>0&&jon===jl.length,jl.length?`${jon}/${jl.length} 연결`:'정보 없음']];
+  /* v1.4.57 하드 남은 공간(3GB 이상)·심판 태블릿 배터리(20% 이상 또는 충전 중) */
+  const dk=((S.courts||{})[c.id]||{}).disk||{},bt=((S.courts||{})[c.id]||{}).bat,bl=Array.isArray(bt)?bt:[],blow=bl.filter(x=>!x.charging&&x.level<0.2);
+  it.push(['하드',!dk.total||dk.free>=3*1073741824,dk.total?`남은 ${(dk.free/1073741824).toFixed(1)}GB`:'정보 없음']);
+  it.push(['태블릿 배터리',!blow.length,bl.length?(blow.length?`${blow.map(x=>(x.seat||'?')+'심 '+Math.round(x.level*100)+'%').join(', ')}`:`${bl.length}대 · 가장 낮음 ${Math.round(Math.min(...bl.map(x=>x.level))*100)}%`):'정보 없음']);
   return {c,it,ok:it.every(x=>x[1])};}
+/* v1.4.57 본부 노트북: 하드 남은 공간 · 상장 프린터 */
+let HQDEV={at:0,disk:null,pr:null};
+function hqDev(){if(Date.now()-HQDEV.at<30000)return;HQDEV.at=Date.now();
+  fetch('/api/disk',{cache:'no-store'}).then(r=>r.json()).then(j=>{HQDEV.disk=j;}).catch(()=>{});
+  fetch('/api/printer',{cache:'no-store'}).then(r=>r.json()).then(j=>{HQDEV.pr=j;try{if(route()==='check')render();}catch(e){}}).catch(()=>{});}
+function hqDevRow(){hqDev();const d=HQDEV.disk,p=HQDEV.pr,dOk=!d||!d.total||d.free>=3*1073741824;
+  const pOk=p&&p.ok,pTxt=!p?'확인 중…':p.name?`${p.name}${p.offline?' · 오프라인':''}${p.jobs?` · 대기 중 ${p.jobs}건`:''}${p.virtual?' · 실제 프린터 아님':''}`:(p.err||'없음');
+  return `<div class="row" style="gap:10px;flex-wrap:wrap;margin:10px 0"><b style="font-size:17px">본부 노트북</b>
+    <span class="chip ${dOk?'ok':'bad'}">${dOk?'✓':'✕'} 하드 ${d&&d.total?`남은 ${(d.free/1073741824).toFixed(1)}GB`:'확인 중…'}</span>
+    <span class="chip ${pOk?'ok':p?'bad':'warn'}">${pOk?'✓':p?'✕':'…'} 상장 프린터 ${esc(pTxt)}</span>
+    ${p&&p.jobs>20?'<span class="small muted">인쇄 대기가 많습니다 · 「설정 → 프린터」에서 대기 문서를 확인하세요</span>':''}
+    <a class="btn sm" href="/emergency" target="_blank" rel="noopener">🆘 비상 안내 인쇄</a></div>`;}
 function vCheck(){const list=courtList(),R=list.map(ckRow),nok=R.filter(r=>r.ok).length;
   return `<div class="panel"><div class="row between"><h2>✅ 시작 전 점검</h2><span class="chip ${R.length&&nok===R.length?'ok':'warn'}">${nok}/${R.length} 코트 준비됨</span></div>
     <span class="small muted">대회 시작 전에 모두 초록불인지 확인하세요. 빨간 칸을 고치면 몇 초 안에 바뀝니다.</span>
+    ${hqDevRow()}
     ${R.length?`<div style="overflow-x:auto"><table class="cktab"><tr><th>코트</th>${R[0].it.map(x=>`<th>${x[0]}</th>`).join('')}</tr>${R.map(r=>`<tr><td><b style="font-size:17px">${esc(r.c.court)}코트</b></td>${r.it.map(x=>`<td><span class="chip ${x[1]?'ok':'bad'}">${x[1]?'✓':'✕'} ${esc(x[2])}</span></td>`).join('')}</tr>`).join('')}</table></div>`:'<div class="empty">아직 연결된 코트 노트북이 없습니다</div>'}</div>`;}
 function vAdmin(){
   const list=courtList(),cf=CFG(),al=alerts(list),n=cf.notice||{};
@@ -2010,6 +2027,53 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
   new MutationObserver(run).observe(document.body,{attributes:true,attributeFilter:['class']});
   addEventListener('resize',run);addEventListener('hashchange',run);
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(run);run();
+})();
+</script>
+<style>/* v1.4.57 심판 태블릿 배터리 배지 */
+.batb{margin-left:auto;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(214,182,124,.35);background:rgba(255,255,255,.04);color:#E9E2D2;border-radius:999px;padding:7px 14px;font:800 15px/1 "Noto Sans KR",sans-serif;cursor:pointer;white-space:nowrap}
+.batb.ok{border-color:rgba(76,175,80,.5);color:#BFE8C1}.batb.low{background:#B3261E;border-color:#B3261E;color:#fff;animation:batblink 1s steps(2) infinite}.batb.warn{background:#8A5A00;border-color:#C98A12;color:#fff}
+@keyframes batblink{50%{background:#5E1410}}
+.batov{position:fixed;inset:0;z-index:60;background:rgba(5,6,9,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.batpn{width:min(1180px,100%);max-height:92vh;overflow:auto;background:linear-gradient(170deg,#191C23,#0E1015);border:1px solid rgba(214,182,124,.4);border-radius:26px;padding:22px 24px;color:#F3EEE3;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.batpn h2{margin:0;font:900 26px/1.2 "Noto Sans KR",sans-serif}.batpn .x{margin-left:auto;font:800 18px/1 "Noto Sans KR",sans-serif;background:#2A2D35;color:#fff;border:0;border-radius:12px;padding:10px 16px;cursor:pointer}
+.batgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px}
+.batct{border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px;background:rgba(255,255,255,.03)}.batct h3{margin:0 0 10px;font:900 24px/1 "Noto Sans KR",sans-serif;color:#E8C77D}
+.batrow{display:grid;grid-template-columns:62px 1fr 64px;align-items:center;gap:8px;margin:8px 0;font:800 17px/1.1 "Noto Sans KR",sans-serif}
+.batbar{height:20px;border-radius:7px;background:#2A2D35;overflow:hidden;position:relative}.batbar i{position:absolute;inset:0 auto 0 0;border-radius:7px;background:#4CAF50}
+.batrow.w .batbar i{background:#E0A21B}.batrow.l .batbar i{background:#E5483D}.batrow .pc{text-align:right}.batrow.l .pc{color:#FF8A80}
+.batnone{color:#9C968A;font:600 15px/1.4 "Noto Sans KR",sans-serif}
+</style>
+<script>/* v1.4.57 본부 맨 위 「🔋 태블릿」 배지: 평소엔 정상, 20% 아래(충전 중이 아닐 때)는 빨갛게 깜빡이고 알림음 한 번.
+   누르면 A~E 코트별로 심판 태블릿 배터리·충전 중 표시를 크게 펼쳐 봅니다. (안드로이드 크롬 태블릿만 배터리를 알려 줍니다) */
+(function(){
+  const LOW=0.2,WARN=0.35,APPN={poomsae:'품새',gyeokpa:'격파',kyorugi:'겨루기'};let OPEN=false,ALERTED={};
+  const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function chime(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C(),t=c.currentTime;[[988,0],[740,.22],[988,.44]].forEach(([f,d])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.12,t+d+.02);g.gain.linearRampToValueAtTime(0,t+d+.2);o.connect(g).connect(c.destination);o.start(t+d);o.stop(t+d+.22);});}catch(e){}}
+  function data(){const out={};try{const S=window.KS_HQS?KS_HQS():{courts:{}};Object.values(S.courts||{}).forEach(doc=>{const b=Array.isArray(doc.bat)?doc.bat:[];const ct=doc.court;if(!ct||ct==='?')return;
+    const L=out[ct]||(out[ct]={court:ct,online:!!doc.online,list:[]});if(doc.online)L.online=true;b.forEach(x=>L.list.push(x));});}catch(e){}
+    return Object.values(out).sort((a,b)=>a.court.localeCompare(b.court));}
+  const cls=x=>!x.charging&&x.level<LOW?'l':!x.charging&&x.level<WARN?'w':'';
+  function badge(){const bar=document.querySelector('header.bar');if(!bar)return;let el=document.getElementById('batb');
+    if(!el){el=document.createElement('button');el.id='batb';el.type='button';el.addEventListener('click',()=>{OPEN=true;panel();});bar.appendChild(el);}
+    const D=data(),all=D.flatMap(c=>c.list.map(x=>({...x,court:c.court}))),low=all.filter(x=>cls(x)==='l'),warn=all.filter(x=>cls(x)==='w');
+    el.className='batb '+(low.length?'low':warn.length?'warn':'ok');
+    el.textContent=!all.length?'🔋 태블릿 정보 없음':low.length?`🪫 ${low.slice(0,2).map(x=>`${x.court}코트 ${x.seat?x.seat+'심':'심판'} ${Math.round(x.level*100)}%`).join(' · ')}${low.length>2?` 외 ${low.length-2}대`:''}`
+      :warn.length?`🔋 ${warn.length}대 35% 아래`:`🔋 태블릿 ${all.length}대 정상`;
+    el.title='누르면 코트별 심판 태블릿 배터리를 크게 봅니다';
+    let ring=false;low.forEach(x=>{if(!ALERTED[x.id]){ALERTED[x.id]=1;ring=true;}});all.forEach(x=>{if(cls(x)!=='l')delete ALERTED[x.id];});
+    if(ring)chime();
+    if(OPEN)panel();}
+  function panel(){let ov=document.getElementById('batov');if(!OPEN){if(ov)ov.remove();return;}
+    if(!ov){ov=document.createElement('div');ov.id='batov';ov.className='batov';ov.addEventListener('click',e=>{if(e.target===ov||e.target.closest('[data-batx]')){OPEN=false;panel();}});document.body.appendChild(ov);}
+    const D=data();
+    ov.innerHTML=`<div class="batpn"><div style="display:flex;align-items:center;gap:12px"><h2>🔋 심판 태블릿 배터리</h2><button class="x" data-batx>닫기</button></div>
+      <div class="batnone" style="margin-top:6px">20% 아래는 빨강, 35% 아래는 노랑 · ⚡는 충전 중 · 1분마다 새로 받습니다. 안드로이드 크롬으로 심판 화면을 연 태블릿만 보입니다.</div>
+      <div class="batgrid">${D.length?D.map(c=>`<div class="batct"><h3>${esc(c.court)}코트${c.online?'':' <span style="font-size:14px;color:#FF8A80">연결 끊김</span>'}</h3>
+        ${c.list.length?c.list.map(x=>{const p=Math.round(x.level*100);return `<div class="batrow ${cls(x)}"><span>${x.seat?x.seat+'심':'심판'}${Object.keys(APPN).length&&c.list.some(y=>y.app!==x.app)?`<small style="display:block;font-size:11px;color:#9C968A">${APPN[x.app]||''}</small>`:''}</span><span class="batbar"><i style="width:${Math.max(3,p)}%"></i></span><span class="pc">${x.charging?'⚡':''}${p}%</span></div>`;}).join('')
+          :'<div class="batnone">배터리 정보를 보낸 태블릿이 없습니다</div>'}</div>`).join(''):'<div class="batnone">연결된 코트가 없습니다</div>'}</div></div>`;}
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&OPEN){OPEN=false;panel();}});
+  setInterval(badge,3000);setTimeout(badge,1200);
+  window.KS_BAT={data,open:()=>{OPEN=true;panel();}};
 })();
 </script>
 <!--@@END-AF-->

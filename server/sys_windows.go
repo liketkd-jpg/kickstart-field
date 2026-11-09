@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -156,4 +157,55 @@ func diskFree(path string) (int64, int64) {
 		return 0, 0
 	}
 	return int64(free), int64(total)
+}
+
+// 하드를 많이 차지하기 쉬운 곳 (이름, 경로, 안내)
+func scanPlaces() [][3]string {
+	la, up, tmp, win := os.Getenv("LOCALAPPDATA"), os.Getenv("USERPROFILE"), os.Getenv("TEMP"), os.Getenv("WINDIR")
+	if win == "" {
+		win = `C:\Windows`
+	}
+	return [][3]string{
+		{"인쇄 대기열 (윈도우)", filepath.Join(win, "System32", "spool", "PRINTERS"), "프린터가 꺼져 있거나 없는 채로 상장을 보내면 여기에 쌓입니다. 「설정 → 프린터」에서 대기 중인 문서를 모두 취소하세요"},
+		{"임시 파일", tmp, "윈도우 「설정 → 시스템 → 저장소 → 임시 파일」에서 지울 수 있습니다"},
+		{"크롬 사용 기록·캐시", filepath.Join(la, "Google", "Chrome", "User Data"), "크롬 「인터넷 사용 기록 삭제 → 캐시된 이미지 및 파일」"},
+		{"엣지 사용 기록·캐시", filepath.Join(la, "Microsoft", "Edge", "User Data"), "엣지 「검색 데이터 지우기 → 캐시된 이미지 및 파일」"},
+		{"다운로드 폴더", filepath.Join(up, "Downloads"), "내려받은 결과·영상 파일이 쌓여 있을 수 있습니다"},
+		{"동영상 폴더", filepath.Join(up, "Videos"), "판독 영상·녹화 파일"},
+		{"윈도우 업데이트 파일", filepath.Join(win, "SoftwareDistribution", "Download"), "윈도우 「디스크 정리 → 시스템 파일 정리」"},
+	}
+}
+
+// 기본 프린터 상태 (PowerShell)
+func printerStatus() map[string]any {
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "powershell", "-NoProfile", "-NonInteractive", "-Command",
+		"[Console]::OutputEncoding=[Text.Encoding]::UTF8; $p=Get-CimInstance Win32_Printer | Where-Object {$_.Default}; if($p){$j=@(Get-CimInstance Win32_PrintJob | Where-Object {$_.Name -like ($p.Name+',*')}).Count; Write-Output ($p.Name+'|'+$p.WorkOffline+'|'+$p.PrinterStatus+'|'+$j)}")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	out, err := cmd.Output()
+	if err != nil {
+		return map[string]any{"ok": false, "err": "프린터 정보를 읽지 못했습니다"}
+	}
+	line := strings.TrimSpace(string(out))
+	if line == "" {
+		return map[string]any{"ok": false, "name": "", "err": "기본 프린터가 없습니다"}
+	}
+	f := strings.Split(line, "|")
+	for len(f) < 4 {
+		f = append(f, "")
+	}
+	name := f[0]
+	off := strings.EqualFold(f[1], "True")
+	jobs := 0
+	fmt.Sscan(f[3], &jobs)
+	virtual := regexp.MustCompile(`(?i)pdf|xps|onenote|fax|팩스`).MatchString(name)
+	v := map[string]any{"name": name, "offline": off, "status": f[2], "jobs": jobs, "virtual": virtual}
+	v["ok"] = !off && !virtual
+	if virtual {
+		v["err"] = "기본 프린터가 실제 프린터가 아닙니다 (" + name + ")"
+	} else if off {
+		v["err"] = "프린터가 오프라인입니다"
+	}
+	return v
 }

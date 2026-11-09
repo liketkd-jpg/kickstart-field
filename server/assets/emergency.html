@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>대회 비상 안내</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;900&display=swap">
+<style>
+:root{--ink:#16181D;--mute:#5B5F68;--line:#D9D4C7;--gold:#9A7432;--red:#B3261E;--paper:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:#EDEAE3;color:var(--ink);font:500 14px/1.42 "Noto Sans KR",system-ui,sans-serif}
+.tool{display:flex;gap:10px;justify-content:center;padding:14px 16px}
+.tool button{font:800 16px/1 "Noto Sans KR",sans-serif;padding:12px 20px;border-radius:12px;border:0;background:#16181D;color:#fff;cursor:pointer}
+.sheet{width:210mm;min-height:297mm;margin:0 auto 24px;background:var(--paper);padding:11mm 12mm;box-shadow:0 6px 30px rgba(0,0,0,.12)}
+header{display:flex;align-items:flex-end;gap:12px;border-bottom:3px solid var(--ink);padding-bottom:6px;margin-bottom:8px}
+header h1{margin:0;font:900 26px/1.1 "Noto Sans KR",sans-serif}
+header .s{margin-left:auto;text-align:right;color:var(--mute);font-size:12px}
+.first{border:2px solid var(--red);border-radius:10px;padding:7px 11px;margin-bottom:9px;font-weight:700}
+.first b{color:var(--red)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.c{border:1px solid var(--line);border-radius:10px;padding:6px 9px;break-inside:avoid}
+.c h2{margin:0 0 3px;font:900 15px/1.25 "Noto Sans KR",sans-serif;display:flex;gap:6px;align-items:baseline}
+.c h2 i{font-style:normal;color:var(--gold)}
+.c ol{margin:0;padding-left:17px}.c li{margin:1px 0}
+.c .note{color:var(--mute);font-size:12px;margin-top:3px}
+.k{display:inline-block;border:1px solid #BFB8A6;border-radius:5px;padding:0 5px;background:#F6F3EC;font-weight:700;font-size:13px;white-space:nowrap}
+.wide{grid-column:1/-1}
+.tel{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.tel div{border:1px dashed #A9A291;border-radius:8px;padding:6px 9px;font-weight:700;min-height:44px}
+.tel small{display:block;color:var(--mute);font-weight:500}
+@media print{body{background:#fff}.tool{display:none}.sheet{box-shadow:none;margin:0;width:auto;min-height:0;padding:0}@page{size:A4;margin:8mm}}
+@media screen and (max-width:820px){.sheet{width:auto;min-height:0;padding:16px}.grid{grid-template-columns:1fr}.tel{grid-template-columns:1fr}}
+</style></head><body>
+<div class="tool"><button onclick="print()">🖨️ 인쇄하기 (A4 한 장)</button></div>
+<div class="sheet">
+<header><h1>🆘 대회 당일 비상 안내</h1><div class="s">KICKSTART UP 현장 모드 · 진행 요원용<br>코트마다 한 장씩 붙여 두세요</div></header>
+<div class="first"><b>먼저 이것부터:</b> 당황하지 말고 <b>경기를 잠시 멈춘 뒤</b> 본부에 알립니다. 점수와 결과는 노트북에 계속 저장되고, 1분마다 본부에도 모이므로 대부분 그대로 이어서 진행할 수 있습니다.</div>
+<div class="grid">
+
+<div class="c"><h2><i>1</i>코트 노트북이 꺼졌어요</h2><ol>
+<li>전원을 연결하고 노트북을 다시 켭니다.</li>
+<li>바탕화면의 <span class="k">현장 프로그램</span>(검은 창)을 실행합니다.</li>
+<li>첫 화면에서 <b>같은 코트</b>(A~E)를 고르고 <span class="k">운영석 열기</span>.</li>
+<li>멈췄던 경기부터 그대로 이어집니다. 심판 태블릿은 1분 안에 저절로 다시 연결됩니다.</li></ol></div>
+
+<div class="c"><h2><i>2</i>코트 노트북이 고장 났어요 (예비 노트북으로)</h2><ol>
+<li>예비 노트북에서 현장 프로그램 실행 → 첫 화면에서 <b>고장 난 코트</b>를 고릅니다.</li>
+<li>코트 화면 아래 <span class="k">🛟 본부에서 이 코트 백업 받기</span>를 누릅니다.</li>
+<li>종목 운영석 → <span class="k">대회 설정</span> → <span class="k">백업과 복구</span>의 <span class="k">백업 파일에서 복구</span>에서 받은 파일을 고르고 <span class="k">복구 실행</span>.</li>
+<li>심판은 QR 코드를 다시 찍습니다.</li></ol>
+<div class="note">본부에 모인 마지막 백업(1분 간격) 이후의 점수는 다시 입력해야 할 수 있습니다.</div></div>
+
+<div class="c"><h2><i>3</i>심판 태블릿이 끊겼어요</h2><ol>
+<li>태블릿 와이파이가 <b>대회 공유기</b>에 연결돼 있는지 확인합니다.</li>
+<li>채점 화면을 아래로 당겨 <b>새로 고침</b>합니다.</li>
+<li>그래도 안 되면 운영석 <span class="k">📱 QR 접속</span>의 그 심판 번호 QR을 다시 찍습니다.</li>
+<li>1분 넘게 안 되면 <b>예비 태블릿</b>으로 같은 QR을 찍습니다.</li></ol></div>
+
+<div class="c"><h2><i>4</i>태블릿 배터리가 부족해요</h2><ol>
+<li>본부 화면 맨 위 <span class="k">🔋</span> 배지가 빨갛게 깜빡이면, 눌러서 몇 코트 몇 심인지 확인합니다.</li>
+<li>부문과 부문 사이에 충전기를 꽂거나 예비 태블릿으로 바꿉니다 (같은 QR).</li>
+<li>20% 아래는 경기 중에 꺼질 수 있으니 바로 바꿉니다.</li></ol></div>
+
+<div class="c"><h2><i>5</i>와이파이(공유기)가 끊겼어요</h2><ol>
+<li>공유기 전원과 랜선을 확인하고, 꺼졌으면 다시 켭니다 (2~3분).</li>
+<li>노트북마다 점수는 계속 저장되므로 기다렸다가 이어서 하면 됩니다.</li>
+<li>공유기가 살아나면 심판 태블릿·본부 연결은 저절로 돌아옵니다.</li></ol></div>
+
+<div class="c"><h2><i>6</i>한 코트가 너무 밀려요 (코트 옮기기)</h2><ol>
+<li>본부 → <span class="k">🔀 코트 진행·옮기기</span>.</li>
+<li><span class="k">추천대로 옮기기</span>를 누르면 남은 부문을 빈 코트로 보냅니다.</li>
+<li>방송으로 선수·지도자에게 코트 변경을 알립니다.</li>
+<li>잘못 옮겼으면 같은 화면의 <span class="k">옮기기 취소</span>.</li></ol></div>
+
+<div class="c"><h2><i>7</i>상장이 안 나와요</h2><ol>
+<li>프린터 전원·용지·토너를 확인합니다.</li>
+<li>본부 <span class="k">✅ 시작 전 점검</span>에서 프린터가 초록불인지 봅니다 (오프라인·대기 문서 수 표시).</li>
+<li>윈도우 <b>설정 → 프린터</b>에서 멈춘 대기 문서를 취소한 뒤, 본부 <span class="k">🖨️ 상장 자동 출력</span>에서 다시 인쇄합니다.</li></ol></div>
+
+<div class="c"><h2><i>8</i>방송(호출)이 안 들려요</h2><ol>
+<li>본부 노트북 소리와 스피커 연결·볼륨을 확인합니다.</li>
+<li>본부 → <span class="k">📣 호출·방송</span>에서 소리가 켜져 있는지, <b>방송 창</b>이 열려 있는지 봅니다.</li>
+<li>급하면 방송 문구를 마이크로 직접 읽습니다.</li></ol></div>
+
+<div class="c wide"><h2><i>9</i>노트북 하드가 꽉 찼어요</h2>
+첫 화면 위쪽 <span class="k">💾 남은 공간</span>을 누르면 하드를 차지하는 곳이 크기순으로 나옵니다. 현장 프로그램 쪽이면 <span class="k">🧹 상장 파일 지우기</span>, 인쇄 대기열이면 <b>설정 → 프린터</b>에서 대기 문서 취소, 임시 파일·브라우저 캐시면 윈도우 <b>설정 → 시스템 → 저장소</b>에서 정리합니다. 대회 전날 3GB 이상 비워 두세요.</div>
+</div>
+<div class="tel"><div><small>본부 대표</small>&nbsp;</div><div><small>기술 담당</small>&nbsp;</div><div><small>예비 노트북·태블릿 위치</small>&nbsp;</div></div>
+</div>
+</body></html>

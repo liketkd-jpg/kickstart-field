@@ -151,7 +151,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 			out[a.Key] = m
 		}
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "time": time.Now().UnixMilli()})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "bat": batList(), "disk": diskNow(), "time": time.Now().UnixMilli()})
 }
 
 // ---------------- 코트: 신호 보내기 ----------------
@@ -212,6 +212,8 @@ type courtEntry struct {
 	written   bool
 	rulesAt   int64  // 이 코트가 받은 본부 경기 규칙 (v1.4.51 시작 전 점검표)
 	licEnds   string // 이 코트 노트북의 허가 코드 끝나는 날
+	lastBat   []byte // v1.4.57 심판 태블릿 배터리
+	lastDisk  []byte // v1.4.57 하드 남은 공간
 }
 
 var (
@@ -401,6 +403,8 @@ type feedMsg struct {
 	Saves   []fileInfo                 `json:"saves"`
 	Lic     json.RawMessage            `json:"lic"`
 	RulesAt int64                      `json:"rulesAt"`
+	Bat     json.RawMessage            `json:"bat"`
+	Disk    json.RawMessage            `json:"disk"`
 	Live    struct {
 		On    bool   `json:"on"`
 		State string `json:"state"`
@@ -453,6 +457,20 @@ func pollCourt(addr string) {
 			changed = true
 			c.rulesAt, c.licEnds = fm.RulesAt, le
 		}
+		if !bytes.Equal(fm.Bat, c.lastBat) {
+			changed = true
+			c.lastBat = append([]byte(nil), fm.Bat...)
+		}
+		if dk := []byte(fm.Disk); !bytes.Equal(dk, c.lastDisk) {
+			// 남은 공간은 100MB 넘게 바뀔 때만 다시 씀
+			var a, b struct{ Free int64 }
+			_ = json.Unmarshal(dk, &a)
+			_ = json.Unmarshal(c.lastDisk, &b)
+			if len(c.lastDisk) == 0 || a.Free-b.Free > 100<<20 || b.Free-a.Free > 100<<20 {
+				changed = true
+				c.lastDisk = append([]byte(nil), dk...)
+			}
+		}
 		lv, _ := json.Marshal(fm.Live)
 		if !bytes.Equal(lv, c.lastLive) {
 			changed = true
@@ -498,7 +516,7 @@ func pollCourt(addr string) {
 	if !c.lastSeen.IsZero() {
 		ls = c.lastSeen.UnixMilli()
 	}
-	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive)), "rulesAt": c.rulesAt, "licEnds": c.licEnds}
+	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive)), "rulesAt": c.rulesAt, "licEnds": c.licEnds, "bat": json.RawMessage(nonEmpty(c.lastBat)), "disk": json.RawMessage(nonEmpty(c.lastDisk))}
 	hqMu.Unlock()
 	s := stores["hq"]
 	if changed {

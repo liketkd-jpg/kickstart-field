@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.4.56" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.4.57" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -240,9 +240,23 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/api/view":
 		handleView(w, r)
 		return
+	case p == "/api/backup/fromhq" && r.Method == http.MethodPost:
+		handleBackupFromHQ(w, r)
+		return
+	case p == "/api/bat" && r.Method == http.MethodPost:
+		handleBat(w, r)
+		return
+	case p == "/api/printer":
+		handlePrinter(w, r)
+		return
+	case p == "/api/disk/scan" || p == "/api/disk/clean":
+		handleDiskScan(w, r)
+		return
 	case p == "/api/disk" && r.Method == http.MethodGet:
 		handleDisk(w, r)
+		return
 	case p == "/api/hqfeed":
+		noteHQ(r)
 		handleFeed(w, r)
 		return
 	case p == "/api/hqctl" && r.Method == http.MethodPost:
@@ -336,6 +350,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/courtseq.js":
 		serveAsset(w, "assets/courtseq.js", "application/javascript; charset=utf-8")
 		return
+	case p == "/bat.js":
+		serveAsset(w, "assets/bat.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/next.js":
 		serveAsset(w, "assets/next.js", "application/javascript; charset=utf-8")
 		return
@@ -344,6 +361,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case strings.HasPrefix(p, "/judge/"):
 		serveJudgeAuto(w, strings.Trim(strings.TrimPrefix(p, "/judge/"), "/"))
+		return
+	case p == "/emergency" || p == "/emergency/":
+		serveAsset(w, "assets/emergency.html", "text/html; charset=utf-8")
 		return
 	case p == "/guide" || p == "/guide/":
 		serveAsset(w, "assets/guide.html", "text/html; charset=utf-8")
@@ -457,6 +477,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/rules.js"></script>`) // 본부 종목별 경기 규칙 받기
 		out.WriteString(`<script src="/courtseq.js"></script>`)
 		out.WriteString(`<script src="/next.js"></script>`) // 한 종목이 끝나면 다음 종목 운영석으로
+		out.WriteString(`<script src="/bat.js"></script>`)  // 심판 태블릿 배터리 → 본부
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)

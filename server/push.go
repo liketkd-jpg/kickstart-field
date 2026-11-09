@@ -147,6 +147,10 @@ func handleHQSim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m.At = time.Now().UnixMilli()
+	if m.Reset > 0 {
+		go cleanCerts(true) // 본부에 모인 가상 경기 상장 파일도 지움
+		tidyStores(true)
+	}
 	type tgt struct{ addr, court string }
 	var list []tgt
 	hqMu.Lock()
@@ -182,7 +186,8 @@ func handleInboxSim(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if m.Reset > 0 {
-		tidyStores(true) // 가상 경기 기록(경기 기록·호출 기록)도 지움
+		tidyStores(true)    // 가상 경기 기록(경기 기록·호출 기록)도 지움
+		go cleanCerts(true) // 가상 경기 상장 파일(크기가 큼)도 지움
 		for _, a := range apps {
 			if s := stores[a.Key]; s != nil {
 				zeroBoard(s, m.At)

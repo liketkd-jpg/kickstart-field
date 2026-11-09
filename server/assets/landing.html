@@ -63,7 +63,7 @@ details.how[open]>summary::after{content:" ▴ 접기"}
 .bt .go{grid-row:2;grid-column:1/-1;justify-self:start}
 .bt .nm span{min-height:2.9em}
 @media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}main>#viewc,main>#role,main>#net{grid-column:1/-1}}
-.disk{margin-left:auto;font:700 13px/1.2 "Noto Sans KR",sans-serif;color:#CFC6B4;border:1px solid rgba(214,182,124,.3);border-radius:999px;padding:5px 12px;white-space:nowrap}.disk.bad{color:#fff;background:#B3261E;border-color:#B3261E}
+.dxov{position:fixed;inset:0;z-index:50;background:rgba(5,6,9,.75);display:flex;align-items:center;justify-content:center;padding:16px}.dxpn{width:min(900px,100%);max-height:92vh;overflow:auto;background:#14171D;border:1px solid rgba(214,182,124,.4);border-radius:22px;padding:22px;color:#F4EFE4}.dxpn h2{margin:0;font:900 24px/1.2 "Noto Sans KR",sans-serif}.dxs{color:#CFC6B4;font:600 15px/1.5 "Noto Sans KR",sans-serif}.dxt{width:100%;border-collapse:collapse;margin-top:8px}.dxt td{padding:10px 6px;border-bottom:1px solid rgba(255,255,255,.08);font:700 17px/1.3 "Noto Sans KR",sans-serif;vertical-align:top}.dxt small{display:block;color:#9C968A;font-weight:500;font-size:13px}.dxt .n{text-align:right;white-space:nowrap;color:#E8C77D}.disk{cursor:pointer;margin-left:auto;font:700 13px/1.2 "Noto Sans KR",sans-serif;color:#CFC6B4;border:1px solid rgba(214,182,124,.3);border-radius:999px;padding:5px 12px;white-space:nowrap}.disk.bad{color:#fff;background:#B3261E;border-color:#B3261E}
 </style><style>/* v1.4.54 코트 먼저 고르는 첫 화면 · 한 화면에 큰 글씨 */
 #home{display:flex;flex-direction:column;gap:14px;max-width:1280px;width:100%;box-sizing:border-box;margin:0 auto;min-height:calc(100vh - 64px);padding-bottom:10px}
 #home>*{grid-column:auto}
@@ -163,14 +163,14 @@ function vCourt(){const r=window.KS_SEQ&&PLAN?KS_SEQ.seq(PLAN):{B:[],cur:null},b
       <button class="lk" data-repick>코트 바꾸기</button></div>
     <div class="ct-main">${big}<div class="sq"><h3>오늘 ${esc(c)}코트 순서</h3><ol>${list}</ol></div></div>
     <div class="spare"><span class="sp-k">예비 모드 · 종목 직접 열기</span>${APPS.map(a=>`<button class="sp" data-open="${a.key}">${glyph(a.key,'sp-g')}${esc(a.title.replace(' 대회',''))}</button>`).join('')}
-      <a class="sp" href="/view" target="_blank" rel="noopener">관람객 화면</a><a class="sp" href="/guide">사용 설명서</a><button class="sp" data-hqpick>본부로 바꾸기</button></div></div>`;}
+      <a class="sp" href="/view" target="_blank" rel="noopener">관람객 화면</a><a class="sp" href="/guide">사용 설명서</a><a class="sp" href="/emergency" target="_blank" rel="noopener">🆘 비상 안내</a><button class="sp" data-fromhq title="이 노트북이 고장 난 코트 노트북 대신일 때">🛟 본부에서 이 코트 백업 받기</button><button class="sp" data-hqpick>본부로 바꾸기</button></div></div>`;}
 /* 3) 본부 노트북 */
 function vHq(){return `<div class="ct"><div class="ct-top"><span class="ct-badge hq">${glyph('hq','pk-g')}</span><div class="ct-t"><b>대회 본부 노트북</b><span>같은 와이파이의 코트 노트북을 자동으로 찾아 모읍니다 · 종목 설정 → 대회 운영표 → 코트로 보내기 순서로 준비하세요</span></div><button class="lk" data-repick>코트로 바꾸기</button></div>
     <div class="ct-main"><button class="now ev-hq" data-hqopen><span class="now-k">대회 본부</span>${glyph('hq','now-g')}<span class="now-n"><em>Headquarters</em><b>본부 운영 열기</b><span>종목별 경기 규칙 · 대회 운영표(관제탑) · 시작 전 점검 · 호출·방송 · 통합 결과</span></span><span class="now-go">본부 열기 →</span></button>
       <div class="sq"><h3>바로 가기</h3><ol><li data-hqopen>${glyph('hq','sq-g')}<span><b>본부 운영</b><small>코트 연결 · 점검 · 운영표</small></span><em>→</em></li>
         <li data-link="/hq/#board">${glyph('hq','sq-g')}<span><b>본부 모니터</b><small>전광판 · 방송</small></span><em>→</em></li>
         <li data-link="/view">${glyph('recognized','sq-g')}<span><b>관람객 화면</b><small>실시간 결과</small></span><em>→</em></li></ol></div></div>
-    <div class="spare"><span class="sp-k">예비 모드 · 종목 직접 열기</span>${APPS.map(a=>`<button class="sp" data-open="${a.key}">${glyph(a.key,'sp-g')}${esc(a.title.replace(' 대회',''))}</button>`).join('')}<a class="sp" href="/guide">사용 설명서</a></div></div>`;}
+    <div class="spare"><span class="sp-k">예비 모드 · 종목 직접 열기</span>${APPS.map(a=>`<button class="sp" data-open="${a.key}">${glyph(a.key,'sp-g')}${esc(a.title.replace(' 대회',''))}</button>`).join('')}<a class="sp" href="/guide">사용 설명서</a><a class="sp" href="/emergency" target="_blank" rel="noopener">🆘 비상 안내</a></div></div>`;}
 let PICK=false;
 function draw(){stat();const el=document.getElementById('stage');
   if(!NODE){el.innerHTML='<div class="now none"><span class="now-k">현장 서버에 연결하지 못했습니다</span><span class="now-n"><b>검은 창(현장 모드 프로그램)이 켜져 있는지 확인해 주세요</b></span></div>';return;}
@@ -195,6 +195,23 @@ async function disk(){try{const j=await (await fetch('/api/disk',{cache:'no-stor
   const gb=v=>(v/1073741824).toFixed(v<10737418240?1:0)+'GB',mb=v=>v<1073741824?Math.round(v/1048576)+'MB':gb(v),low=j.free<3*1073741824;
   el.hidden=false;el.className='disk'+(low?' bad':'');el.textContent=`💾 남은 공간 ${gb(j.free)} · 현장 프로그램 ${mb(j.used)}`+(low?' · 하드 공간이 부족합니다':'');
   el.title=Object.entries(j.parts||{}).sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+': '+mb(v)).join('\n');}catch(e){}}
+/* v1.4.57 남은 공간 표시를 누르면: 하드를 차지하는 곳 찾기 + 상장 파일 정리 */
+document.addEventListener('click',e=>{const fb=e.target.closest('[data-fromhq]');if(fb){fb.disabled=true;fb.textContent='본부에서 받는 중…';
+    fetch('/api/backup/fromhq',{method:'POST'}).then(r=>r.json()).then(j=>{if(j.ok){fb.textContent='✓ 받았습니다 · 폴더를 엽니다';fetch('/api/results/open',{method:'POST'}).catch(()=>{});
+      alert(`본부에 모인 이 코트 백업을 받았습니다:\n${(j.files||[]).join('\n')}\n\n이제 종목 운영석 → 「대회 설정」 → 「백업과 복구」의 「백업 파일에서 복구」에서 이 파일을 골라 「복구 실행」을 누르세요.`);}
+      else{fb.textContent='🛟 본부에서 이 코트 백업 받기';alert(j.error||'받지 못했습니다');}fb.disabled=false;}).catch(()=>{fb.disabled=false;fb.textContent='🛟 본부에서 이 코트 백업 받기';});return;}
+  if(e.target.closest('#disk'))scan();if(e.target.closest('[data-dx]'))document.getElementById('dxov').remove();
+  const cb=e.target.closest('[data-dclean]');if(cb){if(cb.dataset.arm!=='1'){cb.dataset.arm='1';cb.textContent='한 번 더 누르면 지웁니다';setTimeout(()=>{cb.dataset.arm='';cb.textContent='🧹 상장 파일 지우기';},5000);return;}
+    fetch('/api/disk/clean',{method:'POST'}).then(r=>r.json()).then(j=>{cb.textContent=`지웠습니다 · ${j.files||0}개 (${Math.round((j.bytes||0)/1048576)}MB)`;disk();}).catch(()=>{cb.textContent='지우지 못했습니다';});}});
+async function scan(){let ov=document.getElementById('dxov');if(!ov){ov=document.createElement('div');ov.id='dxov';ov.className='dxov';document.body.appendChild(ov);}
+  const sz=v=>v>=1073741824?(v/1073741824).toFixed(1)+'GB':Math.round(v/1048576)+'MB';
+  for(let i=0;i<40&&document.getElementById('dxov');i++){let j=null;try{j=await (await fetch('/api/disk/scan',{cache:'no-store'})).json();}catch(e){}
+    if(j){const it=j.items||[];ov.innerHTML=`<div class="dxpn"><div style="display:flex;align-items:center;gap:12px"><h2>💾 하드를 차지하는 곳</h2><button class="sp" data-dx style="margin-left:auto">닫기</button></div>
+      <p class="dxs">남은 공간 ${sz(j.free||0)} / 전체 ${sz(j.total||0)}${j.busy?' · 크기를 재는 중입니다 (1분쯤)…':''}</p>
+      ${it.length?`<table class="dxt">${it.map(x=>`<tr><td><b>${esc(x.name)}</b><small>${esc(x.hint||'')}</small></td><td class="n">${sz(x.size)}</td></tr>`).join('')}</table>`:'<p class="dxs">재는 중…</p>'}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="sp" data-dclean>🧹 상장 파일 지우기</button><span class="dxs" style="align-self:center">상장 자동 출력용 파일(.cert.json)만 지웁니다 · 결과·백업은 그대로</span></div></div>`;
+      if(!j.busy&&it.length)break;}
+    await new Promise(r=>setTimeout(r,3000));}}
 disk();setInterval(disk,60000);
 addEventListener('focus',()=>load());setInterval(()=>{if(!PICK)load();},5000);load();
 </script>

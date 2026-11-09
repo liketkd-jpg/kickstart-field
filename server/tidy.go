@@ -71,6 +71,7 @@ func tidyStores(reset bool) {
 func startTidy() {
 	rotateLog()
 	clearPrintCache()
+	go cleanCerts(false) // 7일 지난 상장 파일
 	go func() {
 		time.Sleep(20 * time.Second)
 		for {

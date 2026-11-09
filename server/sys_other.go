@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"syscall"
@@ -50,4 +51,12 @@ func diskFree(path string) (int64, int64) {
 		return 0, 0
 	}
 	return int64(st.Bavail) * int64(st.Bsize), int64(st.Blocks) * int64(st.Bsize)
+}
+
+func scanPlaces() [][3]string {
+	return [][3]string{{"임시 파일", os.TempDir(), ""}}
+}
+
+func printerStatus() map[string]any {
+	return map[string]any{"ok": false, "err": "윈도우 노트북에서만 확인합니다"}
 }
