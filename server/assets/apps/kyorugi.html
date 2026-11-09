@@ -919,8 +919,19 @@ function regenerateDivs(){
       return add.length||keep.length!==(prev.order||[]).length?{...prev,order,round1:buildRound1(order)}:prev;}
     return {id:'d'+hash(k),key:k,name:k,order:ids,round1:buildRound1(ids)};
   }).sort((a,b)=>a.name.localeCompare(b.name,'ko',{numeric:true}));
-  return saveDivs(list).then(()=>toast(`체급(부문) ${list.length}개를 편성했습니다`));
+  return purgeStale(list).then(()=>saveDivs(list)).then(()=>toast(`체급(부문) ${list.length}개를 편성했습니다`));
 }
+/* v1.4.63 명단을 지우거나 바꾸면, 없어진 체급·선수의 경기 결과와 진행 중이던 경기를 함께 지움
+   (같은 이름의 체급을 다시 만들면 예전 대진 결과가 「경기 진행」에 남던 문제) */
+async function purgeStale(list){try{
+  const ids=new Set(list.map(d=>d.id)),people=new Set(S.roster.map(a=>a.id));let n=0;
+  for(const [k,r] of Object.entries(S.results||{})){if(!r)continue;
+    if(!ids.has(r.divId)||(r.blue&&!people.has(r.blue))||(r.red&&!people.has(r.red))){await store.del('results/'+(r._id||r.matchId||k));n++;}}
+  const L=ST(),gone=x=>x&&x.id&&!people.has(x.id);
+  if(!S.roster.length){await deleteAll('ev');}
+  if(L&&L.phase&&L.phase!=='idle'&&(!S.roster.length||(L.divId&&!ids.has(L.divId))||gone(L.blue)||gone(L.red)))await saveState({phase:'idle',epoch:(L.epoch||0)+1});
+  if(n)addLog('예전 경기 결과 정리',`${n}건`,'명단이 바뀌어 없어진 선수·체급의 결과를 지움');
+}catch(e){console.warn('purge',e);}}
 const divHasResults=d=>Object.values(S.results).some(r=>r.divId===d.id);
 function rankDiv(d){const r=rankDiv0(d);return COMM()?r.map(x=>x&&x.rank>3?{...x,rank:3}:x):r;}
 function rankDiv0(d){
@@ -956,7 +967,7 @@ function engine(st,evs){
       if(f.side===e.side&&f.k===e.k&&f.round===e.round){grp.push(f);js.add(f.judge);}}
     if(js.size>=need){grp.forEach(x=>{used.add(x._id);status[x._id]='ok';});add(e.round,e.side,e.k,KINDS[e.k].v);}
   }
-  const now=Date.now();
+  const now=NOWS();
   jd.forEach(e=>{if(!status[e._id])status[e._id]=now-e.at<W+300?'wait':'no';});
   const tot={blue:blankSide(),red:blankSide()};
   for(const r of [1,2,3])if(R[r])for(const s of ['blue','red'])for(const k in tot[s])tot[s][k]+=R[r][s][k];
@@ -1351,12 +1362,22 @@ let OUTBOX=(()=>{try{return JSON.parse(lsGet('ky_outbox_'+SEATDEV)||'{}')||{};}c
 const saveOutbox=()=>lsSet('ky_outbox_'+SEATDEV,JSON.stringify(OUTBOX));
 let flushing=false;
 const NETS={ok:0,fail:0};
+/* v1.4.63 심판 기기 시계 맞추기: 부심 입력은 「누른 시각」으로 서로 맞춰 보는데(1.5초 안에 2명 이상),
+   태블릿마다 시계가 몇 초씩 다르면(인터넷 없는 공유기에서 흔함) 같은 순간에 눌러도 점수가 인정되지 않습니다.
+   현장 서버(코트 노트북) 시계를 기준으로 차이를 재서 입력 시각에 더합니다. */
+var SKEW=0,SKEW_RTT=1e9,SKEW_AT=0;
+function NOWS(){return Date.now()+(SKEW||0);}
+async function syncClock(){const F=window.KS_FIELD;if(!F||!F.app)return;
+  for(let i=0;i<3;i++){try{const t0=Date.now(),r=await fetch('/'+F.app+'/api/ping',{method:'POST',cache:'no-store'}),j=await r.json(),t1=Date.now(),rtt=t1-t0;
+    /* 왕복이 짧았던 측정일수록 정확 · 1분 지나면 새 측정을 그대로 씀 */
+    if(j&&j.time&&rtt<2500&&(rtt<=SKEW_RTT+80||Date.now()-SKEW_AT>60000)){SKEW=Math.round(j.time-(t0+t1)/2);SKEW_RTT=rtt;SKEW_AT=Date.now();}}catch(e){}}}
+syncClock();setInterval(syncClock,20000);
 async function flushOutbox(){
   if(flushing)return;flushing=true;
   try{for(const [id,doc] of Object.entries(OUTBOX)){try{await store.putQuiet('ev/'+id,doc);delete OUTBOX[id];saveOutbox();NETS.ok=Date.now();const m=MYLOG.find(x=>x.id===id);if(m)m.st='ok';}catch(e){NETS.fail=Date.now();break;}}}
   finally{flushing=false;schedule();}
 }
-setInterval(()=>{if(Object.keys(OUTBOX).length)flushOutbox();},3000);
+setInterval(()=>{if(Object.keys(OUTBOX).length)flushOutbox();},1500);
 async function claimSeat(n){
   if(!S.seatsLoaded)return 'wait';
   const block=()=>{if(FIXED===n){judgeBlock='taken';render();}};
@@ -1873,7 +1894,7 @@ const ACT={
     await Promise.all(js.map(j=>store.put('ev/'+rid('t'+j),{mid:L.mid,judge:j,side:b.dataset.s,k:b.dataset.k,round:L.round,at,test:true})));
     toast(`${b.dataset.j==='all'?'모든 부심':b.dataset.j+'부심'} · ${sideName(b.dataset.s)} ${KEY_LABEL[b.dataset.k]} 입력`);},
   press:b=>{const L=live();if(!L||!myJudge)return;const id=rid('j'+myJudge);
-    const doc={mid:L.mid,judge:myJudge,side:b.dataset.s,k:b.dataset.k,round:L.round,at:Date.now()};
+    const doc={mid:L.mid,judge:myJudge,side:b.dataset.s,k:b.dataset.k,round:L.round,at:NOWS()};
     OUTBOX[id]=doc;saveOutbox();MYLOG.push({id,side:doc.side,k:doc.k,st:'wait'});if(MYLOG.length>30)MYLOG.shift();
     LASTHIT={side:doc.side,k:doc.k,at:Date.now()};
     b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit');try{navigator.vibrate&&navigator.vibrate(40);}catch(e){}
@@ -4656,7 +4677,7 @@ window.KS_NAT={get,norm,url,img,intl,count,save,learnFile,deco,key,ISO};
 if(window.KS_BOARD)return;
 const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
 const F=window.KS_FIELD||null,HOST=window.KS_HOST||null;
-const APP=()=>(F&&F.app)||(HOST&&HOST.app)||(window.KS_REGIMPORT&&KS_REGIMPORT.sport&&KS_REGIMPORT.sport())||'';
+const APP=()=>(F&&F.app)||(HOST&&HOST.app)||(window.KS_REGIMPORT&&KS_REGIMPORT.sport&&KS_REGIMPORT.sport())||((/^\/(poomsae|kyorugi|gyeokpa)\//.exec(location.pathname)||[])[1])||'';
 const COURT=()=>(F&&F.court)||(HOST&&HOST.court)||'';
 const SPN={poomsae:'품새',kyorugi:'겨루기',gyeokpa:'격파'};
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4675,7 +4696,10 @@ function nextBar(){let n=null;try{const b=window.KS_HQ&&KS_HQ.board();n=b&&b.nex
   return `<div class="ksb-bot">${n?`<span class="ksb-lb">NEXT</span><span class="ksb-nx">${who}${n.div?` · <span>${E(n.div)}</span>`:''}${n.label?` · ${E(n.label)}`:''}</span>`:''}<span class="ksb-kl">KICKSTART UP · TAEKWONDO</span></div>`;}
 /* 전광판 단추: 클래식으로 / 브랜드로 */
 async function setBoard(v){const S=g('S'),sv=g('saveSettings');if(!S||!sv)return;await sv({...(S.settings||{}),board:v});S.settings={...(S.settings||{}),board:v};try{g('render')();}catch(e){}}
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ksb]');if(!b)return;e.preventDefault();e.stopPropagation();setBoard(b.dataset.ksb==='classic'?'classic':'brand');},true);
+/* v1.4.63 전광판 화면의 모양 바꾸기 단추는 실수로 눌리지 않게 두 번 눌러야 바뀜 */
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ksb]');if(!b)return;e.preventDefault();e.stopPropagation();
+  if(b.dataset.arm!=='1'){b.dataset.arm='1';const t=b.textContent;b.textContent='한 번 더 누르면 바뀝니다';setTimeout(()=>{b.dataset.arm='';b.textContent=t;},3000);return;}
+  setBoard(b.dataset.ksb==='classic'?'classic':'brand');},true);
 const swBtn=()=>`<button data-ksb="${classic()?'brand':'classic'}" class="ksb-sw">${classic()?'브랜드 전광판':'클래식 전광판'}</button>`;
 
 /* ---------- 겨루기 ---------- */
