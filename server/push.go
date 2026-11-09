@@ -158,13 +158,15 @@ func handleHQSim(w http.ResponseWriter, r *http.Request) {
 	type tgt struct{ addr, court string }
 	var list []tgt
 	hqMu.Lock()
+	res := map[string]string{}
 	for a, c := range courts {
 		if c.online {
 			list = append(list, tgt{a, c.court})
+		} else if c.court != "" && res[c.court] == "" {
+			res[c.court] = "끊김" // v1.4.71 끊긴 코트도 알려 줌 (어느 코트가 안 되는지 보이게)
 		}
 	}
 	hqMu.Unlock()
-	res := map[string]string{}
 	for _, t := range list {
 		if _, err := postJSON(t.addr, "/api/inbox/sim", m, 5*time.Second); err != nil {
 			res[t.court] = err.Error()
@@ -185,6 +187,9 @@ func handleInboxSim(w http.ResponseWriter, r *http.Request) {
 		m.At = time.Now().UnixMilli()
 	}
 	for _, a := range apps {
+		if a.Key == "kyorugi" { // v1.4.71 가상 경기는 품새·격파만 (겨루기 화면에 「가상 경기」가 뜨지 않게)
+			continue
+		}
 		if s := stores[a.Key]; s != nil {
 			s.setDoc("sim/main", map[string]any{"on": m.On, "speed": m.Speed, "at": m.At, "from": "본부", "reset": m.Reset})
 		}

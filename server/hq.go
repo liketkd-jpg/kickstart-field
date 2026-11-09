@@ -138,7 +138,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{}
 	for _, a := range apps {
 		s := stores[a.Key]
-		if s == nil {
+		if s == nil || !appEnabled(a.Key) { // v1.4.71 대회 종목에서 뺀 앱(예: 수업용 겨루기)은 본부로 보내지 않음
 			continue
 		}
 		s.mu.Lock()

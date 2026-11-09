@@ -25,7 +25,7 @@ func courtPlan() map[string]any {
 	nowMs := time.Now().UnixMilli()
 	for _, a := range apps {
 		s := stores[a.Key]
-		if s == nil {
+		if s == nil || !appEnabled(a.Key) {
 			continue
 		}
 		s.mu.Lock()
@@ -143,4 +143,26 @@ func courtPlan() map[string]any {
 
 func handleCourtPlan(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, courtPlan())
+}
+
+// v1.4.71 본부 「종목별 경기 규칙」에서 뺀 종목은 코트 첫 화면·종목 자동 전환에 넣지 않음
+// (수업 때 쓴 겨루기 명단이 남아 있어도 대회 순서에 끼어들지 않게). 규칙이 없으면 모두 씀
+func appEnabled(key string) bool {
+	raw, _ := getRules()
+	var r struct {
+		Events map[string]bool `json:"events"`
+	}
+	if len(raw) == 0 || json.Unmarshal(raw, &r) != nil || r.Events == nil {
+		return true
+	}
+	e := r.Events
+	switch key {
+	case "kyorugi":
+		return e["kyorugi"]
+	case "gyeokpa":
+		return e["gyeokpa"] || e["team100"]
+	case "poomsae":
+		return e["recognized"] || e["freestyle"] || e["gym"] || e["team100"]
+	}
+	return true
 }
