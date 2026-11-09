@@ -17,6 +17,7 @@ type planDiv struct {
 	Name  string `json:"name"`
 	Done  int    `json:"done"`
 	Total int    `json:"total"`
+	At    string `json:"at,omitempty"` // 운영표 예상 시작 (HH:MM)
 }
 
 func courtPlan() map[string]any {
@@ -41,7 +42,17 @@ func courtPlan() map[string]any {
 			chunks = append(chunks, s.docs[k])
 		}
 		inb, okin := s.docs["inbox/roster"]
+		traw, okt := s.docs["hq/times"]
 		s.mu.Unlock()
+		var times map[string]string
+		if okt {
+			var t struct {
+				Times map[string]string `json:"times"`
+			}
+			if json.Unmarshal(traw, &t) == nil {
+				times = t.Times
+			}
+		}
 		e := map[string]any{"app": a.Key, "title": a.Title}
 		// 본부가 보냈지만 운영석이 아직 넣지 않은 명단 (그 종목 운영석을 열면 들어감)
 		var pending []planDiv
@@ -112,6 +123,16 @@ func courtPlan() map[string]any {
 		if len(pending) > 0 {
 			divs = pending
 			e["pending"] = true
+		}
+		// 생활체육 「· 1조」처럼 나뉜 부문도 원래 부문 시각을 씀
+		for i := range divs {
+			nm := divs[i].Name
+			if j := strings.LastIndex(nm, " · "); j > 0 && strings.HasSuffix(nm, "조") {
+				nm = nm[:j]
+			}
+			if t, ok := times[nm]; ok {
+				divs[i].At = t
+			}
 		}
 		e["divs"] = divs
 		list = append(list, e)

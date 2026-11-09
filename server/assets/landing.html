@@ -100,6 +100,34 @@ details.how[open]>summary::after{content:" ▴ 접기"}
 .sp{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(201,162,98,.35);color:#EAD7A8;border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none}.sp-g{width:20px;height:20px}
 @media (max-height:820px){.lux-hero{display:none}.now-g{width:120px;height:120px}.now-n b{font-size:38px}.pk-c{min-height:140px}}
 @media (max-width:900px){.ct-main{grid-template-columns:minmax(0,1fr)}.now{grid-template-columns:1fr}.now-g{grid-row:auto;width:90px;height:90px}.now-go{grid-column:1}}
+
+/* v1.4.61 한 화면 정리: 코트 8개를 작게 한 줄 · 오늘 일정은 오전 | 오후 두 칸 */
+html,body{height:100%}body{overflow:hidden}
+#home{height:calc(100vh - 64px);min-height:0;overflow:hidden}
+.pk{flex:1;min-height:0;justify-content:center}.pk h2{font-size:clamp(22px,3.2vh,30px)}
+.pk-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}
+.pk-c{min-height:clamp(84px,17vh,150px);border-radius:18px;gap:2px}.pk-c b{font-size:clamp(38px,7.5vh,68px)}.pk-c span{font-size:clamp(13px,1.8vh,16px)}
+.pk-c.xtra{opacity:.82}
+.pk-hq{display:flex;align-items:center;gap:16px;text-align:left;padding:14px 20px;border-radius:18px;border:1px solid rgba(214,182,124,.45);background:linear-gradient(160deg,#2A2519,#14110B);color:#F6F2E9;cursor:pointer;font:inherit}
+.pk-hq:hover{box-shadow:0 0 0 2px rgba(201,162,98,.45)}.pk-hq .pk-g{width:52px;height:52px}.pk-hq span{flex:1;display:flex;flex-direction:column;gap:2px}.pk-hq b{font-size:22px}.pk-hq small{color:#A39D91;font-size:14px}.pk-hq em{font-style:normal;font-weight:900;color:#EBD5A3}
+.ct{gap:10px}.ct-top{gap:12px}.ct-badge{min-width:68px;height:68px;font-size:42px;border-radius:18px}.ct-badge small{bottom:5px;font-size:10px}.ct-t b{font-size:22px}.ct-t span{font-size:13px}
+.ct-main{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:12px}
+.now{padding:20px 22px;column-gap:18px;row-gap:8px}.now-g{width:clamp(70px,13vh,120px);height:clamp(70px,13vh,120px)}.now-n b{font-size:clamp(26px,4.4vh,40px)}.now-n>span{font-size:15px}.now-go{font-size:17px;padding:11px 18px}
+.sq{padding:12px 14px;gap:8px;overflow:hidden}.sq h3{font-size:17px;display:flex;align-items:baseline;gap:8px}.sq h3 small{font-size:12px;color:#8F897C;font-weight:600}
+.blk{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:13px;color:#CFC8B8}.blk span{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.1);cursor:pointer}.blk span.cur{border-color:#C9A262;color:#EBD5A3}.blk span.fin{opacity:.5}.blk small{color:#8F897C}.blk i{font-style:normal;color:#6E6A61}.blk-g{width:16px;height:16px;color:#C9A262}
+.dcols{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dc{min-height:0;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.07);border-radius:14px;background:rgba(255,255,255,.015);overflow:hidden}
+.dc h4{margin:0;padding:8px 10px;font-size:15px;color:#EBD5A3;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(255,255,255,.07)}.dc h4 small{font-size:12px;color:#8F897C;font-weight:600}
+.dc ol{list-style:none;margin:0;padding:4px;display:flex;flex-direction:column;gap:2px;overflow:auto;min-height:0;flex:1}
+.sq .dc li{display:grid;grid-template-columns:8px 44px 1fr auto;align-items:center;gap:7px;padding:5px 8px;border-radius:9px;border:0;background:none;cursor:pointer;font-size:14px;line-height:1.25}
+.dc li .t{font-variant-numeric:tabular-nums;color:#C9A262;font-weight:800;font-size:13px}.dc li .n{color:#ECE6D8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dc li .n small{color:#8F897C;font-size:11px}.dc li em{font-style:normal;font-weight:900;font-size:12px;color:#8F897C}
+.sq .dc li.cur{background:rgba(201,162,98,.16);outline:1px solid rgba(201,162,98,.6)}.dc li.cur em{color:#EBD5A3}.sq .dc li.fin{opacity:.5}.dc li.fin em{color:#6BE0A4}.sq .dc li.emp{cursor:default;color:#7D7A72;grid-template-columns:1fr}
+.sq .dc ol.d li{padding:3px 8px;font-size:13px}.sq .dc ol.xd li{padding:1px 8px;font-size:12px}.dc ol.xd li .t{font-size:11px}
+.ev-dot{width:8px;height:8px;border-radius:50%;background:#C9A262}.ev-dot.ev-freestyle{background:#7FB2FF}.ev-dot.ev-gym{background:#6BE0A4}.ev-dot.ev-team100{background:#C59BFF}.ev-dot.ev-gyeokpa{background:#FF9F57}.ev-dot.ev-kyorugi{background:#FF6B6B}
+.spare{padding-top:0;gap:6px}.sp{padding:5px 11px;font-size:13px}
+.lux-foot{flex:none}
+@media (max-height:900px){.lux-hero{display:none}}
+@media (max-width:900px){body{overflow:auto}#home{height:auto;overflow:visible}.pk-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.ct-main{grid-template-columns:minmax(0,1fr)}.dcols{grid-template-columns:1fr}}
 </style></head><body>
 <header><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#g)" d="M19 16h7.5v32H19z"/><path fill="url(#g)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#g)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#g)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="w">KICKSTART<b>UP</b></span><span class="t">현장 모드 · 중앙 통제</span><small>v__VERSION__</small><span id="disk" class="disk" hidden></span></header>
 <main id="home">
@@ -141,11 +169,22 @@ function stat(){const st=document.getElementById('luxstat');if(!st)return;
     <div><small>Rules</small><b class="${RUL?'ok':''}">${RUL?'본부 규칙 받음':'—'}</b></div>
     <div><small>Address</small><b>${NODE&&NODE.ips&&NODE.ips.length?'http://'+esc(NODE.ips[0])+':'+NODE.port+'/':'와이파이 확인'}</b></div><div><small>Edition</small><b>v__VERSION__</b></div>`;}
 /* 1) 처음: 이 노트북의 역할 고르기 — 코트(A~H) 또는 본부 */
-function vPick(){const L=MORE?'ABCDEFGH':'ABCDE',cur=NODE&&NODE.role==='court'?NODE.court:'';
+function vPick(){const L='ABCDEFGH',cur=NODE&&NODE.role==='court'?NODE.court:'';
   return `<div class="pk"><h2>이 노트북은 어디에 쓰나요?</h2><p class="muted">코트마다 노트북 한 대씩 서로 다른 코트를 고르세요. 한 번 고르면 기억합니다. 종목은 본부 운영표가 보낸 순서대로 저절로 열립니다.</p>
-    <div class="pk-grid">${L.split('').map(c=>`<button class="pk-c ${cur===c?'on':''}" data-court="${c}"><b>${c}</b><span>${c}코트</span></button>`).join('')}
-      <button class="pk-c hq" data-hqpick>${glyph('hq','pk-g')}<span>대회 본부</span></button></div>
-    ${MORE?'':'<button class="lk" data-more>F·G·H 코트 더 보기</button>'}${NODE&&NODE.role?'<button class="lk" data-cancel style="margin-left:14px">취소</button>':''}</div>`;}
+    <div class="pk-grid">${L.split('').map(c=>`<button class="pk-c ${cur===c?'on':''} ${'FGH'.includes(c)?'xtra':''}" data-court="${c}"><b>${c}</b><span>${c}코트</span></button>`).join('')}</div>
+    <button class="pk-hq" data-hqpick>${glyph('hq','pk-g')}<span><b>대회 본부</b><small>코트 노트북을 모으고 운영표·방송·결과를 다룹니다</small></span><em>본부로 쓰기 →</em></button>
+    ${NODE&&NODE.role?'<div><button class="lk" data-cancel>취소</button></div>':''}</div>`;}
+/* v1.4.61 오늘 이 코트 일정: 부문 단위(생활체육 「· 1조」는 한 줄로 묶음) · 운영표 예상 시각으로 오전 | 오후 두 칸 */
+function dayCols(r,cur,act){const G=[],by={};(r.all||[]).forEach(d=>{const base=String(d.name||'').replace(/ · \d+조$/,'');const k=d.app+'|'+base;
+    let g=by[k];if(!g){g=by[k]={k,app:d.app,ev:d.ev,base,nm:base.replace(/^\d{1,3}\s+/,''),at:d.at||'',num:d.num,parts:0,done:0,total:0,fin:true,names:[]};G.push(g);}
+    g.parts++;g.done+=Math.min(d.done||0,d.total||0);g.total+=d.total||0;g.fin=g.fin&&d.fin;g.names.push(d.name);if(!g.at&&d.at)g.at=d.at;});
+  G.sort((a,b)=>a.num-b.num);if(!G.length)return null;
+  const now=act&&act.now&&act.now.div,ci=now?G.findIndex(g=>g.names.includes(now)):-1,cx=ci>=0?ci:G.findIndex(g=>!g.fin);
+  const timed=G.some(g=>g.at);let A=[],P=[];
+  if(timed){let pm=false;G.forEach(g=>{if(g.at&&g.at>='12:00')pm=true;(pm?P:A).push(g);});}else{const h=Math.ceil(G.length/2);A=G.slice(0,h);P=G.slice(h);}
+  const row=g=>{const i=G.indexOf(g),st=g.fin?'fin':i===cx?'cur':'';return `<li class="${st}" data-open="${g.app}" title="${esc(g.base)}"><i class="ev-dot ev-${g.ev}"></i><span class="t">${g.at?esc(g.at):two(i+1)}</span><span class="n">${esc(g.nm)}${g.parts>1?` <small>${g.parts}조</small>`:''}</span><em>${g.fin?'✓':i===cx?'●':g.done?`${g.done}/${g.total}`:''}</em></li>`;};
+  const col=(t,L)=>`<div class="dc"><h4>${t}<small>${L.length}부문 · ${L.filter(g=>g.fin).length} 끝</small></h4><ol>${L.map(row).join('')||'<li class="emp">없음</li>'}</ol></div>`;
+  return `<div class="dcols">${col(timed?'오전 경기':'앞 순서',A)}${col(timed?'오후 경기':'뒤 순서',P)}</div>`;}
 /* 2) 코트 노트북: 지금 할 종목 카드 + 오늘 이 코트 순서 */
 function vCourt(){const r=window.KS_SEQ&&PLAN?KS_SEQ.seq(PLAN):{B:[],cur:null},b=r.cur,c=NODE.court;
   const nm=b&&b.divs.find(d=>!d.fin),act=r.active&&b&&r.active.app===b.app?r.active.now:null;
@@ -158,10 +197,11 @@ function vCourt(){const r=window.KS_SEQ&&PLAN?KS_SEQ.seq(PLAN):{B:[],cur:null},b
         <span class="now-bar"><i style="width:${pc}%"></i></span><span class="now-p">${b.done}/${b.n} 부문 끝 · ${pc}%</span></span>
       <span class="now-go">${esc(b.name)} 운영석 열기 →</span></button>`
     :`<div class="now none"><span class="now-k">아직 배정된 경기가 없습니다</span>${glyph('hq','now-g')}<span class="now-n"><b>본부를 기다리는 중</b><span>본부 노트북 「대회 운영표 → 📡 코트로 보내기」를 누르면 이 코트의 순서가 여기에 나옵니다. 급하면 아래 「예비 모드」로 종목을 직접 여세요.</span></span></div>`;
-  const list=r.B.length?r.B.map(x=>`<li class="${x.fin?'fin':x===b?'cur':''}" data-open="${x.app}">${glyph(x.ev,'sq-g')}<span><b>${esc(x.name)}</b><small>${x.divs[0].num<1000?two(x.divs[0].num)+(x.n>1?'~'+two(x.divs[x.n-1].num):'')+'번 · ':''}${x.n}부문</small></span><em>${x.fin?'✓ 끝':x===b?'● 지금':x.done?`${x.done}/${x.n}`:'대기'}</em></li>`).join(''):'<li class="emp">본부가 보낸 순서가 없습니다</li>';
+  const chips=r.B.length>1?`<div class="blk">${r.B.map(x=>`<span class="${x.fin?'fin':x===b?'cur':''}" data-open="${x.app}">${glyph(x.ev,'blk-g')}${esc(x.name)} <small>${x.n}</small></span>`).join('<i>›</i>')}</div>`:'';
+  const cols=dayCols(r,b,act);
   return `<div class="ct"><div class="ct-top"><span class="ct-badge">${esc(c)}<small>코트</small></span><div class="ct-t"><b>${esc(c)}코트 노트북</b><span>본부 운영표의 순서대로 종목 운영석이 저절로 이어집니다 · 한 종목이 끝나면 다음 종목으로 넘어가라는 안내가 뜹니다</span></div>
       <button class="lk" data-repick>코트 바꾸기</button></div>
-    <div class="ct-main">${big}<div class="sq"><h3>오늘 ${esc(c)}코트 순서</h3><ol>${list}</ol></div></div>
+    <div class="ct-main">${big}<div class="sq"><h3>오늘 ${esc(c)}코트 일정 <small>${r.all&&r.all.length?'운영표 순서'+(r.all.some(d=>d.at)?' · 예상 시각':''):''}</small></h3>${chips}${cols||'<ol><li class="emp">본부가 보낸 순서가 없습니다</li></ol>'}</div></div>
     <div class="spare"><span class="sp-k">예비 모드 · 종목 직접 열기</span>${APPS.map(a=>`<button class="sp" data-open="${a.key}">${glyph(a.key,'sp-g')}${esc(a.title.replace(' 대회',''))}</button>`).join('')}
       <a class="sp" href="/view" target="_blank" rel="noopener">관람객 화면</a><a class="sp" href="/guide">사용 설명서</a><a class="sp" href="/emergency" target="_blank" rel="noopener">🆘 비상 안내</a><button class="sp" data-fromhq title="이 노트북이 고장 난 코트 노트북 대신일 때">🛟 본부에서 이 코트 백업 받기</button><button class="sp" data-hqpick>본부로 바꾸기</button></div></div>`;}
 /* 3) 본부 노트북 */
@@ -212,6 +252,9 @@ async function scan(){let ov=document.getElementById('dxov');if(!ov){ov=document
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="sp" data-dclean>🧹 상장 파일 지우기</button><span class="dxs" style="align-self:center">상장 자동 출력용 파일(.cert.json)만 지웁니다 · 결과·백업은 그대로</span></div></div>`;
       if(!j.busy&&it.length)break;}
     await new Promise(r=>setTimeout(r,3000));}}
+/* v1.4.61 오전·오후 칸이 넘치면 줄 간격·글씨를 한 단계씩 줄여 한 화면에 */
+function fitCols(){document.querySelectorAll('.dc ol').forEach(o=>{o.classList.remove('d','xd');if(o.scrollHeight>o.clientHeight+2)o.classList.add('d');if(o.scrollHeight>o.clientHeight+2){o.classList.remove('d');o.classList.add('xd');}});}
+new MutationObserver(()=>requestAnimationFrame(fitCols)).observe(document.getElementById('stage'),{childList:true});addEventListener('resize',fitCols);
 disk();setInterval(disk,60000);
 addEventListener('focus',()=>load());setInterval(()=>{if(!PICK)load();},5000);load();
 </script>

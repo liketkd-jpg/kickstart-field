@@ -1854,7 +1854,7 @@ async function sendAll(){
   for(let i=0;i<TL.length&&i<8;i++){const L=L8[i],apps=laneApps(TL[i]);const out=[];
     for(const [app,list] of Object.entries(apps)){
       if(app==='kyorugi'){out.push('겨루기 ✕ (아직 지원 안 함)');bad++;continue;}
-      try{const rows=rowsFor(app,list);await postJ('/api/hq/push',{court:L,app,name:'대회 운영표',divs:list.length,rows,from:'본부 운영표',sim:SEND.sim});out.push(`${APPN[app]} ${rows.length-1}건 ✓`);ok++;}
+      try{const rows=rowsFor(app,list),times={};list.forEach(({it,k})=>times[divName(it,k)]=hm(it.s));await postJ('/api/hq/push',{court:L,app,name:'대회 운영표',divs:list.length,rows,from:'본부 운영표',sim:SEND.sim,times});out.push(`${APPN[app]} ${rows.length-1}건 ✓`);ok++;}
       catch(e){out.push(`${APPN[app]} ✕ ${e.message}`);bad++;}}
     SEND.res[L]=out.join(' · ');draw();}
   SEND.busy=false;draw();toast(bad?`보냄 ${ok}건 · 실패 ${bad}건 (표에서 확인)`:`모든 코트로 보냈습니다${SEND.sim?' · 코트 노트북 운영석에서 명단이 바로 바뀝니다':''}`);

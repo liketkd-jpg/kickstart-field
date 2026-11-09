@@ -6,7 +6,7 @@ window.KS_SEQ=(function(){
     if(/자유/.test(n))return 'freestyle';if(/체조/.test(n))return 'gym';if(/경연|종합|시범/.test(n))return 'team100';return 'recognized';}
   const active=a=>!!(a&&a.now&&a.fresh&&!/점수 공개|경기 끝/.test(a.now.status||''));
   function seq(plan){const all=[];((plan&&plan.apps)||[]).forEach((a,ai)=>(a.divs||[]).forEach((d,i)=>{const m=/^(\d{1,3})\s/.exec(d.name||'');
-      all.push({app:a.app,name:d.name,done:d.done||0,total:d.total||0,num:m?+m[1]:1000+ai*500+i,ev:evOf(a.app,d.name),fin:(d.total||0)>0&&(d.done||0)>=(d.total||0),pending:!!a.pending});}));
+      all.push({app:a.app,name:d.name,at:d.at||'',done:d.done||0,total:d.total||0,num:m?+m[1]:1000+ai*500+i,ev:evOf(a.app,d.name),fin:(d.total||0)>0&&(d.done||0)>=(d.total||0),pending:!!a.pending});}));
     all.sort((x,y)=>x.num-y.num);
     const B=[];all.forEach(d=>{const l=B[B.length-1];if(l&&l.ev===d.ev&&l.app===d.app)l.divs.push(d);else B.push({ev:d.ev,app:d.app,divs:[d]});});
     B.forEach((b,i)=>{b.i=i;b.n=b.divs.length;b.done=b.divs.filter(d=>d.fin).length;b.fin=b.done===b.n;b.games=b.divs.reduce((t,d)=>t+d.total,0);b.gdone=b.divs.reduce((t,d)=>t+Math.min(d.done,d.total),0);

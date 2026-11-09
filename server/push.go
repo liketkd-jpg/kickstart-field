@@ -16,15 +16,16 @@ import (
 )
 
 type pushMsg struct {
-	Court string          `json:"court"`
-	App   string          `json:"app"`
-	Name  string          `json:"name"`
-	From  string          `json:"from"`
-	Divs  int             `json:"divs"`
-	Rows  json.RawMessage `json:"rows"`
-	At    int64           `json:"at"`
-	Move  *moveInfo       `json:"move,omitempty"`
-	Sim   bool            `json:"sim,omitempty"` // 운영표 「가상 경기」: 코트 앱이 묻지 않고 명단을 바꾸고 가상 심판으로 진행
+	Court string            `json:"court"`
+	App   string            `json:"app"`
+	Name  string            `json:"name"`
+	From  string            `json:"from"`
+	Divs  int               `json:"divs"`
+	Rows  json.RawMessage   `json:"rows"`
+	At    int64             `json:"at"`
+	Move  *moveInfo         `json:"move,omitempty"`
+	Sim   bool              `json:"sim,omitempty"`   // 운영표 「가상 경기」: 코트 앱이 묻지 않고 명단을 바꾸고 가상 심판으로 진행
+	Times map[string]string `json:"times,omitempty"` // v1.4.61 부문마다 예상 시작 시각 (운영표) → 코트 첫 화면 오전·오후
 }
 
 // 부문 옮기기로 온 명단 (받는 코트가 「추가」로 넣음)
@@ -122,6 +123,9 @@ func handleInbox(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.setDoc("inbox/roster", map[string]any{"court": m.Court, "app": m.App, "name": m.Name, "from": m.From, "divs": m.Divs, "rows": m.Rows, "at": m.At, "done": false, "sim": m.Sim})
+	if len(m.Times) > 0 {
+		s.setDoc("hq/times", map[string]any{"at": m.At, "times": m.Times})
+	}
 	writeJSON(w, 200, map[string]any{"ok": true})
 }
 
