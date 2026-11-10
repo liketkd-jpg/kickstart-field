@@ -14,9 +14,13 @@
 #ksmode b small{display:block;font-size:11px;font-weight:800;letter-spacing:.02em}
 #ksmode-edge{position:fixed;left:0;right:0;top:0;height:6px;z-index:2147483000;pointer-events:none;background:repeating-linear-gradient(135deg,#F2C14E 0 14px,#1A1306 14px 28px);opacity:.85}
 .ksmode-note{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483001;background:#B3261E;color:#fff;font:800 16px/1.35 "Noto Sans KR",system-ui,sans-serif;padding:12px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:min(560px,92vw);text-align:center}
+/* v1.4.77 심판 채점 화면: 모서리 띠가 점수 단추를 가리지 않게 위쪽 작은 표시로 */
+html.ksjdg #ksmode{top:6px;bottom:auto;left:50%;right:auto;transform:translateX(-50%);width:auto;height:auto;overflow:visible}
+html.ksjdg #ksmode b{position:static;transform:none;width:auto;display:block;padding:2px 12px;font-size:12px;border-radius:0 0 8px 8px;opacity:.9}
+html.ksjdg #ksmode b small{display:none}
 @media (max-width:700px){#ksmode{width:150px;height:150px}#ksmode b{bottom:26px;right:-70px;font-size:14px;width:260px;padding:6px 0}#ksmode b small{display:none}}`;
   (document.head||document.documentElement).appendChild(css);
-  function paint(){if(!document.body)return;let el=document.getElementById('ksmode'),ed=document.getElementById('ksmode-edge');const test=ok&&M.mode!=='live';
+  function paint(){if(!document.body)return;document.documentElement.classList.toggle('ksjdg',/^#judge/.test(location.hash||''));let el=document.getElementById('ksmode'),ed=document.getElementById('ksmode-edge');const test=ok&&M.mode!=='live';
     if(test&&!el){el=document.createElement('div');el.id='ksmode';el.className='notranslate';el.setAttribute('translate','no');el.setAttribute('data-notr','');el.innerHTML='<b>🧪 시험 중<small>실제 대회 기록이 아닙니다</small></b>';document.body.appendChild(el);
       ed=document.createElement('div');ed.id='ksmode-edge';document.body.appendChild(ed);}
     if(!test){if(el)el.remove();if(ed)ed.remove();}}

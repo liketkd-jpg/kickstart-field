@@ -1078,6 +1078,31 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
 @keyframes ksaudp{50%{box-shadow:0 0 0 8px rgba(226,194,122,.25),0 8px 30px rgba(0,0,0,.5)}}
 /*@@END*/
 .jskill .opt{font-size:14px;padding:8px 4px}.jskill .opt.miss{background:#B3261E;color:#fff;border-color:#B3261E}
+/* v1.4.77 10.1인치 태블릿 (가로 960×600·1280×800, 세로 600×960·800×1280)
+   - 화면이 넉넉하면(가로 높이 740 이상 · 세로 높이 1100 이상) 점수 단추를 두 줄로 넓고 크게
+   - 작은 태블릿은 한 줄 그대로 두고 글씨만 크게 (두 줄로 나누면 단추 높이가 너무 낮아짐) */
+@media (min-width:700px) and (min-height:520px) and (orientation:landscape){
+  .jo .opt,.jcol.fs .jo .opt{font-size:clamp(20px,4vh,30px)!important;border-radius:11px;border-width:2px;letter-spacing:-.03em}
+  .jo .opt.on,.jcol.fs .jo .opt.on{font-size:clamp(22px,4.4vh,34px)!important}
+  .jo .opt.ded{font-size:clamp(22px,4.2vh,34px)!important}.jo .opt.ded small{font-size:13px}
+  .jskill .jo .opt,.jskill .jo .opt.on{font-size:clamp(16px,2.6vh,22px)!important;min-height:40px;letter-spacing:-.04em}
+}
+@media (min-width:1100px) and (min-height:740px) and (orientation:landscape){
+  .jo[style*="--n:9"],.jo[style*="--n:10"],.jo[style*="--n:11"],.jo[style*="--n:12"]{grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:1fr;gap:6px}
+  .jo .opt,.jcol.fs .jo .opt{font-size:clamp(24px,4.2vh,38px)!important}
+  .jo .opt.on,.jcol.fs .jo .opt.on{font-size:clamp(26px,4.6vh,42px)!important}
+}
+@media (orientation:portrait) and (min-width:560px) and (min-height:860px){
+  .jo .opt,.jcol.fs .jo .opt{font-size:clamp(20px,2.6vh,30px)!important;border-radius:11px;border-width:2px;letter-spacing:-.03em}
+  .jo .opt.on,.jcol.fs .jo .opt.on{font-size:clamp(22px,2.9vh,34px)!important}
+  .jskill .jo .opt,.jskill .jo .opt.on{font-size:clamp(17px,1.9vh,24px)!important;min-height:44px;letter-spacing:-.04em}
+}
+@media (orientation:portrait) and (min-width:760px) and (min-height:1100px){
+  .jo[style*="--n:9"],.jo[style*="--n:10"]{grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:1fr;gap:6px}
+  .jo[style*="--n:11"],.jo[style*="--n:12"]{grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:1fr;gap:6px}
+  .jo .opt,.jcol.fs .jo .opt{font-size:clamp(24px,3vh,40px)!important}
+  .jo .opt.on,.jcol.fs .jo .opt.on{font-size:clamp(26px,3.3vh,44px)!important}
+}
 </style>
 
 <header class="bar">
