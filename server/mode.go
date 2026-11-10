@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -65,6 +66,12 @@ func applyMode(m modeMsg) (backup string) {
 // 현장모드_데이터 의 JSON(경기 데이터·설정)을 날짜·시각 폴더로 복사
 func backupData(tag string) string {
 	dir := filepath.Join(resultsDir, "백업", tag+"_"+time.Now().Format("2006-01-02_150405"))
+	for i := 2; i < 50; i++ { // 같은 초에 두 번 백업해도 덮어쓰지 않게
+		if _, err := os.Stat(dir); err != nil {
+			break
+		}
+		dir = filepath.Join(resultsDir, "백업", fmt.Sprintf("%s_%s_%d", tag, time.Now().Format("2006-01-02_150405"), i))
+	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return ""
 	}
