@@ -1,0 +1,85 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KS 본부 미리보기</title>
+<link rel="manifest" href="hq.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KS 본부"><meta name="theme-color" content="#0B1530">
+<style>body{margin:0;font:16px -apple-system,"Noto Sans KR",sans-serif;background:#0B1530;color:#EEE;display:grid;place-items:center;min-height:100vh;text-align:center}</style></head>
+<body><div id="msg">본부 화면 최신 버전을 불러오는 중…</div>
+<script>
+/* 핸드폰 확인용 본부 화면 미리보기 (v1.4.75)
+   - 열 때마다 GitHub 저장소(main)의 최신 본부 화면(hq.html)을 그대로 불러옵니다 → 새 버전을 올리면 자동으로 최신
+   - 현장 노트북(서버) 대신 이 핸드폰 안의 가짜 저장소로 돌아갑니다: 넣은 내용은 이 기기에만 남고 실제 대회와 섞이지 않습니다
+   - 코트 노트북 연결·방송·상장 인쇄처럼 현장 노트북이 필요한 기능은 화면만 볼 수 있습니다 */
+(async function(){
+  const RAW='https://raw.githubusercontent.com/liketkd-jpg/kickstart-field/main/server/assets/';
+  const CDN='https://cdn.jsdelivr.net/gh/liketkd-jpg/kickstart-field@main/server/assets/';
+  /* 현장 프로그램이 앱 화면 앞에 붙이는 머리말과 같게 (main.go skeleton) */
+  const SKEL='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0B0D12"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>';
+  const bust='?t='+Math.floor(Date.now()/60000);
+  const get=async u=>{const r=await fetch(u+(u.startsWith(RAW)?bust:''),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status+' '+u.split('/').pop());return r.text();};
+  try{
+    const [hq,mode,...css]=await Promise.all([get(RAW+'hq.html'),get(RAW+'mode.js'),
+      get(RAW+'vendor/fonts/fonts.css'),get(RAW+'vendor/fonts/themes.css'),get(RAW+'vendor/hq-themes.css'),get(RAW+'vendor/ks-lux.css')]);
+    const fixUrl=t=>t.replace(/url\(\s*(['"]?)\/vendor\//g,'url($1'+CDN+'vendor/');
+    const CSS=['fonts/fonts.css','fonts/themes.css','hq-themes.css','ks-lux.css'];
+    let h=hq;
+    CSS.forEach((p,i)=>{h=h.replace(new RegExp('<link[^>]*href="/vendor/'+p.replace('.','\\.')+'"[^>]*>'),()=>'<style>'+fixUrl(css[i])+'</style>');});
+    h=h.replace('src="/vendor/cdnjs/xlsx/0.18.5/xlsx.full.min.js"','src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"');
+    h=h.replace(/(src|href)="\/vendor\//g,'$1="'+CDN+'vendor/');
+    h=h.replace('<script src="/mode.js"><\/script>',()=>'<script>'+mode+'<\/script>');
+    h=h.replace(/href="\/emergency"/g,'href="#admin"');
+    const head='<link rel="manifest" href="hq.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">'+
+      '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KS 본부"><meta name="theme-color" content="#0B1530">'+
+      '<script>'+MOCK.toString().replace(/^function MOCK\(\)\{|\}$/g,'')+'<\/script>';
+    h=/^\s*<!doctype[^>]*>/i.test(h)?h.replace(/^\s*<!doctype[^>]*>/i,m=>m+head):SKEL+head+h; /* 맨 앞에: 본부 화면 안의 다른 <head> 글자(인쇄용)와 헷갈리지 않게 */
+    const tag='<div style="position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:2147483000;background:#7A4B00;color:#FFE7B8;font:700 12px/1.4 sans-serif;padding:4px 12px;border-radius:999px;pointer-events:none;opacity:.92">미리보기 · 최신 버전 · 이 기기에만 저장</div>';
+    h=/<\/body>/i.test(h)?h.replace(/<\/body>/i,tag+'</body>'):h+tag;
+    document.open();document.write(h);document.close();
+  }catch(e){document.getElementById('msg').textContent='불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요. ('+e.message+')';}
+})();
+
+/* 현장 노트북 대신: 저장소(window.claude) · /api 응답을 이 기기 안에서 흉내 냄 */
+function MOCK(){(function(){
+  var KEY='ksprev_hq_db',data={};try{data=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){data={};}
+  var save=function(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}};
+  var clone=function(v){return v==null?v:JSON.parse(JSON.stringify(v));};
+  var docL={},collL=[];
+  var snap=function(p){var d=data[p];return {id:p.split('/').pop(),exists:d!==undefined,data:function(){return clone(d);},metadata:{hasPendingWrites:false}};};
+  var inColl=function(c,p){if(p.indexOf(c+'/')!==0)return false;var r=p.slice(c.length+1);return r&&r.indexOf('/')<0;};
+  var csnap=function(q){var docs=[];Object.keys(data).forEach(function(p){if(inColl(q.c,p)&&(!q.f||(data[p]&&data[p][q.f]===q.v)))docs.push({id:p.slice(q.c.length+1),data:(function(d){return function(){return clone(d);};})(data[p]),metadata:{hasPendingWrites:false}});});return {docs:docs,size:docs.length,empty:!docs.length};};
+  var notify=function(p){setTimeout(function(){(docL[p]||[]).forEach(function(cb){try{cb(snap(p));}catch(e){}});collL.forEach(function(q){if(inColl(q.c,p))try{q.cb(csnap(q));}catch(e){}});},0);};
+  var docRef=function(p){return {id:p.split('/').pop(),path:p,
+    get:function(){return Promise.resolve(snap(p));},
+    set:function(d){data[p]=clone(d);save();notify(p);return Promise.resolve();},
+    delete:function(){delete data[p];save();notify(p);return Promise.resolve();},
+    acquire:function(){return Promise.resolve({ok:true});},
+    onSnapshot:function(cb){(docL[p]=docL[p]||[]).push(cb);setTimeout(function(){cb(snap(p));},0);return function(){docL[p]=(docL[p]||[]).filter(function(x){return x!==cb;});};}};};
+  var query=function(c,f,v){return {where:function(ff,op,vv){return query(c,ff,vv);},get:function(){return Promise.resolve(csnap({c:c,f:f,v:v}));},
+    onSnapshot:function(cb){var q={c:c,f:f,v:v,cb:cb};collL.push(q);setTimeout(function(){cb(csnap(q));},0);return function(){collL=collL.filter(function(x){return x!==q;});};}};};
+  var db={doc:docRef,collection:function(c){return query(c,null,null);},open:docRef};
+  var downloads={save:function(o){var n=(o&&(o.filename||o.name))||'download',d=o&&o.data,b=d instanceof Blob?d:new Blob([typeof d==='string'?d:(d instanceof ArrayBuffer||ArrayBuffer.isView(d))?d:JSON.stringify(d)]);
+    var a=document.createElement('a'),u=URL.createObjectURL(b);a.href=u;a.download=n;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove();},4000);return Promise.resolve({saved:true});}};
+  window.KS_PREVIEW=true;
+  var st={mode:'field',connected:true,ready:true,lastOk:Date.now(),lastFail:0,since:Date.now()};
+  window.KS_FIELD={app:'hq',local:false,preview:true,court:'',base:location.href.split('#')[0],ips:[],port:0,status:function(){return st;},onStatus:function(){return function(){};}};
+  window.claude={use:function(n){return Promise.resolve(n==='db'?db:n==='downloads'?downloads:n==='room'?{onPeers:function(cb){setTimeout(function(){cb({peers:[]});},0);return function(){};},presence:function(){return Promise.resolve();},peers:[]}:n==='user'?{id:function(){return Promise.resolve('preview');},canEdit:function(){return Promise.resolve(true);},profiles:function(){return Promise.resolve({});},name:function(){return Promise.resolve('');}}:null);},field:true};
+  /* /api 응답 */
+  var RK='ksprev_hq_rules',MK='ksprev_hq_mode';
+  var J=function(o,s){return Promise.resolve(new Response(JSON.stringify(o),{status:s||200,headers:{'Content-Type':'application/json'}}));};
+  var of=window.fetch.bind(window);
+  window.fetch=function(u,o){var url=typeof u==='string'?u:(u&&u.url)||'';var m=/^(?:https?:\/\/[^\/]+)?(\/[a-z]*\/?api\/[^?#]*)/.exec(url);
+    if(!m||(/^https?:/.test(url)&&url.indexOf(location.origin)!==0))return of(u,o);
+    var p=m[1].replace(/^\/[a-z]+\/api\//,'/api/'),post=o&&o.method&&o.method!=='GET',body={};try{body=o&&o.body&&typeof o.body==='string'?JSON.parse(o.body):{};}catch(e){}
+    if(p==='/api/rules'){if(post){try{localStorage.setItem(RK,JSON.stringify({at:body.at||Date.now(),rules:body}));}catch(e){}return J({ok:true});}
+      var r=null;try{r=JSON.parse(localStorage.getItem(RK)||'null');}catch(e){}return J(r||{at:0,rules:null});}
+    if(p==='/api/mode'){var md={mode:'test',update:true};try{md=JSON.parse(localStorage.getItem(MK)||'null')||md;}catch(e){}
+      if(post){md={mode:body.mode||md.mode,update:body.update!=null?body.update:md.update,at:Date.now()};try{localStorage.setItem(MK,JSON.stringify(md));}catch(e){}}
+      return J({mode:md.mode,update:md.update,at:md.at||0,version:'미리보기',role:'hq',court:''});}
+    if(p==='/api/update')return J({version:'미리보기',newer:false});
+    if(p==='/api/disk')return J({free:120e9,total:256e9,used:3e8,parts:{},dir:'미리보기'});
+    if(p==='/api/printer'||p==='/api/hq/printer')return J({ok:true,name:'미리보기 (프린터 없음)',jobs:0,offline:false,virtual:true});
+    if(p==='/api/hq/sim')return J({ok:true,courts:{}});
+    if(p==='/api/hq/collected')return J({courts:{}});
+    if(p==='/api/hqctl'||p==='/api/view')return J({});
+    return J(post?{ok:true,courts:{},preview:true}:{preview:true});};
+})();}
+</script></body></html>
