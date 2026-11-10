@@ -1161,7 +1161,7 @@ const SHEETS={
 /* v1.4.73 태권체조·팀 종합경연 「대회 규정」 채점 양식 (세계태권도문화예술협회 · 11/28 대회)
    본부 「종목별 경기 규칙」(또는 대회 설정)에서 한마당 / 대회 규정을 고릅니다. 한마당 양식은 그대로 남겨 둠.
    - 태권체조: 점수 항목은 한마당과 같음(정확성 4.0 + 연출성 6.0). 지정 기술 동작 체크(빠지면 −0.3),
-     경연 시간 1분 40초~2분을 벗어나면 한 번에 5점 감점, 구성 인원 5~9명
+     경연 시간 1분 40초~2분, 2분을 넘으면 한 번에 5점 감점 (짧은 것은 감점 없음), 구성 인원 5~9명
    - 팀 종합경연: 격파 단일 종목 — 격파 항목만 채점(정확성 50 + 연출성 50 = 100점),
      품새·태권체조·호신술은 채점하지 않음. 4분을 넘으면 한 번에 5점 감점, 구성 인원 8~15명 */
 const SHEETS_HM={gym:SHEETS.gym,team100:SHEETS.team100};
@@ -1170,7 +1170,7 @@ const SHEETS_WT={
   gym:{...SHEETS.gym,members:'5~9명',std:'대회 규정',
     skills:[{k:'s1',s:'돌려차기'},{k:'s2',s:'옆차기'},{k:'s3',s:'뒤차기'},{k:'s4',s:'뒤 후려차기'},{k:'s5',s:'돌개차기'},{k:'s6',s:'거듭 옆차기'},
       {k:'s7',s:'뛰어 옆차기 ①'},{k:'s8',s:'뛰어 옆차기 ②'},{k:'s9',s:'대형변화 ①'},{k:'s10',s:'대형변화 ②'},{k:'s11',s:'대형변화 ③'},{k:'s12',s:'아크로바틱'}],
-    pens:[{r:'경계선 이탈',v:0.3}],timePer10:0,timeFlat:5},
+    pens:[{r:'경계선 이탈',v:0.3}],timePer10:0,timeFlat:5,timeOverOnly:true}, /* 대회 규정: 2분 「초과 시」에만 5점 (1분 40초 미만은 감점 없음) */
   team100:{...SHEETS.team100,label:'팀 종합경연',short:'종합경연',members:'8~15명',std:'대회 규정',
     A:{label:'정확성',max:50,items:[
       {k:'jA',g:'한 번 뛰어격파',label:'한 번 뛰어격파 정확성',s:'정확성',opts:H10},
@@ -1725,7 +1725,7 @@ function penBtns(cur,e,dl,flag,revealed,sm){const sh=SH(cur.type),c=sm?'btn sm':
     +(sh.pens||[]).map(p=>`<button class="${c}" data-act="ded" data-p="${e.perfId}" data-r="${p.r}" data-v="${p.v}" ${revealed?'disabled':''}>${p.r}${p.s?` <small>${p.s}</small>`:''} −${fmt1(p.v)}</button>`).join('');}
 /* ===================== 타이머 (제10조: "시작"부터 "바로"까지 경과 시간 측정) ===================== */
 function elapsed(t){if(!t)return 0;return t.running?(t.elapsed||0)+(Date.now()-t.startedAt)/1000:(t.elapsed||0);}
-function timeFlag(t){if(!t)return '';const e=elapsed(t);if(t.max&&e>t.max+1e-6)return 'over';if(!t.running&&e>0&&t.min&&e<t.min)return 'under';return '';}
+function timeFlag(t){if(!t)return '';const e=elapsed(t);if(t.max&&e>t.max+1e-6)return 'over';if(!t.running&&e>0&&t.min&&e<t.min){try{const c=curOf();if(c&&SH(c.type).timeOverOnly)return '';}catch(x){}return 'under';}return '';}
 function limitText(t){if(!t)return '';return t.min?`${t.min}~${t.max}초`:`${t.max}초 이내`;}
 /* 남은 시간이 거꾸로 줄어듭니다(제한 시간에서 0까지). 0을 넘기면 '+초과 시간'을 빨갛게 보여 줍니다.
    경과 시간은 그대로 기록되어 시간 위반 판단에 쓰입니다 */
@@ -1918,7 +1918,7 @@ function aSettings(){
       <input type="number" id="freeMax" min="10" max="600" step="5" value="${s.freeMax}" style="width:86px" data-on="setNumIn" data-k="freeMax" aria-label="자유 품새 최대 시간(초)"><span>초 이내</span></div></div>
     <div class="field"><span class="label">태권체조·팀 경연 채점 양식</span>
       <div class="row">${['gym','team100'].map(t=>`<span class="small"><b>${t==='gym'?'태권체조':'팀 경연'}</b></span><div class="seg"><button class="${sheetStd(t)==='hm'?'on':''}" data-act="sheetStd" data-t="${t}" data-v="hm">한마당</button><button class="${sheetStd(t)==='wt'?'on':''}" data-act="sheetStd" data-t="${t}" data-v="wt">대회 규정</button></div>`).join('')}</div>
-      <span class="small muted"><b>대회 규정</b>(세계태권도문화예술협회): 태권체조 지정 기술 체크·1분 40초~2분 벗어나면 5점 감점·5~9명 / 팀 경연 격파 항목만 100점·4분 넘으면 5점 감점·8~15명</span></div>
+      <span class="small muted"><b>대회 규정</b>(세계태권도문화예술협회): 태권체조 지정 기술 체크·2분 넘으면 5점 감점·5~9명 / 팀 경연 격파 항목만 100점·4분 넘으면 5점 감점·8~15명</span></div>
     <div class="field"><span class="label">태권체조 (한마당 제41조 · 1분 50초~2분)</span>
       <div class="row"><input type="number" id="gymMin" min="10" max="900" step="5" value="${s.gymMin}" style="width:86px" data-on="setNumIn" data-k="gymMin" aria-label="태권체조 최소 시간(초)"><span>초 이상</span>
       <input type="number" id="gymMax" min="10" max="900" step="5" value="${s.gymMax}" style="width:86px" data-on="setNumIn" data-k="gymMax" aria-label="태권체조 최대 시간(초)"><span>초 이내</span></div></div>
