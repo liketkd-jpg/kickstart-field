@@ -567,7 +567,10 @@ function vAdmin(){
     <div class="row"><span class="small muted">화면 디자인</span>${themePick('hqpick')}<span class="small muted">지금: <b>${esc((THEMES.find(x=>x[0]===hqTheme(courtList()))||['','기본 금빛'])[1])}</b> · 「따라가기」는 품새 코트 노트북에서 고른 전광판 디자인을 따릅니다</span></div>
     <div class="row" style="flex-wrap:wrap"><b>대회명</b><textarea id="hqCompName" rows="2" placeholder="예: 제9회 세계태권도문화예술협회장대&#10;태권도 대회   ← 엔터로 두 줄 (비우면 코트 노트북의 대회명)" style="flex:1;min-width:260px;font-size:17px;line-height:1.4;resize:vertical">${esc(cf.compName||'')}</textarea><button class="btn primary" data-a="hqCompSave">저장</button></div>
     <div class="small muted" style="margin-top:-4px">줄을 바꾸고 싶은 곳에서 <b>엔터</b>를 누르면 본부 모니터에 그대로 두 줄로 나옵니다.</div>
-    <div class="row"><b>평소 화면</b><div class="seg"><button class="${!cf.monIdle?'on':''}" data-a="hqMonIdle" data-v="">글로벌 (로고·도장 순위)</button><button class="${cf.monIdle==='courts'?'on':''}" data-a="hqMonIdle" data-v="courts">코트별 진행 상황</button><button class="${cf.monIdle==='comp'?'on':''}" data-a="hqMonIdle" data-v="comp">대회명 크게</button></div><span class="small muted">방송이 나올 때만 방송 글씨로 바뀌었다가 끝나면 돌아옵니다</span></div>
+    <div class="row"><b>평소 화면</b><div class="seg"><button class="${!cf.monIdle?'on':''}" data-a="hqMonIdle" data-v="">글로벌 (로고·도장 순위)</button><button class="${cf.monIdle==='courts'?'on':''}" data-a="hqMonIdle" data-v="courts">코트별 진행 상황</button><button class="${cf.monIdle==='flap'?'on':''}" data-a="hqMonIdle" data-v="flap">✈ 공항 안내판</button><button class="${cf.monIdle==='comp'?'on':''}" data-a="hqMonIdle" data-v="comp">대회명 크게</button></div><span class="small muted">방송이 나올 때만 방송 글씨로 바뀌었다가 끝나면 돌아옵니다</span></div>
+    ${cf.monIdle==='flap'?`<div class="row" style="flex-wrap:wrap"><b>공항 안내판</b><span class="small muted">장면 시간</span><div class="seg">${[6,10,15,20].map(v=>`<button class="${(cf.flapSec||10)===v?'on':''}" data-a="flapSec" data-v="${v}">${v}초</button>`).join('')}</div>
+      <span class="small muted">따라락 소리</span><div class="seg"><button class="${cf.flapSound?'':'on'}" data-a="flapSnd" data-v="0">끔</button><button class="${cf.flapSound?'on':''}" data-a="flapSnd" data-v="1">켬</button></div>
+      <span class="small muted">대회 로고 → 코트별 지금 경기 → 도장 메달 순위가 글자판처럼 넘어갑니다. 호출 방송과 입상자 발표는 바로 끼어듭니다</span></div>`:''}
     <span class="small muted">선수 대기실 TV나 큰 모니터에 띄우세요. 새 창을 TV 쪽으로 옮긴 뒤 「전체 화면」을 누르면 됩니다. 소리를 내려면 그 화면을 한 번 눌러 주세요.</span></div>`;
 }
 
@@ -627,11 +630,13 @@ function vMon(){
   const tk=n.mode==='banner'&&n.text?`<div class="ticker ${n.text.length<60?'fit':''}" style="--d:${Math.max(14,n.text.length*0.35)}s"><span>📢 ${esc(n.text)}</span></div>`:'<span style="flex:1"></span>';
   /* v1.4.65 평소 화면 「글로벌」(기본): 올림픽·F1 중계처럼 — 로고·대회명·시각 · 오른쪽 도장 순위 5위 · 코트별 지금 종목 한 줄 · 공지 띠 */
   const G=(cf.monIdle||'')==='';document.body.classList.toggle('monG',G);
-  if(G){$('#mon').innerHTML=monG(list,cf,n,comp);}
-  else $('#mon').innerHTML=`<div class="mwm" aria-hidden="true"><svg class="ksw" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg></div><div class="mh"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><b>${esc(one(comp))}</b><span class="sp"></span>
+  const FL=cf.monIdle==='flap';document.body.classList.toggle('monF',FL);
+  if(FL){FLAP.show(list,cf,n,comp);}
+  else if(G){FLAP.stop();$('#mon').innerHTML=monG(list,cf,n,comp);}
+  else{FLAP.stop();$('#mon').innerHTML=`<div class="mwm" aria-hidden="true"><svg class="ksw" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg></div><div class="mh"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><b>${esc(one(comp))}</b><span class="sp"></span>
       <span class="ctl">${themePick('hqpick mon')}<button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span><span class="clock" data-clock></span></div>
     <div class="cols" style="grid-template-columns:repeat(${nCols},minmax(0,1fr))">${cols}</div>
-    <div class="mf">${tk}<span class="ks"><svg class="ksm" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span>KICKSTART<b>UP</b></span><small>대회 본부</small></span></div>`;
+    <div class="mf">${tk}<span class="ks"><svg class="ksm" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span>KICKSTART<b>UP</b></span><small>대회 본부</small></span></div>`;}
   tick();
   let ov='';
   if(n.mode==='full'&&n.text)ov+=`<div class="full"><div><b>${annHtml(n.text)}</b><span>${esc(one(comp))}</span></div></div>`;
@@ -640,6 +645,86 @@ function vMon(){
   if(needTap)ov+='<button class="tapv" data-a="unlock">🔊 화면을 한 번 눌러 호출 소리를 켜 주세요</button>';
   {const o=$('#ovl');if(o&&o.__ov!==ov){o.innerHTML=ov;o.__ov=ov;}}
 }
+
+/* ---------- v1.4.76 본부 전광판 「공항 안내판」 (두 번째 안) ----------
+   옛날 공항 출발 안내판처럼 글자판이 따라락 넘어가며 세 장면이 번갈아 나옵니다:
+   ① 대회 로고·대회명·날짜·시각  ② 코트별 지금 경기 (출발 안내판처럼)  ③ 도장 메달 순위
+   - 장면 시간은 본부 모니터 설정(6·10·15·20초), 따라락 소리는 켜고 끌 수 있음(기본 끔)
+   - 호출 방송이 나가면 바로 「선수 호출」 판으로, 부문 결과가 확정되면 「입상자」 판이 끼어듦
+   - 본부 화면은 3초마다 다시 그려지므로, 이 판은 한 번 만든 글자칸을 그대로 두고 바뀐 칸만 뒤집습니다 */
+const FLAP=(()=>{
+  const CH='가나다라마바사아자차카타파하거너더러머버서어저처커터퍼허0123456789';
+  let el=null,scene=0,sceneAt=0,cur='',M=null,timer=0,seen=null,awardQ=[],award=null,ac=null,lastAnn=0;
+  const SC=['logo','courts','rank'];
+  const pad=(t,n,ctr)=>{const a=[...String(t??'')];if(a.length>=n)return a.slice(0,n);const l=ctr?Math.floor((n-a.length)/2):0;return Array(l).fill(' ').concat(a,Array(n-a.length-l).fill(' '));};
+  const cut=(t,n)=>{const a=[...String(t??'').replace(/\s+/g,' ').trim()];return a.length>n?a.slice(0,n-1).join('')+'…':a.join('');};
+  /* 글자판 한 줄: 칸 배열 [{w,t,cls}] */
+  const row=(cells,cls='')=>`<div class="fp-row ${cls}">${cells.map(c=>`<span class="fp-seg ${c.cls||''}" style="--w:${c.w}">${pad(c.t,c.w,c.ctr).map(()=>'<i class="fp-t"><b> </b></i>').join('')}</span>`).join('')}</div>`;
+  const want=cells=>cells.map(c=>pad(c.t,c.w));
+  function wrap(text,w,maxL){const words=String(text||'').replace(/\s+/g,' ').trim().split(' ');const L=[];let cur='';
+    words.forEach(x=>{if(!cur)cur=x;else if([...(cur+' '+x)].length<=w)cur+=' '+x;else{L.push(cur);cur=x;}while([...cur].length>w){L.push([...cur].slice(0,w).join(''));cur=[...cur].slice(w).join('');}});
+    if(cur)L.push(cur);return L.slice(0,maxL);}
+  /* 장면 → {html, rows:[[cells]]} */
+  function build(name){const m=M;if(!m)return null;let head='',rows=[],big='';
+    if(name==='logo'){const L=String(m.comp).split('\n').flatMap(x=>wrap(x,16,2)).slice(0,3);
+      head=`<div class="fp-hero">${KSLOGO('fp-lg')}<div class="fp-ey">TAEKWONDO CHAMPIONSHIP</div></div>`;
+      rows=L.map(t=>[{w:16,t,cls:'big',ctr:1}]);rows.push([{w:16,t:m.date,cls:'mid',ctr:1}]);big='logo';}
+    else if(name==='courts'){head=`<div class="fp-h"><b>코트별 지금 경기</b><span>NOW ON COURT</span></div>`;
+      rows=[[{w:2,t:'코트',cls:'lab'},{w:5,t:'종목',cls:'lab'},{w:14,t:'지금 부문',cls:'lab'},{w:5,t:'상태',cls:'lab'}]];
+      (m.courts.length?m.courts:[{c:'-',ev:'',sub:'코트 노트북을 찾는 중',st:'off'}]).slice(0,8).forEach(c=>rows.push([{w:2,t:c.c,cls:'cc'},{w:5,t:c.ev},{w:14,t:cut(c.sub,14)},{w:5,t:c.st==='live'?'진행 중':c.st==='idle'?'대기':'끊김',cls:'st-'+c.st}]));}
+    else if(name==='rank'){head=`<div class="fp-h"><b>도장 메달 순위</b><span>DOJANG RANKING · 금 은 동</span></div>`;
+      rows=[[{w:2,t:'순위',cls:'lab'},{w:10,t:'도장',cls:'lab'},{w:2,t:'금',cls:'lab g'},{w:2,t:'은',cls:'lab s'},{w:2,t:'동',cls:'lab b'}]];
+      if(!m.rank.length)rows.push([{w:18,t:'첫 메달을 기다립니다'}]);
+      m.rank.slice(0,6).forEach((t,i)=>rows.push([{w:2,t:String(i+1),cls:'cc'},{w:10,t:cut(t.team,10)},{w:2,t:String(t.g),cls:'g'},{w:2,t:String(t.s),cls:'s'},{w:2,t:String(t.b),cls:'b'}]));}
+    else if(name==='call'){const a=m.ann;head=`<div class="fp-h call"><b>${a&&a.auto?'선수 호출':a&&a.room?'대기실 안내':'본부 안내'}</b><span>NOW CALLING</span></div>`;
+      rows=wrap(a?a.text:'',14,4).map(t=>[{w:14,t,cls:'big',ctr:1}]);big='call';}
+    else if(name==='award'){const d=award;head=`<div class="fp-h award"><b>🏅 입상자</b><span>${esc(d.court)}코트 · ${esc(d.app)}</span></div>`;
+      rows=[[{w:18,t:cut(String(d.div).replace(/^\d{1,3}\s+/,''),18),cls:'mid'}]];
+      [1,2,3].forEach(r=>d.podium.filter(p=>p.rank===r).slice(0,2).forEach(p=>rows.push([{w:2,t:r+'위',cls:'cc r'+r},{w:5,t:cut(p.name,5)},{w:10,t:cut(p.team,10)}])));big='award';}
+    return {head,rows,big};}
+  /* 소리: 짧은 딸깍 */
+  let clickAt=0;function click(){if(!M||!M.sound)return;const t0=performance.now();if(t0-clickAt<28)return;clickAt=t0;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+    o.type='square';o.frequency.value=900+Math.random()*500;g.gain.setValueAtTime(.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+.03);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+.035);}catch(e){}}
+  /* 칸 하나를 따라락 → 목표 글자 */
+  function flip(tile,ch,delay){const b=tile.firstChild;if(tile.dataset.c===ch&&!tile.dataset.go)return;tile.dataset.c=ch;const go=String(Date.now()+Math.random());tile.dataset.go=go;
+    const n=ch===' '?2:3+Math.floor(Math.random()*4);let k=0;
+    setTimeout(function step(){if(tile.dataset.go!==go)return;tile.classList.remove('fl');void tile.offsetWidth;tile.classList.add('fl');
+      if(k<n){b.textContent=CH[Math.floor(Math.random()*CH.length)];k++;if(k%2)click();setTimeout(step,70);}else{b.textContent=ch;delete tile.dataset.go;}},delay);}
+  function paint(name,fresh){const sc=build(name);if(!sc)return;
+    if(fresh||el.dataset.sc!==name){el.dataset.sc=name;
+      el.innerHTML=`<div class="fp-top">${KSLOGO('fp-sl')}<b class="fp-br">KICKSTART<i> UP</i></b><span class="fp-dots">${SC.map((x,i)=>`<i class="${x===name?'on':''}"></i>`).join('')}</span><span class="fp-clock" data-clock></span>
+        <span class="ctl"><button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span></div>
+        <div class="fp-body ${sc.big||''}" style="--tw:min(${sc.big==='logo'||sc.big==='call'?'3.25vw':(92/Math.max(...sc.rows.map(r=>r.reduce((a,c)=>a+c.w*1.08+.5,0)))).toFixed(2)+'vw'},${(sc.big==='logo'?44:sc.big==='call'?60:62)/(sc.rows.length*1.55)}vh)">${sc.head}<div class="fp-board">${sc.rows.map(r=>row(r,r[0]&&r[0].cls==='lab'?'lab':'')).join('')}</div></div>
+        <div class="fp-foot"><span>${esc(M.compOne)}</span>${M.notice?`<span class="fp-nt">📢 ${esc(M.notice)}</span>`:''}</div>`;
+      tick();}
+    const R=el.querySelectorAll('.fp-row');let d=0;
+    sc.rows.forEach((cells,ri)=>{const r=R[ri];if(!r)return;const segs=r.querySelectorAll('.fp-seg');
+      cells.forEach((c,ci)=>{const ts=segs[ci]?segs[ci].querySelectorAll('.fp-t'):[];pad(c.t,c.w,c.ctr).forEach((ch,k)=>{if(ts[k]&&ts[k].dataset.c!==ch){flip(ts[k],ch,d);d+=fresh?28:12;}});});});}
+  function loop(){if(!el||!M)return;const now=Date.now(),sec=(M.sec||10)*1000;
+    /* 끼어들기: 호출 방송 > 입상자 */
+    if(M.ann){if(el.dataset.sc!=='call'||M.annAt!==lastAnn){lastAnn=M.annAt;paint('call',true);}return;}
+    if(award&&now-award.at<12000){if(el.dataset.sc!=='award')paint('award',true);return;}
+    award=null;if(awardQ.length){award={...awardQ.shift(),at:now};paint('award',true);return;}
+    if(!el.dataset.sc||['call','award'].includes(el.dataset.sc)||now-sceneAt>=sec){
+      if(el.dataset.sc&&!['call','award'].includes(el.dataset.sc))scene=(scene+1)%SC.length;sceneAt=now;paint(SC[scene],true);}
+    else paint(SC[scene],false);}
+  function show(list,cf,n,comp){
+    const d=new Date(),wd='일월화수목금토'[d.getDay()];
+    const rs=allResults();
+    if(!seen){seen=new Set(rs.filter(x=>x.done).map(x=>x.court+'|'+x.app+'|'+x.div));}
+    rs.filter(x=>x.done&&x.podium&&x.podium.length).forEach(x=>{const k=x.court+'|'+x.app+'|'+x.div;if(!seen.has(k)){seen.add(k);awardQ.push(x);}});
+    const a=S.announce,annOn=!!(a&&S.annAt&&(AQBUSY||NOW()-S.annAt<12000));
+    M={comp,compOne:String(comp).replace(/\s*\n\s*/g,' '),date:`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()} (${wd})`,sec:cf.flapSec||10,sound:!!cf.flapSound,
+      notice:n.mode==='banner'?n.text:'',ann:annOn?a:null,annAt:S.annAt,
+      rank:teamTally(rs).sort((x,y)=>y.g-x.g||y.s-x.s||y.b-x.b||x.team.localeCompare(y.team,'ko')),
+      courts:list.map(c=>{const b=c.app&&c.app.board,app=c.app&&c.app.key||'';const dv=b&&(b.curDiv||(b.now&&b.now.div))||'';
+        return {c:c.court,ev:b?MONG_EV(app||((b.appName||'').includes('격파')?'gyeokpa':''),dv):'',sub:String(dv).replace(/^\d{1,3}\s+/,'').replace(/^(품새|자유 품새|개인 격파|팀 태권체조|팀 종합경연|종합시범)\s*/,'')||(c.online?'준비 중':'연결 끊김'),
+          st:!c.online?'off':c.stale||!b||!b.now?'idle':'live'};})};
+    const mon=$('#mon');if(!el||!mon.contains(el)){mon.innerHTML='<div class="fp-wrap"></div>';el=mon.firstChild;scene=0;sceneAt=0;}
+    if(!timer)timer=setInterval(loop,400);loop();}
+  function stop(){if(timer){clearInterval(timer);timer=0;}el=null;}
+  return {show,stop};
+})();
 
 /* ---------- v1.4.65 본부 전광판 「글로벌」 ---------- */
 const MONG_EV=(app,div)=>{const d=String(div||'');if(app==='gyeokpa')return /경연|종합/.test(d)?'팀 경연':'격파';if(app==='kyorugi')return '겨루기';return /자유/.test(d)?'자유 품새':/체조/.test(d)?'태권체조':/경연|종합|시범/.test(d)?'팀 경연':'공인 품새';};
@@ -899,6 +984,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest|hqOpenEdge|annPhDelR)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
   if(a==='hqCompSave'){saveCfg({compName:(($('#hqCompName')||{}).value||'').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,3).join('\n')});toast('대회명을 저장했습니다 · 본부 모니터에 바로 나옵니다');return;}
   if(a==='hqMonIdle'){saveCfg({monIdle:b.dataset.v||''});return;}
+  if(a==='flapSec'){saveCfg({flapSec:Number(b.dataset.v)||10});return;}
+  if(a==='flapSnd'){saveCfg({flapSound:b.dataset.v==='1'});return;}
   if(a==='mvCancel'){try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:b.dataset.id})});const j=await r.json().catch(()=>({}));toast(r.ok?'옮기기를 취소했습니다 · 부문은 원래 코트에 그대로 있습니다':(j.error||'취소하지 못했습니다'));}catch(err){toast('본부 프로그램에 연결하지 못했습니다');}schedule();return;}
   if(a==='mvPlan'){if(S.mvArm!=='PLAN'){S.mvArm='PLAN';schedule();setTimeout(()=>{if(S.mvArm==='PLAN'){S.mvArm=null;schedule();}},5000);return;}
     S.mvArm=null;b.disabled=true;const L=lanes(),busy=new Set(Object.values(S.moves||{}).filter(m=>['req','sending','sent'].includes(m.state)).map(m=>m.from+'|'+m.app+'|'+m.div)),P=mvPlan(L,busy).plan;let ok=0,bad=[];
@@ -2456,6 +2543,38 @@ body.monG #ovl .ann{z-index:40}
 body.monG #ovl .ann b{font:900 clamp(26px,3.4vw,72px)/1.2 "Noto Sans KR",sans-serif;color:#fff}
 @keyframes gup{from{transform:translateY(60%);opacity:0}to{transform:none;opacity:1}}
 body.monG .mwm{display:none}
+/* v1.4.76 공항 안내판 */
+body.monF{background:#07090C}body.monF .mwm,body.monF #ovl .ann{display:none}
+body.monF #mon{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;margin:0!important;padding:0!important;z-index:1}
+.fp-wrap,body.monF #mon>.fp-wrap{position:absolute!important;inset:0!important;height:auto!important;width:auto!important;margin:0!important;display:flex;flex-direction:column;background:radial-gradient(1400px 800px at 50% -10%,#1A2030 0,#07090C 70%);color:#F4F1E8;font-family:"Noto Sans KR",sans-serif;--tw:min(3.25vw,5.6vh)}
+.fp-top{display:flex;align-items:center;gap:1.2vw;padding:1.6vh 2.4vw;border-bottom:1px solid #222936}
+.fp-sl{width:3.4vh;height:3.4vh}.fp-br{font-weight:900;letter-spacing:.32em;font-size:2.1vh}.fp-br i{font-style:normal;color:#D4AF37}
+.fp-dots{display:flex;gap:.6vw;margin-left:1.4vw}.fp-dots i{width:.9vh;height:.9vh;border-radius:50%;background:#2D3545}.fp-dots i.on{background:#F2C14E;box-shadow:0 0 1.2vh #F2C14E}
+.fp-clock{margin-left:auto;font:800 4.4vh/1 "Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.06em;color:#F2C14E}
+.fp-top .ctl{display:flex;gap:6px;opacity:.15;transition:opacity .2s}.fp-top .ctl:hover{opacity:1}.fp-top .ctl button{font:700 12px sans-serif;padding:5px 9px;border-radius:7px;border:1px solid #39404D;background:#151A23;color:#ccc;cursor:pointer}
+.fp-body{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3.2vh;padding:2vh 2vw;min-height:0}
+.fp-h{display:flex;align-items:baseline;gap:1.4vw;width:100%;max-width:calc(var(--tw) * 27);border-left:.8vh solid #F2C14E;padding-left:1.4vw}
+.fp-h b{font-size:4.8vh;font-weight:900}.fp-h span{font-size:2vh;letter-spacing:.3em;color:#9AA3B2;font-weight:800}
+.fp-h.call{border-color:#FF6B57}.fp-h.call b{color:#FFB4A8}.fp-h.award{border-color:#D4AF37}
+.fp-hero{display:flex;flex-direction:column;align-items:center;gap:1.4vh}.fp-lg{width:16vh;height:16vh;filter:drop-shadow(0 0 3vh rgba(212,175,55,.35))}
+.fp-ey{font-weight:800;letter-spacing:.42em;font-size:2vh;color:#D4AF37}
+.fp-board{display:flex;flex-direction:column;gap:1.1vh;align-items:flex-start}
+.fp-row{display:flex;gap:calc(var(--tw)*.5)}
+.fp-seg{display:flex;gap:calc(var(--tw)*.08)}
+.fp-t{position:relative;display:grid;place-items:center;width:var(--tw);height:calc(var(--tw)*1.36);border-radius:calc(var(--tw)*.1);
+  background:linear-gradient(#1F242E 0,#1A1E26 49.4%,#0B0D11 49.6%,#0B0D11 50.4%,#171B22 50.6%,#14171D 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 .3vh .8vh rgba(0,0,0,.55);font-style:normal;overflow:hidden}
+.fp-t b{font-weight:800;font-size:calc(var(--tw)*.78);line-height:1;color:#F4F1E8}
+.fp-t.fl{animation:fpf .07s linear}
+@keyframes fpf{0%{transform:scaleY(1)}50%{transform:scaleY(.15);filter:brightness(1.6)}100%{transform:scaleY(1)}}
+.fp-row.lab .fp-t{height:calc(var(--tw)*.95);background:#0F1218}.fp-row.lab .fp-t b{font-size:calc(var(--tw)*.5);color:#8E97A6}
+.fp-seg.cc .fp-t b{color:#F2C14E}.fp-seg.st-live .fp-t b{color:#58E08A}.fp-seg.st-idle .fp-t b{color:#F2C14E}.fp-seg.st-off .fp-t b{color:#FF7A6B}
+.fp-seg.g .fp-t b,.fp-seg.r1 .fp-t b{color:#F2C94C}.fp-seg.s .fp-t b,.fp-seg.r2 .fp-t b{color:#D7DDE6}.fp-seg.b .fp-t b,.fp-seg.r3 .fp-t b{color:#E0A56E}
+.fp-body.logo .fp-t,.fp-body.call .fp-t{width:calc(var(--tw)*1.5);height:calc(var(--tw)*2)}.fp-body.logo .fp-t b,.fp-body.call .fp-t b{font-size:calc(var(--tw)*1.15)}
+.fp-body.logo .fp-seg.mid .fp-t{width:calc(var(--tw)*1.5);height:calc(var(--tw)*1.4)}.fp-body.logo .fp-seg.mid .fp-t b{font-size:calc(var(--tw)*.8);color:#C9CED8}
+.fp-body.logo .fp-board,.fp-body.call .fp-board{align-items:center}
+.fp-body.award .fp-seg.mid .fp-t b{color:#F2C14E}
+.fp-foot{display:flex;gap:2vw;align-items:center;padding:1.4vh 2.4vw;border-top:1px solid #222936;color:#9AA3B2;font-weight:700;font-size:2vh}
+.fp-nt{margin-left:auto;color:#F4F1E8}
 /* 전체 화면 공지도 글로벌 화면 색으로 */
 body.monG #ovl .full{background:radial-gradient(1200px 700px at 30% 30%,#13213F 0,transparent 60%),linear-gradient(160deg,#0A1226,#04070F);z-index:35}
 body.monG #ovl .full>div{display:flex;flex-direction:column;align-items:center;gap:3vh;border-top:3px solid #D4AF37;border-bottom:3px solid #D4AF37;padding:5vh 4vw}
