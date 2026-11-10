@@ -1077,6 +1077,7 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
 .ksaudio{position:fixed;left:max(14px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:50;border:2px solid #E2C27A;background:#14110B;color:#F3DFA8;border-radius:999px;padding:12px 20px;font:800 18px/1.2 "Noto Sans KR",system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:ksaudp 1.6s ease-in-out infinite}
 @keyframes ksaudp{50%{box-shadow:0 0 0 8px rgba(226,194,122,.25),0 8px 30px rgba(0,0,0,.5)}}
 /*@@END*/
+.jskill .opt{font-size:14px;padding:8px 4px}.jskill .opt.miss{background:#B3261E;color:#fff;border-color:#B3261E}
 </style>
 
 <header class="bar">
@@ -1157,6 +1158,36 @@ const SHEETS={
     timePer10:3.0
   }
 };
+/* v1.4.73 태권체조·팀 종합경연 「대회 규정」 채점 양식 (세계태권도문화예술협회 · 11/28 대회)
+   본부 「종목별 경기 규칙」(또는 대회 설정)에서 한마당 / 대회 규정을 고릅니다. 한마당 양식은 그대로 남겨 둠.
+   - 태권체조: 점수 항목은 한마당과 같음(정확성 4.0 + 연출성 6.0). 지정 기술 동작 체크(빠지면 −0.3),
+     경연 시간 1분 40초~2분을 벗어나면 한 번에 5점 감점, 구성 인원 5~9명
+   - 팀 종합경연: 격파 단일 종목 — 격파 항목만 채점(정확성 50 + 연출성 50 = 100점),
+     품새·태권체조·호신술은 채점하지 않음. 4분을 넘으면 한 번에 5점 감점, 구성 인원 8~15명 */
+const SHEETS_HM={gym:SHEETS.gym,team100:SHEETS.team100};
+const H10F=[1,2,3,4,5,6,7,8,9,10];
+const SHEETS_WT={
+  gym:{...SHEETS.gym,members:'5~9명',std:'대회 규정',
+    skills:[{k:'s1',s:'돌려차기'},{k:'s2',s:'옆차기'},{k:'s3',s:'뒤차기'},{k:'s4',s:'뒤 후려차기'},{k:'s5',s:'돌개차기'},{k:'s6',s:'거듭 옆차기'},
+      {k:'s7',s:'뛰어 옆차기 ①'},{k:'s8',s:'뛰어 옆차기 ②'},{k:'s9',s:'대형변화 ①'},{k:'s10',s:'대형변화 ②'},{k:'s11',s:'대형변화 ③'},{k:'s12',s:'아크로바틱'}],
+    pens:[{r:'경계선 이탈',v:0.3}],timePer10:0,timeFlat:5},
+  team100:{...SHEETS.team100,label:'팀 종합경연',short:'종합경연',members:'8~15명',std:'대회 규정',
+    A:{label:'정확성',max:50,items:[
+      {k:'jA',g:'한 번 뛰어격파',label:'한 번 뛰어격파 정확성',s:'정확성',opts:H10},
+      {k:'mA',g:'여러 표적격파',label:'여러 표적격파 정확성',s:'정확성',opts:H10},
+      {k:'rA',g:'회전격파',label:'회전격파 정확성',s:'정확성',opts:H10},
+      {k:'fA',g:'단체 자유격파',label:'단체 자유격파 정확성',s:'정확성',opts:H10},
+      {k:'wA',g:'위력격파',label:'위력격파 격파 수량 (1장 0.5)',s:'격파 수량',opts:H10}]},
+    B:{label:'연출성',max:50,items:[
+      {k:'jB',g:'한 번 뛰어격파',label:'한 번 뛰어격파 연출성',s:'연출성',opts:H10F},
+      {k:'mB',g:'여러 표적격파',label:'여러 표적격파 연출성',s:'연출성',opts:H10F},
+      {k:'rB',g:'회전격파',label:'회전격파 연출성',s:'연출성',opts:H10F},
+      {k:'fB',g:'단체 자유격파',label:'단체 자유격파 연출성',s:'연출성',opts:H10F},
+      {k:'sB',g:'공연 작품성',label:'공연 작품성 (스토리텔링)',s:'작품성',opts:H10F}]},
+    pens:[{r:'실제 무기·폭죽',v:3.0}],timePer10:0,timeFlat:5}
+};
+const sheetStd=t=>{try{const ts=(typeof SET==='function'?SET():{}).typeSheet||{};return ts[t]==='wt'?'wt':'hm';}catch(e){return 'hm';}};
+['gym','team100'].forEach(t=>Object.defineProperty(SHEETS,t,{enumerable:true,configurable:true,get:()=>sheetStd(t)==='wt'?SHEETS_WT[t]:SHEETS_HM[t]}));
 const SH=t=>SHEETS[t]||SHEETS.recognized;
 const isTeamType=t=>!!(SHEETS[t]&&SHEETS[t].team);
 const usesMusic=t=>t==='freestyle'||!!(SHEETS[t]&&SHEETS[t].music);
@@ -1166,7 +1197,7 @@ const tieOrder=t=>(SHEETS[t]&&SHEETS[t].tie)||(t==='freestyle'?['a','b']:['b','a
 /* 명단의 "공인/자유" 칸 글자로 종목을 알아냅니다 */
 function typeOf(v){const x=String(v||'');if(/종합|팀\s*대항/.test(x))return 'team100';if(/체조/.test(x))return 'gym';if(/자유|프리|free/i.test(x))return 'freestyle';return 'recognized';}
 /* 10초당 감점(한마당): 넘거나 모자란 시간을 10초 단위로 올림 */
-function timeDedV(type,t){const sh=SHEETS[type]||{};if(!sh.timePer10||!t)return 0.3;const e=elapsed(t);if(e<=0)return sh.timePer10;let diff=0;
+function timeDedV(type,t){const sh=SHEETS[type]||{};if(sh.timeFlat)return sh.timeFlat;if(!sh.timePer10||!t)return 0.3;const e=elapsed(t);if(e<=0)return sh.timePer10;let diff=0;
   if(t.max&&e>t.max)diff=e-t.max;else if(t.min&&e<t.min)diff=t.min-e;return r1(Math.max(1,Math.ceil((diff-1e-6)/10))*sh.timePer10);}
 const optTxt=o=>o%1?fmt1(o):String(o);
 /* 팀 이름·팀원처럼 긴 이름은 전광판에서 글자를 줄여 한두 줄에 맞춥니다 */
@@ -1885,12 +1916,15 @@ function aSettings(){
     <div class="field"><span class="label">자유 품새 · 음원 기준</span>
       <div class="row"><input type="number" id="freeMin" min="10" max="600" step="5" value="${s.freeMin}" style="width:86px" data-on="setNumIn" data-k="freeMin" aria-label="자유 품새 최소 시간(초)"><span>초 이상</span>
       <input type="number" id="freeMax" min="10" max="600" step="5" value="${s.freeMax}" style="width:86px" data-on="setNumIn" data-k="freeMax" aria-label="자유 품새 최대 시간(초)"><span>초 이내</span></div></div>
+    <div class="field"><span class="label">태권체조·팀 경연 채점 양식</span>
+      <div class="row">${['gym','team100'].map(t=>`<span class="small"><b>${t==='gym'?'태권체조':'팀 경연'}</b></span><div class="seg"><button class="${sheetStd(t)==='hm'?'on':''}" data-act="sheetStd" data-t="${t}" data-v="hm">한마당</button><button class="${sheetStd(t)==='wt'?'on':''}" data-act="sheetStd" data-t="${t}" data-v="wt">대회 규정</button></div>`).join('')}</div>
+      <span class="small muted"><b>대회 규정</b>(세계태권도문화예술협회): 태권체조 지정 기술 체크·1분 40초~2분 벗어나면 5점 감점·5~9명 / 팀 경연 격파 항목만 100점·4분 넘으면 5점 감점·8~15명</span></div>
     <div class="field"><span class="label">태권체조 (한마당 제41조 · 1분 50초~2분)</span>
       <div class="row"><input type="number" id="gymMin" min="10" max="900" step="5" value="${s.gymMin}" style="width:86px" data-on="setNumIn" data-k="gymMin" aria-label="태권체조 최소 시간(초)"><span>초 이상</span>
       <input type="number" id="gymMax" min="10" max="900" step="5" value="${s.gymMax}" style="width:86px" data-on="setNumIn" data-k="gymMax" aria-label="태권체조 최대 시간(초)"><span>초 이내</span></div></div>
     <div class="field"><span class="label">팀 대항 종합경연 (제43조 · 6분 이내)</span>
       <div class="row"><input type="number" id="teamMax" min="30" max="1200" step="10" value="${s.teamMax}" style="width:86px" data-on="setNumIn" data-k="teamMax" aria-label="팀 대항 종합경연 제한 시간(초)"><span>초 이내</span>
-      <span class="small muted">두 종목은 넘거나 모자란 시간 10초마다 감점합니다 (태권체조 0.3점, 종합경연 3.0점).</span></div></div>
+      <span class="small muted">한마당 양식: 넘거나 모자란 시간 10초마다 감점 (태권체조 0.3점, 종합경연 3.0점) · 대회 규정 양식: 시간을 벗어나면 한 번에 5점 감점</span></div></div>
     <span class="small muted">타이머는 "시작"부터 "바로"까지 경과 시간을 잽니다. 제한 시간을 벗어나면 숫자가 붉게 바뀌고 시간 감점 버튼이 강조됩니다.</span>
   </div>
   <div class="panel">
@@ -2370,6 +2404,9 @@ let myJudge=FIXED0?0:(Number(ssGet('pj_judge'))||0);
 /* 채점 중인 선택은 이 기기에 저장해 두어 새로고침해도 남습니다 */
 let DRAFTS=lsJSON('pj_drafts',{});
 const saveDrafts=()=>{const mine='|'+myJudge,all=lsJSON('pj_drafts',{});for(const k of Object.keys(all))if(k.endsWith(mine))delete all[k];for(const [k,v] of Object.entries(DRAFTS))if(k.endsWith(mine))all[k]=v;lsSet('pj_drafts',JSON.stringify(all));};
+/* 태권체조 지정 기술 동작: 한 것은 그대로 두고, 빠진 기술만 눌러 「누락」(−0.3). 다시 누르면 취소 */
+function skillBox(sh,d,e){const m=d.miss||[];return `<div class="ji jskill"><div class="jl"><span>지정 기술 동작 <small>빠진 기술만 누르세요 · 1개당 −0.3</small></span><b>${m.length?'누락 '+m.length:'모두 함'}</b></div>
+  <div class="jo" style="--n:4">${sh.skills.map(x=>`<button class="opt ${m.includes(x.k)?'miss':''}" data-act="skillMiss" data-p="${e.perfId}" data-k="${x.k}">${m.includes(x.k)?'✕ ':''}${x.s}</button>`).join('')}</div></div>`;}
 function allItems(type){const sh=SHEETS[type];return [...(sh.A.items||[]),...sh.B.items];}
 function draftFor(perfId,type){
   const key=perfId+'|'+myJudge,ep=ST().epoch||0,d0=DRAFTS[key];
@@ -2498,7 +2535,7 @@ function vJudge(){
   if(sh.aMode==='ded'&&sh.dedOpts){
     colA=`<div class="jcol"><div class="jsec"><span>${sh.A.label} <small>${fmt1(sh.A.max)}에서 감점</small></span><b>${fmt1(sc.a)}</b></div>
       <div class="ji jacc"><div class="jl"><span>${sh.dedOpts.map(o=>`${o.s} ${d.ded.filter(x=>x===o.v).length}`).join(' · ')}</span><b>${fmt1(sc.a)}</b></div>
-      <div class="jo" style="--n:${sh.dedOpts.length+1}">${sh.dedOpts.map(o=>`<button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="${o.v}">−${fmt1(o.v)}<small>${o.s}</small></button>`).join('')}<button class="opt ded undo" data-act="accUndo" data-p="${e.perfId}" ${d.ded.length?'':'disabled'}>되돌리기</button></div></div></div>`;
+      <div class="jo" style="--n:${sh.dedOpts.length+1}">${sh.dedOpts.map(o=>`<button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="${o.v}">−${fmt1(o.v)}<small>${o.s}</small></button>`).join('')}<button class="opt ded undo" data-act="accUndo" data-p="${e.perfId}" ${d.ded.length?'':'disabled'}>되돌리기</button></div></div>${sh.skills?skillBox(sh,d,e):''}</div>`;
     colB=`<div class="jcol"><div class="jsec"><span>${sh.B.label} <small>각 1.0~2.0</small></span><b>${fmt1(sc.b)}</b></div>${sh.B.items.map(row).join('')}</div>`;
   }else if(sh.long){
     const gs=[];allItems(cur.type).forEach(it=>{let x=gs.find(q=>q.g===it.g);if(!x)gs.push(x={g:it.g,items:[]});x.items.push(it);});
@@ -2511,7 +2548,7 @@ function vJudge(){
     const n1=d.ded.filter(x=>x===0.1).length,n3=d.ded.filter(x=>x===0.3).length,n6=d.ded.filter(x=>x===0.6).length;
     colA=`<div class="jcol"><div class="jsec"><span>${sh.A.label} <small>4.0에서 감점</small></span><b>${fmt1(sc.a)}</b></div>
       <div class="ji jacc"><div class="jl"><span>작은 실수 ${n1} · 큰 실수 ${n3}${n6?` · 다시 시작 ${n6}`:''}</span><b>${fmt1(sc.a)}</b></div>
-      <div class="jo" style="--n:4"><button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="0.1">−0.1<small>작은 실수</small></button><button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="0.3">−0.3<small>큰 실수</small></button><button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="0.6">−0.6<small>다시 시작</small></button><button class="opt ded undo" data-act="accUndo" data-p="${e.perfId}" ${d.ded.length?'':'disabled'}>되돌리기</button></div></div></div>`;
+      <div class="jo" style="--n:4"><button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="0.1">−0.1<small>작은 실수</small></button><button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="0.3">−0.3<small>큰 실수</small></button><button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="0.6">−0.6<small>다시 시작</small></button><button class="opt ded undo" data-act="accUndo" data-p="${e.perfId}" ${d.ded.length?'':'disabled'}>되돌리기</button></div></div>${sh.skills?skillBox(sh,d,e):''}</div>`;
     colB=`<div class="jcol"><div class="jsec"><span>${sh.B.label} <small>각 2.0</small></span><b>${fmt1(sc.b)}</b></div>${sh.B.items.map(row).join('')}</div>`;
   }else{
     colA=`<div class="jcol fs"><div class="jsec"><span>${sh.A.label} <small>6.0</small></span><b>${fmt1(sc.a)}</b></div>${sh.A.items.map(row).join('')}</div>`;
@@ -3242,7 +3279,7 @@ const ACT={
       if(isNaN(a)||a<0||a>sh.A.max||isNaN(bb)||bb<0||bb>sh.B.max){toast(`${j.judge}심 점수가 범위를 벗어났습니다`);return;}
       judges.push({judge:j.judge,a:r1(a),b:r1(bb)});
     }
-    const dv=r1(Number(P('ded')?.value)||0);if(dv<0||dv>(SH(r.type).timePer10?100:5)){toast('감점 합계를 확인해 주세요');return;}
+    const dv=r1(Number(P('ded')?.value)||0);if(dv<0||dv>(SH(r.type).timePer10||SH(r.type).timeFlat?100:5)){toast('감점 합계를 확인해 주세요');return;}
     const changes=judges.filter(j=>{const o=r.judges.find(x=>x.judge===j.judge);return o.a!==j.a||o.b!==j.b;}).map(j=>{const o=r.judges.find(x=>x.judge===j.judge);return `${j.judge}심 ${fmt1(o.a)}/${fmt1(o.b)}→${fmt1(j.a)}/${fmt1(j.b)}`;});
     if(dv!==r1(r.deduction||0))changes.push(`감점 ${fmt1(r.deduction||0)}→${fmt1(dv)}`);
     if(!changes.length){toast('바뀐 점수가 없습니다');return;}
@@ -3315,7 +3352,13 @@ const ACT={
   },
   releaseSeat:async b=>{const n=b.dataset.n;await store.del('seats/j'+n);addLog('자리 비우기',`${n}심`,'운영석에서 심판 번호 잠금 해제');toast(`${n}번 심판 자리를 비웠습니다`);},
   pick:b=>{const cur=curOf();if(!cur)return;const d=draftFor(b.dataset.p,cur.type);d.items[b.dataset.k]=Number(b.dataset.v);saveDrafts();render();},
+  skillMiss:b=>{const cur=curOf();if(!cur)return;const d=draftFor(b.dataset.p,cur.type),k=b.dataset.k;d.miss=d.miss||[];const i=d.miss.indexOf(k);
+    if(i>=0){d.miss.splice(i,1);const j=d.ded.lastIndexOf(0.3);if(j>=0)d.ded.splice(j,1);}else{d.miss.push(k);d.ded.push(0.3);}saveDrafts();render();},
   accDed:b=>{const cur=curOf();if(!cur)return;draftFor(b.dataset.p,cur.type).ded.push(Number(b.dataset.v));saveDrafts();render();},
+  sheetStd:async b=>{if(SET().hqRulesAt)return toast('본부의 「종목별 경기 규칙」으로 정해져 있습니다 · 바꾸려면 본부에서 고쳐 주세요');
+    const t=b.dataset.t,v=b.dataset.v,ts={...(SET().typeSheet||{}),[t]:v},p={typeSheet:ts};
+    if(v==='wt'){if(t==='gym'){p.gymMin=100;p.gymMax=120;}else{p.teamMin=0;p.teamMax=240;}}
+    S.settings={...SET(),...p};await saveSettings(S.settings);render();toast(`${t==='gym'?'태권체조':'팀 경연'} 채점 양식: ${v==='wt'?'대회 규정':'한마당'}`);},
   accUndo:b=>{const cur=curOf();if(!cur)return;draftFor(b.dataset.p,cur.type).ded.pop();saveDrafts();render();},
   jd:b=>{const cur=curOf();if(!cur)return;draftFor(b.dataset.p,cur.type).jd.push(0.3);saveDrafts();render();},
   jdUndo:b=>{const cur=curOf();if(!cur)return;draftFor(b.dataset.p,cur.type).jd.pop();saveDrafts();render();},

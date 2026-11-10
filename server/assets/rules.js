@@ -27,7 +27,7 @@
       else if(w.adv&&d.advN&&Number(d.advN)!==w.adv){x={...x,advN:null};ch=true;}
       if(ch){n++;x={...x,stages:null};}return x;});
     if(n){await save(list);say(`본부 종목 설정에 맞춰 시작 전 부문 ${n}개를 고쳤습니다`);}}
-  async function tick(){if(busy||!isAdmin())return;const S=g('S');if(!S||!S.settings||typeof S.settings!=='object')return;busy=true;
+  async function tick(){if(busy||!isAdmin())return;const S=g('S');if(!S)return;if(!S.settings||typeof S.settings!=='object')S.settings={}; /* v1.4.73 새 노트북(대회 설정 아직 없음)도 본부 규칙을 받음 */busy=true;
     try{const j=await (await fetch('/api/rules',{cache:'no-store'})).json();if(!j||!j.at||!j.rules)return;
       const R=typeof j.rules==='string'?JSON.parse(j.rules):j.rules;if(!R)return;
       const set=S.settings,C=R.common||{},ev=R.events||null;
@@ -43,6 +43,7 @@
           const rc=T.recognized||{};if(rc.format)p.format=rc.format;if(rc.poomsae)p.poomsae=num(rc.poomsae,1);if(rc.pdraw)p.pdraw=rc.pdraw;
           const fs=T.freestyle||{},gy=T.gym||{},tm=T.team100||{};
           if(fs.min)p.freeMin=num(fs.min,90);if(fs.max)p.freeMax=num(fs.max,100);if(gy.min)p.gymMin=num(gy.min,110);if(gy.max)p.gymMax=num(gy.max,120);if(tm.max)p.teamMax=num(tm.max,300);p.teamMin=Number(tm.min)||0;
+          p.typeSheet={gym:gy.sheet==='wt'?'wt':'hm',team100:tm.sheet==='wt'?'wt':'hm'}; /* v1.4.73 채점 양식: 한마당 / 대회 규정 */
           /* 생활체육 기준: 공인 품새 「예선 2개·결선 1개」 등 단계마다 품새 수 */
           const m=/^([12])-([12])$/.exec(String(rc.pstage||''));p.typePoomStage=C.std==='comm'&&m?{recognized:{pre:+m[1],final:+m[2]}}:{};
           if(C.std==='comm'&&m)p.typePoom.recognized=+m[1];else if(C.std==='comm'&&/^[12]$/.test(String(rc.pstage||'')))p.typePoom.recognized=+rc.pstage;}

@@ -456,9 +456,11 @@ function vRules(){const R=RDRAFT||rulesNow(),list=courtList().filter(c=>c.online
     else if(k==='freestyle')f=`<div class="rrow"><b>경기 방식</b>${seg(P+'.format',[['cutoff','컷오프'],['tournament','토너먼트']],t.format)}</div>${t.format!=='tournament'?stepRows():''}
       <div class="rrow"><b>심판 수</b>${seg(P+'.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],t.judges)}</div>
       <div class="rrow"><b>연기 시간</b>${mmss(P+'.min',t.min)} ~ ${mmss(P+'.max',t.max)} <span class="small muted">넘거나 모자라면 한마당 규정대로 10초마다 감점</span></div>`;
-    else if(k==='gym'||k==='team100')f=`<div class="rrow"><b>경기 방식</b><span class="chip ok">컷오프 · 경연 1회 (고정)</span></div>${stepRows()}
+    else if(k==='gym'||k==='team100')f=`<div class="rrow"><b>채점 양식</b>${seg(P+'.sheet',[['hm','한마당'],['wt','대회 규정 (세계태권도문화예술협회)']],t.sheet||'hm')}</div>
+      <div class="small muted">${(t.sheet||'hm')==='wt'?(k==='gym'?'대회 규정: 점수 항목은 한마당과 같고, 지정 기술 동작 체크(빠지면 −0.3) · 1분 40초~2분 벗어나면 한 번에 5점 감점 · 5~9명':'대회 규정: 격파 단일 종목 — 격파 항목만 100점(정확성 50 + 연출성 50) · 4분 넘으면 한 번에 5점 감점 · 8~15명'):'한마당 규정 채점표 그대로'}</div>
+      <div class="rrow"><b>경기 방식</b><span class="chip ok">컷오프 · 경연 1회 (고정)</span></div>${stepRows()}
       <div class="rrow"><b>심판 수</b>${seg(P+'.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],t.judges)}</div>
-      <div class="rrow"><b>연기 시간</b>${mmss(P+'.min',t.min)} ~ ${mmss(P+'.max',t.max)} <span class="small muted">${k==='gym'?'한마당 규정: 1분 50초~2분 · 벗어난 10초마다 −0.3':'벗어난 10초마다 −3.0 (한마당 종합경연) · 최소를 0분 0초로 두면 최대만 봅니다'}</span></div>`;
+      <div class="rrow"><b>연기 시간</b>${mmss(P+'.min',t.min)} ~ ${mmss(P+'.max',t.max)} <span class="small muted">${(t.sheet||'hm')==='wt'?(k==='gym'?'대회 규정: 1분 40초~2분 · 벗어나면 한 번에 −5':'대회 규정: 4분 이내 · 넘으면 한 번에 −5'):k==='gym'?'한마당 규정: 1분 50초~2분 · 벗어난 10초마다 −0.3':'벗어난 10초마다 −3.0 (한마당 종합경연) · 최소를 0분 0초로 두면 최대만 봅니다'}</span></div>`;
     else if(k==='gyeokpa'){const G=R.gyeokpa;f=`<div class="rrow"><b>심판 수</b>${seg('gyeokpa.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],G.judges)}</div>
       <div class="rrow"><b>예선을 치르는 인원</b>${numIn('gyeokpa.preMin',G.preMin)} 명 이상 <span class="small muted">그보다 적으면 예선 없이 결선만</span></div>
       <div class="rrow"><b>예선 조당 최대 인원</b>${numIn('gyeokpa.grpSize',G.grpSize)} 명</div>
@@ -478,7 +480,10 @@ function vRules(){const R=RDRAFT||rulesNow(),list=courtList().filter(c=>c.online
 function rPath(o,p,v){const ks=p.split('.');let x=o;ks.slice(0,-1).forEach(k=>{x[k]=x[k]||{};x=x[k];});x[ks[ks.length-1]]=v;}
 const rDraft=()=>{RDRAFT=RDRAFT||JSON.parse(JSON.stringify(rulesNow()));return RDRAFT;};
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
-  if(a==='rSet'){const v=b.dataset.v;rPath(rDraft(),b.dataset.k,v==='true'?true:v==='false'?false:/^\d+$/.test(v)?Number(v):v);render();}
+  if(a==='rSet'){const v=b.dataset.v,D=rDraft();rPath(D,b.dataset.k,v==='true'?true:v==='false'?false:/^\d+$/.test(v)?Number(v):v);
+    /* 대회 규정 양식을 고르면 규정 시간으로 (태권체조 1분 40초~2분 · 팀 경연 4분 이내) */
+    const m=/^poomsae\.types\.(gym|team100)\.sheet$/.exec(b.dataset.k);if(m&&v==='wt'){const P='poomsae.types.'+m[1];if(m[1]==='gym'){rPath(D,P+'.min',100);rPath(D,P+'.max',120);}else{rPath(D,P+'.min',0);rPath(D,P+'.max',240);}}
+    render();}
   else if(a==='rEv'){const D=rDraft();D.events[b.dataset.k]=!D.events[b.dataset.k];render();}
   else if(a==='rOpen'){RSEL=b.dataset.k;render();}
   else if(a==='rBack'){RSEL=null;render();}
