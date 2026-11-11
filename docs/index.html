@@ -1384,7 +1384,7 @@ function qtEnglish(n){n=Math.round(n);if(!n)return 'zero';const o=['','one','two
   const S=[[1e9,'billion'],[1e6,'million'],[1e3,'thousand']];let s='';for(const [v,w] of S){if(n>=v){s+=h(Math.floor(n/v))+' '+w+' ';n%=v;}}if(n)s+=h(n);s=s.trim();return s.charAt(0).toUpperCase()+s.slice(1);}
 
 /* ---- 직인 세 가지 안 (캔버스로 그려 PNG로 · 웹글꼴 사용) ---- */
-const QT_SEALS=[['round','둥근 직인','영문 테두리 + 한글 상호'],['square','네모 인감','전통 인감 여섯 글자 + 영문 띠'],['emblem','로고 직인','KS 로고 + 영문·한글 테두리']];
+const QT_SEALS=[['round','둥근 직인','영문·한글 테두리 + 직인 (기본)'],['square','네모 인감','전통 인감 여섯 글자 + 영문 띠'],['emblem','로고 직인','KS 로고 + 영문·한글 테두리']];
 function qtRng(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646;};}
 async function qtSealUrl(kind){if(QT.seals[kind])return QT.seals[kind];
   try{await Promise.all(['900 60px "Noto Serif KR"','900 60px Cinzel','700 30px Cinzel'].map(f=>document.fonts.load(f,'KICKSTARUP킥스타트업인OFFICALSEKR★·')));}catch(e){}
@@ -1394,8 +1394,8 @@ async function qtSealUrl(kind){if(QT.seals[kind])return QT.seals[kind];
   const arc=(t,r,font,bottom,sp)=>{x.font=font;x.textAlign='center';x.textBaseline='middle';const ch=[...t],w=ch.map(c=>x.measureText(c).width+sp);let a=-(w.reduce((p,v)=>p+v,0)-sp)/r/2;
     ch.forEach((c,i)=>{const m=a+(w[i]-sp)/2/r;x.save();x.rotate(bottom?-m:m);x.translate(0,bottom?r:-r);x.fillText(c,0,0);x.restore();a+=w[i]/r;});};
   const star=(cx,cy,r)=>{x.beginPath();for(let i=0;i<10;i++){const rr=i%2?r*.42:r,an=-Math.PI/2+i*Math.PI/5;x.lineTo(cx+rr*Math.cos(an),cy+rr*Math.sin(an));}x.closePath();x.fill();};
-  if(kind==='round'){ring(244,15);ring(222,3.5);ring(150,3.5);arc('KICKSTART UP',186,`900 54px ${CIN}`,false,7);arc('OFFICIAL SEAL',188,`700 34px ${CIN}`,true,8);star(-186,0,15);star(186,0,15);
-    x.textAlign='center';x.textBaseline='middle';x.font=`900 50px ${SER}`;x.fillText('킥스타트업',0,-4);x.fillRect(-70,-62,140,4);x.fillRect(-70,40,140,4);x.font=`700 22px ${CIN}`;x.fillText('K O R E A',0,74);star(0,-90,10);}
+  if(kind==='round'){ring(244,15);ring(222,3.5);ring(150,3.5);arc('KICKSTART UP',186,`900 54px ${CIN}`,false,7);arc('킥스타트업',188,`900 46px ${SER}`,true,24);star(-186,0,15);star(186,0,15);
+    x.textAlign='center';x.textBaseline='middle';x.font=`900 104px ${SER}`;x.fillText('직인',0,6);star(0,-96,11);star(0,104,11);}
   else if(kind==='square'){const rr=(i,r,w)=>{x.lineWidth=w;x.beginPath();x.roundRect(-S/2+i,-S/2+i,S-2*i,S-2*i,r);x.stroke();};rr(16,34,18);rr(40,16,4);
     x.fillRect(-212,124,424,4);x.textAlign='center';x.textBaseline='middle';x.font=`900 42px ${CIN}`;
     {const t='KICKSTART UP';let tw=0;const sp=5;[...t].forEach(c=>tw+=x.measureText(c).width+sp);let px=-(tw-sp)/2;[...t].forEach(c=>{const cw=x.measureText(c).width;x.fillText(c,px+cw/2,180);px+=cw+sp;});}
