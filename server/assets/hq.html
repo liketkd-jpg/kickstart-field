@@ -1687,7 +1687,8 @@ const APPN={poomsae:'품새',gyeokpa:'격파',kyorugi:'겨루기'};
 /* ---------- 명단 → 경기 카드 ---------- */
 function rebuild(){
   G={};
-  P.roster.forEach((r,i)=>{const id=[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||''),r.gev||''].join('|');
+  /* v1.4.90 홈페이지에서 추첨해 온 명단은 홈페이지가 정한 부문(「추첨부문」 칸) 그대로 묶음 — 관리자가 합친 부문도 그대로 */
+  P.roster.forEach((r,i)=>{const id=r.hdDiv?'hd|'+r.ev+'|'+r.hdDiv:[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||''),r.gev||''].join('|');
     const g=G[id]||(G[id]={id,ev:r.ev,div:r.div,grp:r.grp||'',sex:isTeam(r.ev)?'':(r.sex||''),gev:r.gev||'',units:0,people:0,members:[]});
     g.units++;g.people+=isTeam(r.ev)?(+r.cnt||1):1;g.members.push(i);});
 }
@@ -1830,7 +1831,7 @@ function divOf(div,gr,ev,std){div=String(div||'').trim();gr=String(gr||'').trim(
   const gm=/(\d)/.exec(gr);if(/^초등부$/.test(div)&&gm&&!isTeam(ev)){const n=+gm[1];return {div:n<=2?'초등 1·2학년':n<=4?'초등 3·4학년':'초등 5·6학년',merge:false};}
   return {div:div||'일반',merge:false};}
 function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
-  const col=(o,re)=>{const k=Object.keys(o).find(k=>k!=='__sheet'&&re.test(KEYN(k)));return k?String(o[k]==null?'':o[k]).normalize('NFKC').replace(/\p{Cf}+/gu,'').replace(/[\s\p{Z}]+/gu,' ').trim():'';};
+  const col=(o,re)=>{const k=Object.keys(o).find(k=>k!=='__sheet'&&re.test(KEYN(k)));return k?String(o[k]==null?'':o[k]).normalize('NFKC').replace(/[\p{Cf}\u115F\u1160\u3164\uFFA0]+/gu,'').replace(/[\s\p{Z}]+/gu,' ').trim():'';};
   const out=[],teams={};
   rows.forEach(o=>{const sh=String(o.__sheet||'');if(/목록|작성|방법|안내/.test(sh.replace(/\s/g,'')))return;
     const name0=col(o,/^(이름|선수|선수명|성명)$/);if(/\(예시\)|^예시/.test(name0)||/\(예시\)/.test(col(o,/^(팀명|팀|팀이름)$/)))return;
@@ -1843,7 +1844,7 @@ function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
     const mem=col(o,/^(팀원|선수명단)$/),tn=col(o,/^(팀명|팀|팀이름)$/),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
     const g0=col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),gm=/^([A-Za-z])\s*조?$/.exec(g0),s0=col(o,/^성별$/);
     const r={ev,div,grp:dv.merge?'':(gm?gm[1].toUpperCase()+'조':g0),sex:/^(남|M$|male)/i.test(s0)?'남':/^(여|F$|W$|female)/i.test(s0)?'여':s0,
-      name:name0,dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0,drawNo:Number(col(o,/^(추첨|추첨번호)$/))||0};
+      name:name0,dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0,drawNo:Number(col(o,/^(추첨|추첨번호)$/))||0,hdDiv:col(o,/^(추첨부문)$/)};
     /* v1.4.85 개인 격파는 세부 종목(체공 도약·수직축 회전 …)별로 따로 부문 */
     if(/격파/.test(ev)&&!kind&&!isTeam(ev)){const kr=kindRaw.replace(/\s/g,''),hit=GEV.find(([k,l])=>l.replace(/\s/g,'')===kr||k===kindRaw);if(hit)r.gev=hit[0];}
     if(isTeam(ev)||kind){if(kind)r.kind=kind;const k=[ev,r.div,r.grp,tn||r.name||r.dojang].join('|');const add=mem?mem.split(/[,，·]/).filter(x=>x.trim()).length:1;
