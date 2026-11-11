@@ -1703,7 +1703,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.4.91'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.4.92'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={sel:new Set(),res:{},arm:null,comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2043,6 +2043,7 @@ function vAdmin(){ATABS=ATABS_ALL.filter(([k])=>canTab(me(),k));if(!ATABS.some((
     ${UI.newComp?compForm(null):''}
     <div class="row">${!['members','lic','acct','board','quote'].includes(tab)?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.hidden?'(숨김) ':''}${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
     ${c&&!['members','lic','acct','board','quote'].includes(tab)?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
+    ${c&&!['members','lic','acct','board','quote'].includes(tab)?`<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold" type="button" data-a="fullXlsx">⬇ 전체 접수 명단 엑셀 (품새·격파 모두 · 생년월일 포함)</button><span class="small mute">종목별 시트 + 전체 시트 · 생년과 부별이 다른 선수는 「생년과 다름」 칸에 표시</span></div>`:''}
     ${c&&tab!=='draw'?hdAlert(c):''}
     <div class="atabs" role="tablist">${ATABS.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''}" data-a="atab" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}</div>`;}
@@ -2964,6 +2965,19 @@ function exportRows0(c,sport){
   return [H,...E.map(e=>{const A=e.athleteIds.map(ath),f=e.f,team=f.ev==='기술격파 단체전';
     return [team?`${orgOk(A[0].org)||co(e).org} 팀`:A[0].name,f.ev,team?'':A[0].gender,f.div,orgOk(A[0].org)||co(e).org,co(e).name,f.weight||'',f.height||'',team?A.map(a=>a.name).join(','):'',''];})];
 }
+/* v1.4.92 전체 접수 명단 (점검용) — 종목별 시트 + 전체 시트 · 생년월일·생년 기준 학년·다름 표시 */
+async function fullXlsx(c){if(!window.XLSX){toast('엑셀 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요');return;}
+  const E=D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'),ath=id=>D().athletes.find(a=>a.id===id)||{};
+  const H=['번호','종목','세부·종류','부별','학년','실력조','이름','성별','생년월일','생년 기준 학년','생년과 다름','소속','지도자','지도자 도장','팀명','팀원','상태','접수번호'];
+  const row=(e,i)=>{const f=e.f||{},A=e.athleteIds.map(ath),a=A[0]||{},co=coachOf(e.coachId),team=A.length>1;
+    const det=e.sport==='gyeokpa'?(f.ev||''):e.sport==='poomsae'?(isTeamT(f.type)?'단체':(f.kind||'개인')):e.sport==='kyorugi'?(f.weight||''):'';
+    return [i+1,EVN(e),det,f.div||'',f.grade||'',f.cls||'',team?(f.team||A.map(x=>x.name).join(',')):a.name||'',team?'':a.gender||'',team?'':a.birth||'',team?'':schoolTxt(a.birth),ageWarn(e)?'⚠ '+ageWarn(e):'',
+      orgOk(a.org)||'',co.name||'',co.org||'',f.team||'',team?A.map(x=>x.name).join(','):'',(STS[e.status]||['',''])[1],e.id];};
+  const wb=XLSX.utils.book_new(),add=(name,L)=>{const rows=[H,...L.map(row)].map(r=>r.map(nfc));const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=H.map(h=>({wch:/이름|소속|도장|생년과|팀원/.test(h)?18:Math.max(8,h.length*2+2)}));ws['!autofilter']={ref:XLSX.utils.encode_range({s:{c:0,r:0},e:{c:H.length-1,r:rows.length-1}})};XLSX.utils.book_append_sheet(wb,ws,name.slice(0,31));};
+  const ord=(a,b)=>EVN(a).localeCompare(EVN(b),'ko')||String((a.f||{}).div||'').localeCompare(String((b.f||{}).div||''),'ko',{numeric:true})||String((a.f||{}).grade||'').localeCompare(String((b.f||{}).grade||''),'ko',{numeric:true});
+  add('전체',[...E].sort(ord));c.sports.forEach(s=>{const L=E.filter(e=>e.sport===s);if(L.length)add(SPORTS[s].n,[...L].sort(ord));});
+  const n=E.filter(e=>ageWarn(e)).length;
+  return saveBytes(new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'})),`${c.name}_전체접수명단.xlsx`.replace(/[\\/:*?"<>|]/g,''),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',`전체 접수 명단 ${E.length}건을 내려받았습니다${n?` · 생년과 다른 건 ${n}건 (「생년과 다름」 칸)`:''}`);}
 async function saveXlsx(rows,name,sheet,okMsg){
   if(!window.XLSX){toast('엑셀 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요');return;}
   const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=rows[0].map(h=>({wch:Math.max(8,String(h).length*2+4)}));
@@ -3106,6 +3120,7 @@ document.addEventListener('click',e=>{
   else if(a==='adTab'){UI.adminSport=b.dataset.s;render();}
   else if(a==='paid'){const x=S.entries.find(y=>y.id===b.dataset.id);if(x)run(async()=>{await q(sb.from('entries').update({status:x.status==='paid'?'wait':'paid'}).eq('id',x.id));await reload();});}
   else if(a==='export'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)exportXlsx(c,b.dataset.s);}
+  else if(a==='fullXlsx'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)fullXlsx(c);}
   else if(a==='statsXlsx'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)statsXlsx(c);}
   else if(a==='statOpen'){UI.statOpen={...(UI.statOpen||{}),[b.dataset.k]:!(UI.statOpen||{})[b.dataset.k]};render();}
   else if(a==='editEntry'){UI.edit=UI.edit===b.dataset.id?null:b.dataset.id;UI.edF=null;render();}
