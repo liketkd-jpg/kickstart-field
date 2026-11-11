@@ -855,8 +855,14 @@ function monG(list,cf,n,comp){
       <aside class="g-rk"><div class="g-rkh"><b>도장 순위</b><span>DOJANG RANKING</span></div><div class="g-rks">금 · 은 · 동 순 &nbsp;<i class="g"></i><i class="s"></i><i class="b"></i></div><ol>${rows}</ol></aside></div>
     ${tk}</div>`;}
 const KSLOGO=c=>`<svg class="${c}" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg>`;
-function tick(){const el=document.querySelector('[data-clock]');if(el){const d=new Date();el.textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;}}
-setInterval(tick,1000);
+/* v1.4.83 전광판 시계: 시·분은 크게(24시간), 초는 작게, 가운데 두 점은 1초마다 은은하게, 아래에 날짜·요일 */
+function tick(){document.querySelectorAll('[data-clock]').forEach(el=>{const d=new Date(),p=n=>String(n).padStart(2,'0');
+  if(el.classList.contains('small')){el.textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;return;}
+  const hm=el.querySelector('.kc-hm');
+  if(!hm){el.classList.add('kclk');el.innerHTML='<span class="kc-row"><b class="kc-hm"><span class="kc-h"></span><i class="kc-col">:</i><span class="kc-m"></span></b><span class="kc-s"></span></span><em class="kc-dt"></em>';}
+  const q=c=>el.querySelector(c);q('.kc-h').textContent=p(d.getHours());q('.kc-m').textContent=p(d.getMinutes());q('.kc-s').textContent=p(d.getSeconds());
+  q('.kc-dt').textContent=`${d.getMonth()+1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일`;q('.kc-col').classList.toggle('dim',d.getSeconds()%2===1);});}
+setInterval(tick,250);
 
 /* ---------- 음성 ---------- */
 /* v1.4.45 자연스러운 AI 목소리
@@ -2634,7 +2640,28 @@ body.monG .g-live{display:flex;align-items:center;gap:.5vw;font:800 clamp(11px,.
 @keyframes gblink{50%{opacity:.25}}
 body.monG .g-top .ctl{margin-left:auto;opacity:0!important;transition:opacity .3s}body.monG .g-top:hover .ctl{opacity:1!important}
 body.mon .batb{display:none!important}
-body.monG .g-clock{font:700 clamp(22px,2.8vw,56px)/1 "Archivo",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--wt)}
+body.monG /* v1.4.83 고급 시계 */
+.kclk{display:inline-flex!important;flex-direction:column!important;align-items:flex-end!important;justify-content:center!important;line-height:1!important;gap:.18em;white-space:nowrap;height:auto!important}
+.kclk .kc-dt{display:block!important;align-self:flex-end;margin:0!important}.kclk .kc-row{flex-direction:row!important}
+.kclk .kc-row{display:inline-flex;align-items:flex-start;gap:.12em}
+.kclk .kc-hm{font-weight:800;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.kclk .kc-col{font-style:normal;display:inline-block;margin:0 .04em;transform:translateY(-.06em);transition:opacity .35s}.kclk .kc-col.dim{opacity:.25}
+.kclk .kc-s{font-size:.42em;font-weight:700;opacity:.75;font-variant-numeric:tabular-nums;margin-top:.12em}
+.kclk .kc-dt{font-style:normal;font-size:.26em;font-weight:700;letter-spacing:.22em;opacity:.8;font-family:"Noto Sans KR",sans-serif}
+/* 기본 금빛 전광판 · 글로벌 · 공항 안내판: 금빛 판 */
+body.hqt-gold .mh .clock.kclk,.g-clock.kclk,.fp-clock.kclk{position:relative;padding:.22em .5em .26em;border-radius:.28em;
+  background:linear-gradient(180deg,rgba(255,236,190,.07),rgba(0,0,0,.25));border:1px solid rgba(226,190,110,.55);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.25),0 0 .5em rgba(226,180,90,.18)}
+body.hqt-gold .mh .clock.kclk{font-size:min(4.2vw,7vh);font-stretch:normal}
+.g-clock.kclk{font-size:clamp(30px,3.6vw,72px)}
+.fp-clock.kclk{font-size:5.4vh}
+body.hqt-gold .mh .clock.kclk .kc-hm,.g-clock.kclk .kc-hm,.fp-clock.kclk .kc-hm{font-family:"Archivo","Noto Sans KR",sans-serif;
+  background:linear-gradient(180deg,#FFF6DC 0%,#F3D58E 42%,#D3A24A 70%,#A8772B 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 .03em .06em rgba(0,0,0,.55)) drop-shadow(0 0 .18em rgba(240,195,100,.28))}
+body.hqt-gold .mh .clock.kclk .kc-col,.g-clock.kclk .kc-col,.fp-clock.kclk .kc-col{color:#F0C873;-webkit-text-fill-color:#F0C873}
+body.hqt-gold .mh .clock.kclk .kc-s,.g-clock.kclk .kc-s,.fp-clock.kclk .kc-s{color:#E9C77F}
+body.hqt-gold .mh .clock.kclk .kc-dt,.g-clock.kclk .kc-dt,.fp-clock.kclk .kc-dt{color:#CDB383}
+.g-clock{font:700 clamp(22px,2.8vw,56px)/1 "Archivo",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--wt)}
 body.monG .g-main{display:grid;grid-template-columns:minmax(0,1fr) clamp(280px,27vw,560px);min-height:0}
 body.monG .g-hero{display:flex;flex-direction:column;justify-content:center;padding:0 4vw;gap:1.6vh;min-height:0}
 body.monG .g-hl{width:clamp(70px,8vw,160px);height:clamp(70px,8vw,160px);filter:drop-shadow(0 0 30px rgba(212,175,55,.25))}

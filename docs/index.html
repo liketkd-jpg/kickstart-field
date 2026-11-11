@@ -1823,9 +1823,25 @@ function bankCard(c){const B=UI.bank;const up=`<label class="btn gold">🏦 은�
   </div>`;}
 document.addEventListener('change',ev=>{const t=ev.target;if(t&&t.id&&/^ed_(div|grade|cls)$/.test(t.id)&&UI.edit){const k=t.id.slice(3);UI.edF={...(UI.edF&&UI.edF.id===UI.edit?UI.edF:{id:UI.edit}),[k]:t.value};if(k==='div'){UI.edF.grade='';render();}}},true);
 document.addEventListener('change',ev=>{const t=ev.target;if(t&&t.dataset&&t.dataset.bank!=null){const F=t.files&&t.files[0];if(F){UI.bank={file:F.name,comp:UI.adminComp,busy:true,err:''};bankFile(F);}t.value='';}},true);
+/* 접수 점검: 가입한 지도자마다 「이 대회에 접수했는지」를 한눈에 → 접수했다는데 안 보이는 도장 찾기 */
+function entryCheck(c,E){const D0=D(),coaches=(D0.users||[]).filter(u=>!isOps(u));
+  const rows=coaches.map(u=>{const ath=D0.athletes.filter(a=>a.coachId===u.id).length,act=E.filter(e=>e.coachId===u.id).length,
+    can=D0.entries.filter(e=>e.compId===c.id&&e.coachId===u.id&&e.status==='cancel').length,
+    st=act?'ok':can?'cancel':ath?'nent':'none';return {u,ath,act,can,st};});
+  const ord={nent:0,cancel:1,none:2,ok:3};rows.sort((a,b)=>ord[a.st]-ord[b.st]||String(a.u.org||'').localeCompare(String(b.u.org||'')));
+  const n=k=>rows.filter(r=>r.st===k).length,okOrgs=new Set(rows.filter(r=>r.st==='ok').map(r=>(r.u.org||'').replace(/\s+/g,''))).size;
+  const dupOrg=(()=>{const m={};rows.filter(r=>r.st==='ok').forEach(r=>{const k=(r.u.org||'').replace(/\s+/g,'');if(k)m[k]=(m[k]||0)+1;});return Object.keys(m).filter(k=>m[k]>1);})();
+  const lab={ok:['접수함','open'],nent:['선수만 등록 · 이 대회 접수 없음','soon'],cancel:['접수했다가 모두 취소됨','soon'],none:['가입만 함 · 선수 없음','closed']};
+  return `<section class="card stack" style="gap:8px"><div class="row between"><div><h3>🔍 접수 점검 · 지도자별</h3><p class="small mute" style="margin:4px 0 0">가입한 지도자 <b>${rows.length}명</b> 가운데 이 대회에 접수한 지도자 <b>${n('ok')}명</b>(도장 이름 기준 ${okOrgs}곳)입니다. 「접수했다」는데 목록에 없는 도장은 아래 노란 줄에서 찾으세요.</p></div>
+    <button class="btn sm" type="button" data-a="ecMore">${UI.ecMore?'접기':'모두 보기'}</button></div>
+    <div class="row" style="gap:6px"><span class="chip open">접수함 ${n("ok")}</span>${n('nent')?`<span class="chip soon">선수만 등록 · 접수 없음 ${n('nent')}</span>`:''}${n('cancel')?`<span class="chip soon">모두 취소 ${n('cancel')}</span>`:''}<span class="chip">가입만 함 ${n('none')}</span></div>
+    ${dupOrg.length?`<div class="notice"><b>같은 도장 이름으로 접수한 지도자가 둘 이상입니다</b><div>${dupOrg.map(esc).join(', ')} — 도장 수를 셀 때 한 곳으로 셀 수 있습니다.</div></div>`:''}
+    <div class="tablewrap"><table><tr><th>상태</th><th>소속 · 지도자</th><th>연락처</th><th>등록 선수</th><th>이 대회 접수</th><th>가입일</th></tr>
+    ${rows.filter(r=>UI.ecMore||r.st==='nent'||r.st==='cancel').map(r=>`<tr><td><span class="chip ${lab[r.st][1]}">${lab[r.st][0]}</span></td><td><b>${esc(r.u.org||'—')}</b> <span class="small mute">${esc(r.u.name||'')}</span></td><td class="small num">${esc(r.u.phone||'')}</td><td class="num">${r.ath}</td><td class="num">${r.act}${r.can?` <span class="small mute">(취소 ${r.can})</span>`:''}</td><td class="small num">${esc(r.u.at||'')}</td></tr>`).join('')||`<tr><td colspan="6" class="small mute">빠진 도장이 없습니다. 「모두 보기」로 전체 지도자를 볼 수 있습니다.</td></tr>`}</table></div>
+    <span class="small mute">엑셀 일괄 접수에서 「고칠 곳」이 있던 줄은 빼고 접수되므로, 그 도장은 일부 종목만 접수되어 있을 수 있습니다. 도장별 종목 수는 아래 합계표에서 확인하세요.</span></section>`;}
 function vDojang(c,E){const L=dojangRows(c,E),T=L.reduce((s,r)=>({cnt:s.cnt+r.cnt,total:s.total+r.total,paid:s.paid+r.paid}),{cnt:0,total:0,paid:0}),dueN=L.filter(r=>r.due>0).length;
-  if(!L.length)return '<div class="empty">아직 접수한 도장이 없습니다.</div>';
-  return `${bankCard(c)}<div class="row between"><div><h2>도장별 참가비 합계표</h2><p class="small mute" style="margin:4px 0 0">한 도장이 여러 선수 참가비를 한꺼번에 입금하면 「모두 입금 확인」을 누르세요. 미입금 도장에는 안내 문자를 보낼 수 있습니다.</p></div>
+  if(!L.length)return entryCheck(c,E)+'<div class="empty">아직 접수한 도장이 없습니다.</div>';
+  return `${entryCheck(c,E)}${bankCard(c)}<div class="row between"><div><h2>도장별 참가비 합계표</h2><p class="small mute" style="margin:4px 0 0">한 도장이 여러 선수 참가비를 한꺼번에 입금하면 「모두 입금 확인」을 누르세요. 미입금 도장에는 안내 문자를 보낼 수 있습니다.</p></div>
     <div class="row"><button class="btn" type="button" data-a="dojangX">합계표 엑셀</button>${dueN?`<button class="btn gold" type="button" data-a="copyAll">미입금 ${dueN}곳 안내문 복사</button>`:''}</div></div>
     <div class="tablewrap"><table><tr><th>소속 · 지도자</th><th>연락처</th>${c.sports.map(s=>`<th>${SPORTS[s].n}</th>`).join('')}<th>참가비</th><th>입금 확인</th><th>남은 금액</th><th></th></tr>
     ${L.map(r=>`<tr><td><b>${esc(r.co.org||'')}</b><div class="small mute">${esc(r.co.name||'')}</div></td><td class="small num">${esc(r.co.phone||'')}</td>${c.sports.map(s=>`<td class="num">${r.n[s]||''}</td>`).join('')}
@@ -2683,6 +2699,7 @@ document.addEventListener('click',e=>{
   else if(a==='acDel'){const id=b.dataset.id;if(UI.acArm!==id){UI.acArm=id;render();setTimeout(()=>{UI.acArm=null;},4000);return;}
     const x=(M.ledger||[]).find(r=>r.id===id);run(async()=>{await q(sb.from('ledger').delete().eq('id',id));if(x&&x.receipt){try{await sb.storage.from('receipts').remove([x.receipt]);}catch(e){}}UI.acArm=null;await reload();toast('장부에서 지웠습니다');});}
   else if(a==='acRc'){const x=(M.ledger||[]).find(r=>r.id===b.dataset.id);if(x&&x.receipt)run(async()=>{const {data,error}=await sb.storage.from('receipts').createSignedUrl(x.receipt,600);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');});}
+  else if(a==='ecMore'){UI.ecMore=!UI.ecMore;render();}
   else if(a==='drSp'){UI.drSp=b.dataset.s;render();}
   else if(a==='drMine'){UI.drMine=!UI.drMine;render();}
   else if(a==='drDel'){const c=UI.adminComp,sp=b.dataset.s;if(UI.drArm!==sp){UI.drArm=sp;render();setTimeout(()=>{UI.drArm=null;},4000);return;}
