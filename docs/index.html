@@ -694,6 +694,13 @@ const mapAth=a=>({id:a.id,coachId:a.coach_id,name:a.name,gender:a.gender,birth:a
 const mapEnt=e=>({id:e.id,compId:e.comp_id,coachId:e.coach_id,sport:e.sport,athleteIds:e.athlete_ids||[],f:e.f||{},fee:e.fee,status:e.status,at:String(e.created_at||'').slice(0,19),paidAt:e.paid_at?String(e.paid_at).slice(0,10):''});
 const mapRes=r=>({id:r.id,compId:r.comp_id,sport:r.sport,kind:r.kind,div:r.div,rank:r.rank,name:r.name,team:r.team,coach:r.coach,members:r.members,coachId:r.coach_id,nat:r.nat||'',nameEn:r.name_en||''});
 const mapUser=p=>({id:p.id,role:p.role,name:p.name,org:p.org,phone:p.phone,email:p.email,license:p.license||'',country:p.country||'KOR',at:String(p.created_at||'').slice(0,10)});
+/* v1.4.85 관리자 화면의 표마다 맨 앞에 1번부터 번호 (합계 줄·안내 줄은 빼고) */
+function numTables(root){if(!root)return;root.querySelectorAll('table').forEach(t=>{if(t.dataset.numd||t.closest('.qpage,.hdp,.qsum,.nonum'))return;t.dataset.numd='1';
+  const R=[...t.rows];const h0=R[0]&&R[0].cells[0];if(h0&&/^(번호|No\.?|#|순번)$/i.test(h0.textContent.trim()))return;let k=0;
+  R.forEach(r=>{const c0=r.cells[0];if(!c0)return;const isH=r.querySelector('th')&&!r.querySelector('td');
+    if(isH){const th=document.createElement('th');th.textContent='번호';th.style.width='44px';r.insertBefore(th,c0);return;}
+    if(r.classList.contains('tot')||(r.cells.length===1&&c0.colSpan>1)){if(r.cells.length===1&&c0.colSpan>1){c0.colSpan+=1;return;}const td=document.createElement('td');r.insertBefore(td,c0);return;}
+    const td=document.createElement('td');td.className='num small mute';td.style.width='44px';td.textContent=++k;r.insertBefore(td,c0);});});}
 async function q(p){const {data,error}=await p;if(error)throw error;return data;}
 /* v1.4.85 Supabase는 한 번에 1,000줄까지만 돌려줌 → 1,000줄씩 끝까지 나눠 불러오기 (접수·선수가 1,000줄을 넘으면 뒤쪽 도장이 안 보이던 문제) */
 async function qAll(mk){const out=[],N=1000;for(let from=0;from<200000;from+=N){const {data,error}=await mk().range(from,from+N-1);if(error)throw error;const d=data||[];out.push(...d);if(d.length<N)break;}return out;}
@@ -708,11 +715,11 @@ async function reload(){
   try{
     const {data:{session}}=await sb.auth.getSession();
     fixAuthHash(session);
-    {const rows=await q(sb.from('comps').select('*').order('date',{ascending:true}));if(rows&&rows.length)M.hasHidden='hidden' in rows[0];M.comps=rows.map(mapComp);}
-    try{const {data,error}=await sb.from('site_notices').select('*').order('created_at',{ascending:false});M.boardOk=!error;M.notices=error?[]:(data||[]).slice().sort((a,b)=>(!!b.pinned-!!a.pinned)||String(b.created_at).localeCompare(String(a.created_at)));}catch(e){M.boardOk=false;M.notices=[];}
+    {const rows=await qAll(()=>sb.from('comps').select('*').order('date',{ascending:true}).order('id',{ascending:true}));if(rows&&rows.length)M.hasHidden='hidden' in rows[0];M.comps=rows.map(mapComp);}
+    try{let data=null,error=null;try{data=await qAll(()=>sb.from('site_notices').select('*').order('created_at',{ascending:false}).order('id',{ascending:true}));}catch(x){error=x;}M.boardOk=!error;M.notices=error?[]:(data||[]).slice().sort((a,b)=>(!!b.pinned-!!a.pinned)||String(b.created_at).localeCompare(String(a.created_at)));}catch(e){M.boardOk=false;M.notices=[];}
     try{const {data,error}=await sb.from('site_config').select('*').eq('key','popup');M.popup=!error&&data&&data[0]?data[0].value||null:null;}catch(e){M.popup=null;}
-    try{const {data,error}=await sb.from('live_view').select('comp_id,updated_at');M.live=error?[]:(data||[]);M.liveOk=!error;}catch(e){M.live=[];M.liveOk=false;}
-    try{const {data,error}=await sb.from('draws').select('comp_id,sport,updated_at');M.draws=error?[]:(data||[]);M.drawsOk=!error;}catch(e){M.draws=[];M.drawsOk=false;}
+    try{let data=null,error=null;try{data=await qAll(()=>sb.from('live_view').select('comp_id,updated_at').order('comp_id',{ascending:true}));}catch(x){error=x;}M.live=error?[]:(data||[]);M.liveOk=!error;}catch(e){M.live=[];M.liveOk=false;}
+    try{let data=null,error=null;try{data=await qAll(()=>sb.from('draws').select('comp_id,sport,updated_at').order('comp_id',{ascending:true}).order('sport',{ascending:true}));}catch(x){error=x;}M.draws=error?[]:(data||[]);M.drawsOk=!error;}catch(e){M.draws=[];M.drawsOk=false;}
     if(session){
       const prof=await q(sb.from('profiles').select('*').eq('id',session.user.id));
       M.profile=prof&&prof[0]?mapUser(prof[0]):{id:session.user.id,role:'coach',name:session.user.email,org:'',phone:'',email:session.user.email};
@@ -827,6 +834,7 @@ function render(){
   if(UI.contact&&u&&isMgr(u))h+=vContact();
   if(UI.flash){h=`<div class="flash" role="status">${esc(UI.flash)}<button class="btn sm ghost" type="button" data-a="flashX" aria-label="닫기">✕</button></div>`+h;}
   document.getElementById('view').innerHTML=h;
+  if(/^admin/.test(r))numTables(document.getElementById('view'));
   if(r==='admin'&&UI.atab==='results')setTimeout(certPreview,0);
   if(r.startsWith('live-'))liveMount(r.slice(5));
   if(r==='admin'&&UI.atab==='results')setTimeout(liveQr,0);
@@ -1351,7 +1359,7 @@ const qtAdd=(s,n)=>{const d=new Date((s||qtToday())+'T00:00:00');d.setDate(d.get
 const QT_LS='ks_quote_store';
 function qtLsAll(){try{return JSON.parse(localStorage.getItem(QT_LS)||'{}')||{};}catch(e){return {};}}
 async function qtLoad(){if(QT.loading)return;QT.loading=true;let rows=null;
-  try{const {data,error}=await sb.from('quote_store').select('*');if(error)throw error;rows=data||[];QT.ok=true;}catch(e){QT.ok=false;QT.err=msgOf(e);}
+  try{rows=await qAll(()=>sb.from('quote_store').select('*').order('key',{ascending:true}));QT.ok=true;}catch(e){QT.ok=false;QT.err=msgOf(e);}
   const all={};if(rows)rows.forEach(r=>all[r.key]=r.value);else Object.assign(all,qtLsAll());
   QT.prices=all.prices&&all.prices.length?all.prices:qtClone(QT_PRICES0);
   QT.co={...QT_CO0,...(all.company||{})};
@@ -1722,6 +1730,10 @@ function hdApplyRows(c,sport,rows){const P=hdPub(c,sport);if(!P||!P.data||!P.dat
   const body=rows.slice(1).map((r,i)=>({r,e:E[i]})).map(x=>({...x,m:x.e&&mp[x.e.id]}));
   body.sort((a,b)=>(a.m?a.m[0]:1e6)-(b.m?b.m[0]:1e6)||(a.m?a.m[1]:1e6)-(b.m?b.m[1]:1e6));
   return [[...rows[0],'추첨'],...body.map(x=>[...x.r,x.m?x.m[1]:''])];}
+function hdAlert(c){if(!M.drawsOk||!drawsOf(c.id).length)return '';const X=(M.drawData||{})[c.id];if(!X||X.at!==drawLast(c.id)){loadDraw(c.id).then(()=>{if(route()==='admin')render();});return '';}
+  const L=c.sports.map(sp=>{const P=hdPub(c,sp);if(!P||!P.data||!P.data.home||!P.data.map)return null;const E=D().entries.filter(e=>e.compId===c.id&&e.sport===sp&&e.status!=='cancel');
+    const miss=E.filter(e=>!P.data.map[e.id]).length,gone=Object.keys(P.data.map).filter(id=>!E.some(e=>e.id===id)).length;return miss||gone?`${SPORTS[sp].n} 새로 ${miss}건 · 빠진 ${gone}건`:null;}).filter(Boolean);
+  return L.length?`<div class="notice" style="border-color:var(--warn)"><b>🎲 홈페이지에 올린 대진 추첨 뒤에 접수가 바뀌었습니다</b><div>${L.join(' · ')} — 새로 들어온 건은 각 부문 맨 뒤에 붙습니다. 공정하게 하려면 다시 추첨해 올려 주세요. <button class="btn sm gold" type="button" data-a="atab" data-t="draw">대진 추첨으로 가기</button></div></div>`:'';}
 function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저장소가 아직 없습니다</b><div>Supabase에서 10단계 SQL(schema10.sql)을 먼저 실행해 주세요.</div></div>`;
   const X=(M.drawData||{})[c.id];if(!X||X.at!==drawLast(c.id)){loadDraw(c.id).then(()=>render());return '<div class="empty">대진표를 불러오는 중…</div>';}
   const SP=c.sports.filter(s=>s==='poomsae'||s==='gyeokpa');if(!SP.length)return '<div class="empty">이 대회에는 홈페이지에서 추첨할 종목(품새·격파)이 없습니다. 겨루기는 경기 앱에서 추첨합니다.</div>';
@@ -1803,6 +1815,7 @@ function vAdmin(){ATABS=ATABS_ALL.filter(([k])=>canTab(me(),k));if(!ATABS.some((
     ${UI.newComp?compForm(null):''}
     <div class="row">${!['members','lic','acct','board','quote'].includes(tab)?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.hidden?'(숨김) ':''}${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
     ${c&&!['members','lic','acct','board','quote'].includes(tab)?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
+    ${c&&tab!=='draw'?hdAlert(c):''}
     <div class="atabs" role="tablist">${ATABS.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''}" data-a="atab" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}</div>`;}
 /* 경기 앱 주소: 주소 끝 #ksreg-대회번호 로 열면 경기 앱이 그 대회 명단 가져오기 창을 바로 엽니다 */
@@ -1938,6 +1951,7 @@ function bankCard(c){const B=UI.bank;const up=`<label class="btn gold">🏦 은�
   </div>`;}
 document.addEventListener('change',ev=>{const t=ev.target;if(t&&t.id&&/^ed_(div|grade|cls)$/.test(t.id)&&UI.edit){const k=t.id.slice(3);UI.edF={...(UI.edF&&UI.edF.id===UI.edit?UI.edF:{id:UI.edit}),[k]:t.value};if(k==='div'){UI.edF.grade='';render();}}},true);
 document.addEventListener('change',ev=>{const t=ev.target;if(t&&t.dataset&&t.dataset.bank!=null){const F=t.files&&t.files[0];if(F){UI.bank={file:F.name,comp:UI.adminComp,busy:true,err:''};bankFile(F);}t.value='';}},true);
+const ecMsg=(c,u)=>`[KICKSTART UP] ${u.org||''} ${u.name||''} 지도자님, 「${c.name}」 대회에 선수 등록은 되어 있으나 대회 접수가 아직 완료되지 않았습니다. 홈페이지 → 대회 → 「접수하기」에서 종목을 고르고 마지막 「접수하기」 단추까지 눌러 주세요.${c.deadline?` (접수 마감 ${fmtDate(c.deadline)})`:''} 이미 하셨다면 「내 접수 내역」에 이 대회가 보이는지 한 번 확인 부탁드립니다.`;
 /* 접수 점검: 가입한 지도자마다 「이 대회에 접수했는지」를 한눈에 → 접수했다는데 안 보이는 도장 찾기 */
 function entryCheck(c,E){const D0=D(),coaches=(D0.users||[]).filter(u=>!isOps(u));
   const rows=coaches.map(u=>{const ath=D0.athletes.filter(a=>a.coachId===u.id).length,act=E.filter(e=>e.coachId===u.id).length,
@@ -1951,8 +1965,9 @@ function entryCheck(c,E){const D0=D(),coaches=(D0.users||[]).filter(u=>!isOps(u)
     <button class="btn sm" type="button" data-a="ecMore">${UI.ecMore?'접기':'모두 보기'}</button></div>
     <div class="row" style="gap:6px"><span class="chip open">접수함 ${n("ok")}</span>${n('nent')?`<span class="chip soon">선수만 등록 · 접수 없음 ${n('nent')}</span>`:''}${n('cancel')?`<span class="chip soon">모두 취소 ${n('cancel')}</span>`:''}<span class="chip">가입만 함 ${n('none')}</span></div>
     ${dupOrg.length?`<div class="notice"><b>같은 도장 이름으로 접수한 지도자가 둘 이상입니다</b><div>${dupOrg.map(esc).join(', ')} — 도장 수를 셀 때 한 곳으로 셀 수 있습니다.</div></div>`:''}
-    <div class="tablewrap"><table><tr><th>상태</th><th>소속 · 지도자</th><th>연락처</th><th>등록 선수</th><th>이 대회 접수</th><th>가입일</th></tr>
-    ${rows.filter(r=>UI.ecMore||r.st==='nent'||r.st==='cancel').map(r=>`<tr><td><span class="chip ${lab[r.st][1]}">${lab[r.st][0]}</span></td><td><b>${esc(r.u.org||'—')}</b> <span class="small mute">${esc(r.u.name||'')}</span></td><td class="small num">${esc(r.u.phone||'')}</td><td class="num">${r.ath}</td><td class="num">${r.act}${r.can?` <span class="small mute">(취소 ${r.can})</span>`:''}</td><td class="small num">${esc(r.u.at||'')}</td></tr>`).join('')||`<tr><td colspan="6" class="small mute">빠진 도장이 없습니다. 「모두 보기」로 전체 지도자를 볼 수 있습니다.</td></tr>`}</table></div>
+    <div class="tablewrap"><table><tr><th>상태</th><th>소속 · 지도자</th><th>연락처</th><th>등록 선수</th><th>이 대회 접수</th><th>가입일</th><th>안내</th></tr>
+    ${rows.filter(r=>UI.ecMore||r.st==='nent'||r.st==='cancel').map(r=>`<tr><td><span class="chip ${lab[r.st][1]}">${lab[r.st][0]}</span></td><td><b>${esc(r.u.org||'—')}</b> <span class="small mute">${esc(r.u.name||'')}</span></td><td class="small num">${esc(r.u.phone||'')}</td><td class="num">${r.ath}</td><td class="num">${r.act}${r.can?` <span class="small mute">(취소 ${r.can})</span>`:''}</td><td class="small num">${esc(r.u.at||'')}</td><td style="white-space:nowrap">${r.st==='nent'||r.st==='cancel'?`${r.u.phone?`<a class="btn sm" href="${esc(smsHref(r.u.phone,ecMsg(c,r.u)))}">📱 문자</a> `:''}<button class="btn sm ghost" type="button" data-a="payCopy" data-t="${esc(ecMsg(c,r.u))}">복사</button>`:''}</td></tr>`).join('')||`<tr><td colspan="7" class="small mute">빠진 도장이 없습니다. 「모두 보기」로 전체 지도자를 볼 수 있습니다.</td></tr>`}</table></div>
+    ${n('nent')+n('cancel')?`<div class="row" style="gap:8px"><button class="btn sm gold" type="button" data-a="ecCopyAll">📋 접수 안 된 ${n('nent')+n('cancel')}곳 안내문 모두 복사</button><span class="small mute">줄마다 「📱 문자」로 바로 보내거나 「복사」해 카카오톡에 붙여 넣으세요.</span></div>`:''}
     <span class="small mute">엑셀 일괄 접수에서 「고칠 곳」이 있던 줄은 빼고 접수되므로, 그 도장은 일부 종목만 접수되어 있을 수 있습니다. 도장별 종목 수는 아래 합계표에서 확인하세요.</span></section>`;}
 function vDojang(c,E){const L=dojangRows(c,E),T=L.reduce((s,r)=>({cnt:s.cnt+r.cnt,total:s.total+r.total,paid:s.paid+r.paid}),{cnt:0,total:0,paid:0}),dueN=L.filter(r=>r.due>0).length;
   if(!L.length)return entryCheck(c,E)+'<div class="empty">아직 접수한 도장이 없습니다.</div>';
@@ -2820,6 +2835,7 @@ document.addEventListener('click',e=>{
   else if(a==='hdCancel'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c){Object.keys(HD.res).filter(k=>k.startsWith(c.id+'|')).forEach(k=>delete HD.res[k]);render();}}
   else if(a==='hdPub'){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;if(HD.arm!=='pub'){HD.arm='pub';render();setTimeout(()=>{if(HD.arm==='pub'){HD.arm=null;render();}},5000);return;}run(()=>hdPublish(c,HD.sp&&c.sports.includes(HD.sp)?HD.sp:c.sports.filter(s=>s==='poomsae'||s==='gyeokpa')[0]));}
   else if(a==='hdPdf'){const c=D().comps.find(x=>x.id===(b.dataset.c||UI.adminComp));if(c)run(()=>hdPdf(c,b.dataset.s));}
+  else if(a==='ecCopyAll'){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;const E=S.entries.filter(e=>e.compId===c.id&&e.status!=='cancel');const L=(S.users||[]).filter(u=>!isOps(u)&&!E.some(e=>e.coachId===u.id)&&(S.athletes.some(x=>x.coachId===u.id)||S.entries.some(e=>e.compId===c.id&&e.coachId===u.id)));copyText(L.map(u=>`${u.org||''} ${u.name||''} ${u.phone||''}\n${ecMsg(c,u)}`).join('\n\n'),`${L.length}곳 안내문을 복사했습니다`);}
   else if(a==='ecMore'){UI.ecMore=!UI.ecMore;render();}
   else if(a==='drSp'){UI.drSp=b.dataset.s;render();}
   else if(a==='drMine'){UI.drMine=!UI.drMine;render();}
