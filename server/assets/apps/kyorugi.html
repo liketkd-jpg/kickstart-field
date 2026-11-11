@@ -1737,13 +1737,15 @@ async function addOpEv(side,k,v){const L=live();if(!L)return;
 
 /* ===================== 생활체육 대회 (4명·4팀 1조) =====================
    켜면 부문마다 4명(팀)씩 조를 나눠 「부문 이름 · 1조」, 「· 2조」 … 부문으로 만듭니다.
-   남는 인원: small = 마지막 조 2~3명 (10명 4·4·2, 9명 4·3·2, 11명 4·4·3) / merge = 1명이 남으면 5명 조.
+   남는 인원: small = 고르게 나누기 (6명 3·3) (10명 4·4·2, 9명 4·3·2, 11명 4·4·3) / merge = 1명이 남으면 5명 조.
    조마다 1등 금, 2등 은, 3~5등 동메달(3위). 점수가 있는 조는 다시 나누지 않습니다. */
 const COMM=()=>!!SET().comm;
 const COMMBU=()=>!!SET().comm;
 const COMM_RE=/ · (\d+)조$/;
 function commSizes(n,rem){rem=rem||SET().commRem||'small';if(n<=4)return n?[n]:[];const q=Math.floor(n/4),r=n%4,s=Array(q).fill(4);
-  if(r===1){if(rem==='merge')s[q-1]=5;else{s[q-1]=3;s.push(2);}}else if(r)s.push(r);return s;}
+  /* v1.4.97 고르게: 조 수는 4명 기준(올림), 인원은 최대한 고르게 — 5명 3·2 · 6명 3·3 · 7명 4·3 · 9명 3·3·3 · 10명 4·3·3 */
+  if(rem==='merge'){if(r===1)s[q-1]=5;else if(r)s.push(r);return s;}
+  const k=Math.ceil(n/4),b=Math.floor(n/k),x=n%k;return Array.from({length:k},(_,i)=>b+(i<x?1:0));}
 const commTeam=id=>{const a=S.roster.find(x=>x.id===id);return a?String(a.team||'').trim():'';};
 /* ===== 같은 도장 떨어뜨리기 (v1.4.45) — 설정 하나로 조 편성·출전 순서·대진표 추첨에 모두 적용 =====
    켜면: ① 같은 도장(팀)은 여러 조로 고르게 나누고 ② 컷오프는 같은 도장이 연달아 나오지 않게
@@ -1845,7 +1847,7 @@ function commPanel(){
   return `<div class="field"><span class="label">생활체육 대회 (4명·4팀 1조)</span>
     <div class="seg"><button class="${on?'':'on'}" data-act="${act}" data-do="commSet" data-k="comm" data-v="0">끄기</button><button class="${on?'on':''}" data-act="${act}" data-do="commSet" data-k="comm" data-v="1">켜기</button></div>
     <span class="label" style="margin-top:6px">남는 인원 처리</span>
-    <div class="seg"><button class="${rem==='small'?'on':''}" data-act="${on?act:'commSet'}" data-do="commSet" data-k="commRem" data-v="small">마지막 조 2~3명</button><button class="${rem==='merge'?'on':''}" data-act="${on?act:'commSet'}" data-do="commSet" data-k="commRem" data-v="merge">5명 조로 합치기</button></div>
+    <div class="seg"><button class="${rem==='small'?'on':''}" data-act="${on?act:'commSet'}" data-do="commSet" data-k="commRem" data-v="small">고르게 나누기 (6명 3·3)</button><button class="${rem==='merge'?'on':''}" data-act="${on?act:'commSet'}" data-do="commSet" data-k="commRem" data-v="merge">5명 조로 합치기</button></div>
     <span class="small muted">예: 9명 → ${ex(9)}, 10명 → ${ex(10)}, 11명 → ${ex(11)}. 켜면 부문마다 4명(팀)씩 자동으로 조를 나눕니다(같은 도장은 되도록 다른 조로). 조마다 1등 금, 2등 은, 3~5등 동메달이며 상장에는 3위로 표시됩니다. 4명이 안 되는 조도 시상합니다.${S.roster.length?` 지금 선수로는 ${bases.size}개 부문 → ${nG}개 조입니다.`:''}${on?' 이미 점수가 있는 조는 다시 나누지 않습니다.':''}</span>
     ${risky?'<span class="chip warn" style="white-space:normal">점수가 있는 부문이 있습니다. 끄거나 방식을 바꾸면 조 편성이 바뀔 수 있어 한 번 더 확인합니다.</span>':''}
     
@@ -5657,7 +5659,7 @@ const labOf=el=>{const f=el.matches('.field,.label')?el:el.querySelector('.field
 /* ---- 요약 ---- */
 function info(){
   const s=G('SET')?G('SET')():{},S=G('S')||{roster:[],divs:[]},o={};
-  o.name=s.name||'';o.comm=!!s.comm;o.rem=s.commRem==='merge'?'5명 조로 합치기':'마지막 조 2~3명';
+  o.name=s.name||'';o.comm=!!s.comm;o.rem=s.commRem==='merge'?'5명 조로 합치기':'고르게 나누기 (6명 3·3)';
   if(APP==='poomsae'){o.fmt=`${(s.format||'cutoff')==='tournament'?'토너먼트':'컷오프'} · 품새 ${s.poomsae===2?2:1}개`;o.ref=`심판 ${s.judges||5}명`;
     const AS=G('AGE_SCHEMES');o.age=AS&&AS[s.ageScheme]?AS[s.ageScheme].label:'';o.pf=G('pfRows')?G('pfRows')().length:0;o.pdraw=s.pdraw==='pre'?'당일 일괄 추첨':'매 경기 추첨';}
   else if(APP==='kyorugi'){o.fmt=`${s.system==='sum'?'3회전 점수 합산':'3전 다승제'} · ${Math.floor((s.roundSec||120)/60)}분${(s.roundSec||120)%60?' 30초':''}`;o.ref=`부심 ${s.refs||3}명 · ${s.hogu==='pss'?'전자호구':'일반호구'}`;}
@@ -5752,7 +5754,7 @@ function parseCmd(txt){
   if(comm===null&&/(4|네)\s*(인|명|팀)\s*1\s*조/.test(t))comm=true;
   if(comm!==null&&comm!==!!s.comm)add('생활체육 대회',s.comm?'켜짐':'꺼짐',comm?'켜짐':'꺼짐','comm',comm);
   let rem=null;if(/5\s*명\s*조|5\s*명으로\s*합|합치/.test(t))rem='merge';else if(/2\s*~\s*3\s*명|마지막\s*조\s*[23]|2\s*명\s*조|3\s*명\s*조/.test(t))rem='small';
-  if(rem&&rem!==(s.commRem||'small'))add('남는 인원 처리',(s.commRem||'small')==='merge'?'5명 조로 합치기':'마지막 조 2~3명',rem==='merge'?'5명 조로 합치기':'마지막 조 2~3명','commRem',rem);
+  if(rem&&rem!==(s.commRem||'small'))add('남는 인원 처리',(s.commRem||'small')==='merge'?'5명 조로 합치기':'고르게 나누기 (6명 3·3)',rem==='merge'?'5명 조로 합치기':'고르게 나누기 (6명 3·3)','commRem',rem);
   /* 심판·부심 수 */
   if((m=t.match(/(?:심판|부심)\s*([1-7])\s*(?:명|인)|([1-7])\s*(?:심제|부심)/))){const n=+(m[1]||m[2]);
     if(APP==='kyorugi'){if(n>=1&&n<=3&&n!==s.refs)add('부심 수',`${s.refs}명`,`${n}명`,'refs',n);else if(n>3)notes.push('겨루기 부심은 1~3명입니다.');}
