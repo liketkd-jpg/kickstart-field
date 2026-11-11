@@ -582,6 +582,8 @@ const CLS=['A조','B조'];
 const clsOn=c=>!!c&&(c.fee||{}).cls!==false;
 const clsSp=(sp,type)=>sp==='kyorugi'||sp==='gyeokpa'||(sp==='poomsae'&&!isTeamT(type||'공인'));
 const needCls=(c,sp,type)=>clsOn(c)&&clsSp(sp,type);
+/* 팀대항 종합경연 「여자 1명 이상」: 대회마다 고름 (대회 설정 fee.teamW · 기본 꺼짐 = 성별 제한 없음) */
+const teamW=(c,T)=>!!(T&&T.w&&c&&(c.fee||{}).teamW===true);
 const normCls=v=>{const t=String(v==null?'':v).trim().toUpperCase().replace(/\s/g,'');return /^A(조|반|그룹)?$/.test(t)?'A조':/^B(조|반|그룹)?$/.test(t)?'B조':'';};
 const clsTxt=f=>f&&f.cls?' · '+f.cls:'';
 const tabOfEntry=e=>e.sport==='poomsae'?(e.f.type==='태권체조'?'gym':e.f.type==='팀대항 종합경연'?'team100':'poomsae'):e.sport;
@@ -1103,7 +1105,7 @@ function entryForm(c,tab,a){const f=UI.form||defaults(tab,a);UI.form=f;const L=m
       <label class="f"><span>${gradeLbl(f.div)}</span>${sel('eGrade',gradeList(f.div),f.grade,'data-on="ef" data-k="grade"')}</label>
       <label class="f"><span>팀 성별</span>${sel('eTg',TEAM_G,f.tg||'혼합','data-on="ef" data-k="tg"')}</label></div>
       <span class="small mute">통합부: 여러 나이가 섞인 팀 · 팀 성별은 남녀가 함께면 「혼합」, 남자만·여자만이면 남·여${/^실버/.test(f.div||'')?' · 실버 1: 1962~1971년생 · 실버 2: 1961년 이전 출생 · 통합: 55세 이상 모두':''}</span>
-      <div class="stack" style="gap:6px"><span class="small"><b>팀원 고르기</b> · 이 선수 포함 ${TT.min}명 이상 (${TT.max}명까지)${TT.w?' · 여자 1명 이상':''} · 지금 <b>${n}명</b></span>${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)} <span class="small mute">${x.gender} · ${schoolTxt(x.birth)}</span></span></label>`).join('')||'<span class="small mute">아직 고를 팀원이 없습니다. 아래에서 바로 등록하세요.</span>'}</div>
+      <div class="stack" style="gap:6px"><span class="small"><b>팀원 고르기</b> · 이 선수 포함 ${TT.min}명 이상 (${TT.max}명까지)${teamW(c,TT)?' · 여자 1명 이상':''} · 지금 <b>${n}명</b></span>${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)} <span class="small mute">${x.gender} · ${schoolTxt(x.birth)}</span></span></label>`).join('')||'<span class="small mute">아직 고를 팀원이 없습니다. 아래에서 바로 등록하세요.</span>'}</div>
       <div class="tmadd"><b class="small">➕ 팀원 바로 등록</b> <span class="small mute">「내 선수」에 없는 팀원을 여기서 등록하면 바로 팀원으로 들어갑니다</span>
         <div class="row" style="gap:6px;align-items:flex-end"><label class="f" style="flex:1;min-width:110px"><span>이름</span><input type="text" id="tmName"></label>
           <label class="f" style="width:84px"><span>성별</span>${sel('tmGender',['남','여'],'남')}</label>
@@ -1153,7 +1155,7 @@ function vEnter(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div clas
     ${bulkCard(c)}
     <div class="desk"><div class="stack">
       <div class="tabs">${tabsOf(c).map(s=>`<button type="button" class="${s===sport?'on':''}" data-a="tab" data-s="${s}">${TABS[s].n}</button>`).join('')}</div>
-      <p class="small mute" style="margin:0">${TABS[sport].type?`팀 대표 선수 한 명을 누르고, 팀 이름과 팀원을 고르세요. ${sport==='gym'?'태권체조는 7명 이상':'팀 대항 종합경연은 9명 이상(여자 1명 이상)'}, 한 팀 30명까지입니다. 「내 선수」에 없는 팀원은 접수 칸에서 바로 등록할 수 있습니다.`:`선수를 누르면 ${TABS[sport].n} 접수 칸이 열립니다. 부별·학년은 생년월일로 미리 맞춰 두었으니 확인만 해 주세요.`}</p>
+      <p class="small mute" style="margin:0">${TABS[sport].type?`팀 대표 선수 한 명을 누르고, 팀 이름과 팀원을 고르세요. ${sport==='gym'?'태권체조는 7명 이상':`팀 대항 종합경연은 9명 이상${teamW(c,TEAM_T['팀대항 종합경연'])?'(여자 1명 이상)':''}`}, 한 팀 30명까지입니다. 「내 선수」에 없는 팀원은 접수 칸에서 바로 등록할 수 있습니다.`:`선수를 누르면 ${TABS[sport].n} 접수 칸이 열립니다. 부별·학년은 생년월일로 미리 맞춰 두었으니 확인만 해 주세요.`}</p>
       ${L.length?LF.bar:''}
       ${L.length?LF.list.map(a=>{const done=inSport.has(a.id);return `<div class="ath ${UI.pick===a.id?'picked':''}"><div><span class="nm">${esc(a.name)}</span> <span class="small mute">${a.gender} · ${schoolTxt(a.birth)}${a.weight?' · '+a.weight+'kg':''}</span></div>
         ${done?'<span class="chip open">접수함</span>':`<button class="btn sm ${UI.pick===a.id?'':'gold'}" type="button" data-a="pick" data-id="${a.id}">${UI.pick===a.id?'작성 중':TABS[sport].type?'이 선수로 팀 만들기':'접수'}</button>`}</div>
@@ -1245,7 +1247,7 @@ function bulkParse(wb,c){
         else ents.push({sp:'gyeokpa',f,P:[p],rows:[ri],sh});}}}
   for(const G of groups.values()){const T=TEAM_T[G.f.type],n=G.P.length,rr=G.rows.join(', ');
     if(G.sp==='poomsae'&&T){if(n<T.min||n>T.max){errs.push([G.sh,rr,`「${G.f.team}」 팀은 ${n}명입니다. ${eun(G.f.type)} ${T.min}명 이상 ${T.max}명까지입니다`]);continue;}
-      if(T.w&&!G.P.some(p=>p.gender==='여')){errs.push([G.sh,rr,`「${G.f.team}」 팀에 여자 선수가 없습니다 (여자 1명 이상)`]);continue;}
+      if(teamW(c,T)&&!G.P.some(p=>p.gender==='여')){errs.push([G.sh,rr,`「${G.f.team}」 팀에 여자 선수가 없습니다 (여자 1명 이상)`]);continue;}
       if(G.f.tg&&G.f.tg!=='혼합'&&G.P.some(p=>p.gender!==G.f.tg)){errs.push([G.sh,rr,`「${G.f.team}」 팀 성별이 「${G.f.tg}」인데 다른 성별 팀원이 있습니다 (남녀가 함께면 혼합)`]);continue;}}
     else if(G.sp==='poomsae'){const need=G.f.kind==='복식'?2:3;if(n!==need){errs.push([G.sh,rr,`「${G.f.team}」 ${eun(G.f.kind)} ${need}명인데 ${n}명입니다`]);continue;}}
     else if(G.sp==='gyeokpa'&&(n<5||n>10)){errs.push([G.sh,rr,`기술격파 단체전 ${eun('「'+(G.f.team||'팀')+'」')} 5~10명입니다 (${n}명)`]);continue;}
@@ -1964,6 +1966,7 @@ function compForm(c){const E=!!c;c=c||{sports:Object.keys(SPORTS),fee:{poomsae:3
   <div class="grid3">${Object.entries(SPORTS).map(([k,s])=>`<label class="f"><span><input type="checkbox" id="cS_${k}" ${c.sports.includes(k)?'checked':''} style="accent-color:var(--gold)"> ${s.n} 참가비</span><input type="number" id="cF_${k}" value="${c.fee[k]??(k==='kyorugi'?40000:30000)}" step="1000"></label>`).join('')}</div>
   <div class="row" style="gap:18px"><span class="small mute">품새 안의 단체 종목 (참가비는 품새와 같게 1팀당):</span><label class="check"><input type="checkbox" id="cO_gym" ${(c.fee||{}).gym!==false?'checked':''}><span>태권체조 접수 받기</span></label><label class="check"><input type="checkbox" id="cO_team100" ${(c.fee||{}).team100!==false?'checked':''}><span>팀 대항 종합경연 접수 받기</span></label></div>
   <label class="check"><input type="checkbox" id="cO_cls" ${(c.fee||{}).cls!==false?'checked':''}><span><b>실력별 A조 · B조로 나누어 받기</b> <span class="small mute">품새·겨루기·격파 (태권체조·팀 경연 제외). 켜면 지도자가 접수할 때 꼭 고르고, 경기 앱 부문 이름 끝에 A조·B조가 붙습니다</span></span></label>
+  <label class="check"><input type="checkbox" id="cO_teamW" ${(c.fee||{}).teamW===true?'checked':''}><span><b>팀대항 종합경연 · 여자 선수 1명 이상 꼭 넣기</b> <span class="small mute">대회 요강에 성별 제한이 있을 때만 켜세요. 끄면 남자만·여자만 팀도 접수됩니다</span></span></label>
   <div class="grid2"><label class="f"><span>입금 계좌</span><input type="text" id="cAcct" placeholder="은행 계좌번호 (예금주)" value="${E&&/관리자 화면에서|적어 주세요/.test(c.account)?'':f('account')}"></label>
     <label class="f"><span>문의 연락처 (지도자에게 보임)</span><input type="text" id="cContact" placeholder="대회 본부 010-0000-0000" value="${f('contact')}"></label></div>
   <label class="f"><span>안내 문구 (대회 안내에 늘 보임)</span><textarea id="cNote" rows="2">${f('note')}</textarea></label>
@@ -2658,7 +2661,7 @@ document.addEventListener('click',e=>{
     if(sp==='poomsae'&&isTeamT(f.type)){const T=TEAM_T[f.type];if(!String(f.team||'').trim()){UI.err='팀 이름을 적어 주세요';render();return;}
       if(ids.length<T.min||ids.length>T.max){UI.err=`${eun(f.type)} ${T.min}명 이상 ${T.max}명까지입니다. 지금 ${ids.length}명입니다`;render();return;}
       const GS=ids.map(id=>(S.athletes.find(x=>x.id===id)||{}).gender);f.tg=f.tg||'혼합';
-      if(T.w&&!GS.includes('여')){UI.err=`${eun(f.type)} 여자 선수가 1명 이상 있어야 합니다`;render();return;}
+      if(teamW(c,T)&&!GS.includes('여')){UI.err=`${eun(f.type)} 여자 선수가 1명 이상 있어야 합니다`;render();return;}
       if(f.tg!=='혼합'&&GS.some(g=>g!==f.tg)){UI.err=`팀 성별이 「${f.tg}」이면 팀원이 모두 ${f.tg}자여야 합니다. 남녀가 함께면 「혼합」을 고르세요`;render();return;}
       f.kind='단체';f.team=String(f.team).trim();}
     else if(sp==='poomsae'){const need=f.kind==='복식'?2:f.kind==='단체'?3:1;if(ids.length!==need){UI.err=`${f.kind} 팀은 ${need}명입니다. 팀원을 ${need-1}명 골라 주세요`;render();return;}}
@@ -2824,7 +2827,7 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
     const old=editId?D().comps.find(x=>x.id===editId):null,link=v('cDocUrl').trim(),file=(document.getElementById('cDoc')||{}).files,del=document.getElementById('cDocDel');
     if(link&&!/^https?:\/\//i.test(link)){formErr(f,'요강 링크는 https:// 로 시작하는 주소로 넣어 주세요');return;}
     if(file&&file[0]&&file[0].size>20*1024*1024){formErr(f,'요강 파일은 20MB까지 올릴 수 있습니다');return;}
-    const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:{...Object.fromEntries(sports.map(k=>[k,Number(v('cF_'+k))||0])),gym:!!(document.getElementById('cO_gym')||{}).checked,team100:!!(document.getElementById('cO_team100')||{}).checked,cls:!!(document.getElementById('cO_cls')||{}).checked},account:v('cAcct').trim()||'입금 계좌를 적어 주세요',note:v('cNote').trim(),notice:v('cNotice').trim(),contact:v('cContact').trim()};
+    const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:{...Object.fromEntries(sports.map(k=>[k,Number(v('cF_'+k))||0])),gym:!!(document.getElementById('cO_gym')||{}).checked,team100:!!(document.getElementById('cO_team100')||{}).checked,cls:!!(document.getElementById('cO_cls')||{}).checked,teamW:!!(document.getElementById('cO_teamW')||{}).checked},account:v('cAcct').trim()||'입금 계좌를 적어 주세요',note:v('cNote').trim(),notice:v('cNotice').trim(),contact:v('cContact').trim()};
     if(!editId)c.host='KICKSTART UP';
     if(M.musicOk&&document.getElementById('cMusDue')){const md=v('cMusDue');if(md&&md>v('cDate')){formErr(f,'음원 제출 마감일은 대회일보다 앞이어야 합니다');return;}c.music_due=md||null;}
     run(async()=>{let doc=null;
