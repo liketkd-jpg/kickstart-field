@@ -1830,6 +1830,8 @@ function divOf(div,gr,ev,std){div=String(div||'').trim();gr=String(gr||'').trim(
   if(all)return {div:/통합/.test(div)?div:div+' 통합',merge:false};
   const gm=/(\d)/.exec(gr);if(/^초등부$/.test(div)&&gm&&!isTeam(ev)){const n=+gm[1];return {div:n<=2?'초등 1·2학년':n<=4?'초등 3·4학년':'초등 5·6학년',merge:false};}
   return {div:div||'일반',merge:false};}
+/* v1.4.93 부별 오타·빠진 「부」 맞춤: 증등→중등 · 「중등 2학년」→「중등 2학년부」 */
+const divFix=s=>{s=String(s||'').replace(/^증등/,'중등').replace(/^중학교?\s*(?=\d)/,'중등 ').replace(/^고등학교\s*(?=\d)/,'고등 ').replace(/^초등학교\s*(?=\d)/,'초등 ');return /^(초등|중등|고등)\s*\d\s*학년$/.test(s)?s.replace(/\s*학년$/,'학년부').replace(/^(초등|중등|고등)\s*/,'$1 '):s;};
 function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
   const col=(o,re)=>{const k=Object.keys(o).find(k=>k!=='__sheet'&&re.test(KEYN(k)));return k?String(o[k]==null?'':o[k]).normalize('NFKC').replace(/[\p{Cf}\u115F\u1160\u3164\uFFA0]+/gu,'').replace(/[\s\p{Z}]+/gu,' ').trim():'';};
   const out=[],teams={};
@@ -1840,7 +1842,7 @@ function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
     let ev=known(shEv)?shEv:'';
     if(!ev&&pz)ev=normEv(/자유/.test(pz)?'자유 품새':/체조/.test(pz)?'태권체조':/경연|시범/.test(pz)?'팀 경연':'품새');
     if(!ev)ev=normEv(kindRaw);if(!ev&&GEV.some(([k,l])=>l.replace(/\s/g,'')===kindRaw.replace(/\s/g,'')))ev='개인 격파';if(!ev||/히어로/.test(ev+sh))return;
-    const gr=col(o,/^학년$/),dv=divOf(col(o,/^(부별|부문|구분|부)$/)||gr,gr,ev,std),div=dv.div;
+    const gr=col(o,/^학년$/),dv=divOf(divFix(col(o,/^(부별|부문|구분|부)$/))||gr,gr,ev,std),div=dv.div;
     const mem=col(o,/^(팀원|선수명단)$/),tn=col(o,/^(팀명|팀|팀이름)$/),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
     const g0=col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),gm=/^([A-Za-z])\s*조?$/.exec(g0),s0=col(o,/^성별$/);
     const r={ev,div,grp:dv.merge?'':(gm?gm[1].toUpperCase()+'조':g0),sex:/^(남|M$|male)/i.test(s0)?'남':/^(여|F$|W$|female)/i.test(s0)?'여':s0,
