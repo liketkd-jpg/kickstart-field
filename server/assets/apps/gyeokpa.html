@@ -1490,6 +1490,8 @@ let USER=null,MYID=null;const NAMES={},NAME_ASKED=new Set();
 let ROOM=null,PEERS=[];
 function onlineJudges(){const m={};PEERS.forEach(p=>{const pr=p.presence||{};if(pr.role==='judge'&&pr.judge)m[pr.judge]=pr.device;});return m;}
 function deviceOnline(dev){return PEERS.some(p=>(p.presence||{}).device===dev);}
+/* v1.4.82 심판 자리를 잡고 있던 기기가 20초 넘게 안 보이면(꺼짐·잠듦·예전 태블릿) 그 자리는 빈 자리로 봄 → 새 태블릿이 바로 들어감 */
+let PEERS0=0;function seatStale(s){return !!(ROOM&&PEERS0&&Date.now()-PEERS0>6000&&s&&s.device&&!deviceOnline(s.device)&&Date.now()-(s.at||0)>20000);}
 function judgeQueued(j){const p=PEERS.find(p=>{const pr=p.presence||{};return pr.role==='judge'&&pr.judge===j;});return p&&p.presence.q||0;}
 let lastPresence='';
 function updatePresence(){
@@ -1500,7 +1502,9 @@ function updatePresence(){
   ROOM.presence(pr).catch(()=>{});
 }
 const sameComputer=dev=>typeof dev==='string'&&(dev===DEVICE||dev.startsWith(DEVICE+'-'));
-function seatTakenByOther(n){const s=S.seats[n];return !!(s&&s.device&&s.device!==SEATDEV&&!sameComputer(s.device));}
+function seatTakenByOther(n){const s=S.seats[n];return !!(s&&s.device&&s.device!==SEATDEV&&!sameComputer(s.device)&&!seatStale(s));}
+/* 「이미 사용 중」으로 막힌 채점기: 그 자리가 비면 저절로 다시 연결 */
+setInterval(()=>{try{if(typeof FIXED!=='undefined'&&FIXED&&myJudge!==FIXED&&(judgeBlock==='taken'||judgeBlock==='busy')&&!seatTakenByOther(FIXED))claimSeat(FIXED);}catch(e){}},5000);
 const SET=()=>({...DEFAULTS,...(S.settings||{})});
 const ST=()=>S.state||{status:'idle',epoch:0};
 const curOf=()=>{const c=ST().current;return c&&c.perfId?c:null;};
@@ -2499,7 +2503,7 @@ async function claimSeat(n){
       let lease=null;try{lease=await DB.doc(path).acquire({holder:SEATDEV,ttlMs:3000});}catch(e){lease={acquired:true};}
       if(!lease.acquired){block();return 'busy';}
       const snap=await DB.doc(path).get();const c=snap.exists?snap.data():null;
-      if(c&&c.device&&c.device!==SEATDEV&&!sameComputer(c.device)){block();return 'taken';}
+      if(c&&c.device&&c.device!==SEATDEV&&!sameComputer(c.device)&&!seatStale(c)){block();return 'taken';}
     }
     if(myJudge&&myJudge!==n){const old=myJudge;myJudge=0;if(S.seats[old]&&S.seats[old].device===SEATDEV)await store.del('seats/j'+old);}
     await store.put(path,{device:SEATDEV,judge:n,at:Date.now()});
@@ -3146,7 +3150,7 @@ document.addEventListener('click',()=>{const r=routeNow();if(r==='judge'||r==='d
   DL=dl;USER=usr;
   try{if(usr&&usr.canEdit&&(await usr.canEdit())===false)KIOSK=true;}catch(e){}
   try{if(usr&&usr.id)MYID=await usr.id();}catch(e){MYID=null;}
-  if(room){ROOM=room;try{room.onPeers(ch=>{PEERS=ch.peers;schedule();},()=>{ROOM=null;PEERS=[];schedule();});}catch(e){ROOM=null;}}
+  if(room){ROOM=room;try{room.onPeers(ch=>{PEERS=ch.peers;if(!PEERS0)PEERS0=Date.now();schedule();},()=>{ROOM=null;PEERS=[];schedule();});}catch(e){ROOM=null;}}
   if(db){DB=db;MODE='db';}else{MODE='local';}
   try{if(window.KS_FIELD&&KS_FIELD.onStatus)KS_FIELD.onStatus(()=>{schedule();try{refreshAlerts(true);}catch(e){}if(KS_FIELD.status().connected)flushOutbox();});}catch(e){}
   subscribe();render();

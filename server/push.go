@@ -117,6 +117,9 @@ func handleInbox(w http.ResponseWriter, r *http.Request) {
 	if m.At == 0 {
 		m.At = time.Now().UnixMilli()
 	}
+	if c.Mode == "live" {
+		m.Sim = false // v1.4.82 실제 대회 모드에서는 「가상 경기용」 명단도 일반 명단처럼 (묻고 나서 바꿈)
+	}
 	if m.Move != nil && m.Move.ID != "" {
 		s.setDoc("inbox/mvin_"+m.Move.ID, map[string]any{"court": m.Court, "app": m.App, "from": m.From, "divs": m.Divs, "rows": m.Rows, "at": m.At, "done": false, "move": m.Move})
 		writeJSON(w, 200, map[string]any{"ok": true})
@@ -185,6 +188,9 @@ func handleInboxSim(w http.ResponseWriter, r *http.Request) {
 	}
 	if m.At == 0 {
 		m.At = time.Now().UnixMilli()
+	}
+	if getConfig().Mode == "live" {
+		m.On = false // v1.4.82 실제 대회 모드에서는 가상 경기를 켜지 않음
 	}
 	for _, a := range apps {
 		if a.Key == "kyorugi" { // v1.4.71 가상 경기는 품새·격파만 (겨루기 화면에 「가상 경기」가 뜨지 않게)

@@ -105,6 +105,13 @@ func handleInboxWipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bk, n := wipeCourt()
+	c := getConfig()
+	if m.At > 0 {
+		c.WipeAt = m.At
+	} else {
+		c.WipeAt = time.Now().UnixMilli()
+	}
+	setConfig(c)
 	writeJSON(w, 200, map[string]any{"ok": true, "backup": bk, "docs": n})
 }
 
@@ -131,6 +138,8 @@ func handleHQWipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m := wipeMsg{At: time.Now().UnixMilli()}
+	c.WipeAt = m.At // 지금 꺼져 있는 코트도 다시 연결되면 이 초기화를 받음
+	setConfig(c)
 	// 1) 코트부터 (본부 백업에 코트 결과가 남아 있도록 본부는 나중에)
 	type tgt struct{ addr, court string }
 	var list []tgt
@@ -140,7 +149,7 @@ func handleHQWipe(w http.ResponseWriter, r *http.Request) {
 		if ct.online {
 			list = append(list, tgt{a, ct.court})
 		} else if ct.court != "" && res[ct.court] == "" {
-			res[ct.court] = "끊김 · 지우지 못함"
+			res[ct.court] = "끊김 · 다시 연결되면 저절로 지움"
 		}
 	}
 	hqMu.Unlock()

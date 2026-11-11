@@ -364,7 +364,7 @@ function courtList(){
     const apps=c.apps||{};let best=null;
     for(const [k,v] of Object.entries(apps)){const b=v&&v.board;if(!appOn(k))continue;if(b&&(!best||(b.at||0)>(best.board.at||0)))best={key:k,board:b,results:v.results||null};}
     const age=best&&best.board.at?NOW()-best.board.at:null;
-    return {id,addr:c.addr,via:c.via,court:c.court||'?',online:!!c.online,lastSeen:c.lastSeen||0,app:best,stale:c.online&&(!best||age>40000),apps,live:c.live&&c.live.on?c.live:null,rulesAt:c.rulesAt||0,licEnds:c.licEnds||''};
+    return {id,addr:c.addr,via:c.via,court:c.court||'?',online:!!c.online,lastSeen:c.lastSeen||0,app:best,stale:c.online&&(!best||age>40000),apps,live:c.live&&c.live.on?c.live:null,rulesAt:c.rulesAt||0,licEnds:c.licEnds||'',mode:c.mode||'',hqs:c.hqs||[]};
   }).sort((a,b)=>(a.court||'').localeCompare(b.court||'')||a.addr.localeCompare(b.addr));
 }
 function dupLetters(list){const m={};list.forEach(c=>{m[c.court]=(m[c.court]||0)+1;});return Object.keys(m).filter(k=>m[k]>1);}
@@ -1669,7 +1669,8 @@ const normEv=v=>{v=String(v||'').trim();if(/자유|프리스타일/.test(v)&&/�
 
 const DEF={courts:5,start:'09:30',openOn:false,openS:'09:30',openE:'10:00',lunchOn:true,lunchS:'12:00',lunchE:'13:00',awardOn:false,awardS:'14:30',awardE:'15:00',lateOn:true,lateAt:'11:00',buf:10,target:'15:00',gap:1,per:{},courtEv:[],lanes:[],roster:[],src:''};
 let P=clone(DEF),G={},UNDO=[],REDO=[],DB=null,DL=null,saveT=null,myRev='',OPEN=false,D=null,OVL=false;
-const SEND={open:false,sim:true,gev:'comp',speed:30,res:{},busy:false,simOn:null};let COURTS={};
+const ISLIVE=()=>{try{return !!(window.KS_MODE&&KS_MODE.get().mode==='live');}catch(e){return false;}};
+const SEND={open:false,sim:false,gev:'comp',speed:30,res:{},busy:false,simOn:null};let COURTS={};
 const L8='ABCDEFGH';
 const GEV=[['air','체공 도약 격파'],['vert','수직축 회전 격파'],['horz','수평축 회전 격파'],['comp','종합 격파'],['hjump','높이 뛰어차기'],['cbk','제자리 연속 뒤 후려차기'],['fist','주먹 격파'],['foot','발 격파']];
 const appOf=e=>/격파|종합경연/.test(e)?'gyeokpa':/겨루기/.test(e)?'kyorugi':'poomsae';   /* 요강: 팀 종합경연은 격파 단일 종목 → 격파 앱 「기술격파 단체전」 */
@@ -2099,14 +2100,14 @@ function sendHtml(TL){
         <td>${x.items.length?Object.entries(apps).map(([a,l])=>`<span class="chip">${APPN[a]} ${l.length}부문 · ${l.reduce((s,y)=>s+y.it.g.units,0)}${l.some(y=>isTeam(y.it.g.ev))?'팀·명':'명'}</span>`).join(' '):'<span class="small muted">비어 있음</span>'}</td>
         <td>${L?st(L):'<span class="chip warn">A~H 8코트까지만</span>'}</td><td class="small">${esc(SEND.res[L]||'')}</td></tr>`).join('')}</table></div>
     <div class="opt"><label>개인 격파 세부 종목 <select data-p="gev">${GEV.map(([k,l])=>`<option value="${k}" ${SEND.gev===k?'selected':''}>${l}</option>`).join('')}</select></label>
-      <label><input type="checkbox" data-p="simChk" ${SEND.sim?'checked':''}> 🧪 가상 경기용 (코트 노트북이 묻지 않고 명단을 바꾸고 점수·결과를 지움)</label></div>
-    ${SEND.sim?'<div class="alert warn" style="font-size:13.5px">가상 경기용으로 보내면 받는 코트 노트북의 지금 명단·점수가 바로 지워집니다. 실제 대회 중인 노트북에는 보내지 마세요.</div>':'<span class="small muted">일반으로 보내면 코트 노트북 운영석에 「본부에서 명단이 왔습니다」가 뜨고, 그 노트북에서 「명단 가져오기」를 눌러야 들어갑니다.</span>'}
-    <div class="row"><button class="btn primary" data-p="sendGo" ${SEND.busy?'disabled':''}>${SEND.busy?'보내는 중…':`📡 ${SEND.sim?'가상 경기용으로 ':''}모든 코트로 보내기`}</button></div>
-    <div class="pl-simbox"><b>🧪 가상 경기 (가상 심판이 점수를 넣고 끝까지 자동 진행)</b>
+      ${ISLIVE()?'':`<label><input type="checkbox" data-p="simChk" ${SEND.sim?'checked':''}> 🧪 가상 경기용 (시험용 · 코트 노트북이 묻지 않고 명단을 바꾸고 점수·결과를 지움)</label>`}</div>
+    ${SEND.sim&&!ISLIVE()?'<div class="alert warn" style="font-size:13.5px">가상 경기용으로 보내면 받는 코트 노트북의 지금 명단·점수가 바로 지워집니다. 실제 대회 중인 노트북에는 보내지 마세요.</div>':'<span class="small muted">일반으로 보내면 코트 노트북 운영석에 「본부에서 명단이 왔습니다」가 뜨고, 그 노트북에서 「명단 가져오기」를 눌러야 들어갑니다.</span>'}
+    <div class="row"><button class="btn primary" data-p="sendGo" ${SEND.busy?'disabled':''}>${SEND.busy?'보내는 중…':`📡 ${SEND.sim&&!ISLIVE()?'가상 경기용으로 ':''}모든 코트로 보내기`}</button></div>
+    ${ISLIVE()?'<span class="small muted">🏁 실제 대회 모드라서 가상 경기 기능은 숨겨 두었습니다.</span>':`<div class="pl-simbox"><b>🧪 가상 경기 (가상 심판이 점수를 넣고 끝까지 자동 진행)</b>
       <span class="small muted">각 코트 노트북의 품새·격파 <b>운영석 화면</b>이 열려 있어야 진행됩니다. 호출 → 심판 점수 → 점수 공개 → 다음 경기 → 다음 부문(결선 순서 추첨 포함)까지 자동으로 넘어갑니다. 진행 상황은 본부 메뉴 「코트 진행·옮기기」와 본부 모니터에서 볼 수 있습니다.</span>
       <div class="row"><span class="small"><b>속도</b></span>${[1,10,30,100].map(v=>`<button class="btn sm ${SEND.speed===v?'primary':''}" data-p="simSp" data-v="${v}">×${v}${v===1?' 실제':''}</button>`).join('')}
         <span style="flex:1"></span><button class="btn primary" data-p="simGo">▶ 모든 코트 가상 경기 시작</button><button class="btn" data-p="simStop">⏸ 멈춤</button><button class="btn ${SEND.rstArm?'primary':''}" data-p="simReset" title="모든 코트의 가상 점수·결과를 지우고 처음부터 (명단·경기 규칙은 그대로)">${SEND.rstArm?'한 번 더 누르면 초기화':'🔄 가상 경기 초기화'}</button></div>
-      ${SEND.simOn!=null?`<span class="small"><b>${SEND.simOn?'▶ 진행 중':'⏸ 멈춤'}</b> · ${esc(SEND.simMsg||'')}</span>`:''}</div>
+      ${SEND.simOn!=null?`<span class="small"><b>${SEND.simOn?'▶ 진행 중':'⏸ 멈춤'}</b> · ${esc(SEND.simMsg||'')}</span>`:''}</div>`}
   </div></div>`;}
 async function postJ(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j;}
 async function sendAll(){P.lanes=(P.lanes||[]).map(lateOrder);
@@ -2115,7 +2116,7 @@ async function sendAll(){P.lanes=(P.lanes||[]).map(lateOrder);
   for(let i=0;i<TL.length&&i<8;i++){const L=L8[i],apps=laneApps(TL[i]);const out=[];
     for(const [app,list] of Object.entries(apps)){
       if(app==='kyorugi'){out.push('겨루기 ✕ (아직 지원 안 함)');bad++;continue;}
-      try{const rows=rowsFor(app,list),times={};list.forEach(({it,k})=>times[divName(it,k)]=hm(it.s));await postJ('/api/hq/push',{court:L,app,name:'대회 운영표',divs:list.length,rows,from:'본부 운영표',sim:SEND.sim,times});out.push(`${APPN[app]} ${rows.length-1}건 ✓`);ok++;}
+      try{const rows=rowsFor(app,list),times={};list.forEach(({it,k})=>times[divName(it,k)]=hm(it.s));await postJ('/api/hq/push',{court:L,app,name:'대회 운영표',divs:list.length,rows,from:'본부 운영표',sim:SEND.sim&&!ISLIVE(),times});out.push(`${APPN[app]} ${rows.length-1}건 ✓`);ok++;}
       catch(e){out.push(`${APPN[app]} ✕ ${e.message}`);bad++;}}
     SEND.res[L]=out.join(' · ');draw();}
   SEND.busy=false;draw();toast(bad?`보냄 ${ok}건 · 실패 ${bad}건 (표에서 확인)`:`모든 코트로 보냈습니다${SEND.sim?' · 코트 노트북 운영석에서 명단이 바로 바뀝니다':''}`);
@@ -2533,7 +2534,13 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
 <style>/* v1.4.64 대회 모드 스위치 */
 .mdbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 14px;padding:14px 18px;border-radius:18px;border:2px solid #E8A93A;background:repeating-linear-gradient(135deg,rgba(242,193,78,.10) 0 18px,rgba(242,193,78,.03) 18px 36px),#15130E;color:#F6EFDF}
 #mdbar .mdsw .wipe{font:800 15px/1 "Noto Sans KR",sans-serif;padding:11px 16px;border-radius:12px;border:1.5px solid #B3261E;background:transparent;color:#FF8A80;cursor:pointer}
-.mdbar.live{border-color:#3FB971;background:linear-gradient(160deg,#0F2418,#0B140F)}
+.mdbar.test{border-color:#3FB971;background:linear-gradient(160deg,#0F2418,#0B140F)}.mdbar.test .mdnow b{color:#6FE09A}
+.mdbar.live{border-color:#E5484D;background:linear-gradient(160deg,#2A0F12,#140A0B)}.mdbar.live .mdnow b{color:#FF7A7E}
+.mdbar .mdnow{font:900 26px/1.2 "Noto Sans KR",sans-serif}.mdbar .mdk{flex:1;min-width:280px}
+.mdct{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.mdct span{font:800 13px/1 "Noto Sans KR",sans-serif;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08)}
+.mdct span.ok{background:rgba(63,185,113,.22)}.mdct span.bad{background:#B3261E;color:#fff}
+.mdw{margin-top:8px;font:800 14px/1.45 "Noto Sans KR",sans-serif;color:#FFD27A}
+.mdbar button.go{background:#B3261E!important;border-color:#E5484D!important}.mdbar button.back{background:#2E9E5B!important;border-color:#3FB971!important}
 .mdbar .mdk{font:900 22px/1.2 "Noto Sans KR",sans-serif}.mdbar .mdk small{display:block;font-size:13px;font-weight:600;color:#CFC6B4;margin-top:2px}
 .mdbar .mdsw{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .mdbar button{font:800 16px/1 "Noto Sans KR",sans-serif;padding:12px 18px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:#22252C;color:#fff;cursor:pointer}
@@ -2552,11 +2559,16 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
   async function load(){try{M=await (await fetch('/api/mode',{cache:'no-store'})).json();}catch(e){}bar();}
   function bar(){if(!M)return;const app=document.getElementById('app');if(!app)return;const host=app.querySelector('.hqs-tiles');let el=document.getElementById('mdbar');
     if(!host||host.hidden){if(el)el.remove();return;}
-    const live=M.mode==='live';const h=`<div class="mdk">${live?'🏁 실제 대회 모드':'🧪 시험 모드'}<small>${live?'위험한 단추(초기화·명단 지우기·가상 경기)가 잠겨 있고, 자동 업데이트를 하지 않습니다':'모든 화면에 「시험 중」이 표시됩니다 · 대회를 시작할 때 「실제 대회로 바꾸기」를 누르세요'}</small></div>
+    const live=M.mode==='live';let rows=[];try{rows=(window.KS_HQCHECK?KS_HQCHECK().rows:[]).map(r=>r.c).filter(c=>c&&c.online&&c.court);}catch(e){}
+    const seen=new Set();rows=rows.filter(c=>!seen.has(c.court)&&seen.add(c.court)).sort((a,b)=>a.court.localeCompare(b.court));
+    const bad=rows.filter(c=>c.mode&&c.mode!==M.mode),hqs=[...new Set(rows.flatMap(c=>c.hqs||[]))];
+    const chips=rows.length?`<div class="mdct">${rows.map(c=>`<span class="${!c.mode?'':c.mode===M.mode?'ok':'bad'}">${esc(c.court)}코트 ${!c.mode?'?':c.mode==='live'?'🏁 실제':'🧪 시험'}</span>`).join('')}</div>`:'';
+    const warn=(hqs.length>1?`<div class="mdw">⚠ 본부 노트북이 ${hqs.length}대 켜져 있습니다 (${hqs.map(esc).join(' · ')}). 두 본부가 서로 모드를 바꾸면 코트가 왔다 갔다 합니다 · 한 대는 첫 화면에서 「코트」로 바꾸거나 꺼 주세요.</div>`:'')+(bad.length?`<div class="mdw">⏳ ${bad.map(c=>esc(c.court)).join('·')}코트가 아직 본부와 모드가 다릅니다 · 몇 초 안에 저절로 맞춰집니다 (계속 다르면 그 노트북을 새 버전으로 업데이트)</div>`:'');
+    const h=`<div class="mdk"><span class="mdnow">지금은 <b>${live?'🏁 실제 대회':'🧪 시험 모드'}</b></span><small>${live?'실제 대회 기록입니다 · 초기화·명단 지우기·가상 경기 단추가 잠겨 있고, 자동 업데이트를 하지 않습니다':'연습 기록입니다 · 모든 화면에 「시험 중」이 표시됩니다 · 대회를 시작할 때 오른쪽 「실제 대회로 바꾸기」를 누르세요'}</small>${chips}${warn}</div>
       <div class="mdsw"><button class="upd ${M.update?'':'off'}" data-md="upd" title="프로그램을 켤 때 새 버전을 받을지">${M.update?'🔄 자동 업데이트 켜짐':'⏸ 자동 업데이트 멈춤'}</button>
-      ${live?'<button class="back" data-md="test">시험 모드로 바꾸기</button>':'<button class="go" data-md="live">🏁 실제 대회로 바꾸기</button><button class="wipe" data-md="wipe" title="모든 코트의 명단·대진·점수·결과와 운영표를 한 번에 지웁니다 (먼저 백업)">🧹 전체 초기화</button>'}</div>`;
+      ${live?'<button class="back" data-md="test">🧪 시험 모드로 바꾸기 →</button>':'<button class="go" data-md="live">🏁 실제 대회로 바꾸기 →</button><button class="wipe" data-md="wipe" title="모든 코트의 명단·대진·점수·결과와 운영표를 한 번에 지웁니다 (먼저 백업)">🧹 전체 초기화</button>'}</div>`;
     if(!el){el=document.createElement('div');el.id='mdbar';host.parentNode.insertBefore(el,host);}
-    el.className='mdbar'+(live?' live':'');if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h;}}
+    el.className='mdbar '+(live?'live':'test');if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h;}}
   function warnList(){const C=window.KS_HQCHECK?KS_HQCHECK():{rows:[],hq:{}},W=[];
     C.rows.forEach(r=>r.it.forEach(([l,ok,t])=>{if(!ok)W.push(`${r.c.court}코트 · ${l}: ${t}`);}));
     const d=C.hq&&C.hq.disk,p=C.hq&&C.hq.pr;if(d&&d.total&&d.free<3*1073741824)W.push(`본부 노트북 · 하드: 남은 ${(d.free/1073741824).toFixed(1)}GB`);
@@ -2607,6 +2619,8 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
   function toastMd(t){try{(window.toast||(0,eval)('toast'))(t);}catch(e){alert(t);}}
   new MutationObserver(()=>bar()).observe(document.getElementById('app')||document.body,{childList:true});
   load();setInterval(load,8000);
+  /* v1.4.82 서버가 보낸 본부 알림 (예: 다시 연결된 코트 자동 초기화) */
+  (async()=>{try{const DB=await window.claude.use('db');let first=true;DB.doc('hq/note').onSnapshot(d=>{const v=d&&d.exists?d.data():null;if(first){first=false;return;}if(v&&v.text&&Date.now()-(v.at||0)<60000)toastMd(v.text);});}catch(e){}})();
 })();
 </script>
 <script src="/mode.js"></script>

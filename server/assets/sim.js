@@ -10,6 +10,7 @@ if(!/^(poomsae|gyeokpa)$/.test(APP||''))return;
 const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
 const say=m=>{try{(g('toast'))(m);}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LIVE=()=>{try{return !!(window.KS_MODE&&KS_MODE.get().mode==='live');}catch(e){return false;}};
 const TAB='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 let WD={sig:'',at:0,n:0};let SIM=null,INB=null,WATCHED=false,TAKING=false,BUSY=false,LAST={},DONE=false,PANEL=null,COUNT=0,STALL={};
 
@@ -97,7 +98,7 @@ async function tick(){
   if(!F.status||!admin())return;
   if(RESETQ&&leader()&&!BUSY){BUSY=true;try{if(await doReset())return;}finally{BUSY=false;}}
   if(INB&&INB.sim&&!INB.done&&!TAKING&&leader()){await take(INB);return;}
-  if(!SIM||!SIM.on||DONE||BUSY||TAKING||!leader())return;
+  if(!SIM||!SIM.on||DONE||BUSY||TAKING||LIVE()||!leader())return;
   const S=g('S'),ST=g('ST'),curOf=g('curOf');if(!S||!ST||!curOf||!S.stateLoaded)return;
   BUSY=true;
   try{
@@ -151,7 +152,8 @@ async function tick(){
 
 /* ---------- 운영석 표시 ---------- */
 function draw(){
-  const show=admin()&&(TAKING||(SIM&&(SIM.on||SIM.at)&&Date.now()-(SIM.at||0)<12*3600e3));
+  /* v1.4.82 가상 경기 창은 본부가 「시작」해서 진행 중일 때만 · 실제 대회 모드에서는 절대 안 뜸 (멈추거나 초기화하면 사라짐) */
+  const show=admin()&&!LIVE()&&(TAKING||(SIM&&SIM.on&&Date.now()-(SIM.at||0)<12*3600e3));
   if(!show){if(PANEL){PANEL.remove();PANEL=null;}return;}
   if(!PANEL){PANEL=document.createElement('div');PANEL.className='kssim';PANEL.setAttribute('data-noi18n','');document.body.appendChild(PANEL);}
   let p={divs:0,dd:0,tot:0,dn:0};try{p=progress();}catch(e){}

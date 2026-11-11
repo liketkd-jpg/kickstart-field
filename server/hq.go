@@ -34,6 +34,8 @@ type nodeConfig struct {
 	// v1.4.64 대회 모드: "live"(실제 대회) · 그 밖은 시험 모드
 	Mode   string `json:"mode,omitempty"`
 	ModeAt int64  `json:"modeAt,omitempty"`
+	// v1.4.82 전체 초기화 시각 (본부: 마지막으로 누른 때 · 코트: 마지막으로 받은 때) → 그때 꺼져 있던 코트는 다시 연결되면 저절로 초기화
+	WipeAt int64 `json:"wipeAt,omitempty"`
 }
 
 func (c nodeConfig) autoUpdate() bool {
@@ -160,7 +162,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 			out[a.Key] = m
 		}
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "bat": batList(), "disk": diskNow(), "mode": modeName(c), "time": time.Now().UnixMilli()})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "bat": batList(), "disk": diskNow(), "mode": modeName(c), "modeAt": c.ModeAt, "wipeAt": c.WipeAt, "hqs": recentHQs(), "time": time.Now().UnixMilli()})
 }
 
 // ---------------- 코트: 신호 보내기 ----------------
@@ -220,10 +222,12 @@ type courtEntry struct {
 	announced map[string]time.Time
 	stageAt   map[string]int64
 	written   bool
-	rulesAt   int64  // 이 코트가 받은 본부 경기 규칙 (v1.4.51 시작 전 점검표)
-	licEnds   string // 이 코트 노트북의 허가 코드 끝나는 날
-	lastBat   []byte // v1.4.57 심판 태블릿 배터리
-	lastDisk  []byte // v1.4.57 하드 남은 공간
+	rulesAt   int64    // 이 코트가 받은 본부 경기 규칙 (v1.4.51 시작 전 점검표)
+	licEnds   string   // 이 코트 노트북의 허가 코드 끝나는 날
+	lastBat   []byte   // v1.4.57 심판 태블릿 배터리
+	lastDisk  []byte   // v1.4.57 하드 남은 공간
+	mode      string   // v1.4.82 코트 노트북의 시험/실제 대회 모드
+	hqs       []string // v1.4.82 이 코트를 부르는 본부 주소들 (2개 이상이면 본부가 두 대)
 }
 
 var (
@@ -400,6 +404,7 @@ func pollLoop() {
 				go func(a string) { defer wg.Done(); pollCourt(a) }(a)
 			}
 			wg.Wait()
+			pruneStale()
 		}
 		time.Sleep(2 * time.Second)
 	}
@@ -416,6 +421,9 @@ type feedMsg struct {
 	Bat     json.RawMessage            `json:"bat"`
 	Disk    json.RawMessage            `json:"disk"`
 	Mode    string                     `json:"mode"`
+	ModeAt  int64                      `json:"modeAt"`
+	WipeAt  *int64                     `json:"wipeAt"` // 예전 버전 코트는 없음(nil) → 자동 초기화 안 함
+	Hqs     []string                   `json:"hqs"`
 	Live    struct {
 		On    bool   `json:"on"`
 		State string `json:"state"`
@@ -441,8 +449,21 @@ func pollCourt(addr string) {
 	}
 	// v1.4.69 시험/실제 대회 모드를 본부에 맞춤 (본부에서 바꿀 때 꺼져 있던 코트 노트북도 켜지면 따라옴)
 	if ok && fm.Mode != "" {
-		if hm := modeName(getConfig()); fm.Mode != hm && modeSyncOK(addr) {
-			go postJSON(addr, "/api/inbox/mode", modeMsg{Mode: hm}, 5*time.Second)
+		hc := getConfig()
+		if hm := modeName(hc); fm.Mode != hm && modeSyncOK(addr) {
+			go postJSON(addr, "/api/inbox/mode", modeMsg{Mode: hm, At: hc.ModeAt}, 5*time.Second)
+		}
+		// v1.4.82 전체 초기화 때 꺼져 있던 코트: 다시 연결되면 저절로 초기화 (시험 모드 · 12시간 안 · 1분에 한 번까지)
+		if fm.WipeAt != nil && hc.Mode != "live" && fm.Mode != "live" && hc.WipeAt > 0 && *fm.WipeAt < hc.WipeAt &&
+			time.Since(time.UnixMilli(hc.WipeAt)) < 12*time.Hour && fm.Court != "" && wipeSyncOK(fm.Court) {
+			go func(a, ct string, at int64) {
+				_, err := postJSON(a, "/api/inbox/wipe", wipeMsg{At: at}, 20*time.Second)
+				txt := ct + "코트 노트북이 다시 연결되어, 아까 누른 「전체 초기화」를 이 코트에도 적용했습니다 (먼저 백업)"
+				if err != nil {
+					txt = ct + "코트 노트북 자동 초기화 실패: " + err.Error()
+				}
+				hqNote(txt)
+			}(addr, fm.Court, hc.WipeAt)
 		}
 	}
 	hqMu.Lock()
@@ -463,6 +484,10 @@ func pollCourt(addr string) {
 			changed = true
 		}
 		c.court = fm.Court
+		if hs := strings.Join(fm.Hqs, ","); c.mode != fm.Mode || strings.Join(c.hqs, ",") != hs {
+			changed = true
+			c.mode, c.hqs = fm.Mode, fm.Hqs
+		}
 		le := ""
 		if len(fm.Lic) > 4 {
 			var l licDoc
@@ -552,7 +577,7 @@ func pollCourt(addr string) {
 	if !c.lastSeen.IsZero() {
 		ls = c.lastSeen.UnixMilli()
 	}
-	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive)), "rulesAt": c.rulesAt, "licEnds": c.licEnds, "bat": json.RawMessage(nonEmpty(c.lastBat)), "disk": json.RawMessage(nonEmpty(c.lastDisk))}
+	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "mode": c.mode, "hqs": c.hqs, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive)), "rulesAt": c.rulesAt, "licEnds": c.licEnds, "bat": json.RawMessage(nonEmpty(c.lastBat)), "disk": json.RawMessage(nonEmpty(c.lastDisk))}
 	hqMu.Unlock()
 	s := stores["hq"]
 	if changed {
@@ -627,7 +652,65 @@ func (s *Store) setDoc(path string, v any) {
 	s.mu.Unlock()
 }
 
-// 본부 운영 화면에서 코트를 목록에서 지우기
+// v1.4.82 와이파이를 바꾸면 같은 코트가 새 주소로 다시 보임 → 20초 넘게 끊긴 예전 주소 줄은 저절로 지움
+// (직접 넣은 주소였으면 본부 설정의 주소 목록에서도 뺌)
+func pruneStale() {
+	hqMu.Lock()
+	on := map[string]string{}
+	for a, c := range courts {
+		if c.online && c.court != "" {
+			on[c.court] = a
+		}
+	}
+	var drop []string
+	for a, c := range courts {
+		if c.online || c.court == "" || on[c.court] == "" || on[c.court] == a {
+			continue
+		}
+		if c.lastSeen.IsZero() || time.Since(c.lastSeen) > 20*time.Second {
+			drop = append(drop, a)
+		}
+	}
+	hqMu.Unlock()
+	if len(drop) == 0 {
+		return
+	}
+	s := stores["hq"]
+	if s != nil {
+		s.mu.Lock()
+		var m map[string]any
+		if json.Unmarshal(s.docs["hqcfg/main"], &m) == nil && m != nil {
+			if list, ok := m["manual"].([]any); ok {
+				keep := []any{}
+				for _, x := range list {
+					d := false
+					for _, a := range drop {
+						if normAddr(fmt.Sprint(x)) == a {
+							d = true
+						}
+					}
+					if !d {
+						keep = append(keep, x)
+					}
+				}
+				if len(keep) != len(list) {
+					m["manual"] = keep
+					b, _ := json.Marshal(m)
+					s.docs["hqcfg/main"] = b
+					s.seq++
+					s.dirty = true
+					s.broadcast(sse("chg", map[string]any{"seq": s.seq, "path": "hqcfg/main", "data": json.RawMessage(b)}))
+				}
+			}
+		}
+		s.mu.Unlock()
+	}
+	for _, a := range drop {
+		forgetCourt(a)
+	}
+}
+
+// 본部 운영 화면에서 코트를 목록에서 지우기
 func forgetCourt(addr string) {
 	hqMu.Lock()
 	delete(courts, addr)
@@ -664,7 +747,15 @@ func handleHQCtl(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"ok": true})
 }
 
+// v1.4.82 본부 화면에 알림 한 줄 (본부 노트북 화면이 받아서 띄움)
+func hqNote(text string) {
+	if s := stores["hq"]; s != nil {
+		s.setDoc("hq/note", map[string]any{"text": text, "at": time.Now().UnixMilli()})
+	}
+}
+
 func startNode() {
+	initModeAt()
 	go beaconLoop()
 	go listenBeacons()
 	go scanLoop()

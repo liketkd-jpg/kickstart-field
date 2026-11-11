@@ -216,7 +216,38 @@ func noteHQ(r *http.Request) {
 	}
 	hqSeenMu.Lock()
 	hqSeen = h
+	hqSeenAt[h] = time.Now()
 	hqSeenMu.Unlock()
+}
+
+// v1.4.82 최근 15초 안에 이 코트를 부른 본부 주소들 (본부가 두 대 켜져 있으면 2개)
+var hqSeenAt = map[string]time.Time{}
+
+func recentHQs() []string {
+	hqSeenMu.Lock()
+	defer hqSeenMu.Unlock()
+	out := []string{}
+	for h, t := range hqSeenAt {
+		if time.Since(t) < 15*time.Second {
+			out = append(out, h)
+		} else if time.Since(t) > time.Hour {
+			delete(hqSeenAt, h)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// 본부와 연결되어 있는 코트인지 (최근 30초 안에 본부가 불렀는지)
+func hqConnected() bool {
+	hqSeenMu.Lock()
+	defer hqSeenMu.Unlock()
+	for _, t := range hqSeenAt {
+		if time.Since(t) < 30*time.Second {
+			return true
+		}
+	}
+	return false
 }
 
 // POST /api/backup/fromhq — 본부의 「본부수집\X코트」에서 가장 최근 백업(자동저장).json 을 종목마다 받아

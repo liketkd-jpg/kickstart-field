@@ -39,12 +39,21 @@ func modeState() map[string]any {
 // 이 노트북에 적용 · 실제 대회로 바뀌는 순간 데이터 백업
 func applyMode(m modeMsg) (backup string) {
 	c := getConfig()
+	// v1.4.82 예전 명령(다른 본부가 더 나중에 바꾼 뒤 들어온 것)은 무시 — 노트북 한두 대가 혼자 다른 모드로 돌아가던 문제
+	if (m.Mode == "live" || m.Mode == "test") && m.At > 0 && c.ModeAt > 0 && m.At < c.ModeAt && modeName(c) != m.Mode {
+		m.Mode = ""
+	}
 	if m.Mode == "live" || m.Mode == "test" {
 		if m.Mode == "live" && c.Mode != "live" {
 			backup = backupData("실제대회전환")
+			go stopSimAll() // 실제 대회로 바뀌면 가상 경기는 저절로 멈춤
 		}
-		if c.Mode != m.Mode || (m.Mode == "test" && c.Mode == "") {
-			c.ModeAt = time.Now().UnixMilli()
+		if modeName(c) != m.Mode || c.ModeAt == 0 {
+			if m.At > 0 {
+				c.ModeAt = m.At
+			} else {
+				c.ModeAt = time.Now().UnixMilli()
+			}
 		}
 		if m.Mode == "test" {
 			c.Mode = ""
@@ -114,7 +123,16 @@ func handleMode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m.At = time.Now().UnixMilli()
+	if getConfig().Role == "court" && m.Mode != "" && hqConnected() {
+		writeJSON(w, 409, map[string]any{"error": "이 코트 노트북은 본부와 연결되어 있어, 모드는 본부 노트북에서만 바꿀 수 있습니다"})
+		return
+	}
 	res := map[string]string{}
+	if m.Mode != "" {
+		c := getConfig()
+		c.ModeAt = 0 // 본부에서 직접 바꾸면 늘 가장 새 명령
+		setConfig(c)
+	}
 	bk := applyMode(m)
 	if getConfig().Role == "hq" {
 		hqMu.Lock()
@@ -170,6 +188,46 @@ func handleInboxMode(w http.ResponseWriter, r *http.Request) {
 	v := modeState()
 	v["backup"] = bk
 	writeJSON(w, 200, v)
+}
+
+// 본부 노트북: 처음 켤 때 모드 시각이 없으면 지금으로 (코트들이 이 본부의 모드를 따르게)
+func initModeAt() {
+	c := getConfig()
+	if c.Role == "hq" && c.ModeAt == 0 {
+		c.ModeAt = time.Now().UnixMilli()
+		setConfig(c)
+	}
+}
+
+// 이 노트북의 모든 경기 앱에서 가상 경기를 끔
+func stopSimAll() {
+	for k, s := range stores {
+		if s == nil || k == "hq" {
+			continue
+		}
+		s.mu.Lock()
+		_, has := s.docs["sim/main"]
+		s.mu.Unlock()
+		if has {
+			s.setDoc("sim/main", map[string]any{"on": false, "speed": 30, "at": 0, "from": "실제 대회 전환"})
+		}
+	}
+}
+
+var (
+	wipeSyncMu sync.Mutex
+	wipeSyncAt = map[string]time.Time{}
+)
+
+// 같은 코트에 1분에 한 번까지만 자동 초기화
+func wipeSyncOK(court string) bool {
+	wipeSyncMu.Lock()
+	defer wipeSyncMu.Unlock()
+	if time.Since(wipeSyncAt[court]) < time.Minute {
+		return false
+	}
+	wipeSyncAt[court] = time.Now()
+	return true
 }
 
 func modeName(c nodeConfig) string {
