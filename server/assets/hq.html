@@ -1687,8 +1687,8 @@ const APPN={poomsae:'품새',gyeokpa:'격파',kyorugi:'겨루기'};
 /* ---------- 명단 → 경기 카드 ---------- */
 function rebuild(){
   G={};
-  P.roster.forEach((r,i)=>{const id=[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||'')].join('|');
-    const g=G[id]||(G[id]={id,ev:r.ev,div:r.div,grp:r.grp||'',sex:isTeam(r.ev)?'':(r.sex||''),units:0,people:0,members:[]});
+  P.roster.forEach((r,i)=>{const id=[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||''),r.gev||''].join('|');
+    const g=G[id]||(G[id]={id,ev:r.ev,div:r.div,grp:r.grp||'',sex:isTeam(r.ev)?'':(r.sex||''),gev:r.gev||'',units:0,people:0,members:[]});
     g.units++;g.people+=isTeam(r.ev)?(+r.cnt||1):1;g.members.push(i);});
 }
 const perOf=e=>{const v=Number(P.per[e]);return v>0?v:(DEFPER[e]||(isTeam(e)?4:1.5));};
@@ -1697,7 +1697,8 @@ const gap=()=>Math.max(0,Number(P.gap)||0);
 const events=()=>[...new Set(Object.values(G).map(g=>g.ev))].sort((a,b)=>evRank(a)-evRank(b)||a.localeCompare(b));
 /* v1.4.59 같은 부별 안에서는 B조 먼저, A조 다음 */
 const grpRank=g=>/B/i.test(g||'')?0:/A/i.test(g||'')?1:2;
-const cmpG=(a,b)=>evRank(a.ev)-evRank(b.ev)||divRank(a.div)-divRank(b.div)||a.div.localeCompare(b.div)||grpRank(a.grp)-grpRank(b.grp)||a.grp.localeCompare(b.grp)||(a.sex==='남'?0:1)-(b.sex==='남'?0:1);
+const gevRank=g=>{const i=GEV.findIndex(x=>x[0]===(g||''));return i<0?-1:i;};
+const cmpG=(a,b)=>evRank(a.ev)-evRank(b.ev)||gevRank(a.gev)-gevRank(b.gev)||divRank(a.div)-divRank(b.div)||a.div.localeCompare(b.div)||grpRank(a.grp)-grpRank(b.grp)||a.grp.localeCompare(b.grp)||(a.sex==='남'?0:1)-(b.sex==='남'?0:1);
 const gamesOf=e=>Object.values(G).filter(g=>g.ev===e).sort(cmpG);
 const wt=g=>dur(g)+gap();
 
@@ -1837,11 +1838,13 @@ function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
     const shEv=normEv(sh),known=e=>EVORD.includes(e);
     let ev=known(shEv)?shEv:'';
     if(!ev&&pz)ev=normEv(/자유/.test(pz)?'자유 품새':/체조/.test(pz)?'태권체조':/경연|시범/.test(pz)?'팀 경연':'품새');
-    if(!ev)ev=normEv(kindRaw);if(!ev||/히어로/.test(ev+sh))return;
+    if(!ev)ev=normEv(kindRaw);if(!ev&&GEV.some(([k,l])=>l.replace(/\s/g,'')===kindRaw.replace(/\s/g,'')))ev='개인 격파';if(!ev||/히어로/.test(ev+sh))return;
     const gr=col(o,/^학년$/),dv=divOf(col(o,/^(부별|부문|구분|부)$/)||gr,gr,ev,std),div=dv.div;
     const mem=col(o,/^(팀원|선수명단)$/),tn=col(o,/^(팀명|팀|팀이름)$/),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
     const r={ev,div,grp:dv.merge?'':col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),sex:col(o,/^성별$/),
       name:name0,dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0,drawNo:Number(col(o,/^(추첨|추첨번호)$/))||0};
+    /* v1.4.85 개인 격파는 세부 종목(체공 도약·수직축 회전 …)별로 따로 부문 */
+    if(/격파/.test(ev)&&!kind&&!isTeam(ev)){const kr=kindRaw.replace(/\s/g,''),hit=GEV.find(([k,l])=>l.replace(/\s/g,'')===kr||k===kindRaw);if(hit)r.gev=hit[0];}
     if(isTeam(ev)||kind){if(kind)r.kind=kind;const k=[ev,r.div,r.grp,tn||r.name||r.dojang].join('|');const add=mem?mem.split(/[,，·]/).filter(x=>x.trim()).length:1;
       if(teams[k]){teams[k].cnt+=r.cnt||add;return;}r.name=tn||r.name||r.dojang;r.cnt=r.cnt||add;r.sex=kind?r.sex:'';teams[k]=r;}
     out.push(r);});
@@ -2088,10 +2091,10 @@ function confirmTwice(b){if(b.dataset.arm)return true;b.dataset.arm='1';const t=
    운영표 1코트 → A코트, 2코트 → B코트 … (현장 프로그램 코트는 A~H 8개까지)
    품새·팀 태권체조·종합시범 → 품새 앱, 개인 격파 → 격파 앱. 부문 이름 앞 번호가 운영표 순서입니다. */
 function laneApps(x){const m={};x.items.forEach((it,k)=>{const a=appOf(it.g.ev);(m[a]=m[a]||[]).push({it,k});});return m;}
-function divName(it,k){const g=it.g;return `${String(k+1).padStart(2,'0')} ${g.ev} ${g.div} ${g.grp}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();}
+function divName(it,k){const g=it.g,gl=g.gev&&(GEV.find(x=>x[0]===g.gev)||[])[1];return `${String(k+1).padStart(2,'0')} ${gl||g.ev} ${g.div} ${g.grp}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();}
 function rowsFor(app,list){
   if(app==='gyeokpa'){const R=[['이름','종목','성별','부별','소속','체중(kg)','신장(cm)','팀원','부문']];
-    list.forEach(({it,k})=>{const dn=divName(it,k),team=isTeam(it.g.ev),ev=team?'team':SEND.gev;
+    list.forEach(({it,k})=>{const dn=divName(it,k),team=isTeam(it.g.ev),ev=team?'team':(it.g.gev||SEND.gev);
       it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',ev,team?'혼성':(r.sex||'남'),r.div||it.g.div,r.dojang||'','','','',dn]);});});return R;}
   const R=[['이름','성별','나이','소속','부별','공인/자유','종목','팀원','부문']];
   list.forEach(({it,k})=>{const dn=divName(it,k),ev=it.g.ev,team=isTeam(ev),t=/시범|종합/.test(ev)?'팀대항 종합경연':/체조/.test(ev)?'태권체조':/자유/.test(ev)?'자유':'공인';
@@ -2107,7 +2110,7 @@ function sendHtml(TL){
       ${lanes.map(({x,i,L,apps})=>`<tr><td><b>${i+1}코트</b></td><td>${L?`<b>${L}코트</b>`:'—'}</td>
         <td>${x.items.length?Object.entries(apps).map(([a,l])=>`<span class="chip">${APPN[a]} ${l.length}부문 · ${l.reduce((s,y)=>s+y.it.g.units,0)}${l.some(y=>isTeam(y.it.g.ev))?'팀·명':'명'}</span>`).join(' '):'<span class="small muted">비어 있음</span>'}</td>
         <td>${L?st(L):'<span class="chip warn">A~H 8코트까지만</span>'}</td><td class="small">${esc(SEND.res[L]||'')}</td></tr>`).join('')}</table></div>
-    <div class="opt"><label>개인 격파 세부 종목 <select data-p="gev">${GEV.map(([k,l])=>`<option value="${k}" ${SEND.gev===k?'selected':''}>${l}</option>`).join('')}</select></label>
+    <div class="opt"><label>개인 격파 세부 종목 <span class="small muted">(엑셀에 세부 종목이 없는 선수만)</span> <select data-p="gev">${GEV.map(([k,l])=>`<option value="${k}" ${SEND.gev===k?'selected':''}>${l}</option>`).join('')}</select></label>
       ${ISLIVE()?'':`<label><input type="checkbox" data-p="simChk" ${SEND.sim?'checked':''}> 🧪 가상 경기용 (시험용 · 코트 노트북이 묻지 않고 명단을 바꾸고 점수·결과를 지움)</label>`}</div>
     ${SEND.sim&&!ISLIVE()?'<div class="alert warn" style="font-size:13.5px">가상 경기용으로 보내면 받는 코트 노트북의 지금 명단·점수가 바로 지워집니다. 실제 대회 중인 노트북에는 보내지 마세요.</div>':'<span class="small muted">일반으로 보내면 코트 노트북 운영석에 「본부에서 명단이 왔습니다」가 뜨고, 그 노트북에서 「명단 가져오기」를 눌러야 들어갑니다.</span>'}
     <div class="row"><button class="btn primary" data-p="sendGo" ${SEND.busy?'disabled':''}>${SEND.busy?'보내는 중…':`📡 ${SEND.sim&&!ISLIVE()?'가상 경기용으로 ':''}모든 코트로 보내기`}</button></div>
@@ -2209,7 +2212,7 @@ const ASSOC={open:false,rep:null};
 const KIND=e=>/품새/.test(e)?'poom':/격파/.test(e)?'gp':/체조|경연|시범/.test(e)?'team':'other';
 const KINDN={poom:'품새',gp:'격파',team:'태권체조·팀 경연',other:'기타'};
 const ELBL={'품새':'공인','자유 품새':'자유','개인 격파':'격파','팀 태권체조':'체조','팀 종합경연':'경연','종합시범':'시범','겨루기':'겨루기'};
-const glabel=g=>`${ELBL[g.ev]||g.ev} ${g.div}${g.grp?' '+g.grp:''}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();
+const glabel=g=>`${(g.gev&&(GEV.find(x=>x[0]===g.gev)||[])[1])||ELBL[g.ev]||g.ev} ${g.div}${g.grp?' '+g.grp:''}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();
 const gcount=g=>isTeam(g.ev)?`${g.units}팀`:`${g.people}명`;
 /* 자동 순서: 종목(공인→자유) → 학년 → B조→A조 → 남→여 */
 const cmpSched=(a,b)=>evRank(a.ev)-evRank(b.ev)||divRank(a.div)-divRank(b.div)||a.div.localeCompare(b.div)||grpRank(a.grp)-grpRank(b.grp)||(a.sex==='남'?0:1)-(b.sex==='남'?0:1);
