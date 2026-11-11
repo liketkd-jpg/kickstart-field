@@ -1820,7 +1820,7 @@ function virtualRoster(){
 /* ---------- 엑셀 명단 불러오기 ---------- */
 /* v1.4.54 접수 홈페이지 「도장용 엑셀 양식」(시트마다 종목: 공인품새·프리스타일품새·태권체조·팀대항 종합경연·격파)과
    접수 홈페이지 「대회 앱 형식」 내보내기도 그대로 읽음. 칸 이름의 「*」·괄호 설명은 무시, 「(예시)」 줄은 건너뜀. */
-const KEYN=k=>String(k).normalize('NFC').replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
+const KEYN=k=>String(k).normalize('NFKC').replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
 /* v1.4.55 유치부·실버부·「통합」: 접수 양식에서 유치부는 3~7세·통합, 실버부는 실버 1·실버 2·통합, 학년은 1~6학년·통합을 고름.
    생활체육 기준(본부 종목 설정)이면 유치부·실버부는 나이·띠(실력조) 상관없이 「유치부 통합」·「실버부 통합」 한 부문으로 묶음 (성별은 나눔) */
 function divOf(div,gr,ev,std){div=String(div||'').trim();gr=String(gr||'').trim();const comm=std==='comm',all=/통합/.test(gr);
@@ -1830,7 +1830,7 @@ function divOf(div,gr,ev,std){div=String(div||'').trim();gr=String(gr||'').trim(
   const gm=/(\d)/.exec(gr);if(/^초등부$/.test(div)&&gm&&!isTeam(ev)){const n=+gm[1];return {div:n<=2?'초등 1·2학년':n<=4?'초등 3·4학년':'초등 5·6학년',merge:false};}
   return {div:div||'일반',merge:false};}
 function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
-  const col=(o,re)=>{const k=Object.keys(o).find(k=>k!=='__sheet'&&re.test(KEYN(k)));return k?String(o[k]==null?'':o[k]).normalize('NFC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():'';};
+  const col=(o,re)=>{const k=Object.keys(o).find(k=>k!=='__sheet'&&re.test(KEYN(k)));return k?String(o[k]==null?'':o[k]).normalize('NFKC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():'';};
   const out=[],teams={};
   rows.forEach(o=>{const sh=String(o.__sheet||'');if(/목록|작성|방법|안내/.test(sh.replace(/\s/g,'')))return;
     const name0=col(o,/^(이름|선수|선수명|성명)$/);if(/\(예시\)|^예시/.test(name0)||/\(예시\)/.test(col(o,/^(팀명|팀|팀이름)$/)))return;

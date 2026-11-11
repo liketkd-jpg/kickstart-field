@@ -901,12 +901,14 @@ const drN=s=>String(s||'').toLowerCase().replace(/\s+/g,'');
 function drHit(p,q,mine){if(!p)return false;if(mine&&mine.has(p.n))return true;return !!q&&(drN(p.n).includes(q)||drN(p.t).includes(q));}
 /* 토너먼트 대진표를 거미줄(계단) 모양 SVG로 — 지도자 화면·관리자 화면·PDF 공통 */
 function hdBrSvg(d,o){o=Object.assign({h:30,nameW:190,colW:96,fs:12.5,hit:()=>false},o||{});const rs=d.rounds||[];if(!rs.length)return '';
+  if(o.fitW){const L=rs.length-1;o.nameW=L?Math.max(320,Math.round(o.fitW*.56)):o.fitW-8;o.colW=L?Math.floor((o.fitW-8-o.nameW)/L):0;}
   const R=rs.length,M1=rs[0].m.length,top=22,h=o.h,H=top+M1*2*h+6,W=o.nameW+(R-1)*o.colW+8+((rs[R-1].m[0]||{}).w?o.colW:0),BL='#2F6BE0',RD='#D9343A',GD='#C9A45A';
   const ex=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
   let g='';const ln=(x1,y1,x2,y2)=>{g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-opacity=".38" stroke-width="1.3"/>`;};
   const nm=(p,x,y,maxW,side,lose,win)=>{if(!p){g+=`<text x="${x+10}" y="${y-6}" font-size="${o.fs-1.5}" fill="currentColor" fill-opacity=".35">—</text>`;return;}
     const hit=o.hit(p),sw=o.fs+3;if(side)g+=`<rect x="${x}" y="${y-o.fs-5}" width="${sw}" height="${sw}" rx="3" fill="${side==='b'?BL:RD}"/><text x="${x+sw/2}" y="${y-7.5}" font-size="${o.fs-3}" text-anchor="middle" fill="#fff" font-weight="800">${side==='b'?'청':'홍'}</text>`;
-    g+=`<text x="${x+(side?sw+5:2)}" y="${y-6}" font-size="${o.fs}" fill="${hit?GD:'currentColor'}" fill-opacity="${lose?.42:1}" font-weight="${win||hit?800:600}">${ex(p.n)}${p.t&&maxW>120?`<tspan font-size="${o.fs-2.5}" font-weight="400" fill-opacity=".6" dx="5">${ex(p.t)}</tspan>`:''}</text>`;};
+    g+=`<text x="${x+(side?sw+5:2)}" y="${y-6}" font-size="${o.fs}" fill="${hit?GD:'currentColor'}" fill-opacity="${lose?.42:1}" font-weight="${win||hit?800:600}">${ex(p.n)}${p.t&&maxW>120&&!(o.orgX&&maxW>=o.orgX+60)?`<tspan font-size="${o.fs-2.5}" font-weight="400" fill-opacity=".6" dx="5">${ex(p.t)}</tspan>`:''}</text>`;
+    if(p.t&&o.orgX&&maxW>=o.orgX+60)g+=`<text x="${x+o.orgX}" y="${y-6}" font-size="${o.fs-1.5}" fill="currentColor" fill-opacity="${lose?.35:.62}" font-weight="500">${ex(p.t)}</text>`;};
   rs.forEach((r,k)=>{const x0=k?o.nameW+(k-1)*o.colW:0;g+=`<text x="${k?x0+o.colW/2:o.nameW/2}" y="13" font-size="${o.fs-2}" text-anchor="middle" fill="currentColor" fill-opacity=".55" font-weight="700" letter-spacing=".08em">${ex(r.name)}</text>`;});
   let outs=[];
   rs[0].m.forEach((m,i)=>{const c=top+(2*i+1)*h;
@@ -1240,7 +1242,7 @@ function bulkParse(wb,c){
     const ix={name:col('이름'),gender:col('성별'),birth:col('생년월일'),org:col('소속'),kind:col('종목'),div:col('부별'),grade:col('학년'),team:col('팀 이름','팀이름','팀명'),tg:col('팀 성별','팀성별'),weight:col('체급'),kg:col('체중'),height:col('신장'),cls:col('실력조','실력 조')};
     if(ix.name<0){errs.push([sh,1,'「이름」 칸을 찾지 못했습니다']);continue;}
     if(!c.sports.includes(meta.sp)){if(A.slice(1).some(r=>String(r[ix.name]||'').trim()&&!/\(예시\)/.test(r[ix.name])))errs.push([sh,'',`이 대회에는 ${SPORTS[meta.sp].n} 종목이 없습니다. 이 시트는 접수하지 않습니다`]);continue;}
-    for(let i=1;i<A.length;i++){const R=A[i],g=k=>ix[k]>=0?(typeof R[ix[k]]==='string'?R[ix[k]].normalize('NFC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():R[ix[k]]):'';const nm=String(g('name')||'').trim();if(!nm||/\(예시\)/.test(nm))continue;rowsN++;
+    for(let i=1;i<A.length;i++){const R=A[i],g=k=>ix[k]>=0?(typeof R[ix[k]]==='string'?R[ix[k]].normalize('NFKC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():R[ix[k]]):'';const nm=String(g('name')||'').trim();if(!nm||/\(예시\)/.test(nm))continue;rowsN++;
       const ri=i+1,r={name:nm,gender:g('gender'),birth:g('birth'),org:g('org'),weight:meta.sp==='kyorugi'||meta.sp==='gyeokpa'?g('kg'):'',height:g('height')};
       let div=String(g('div')||'').trim();const team=String(g('team')||'').trim();let grade=String(g('grade')||'').trim();
       if(div==='유치부'&&/^[3-7]$/.test(grade))grade+='세';
@@ -1723,6 +1725,8 @@ const hdEvRank=n=>{const i=HD_EVN.indexOf(hdEvGroup(n));return i<0?9:i;};
 /* 실력조·성별 적는 방식이 달라도 같은 부문으로: 「b」「B」「B조」「b 조」→ B조 · 「남자」「M」→ 남 */
 const hdGrpN=s=>{s=String(s||'').trim();const m=/^([A-Za-z])\s*조?$/.exec(s);return m?m[1].toUpperCase()+'조':s;};
 const hdSexN=s=>{s=String(s||'').trim();return /^(남|M$|male)/i.test(s)?'남':/^(여|F$|W$|female)/i.test(s)?'여':s;};
+/* 부문 열쇠 = 사람이 보는 부문 이름(글자 모양·빈칸·전각 문자 정리) — 화면에 같은 이름이면 반드시 한 부문 */
+const hdK=s=>String(s||'').normalize('NFKC').replace(/[\s\u00a0\u200b\u200c\u200d\u3000\ufeff]+/g,'');
 function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries.filter(e=>e.compId===c.id&&e.sport===sport&&e.status!=='cancel');
   const col=(r,re)=>{const i=H.findIndex(h=>re.test(HD_KEYN(h)));return i<0?'':String(r[i]==null?'':r[i]).trim();};
   return rows.slice(1).map((r,i)=>{const e=E[i];if(!e)return null;
@@ -1730,11 +1734,12 @@ function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries
     let ev='';if(pz)ev=hdNormEv(/자유/.test(pz)?'자유 품새':/체조/.test(pz)?'태권체조':/경연|시범/.test(pz)?'팀 경연':'품새');if(!ev)ev=hdNormEv(kindRaw);
     if(!ev)ev=sport==='gyeokpa'?'개인 격파':'품새';
     const gr=col(r,/^학년$/),dv=hdDivOf(col(r,/^(부별|부문|구분|부)$/)||gr,gr,ev,HD.comm),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
-    const det=ev==='개인 격파'&&!kind?(HD_GEV.find(g=>g.replace(/\s/g,'')===kindRaw.replace(/\s/g,''))||kindRaw||'격파'):'';
+    const det=ev==='개인 격파'&&!kind?(HD_GEV.find(g=>hdK(g)===hdK(kindRaw))||kindRaw||'격파'):'';
     const grp=dv.merge?'':hdGrpN(col(r,/^(조|실력|조구분|등급|레벨|실력조)$/)),sex=HD_TEAM(ev)||kind?'':hdSexN(col(r,/^성별$/));
     const name=col(r,/^(이름|선수|선수명|성명)$/),org=col(r,/^(도장|소속|도장명|단체|소속도장)$/),mem=col(r,/^(팀원|선수명단)$/);
     const evName=kind&&/격파/.test(ev)?'기술격파 단체전':det?det:ev==='품새'?'공인 품새':ev==='팀 태권체조'?'태권체조':ev==='팀 종합경연'?'팀 경연':ev;
-    return {id:e.id,sp:sport,key:[ev,det,dv.div,grp,sex,kind?'k':''].join('|'),ev,evName,det,div:dv.div,grp,sex,name,org,mem};}).filter(Boolean);}
+    const shown=[evName,sex==='남'?'남자':sex==='여'?'여자':sex,dv.div,grp].filter(Boolean).join(' ');
+    return {id:e.id,sp:sport,key:hdK(shown)+'|'+(kind?'k':''),ev,evName,det,div:dv.div,grp,sex,name,org,mem};}).filter(Boolean);}
 function hdGroups(units){const m=new Map();units.forEach(u=>{if(!m.has(u.key))m.set(u.key,{key:u.key,sp:u.sp,ev:u.ev,evName:u.evName,div:u.div,name:[u.evName,u.sex==='남'?'남자':u.sex==='여'?'여자':u.sex,u.div,u.grp].filter(Boolean).join(' ').replace(/\s+/g,' '),units:[]});m.get(u.key).units.push(u);});
   const gi=n=>{const i=HD_GEV.indexOf(n);return i<0?99:i;};
   const grk=g=>/B/i.test(g||'')?0:/A/i.test(g||'')?1:2,sk=s=>s==='남'?0:s==='여'?1:2;
@@ -1787,7 +1792,7 @@ function hdData(G){const divs=[],map={};
   G.forEach((g,gi)=>{g.order.forEach((u,i)=>{map[u.id]=[gi,i+1];});const ev=hdEvGroup(g.evName),many=g.parts.length>1;
     if(hdIsTour(g))g.parts.forEach((p,pi)=>divs.push({name:g.name+(many?` ${pi+1}조`:''),ev,court:'',n:p.length,kind:'t',stage:'토너먼트',rounds:hdBracket(p)}));
     else g.parts.forEach((p,pi)=>divs.push({name:g.name+(many?` ${pi+1}조`:''),ev,court:'',n:p.length,kind:'o',stage:p.length>=16?'예선':'결선',groups:[p.map(u=>({n:u.name,t:u.org,m:u.mem||''}))]}));});
-  return {home:true,at:new Date().toISOString(),comm:HD.comm,fmt:HD.fmt,n:Object.keys(map).length,divs,map};}
+  return {home:true,v:4,at:new Date().toISOString(),comm:HD.comm,fmt:HD.fmt,n:Object.keys(map).length,divs,map};}
 const hdPub=(c,sp)=>{const X=(M.drawData||{})[c.id];return X&&X.rows?X.rows.find(r=>r.sport===sp)||null:null;};
 const hdSports=c=>c.sports.filter(s=>s==='poomsae'||s==='gyeokpa');
 const hdEvsOf=c=>{const S=new Set();hdSports(c).forEach(sp=>{try{hdUnits(c,sp).forEach(u=>S.add(hdEvGroup(u.evName)));}catch(e){}});return HD_EVN.filter(e=>S.has(e));};
@@ -1822,6 +1827,7 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
   return `<div class="stack">
     <div><h2>🎲 대진 추첨 · 출전 순서</h2><p class="small mute" style="margin:4px 0 0">접수가 끝나면 「모두 한 번에 추첨」 → 확인 → 「홈페이지에 올리기」. 지도자는 「대진표」 화면에서 바로 보고, 대회 날에는 이 순서 그대로 코트로 갑니다 (코트에서는 다시 추첨할 수 없습니다).</p></div>
     ${pubApp.length?`<div class="notice"><b>지금 홈페이지에는 경기 앱에서 올린 ${pubApp.map(x=>SPORTS[x.sp].n).join('·')} 대진표가 있습니다</b><div>여기서 추첨해 올리면 그 대진표를 바꿉니다.</div></div>`:''}
+    ${pubHome.some(x=>(x.P.data.v||0)<4)&&!R?`<div class="notice" style="border-color:var(--warn)"><b>⚠ 홈페이지에 올린 대진이 예전 방식으로 만들어졌습니다</b><div>그 뒤 고친 점(같은 부문 합치기·격파 세부 종목·토너먼트 도장 떨어뜨리기 등)이 들어 있지 않습니다. 「모두 다시 추첨」 → 「홈페이지에 올리기」를 해 주세요. 책자 PDF도 그다음에 내려받아야 반영됩니다.</div></div>`:''}
     ${pubHome.length?`<div class="notice" style="border-color:#24563C"><b>✓ 홈페이지에 올린 추첨: ${pubHome.map(x=>`${SPORTS[x.sp].n} ${fmtAt(x.P.updated_at)} (${x.P.data.n}건${x.P.data.comm?' · 생활체육':''})`).join(' · ')}</b><div>${ch.length?`<b style="color:var(--warn)">추첨 뒤 접수가 바뀌었습니다: ${ch.map(x=>`${SPORTS[x.sp].n} 새로 ${x.miss}건 · 빠진 ${x.gone}건`).join(' · ')}.</b> 새로 들어온 건은 각 부문 맨 뒤에 붙습니다. 공정하게 하려면 「모두 다시 추첨」하세요.`:'추첨 뒤 접수 변동이 없습니다.'}</div></div>`:''}
     ${(()=>{const L=D().athletes.filter(a=>badOrg(a)&&D().entries.some(e=>e.compId===c.id&&e.status!=='cancel'&&e.athleteIds.includes(a.id)));if(!L.length)return '';
       return `<div class="notice"><b>소속 칸에 숫자(생년월일 등)가 적힌 선수 ${L.length}명</b><div>대진표·명단에는 그 지도자의 도장 이름으로 대신 나옵니다. ${L.slice(0,8).map(a=>`${esc(a.name)}(${esc(String(a.org))})`).join(', ')}${L.length>8?' …':''} — 바로잡으려면 지도자가 「선수 관리」에서 소속을 고치면 됩니다.</div></div>`;})()}
@@ -1911,12 +1917,11 @@ function hdBkRows(d,ctr){const R=[];
   else (d.groups||[]).forEach((g,gi)=>g.forEach((p,pi)=>R.push({no:++ctr.n,seat:pi+1,div:d.name+((d.groups||[]).length>1?` ${gi+1}조`:''),stage:d.stage==='예선'?'예선':d.stage==='본선'?'본선':'결선',p,mt:!pi&&gi>0})));
   return R;}
 function hdBkBlock(d,rows,land){const team=/체조|경연|단체|팀/.test(d.name+(d.ev||''));
-  const tr=rows.map(r=>`<tr class="${r.mt?'mt':''}"><td class="c no">${r.no}</td><td class="c">${typeof r.seat==='number'?`<span class="st n">${r.seat}</span>`:`<span class="st ${r.seat}">${r.seat==='b'?'청':'홍'}</span>`}</td><td class="dvn">${esc(r.div)}</td><td class="c">${esc(r.stage)}</td>`
-    +(r.p&&r.p.ph?`<td colspan="2"><span class="ph">${esc(r.p.n)}</span></td>`:`<td>${esc(r.p&&r.p.t||'')}</td><td class="nm">${r.p?esc(r.p.n):'<span class="ph">—</span>'}${r.p&&r.p.m?`<small>${esc(r.p.m)}</small>`:''}</td>`)+'</tr>').join('');
-  const W=land?[30,30,0,44,26,23]:[38,38,0,52,26,22];
-  return `<div class="dv"><div class="dh"><b>${esc(d.name)}</b><span><span class="chip">${d.n}${team?'팀':'명'}</span><span class="chip ${d.kind==='t'?'t':'o'}">${d.kind==='t'?'토너먼트':'컷오프 · '+esc(rows[0]?rows[0].stage:'결선')}</span></span></div>
-    ${d.kind==='t'?`<div class="br">${hdBrSvg(d,{h:land?22:24,nameW:land?200:300,colW:land?60:110,fs:land?11:12})}</div></div>`:`<table><colgroup><col style="width:${W[0]}px"><col style="width:${W[1]}px"><col><col style="width:${W[3]}px"><col style="width:${W[4]}%"><col style="width:${W[5]}%"></colgroup>
-    <tr><th class="c">경기</th><th class="c">${d.kind==='t'?'청·홍':'출전'}</th><th>부문</th><th class="c">강수</th><th>${team?'소속':'팀명'}</th><th>${team?'팀 · 팀원':'이름'}</th></tr>${tr}</table></div>`}`;}
+  const head=`<div class="dh"><b>${esc(d.name)}</b><span><span class="chip">${d.n}${team?'팀':'명'}</span><span class="chip ${d.kind==='t'?'t':'o'}">${d.kind==='t'?'토너먼트':'컷오프 · '+esc(rows[0]?rows[0].stage:'결선')}</span></span></div>`;
+  if(d.kind==='t')return `<div class="dv">${head}<div class="br">${hdBrSvg(d,{fitW:land?488:700,h:land?24:26,fs:land?11.5:12.5,orgX:land?104:128})}</div></div>`;
+  const tr=rows.map(r=>`<tr class="${r.mt?'mt':''}"><td class="c"><span class="st n">${r.seat}</span></td><td class="dvn">${esc(r.div)}</td><td class="c">${esc(r.stage)}</td><td>${esc(r.p&&r.p.t||'')}</td><td class="nm">${r.p?esc(r.p.n):'—'}${r.p&&r.p.m?`<small>${esc(r.p.m)}</small>`:''}</td></tr>`).join('');
+  return `<div class="dv">${head}<table><colgroup><col style="width:${land?52:62}px"><col><col style="width:${land?44:54}px"><col style="width:${land?27:26}%"><col style="width:${land?25:24}%"></colgroup>
+    <tr><th class="c">출전 번호</th><th>부문</th><th class="c">강수</th><th>${team?'소속':'팀명'}</th><th>${team?'팀 · 팀원':'이름'}</th></tr>${tr}</table></div>`;}
 function hdBkEvHead(ev,divs){const n=divs.reduce((t,d)=>t+d.n,0),tour=divs.some(d=>d.kind==='t'),cut=divs.some(d=>d.kind!=='t');
   return `<div class="evh"><i></i><div><span><b>${esc(ev)}</b><small>${HD_EVEN[ev]||''}</small></span><em>부문 ${divs.length}개 · ${n}${/체조|경연/.test(ev)?'팀':'건'}<br>${tour?'<u>토너먼트</u>':''}${cut?'<u>컷오프</u>':''}</em></div></div>`;}
 function hdBkCover(c,divs,toc,land,total){const evs=HD_EVN.filter(e=>divs.some(d=>d.ev===e));const D=new Date(),at=`${D.getFullYear()}.${String(D.getMonth()+1).padStart(2,'0')}.${String(D.getDate()).padStart(2,'0')} ${String(D.getHours()).padStart(2,'0')}:${String(D.getMinutes()).padStart(2,'0')}`;
@@ -1934,15 +1939,18 @@ function hdBkCover(c,divs,toc,land,total){const evs=HD_EVN.filter(e=>divs.some(d
 const hdMedalOf=n=>n>=4?[1,1,2]:n===3?[1,1,1]:n===2?[1,1,0]:n===1?[1,0,0]:[0,0,0];
 const HD_MEDROW=['공인 품새','자유 품새','겨루기','개인 격파','기술격파 단체전','태권체조','팀 경연'];
 function hdMedals(divs){const by={},sz={};
-  divs.forEach(d=>{const k=d.ev==='격파'?(/단체/.test(d.name)?'기술격파 단체전':'개인 격파'):d.ev,m=hdMedalOf(d.n),o=by[k]||(by[k]={k,divs:0,n:0,g:0,s:0,b:0,team:/체조|경연|단체/.test(k)});
-    o.divs++;o.n+=d.n;o.g+=m[0];o.s+=m[1];o.b+=m[2];const zk=Math.min(d.n,5),z=sz[zk]||(sz[zk]={n:zk,divs:0,g:0,s:0,b:0});z.divs++;z.g+=m[0];z.s+=m[1];z.b+=m[2];});
+  const memN=p=>p&&p.m?Math.max(1,String(p.m).split(/[,，·]/).filter(s=>s.trim()).length):1;
+  divs.forEach(d=>{const k=d.ev==='격파'?(/단체/.test(d.name)?'기술격파 단체전':'개인 격파'):d.ev,m=hdMedalOf(d.n),o=by[k]||(by[k]={k,divs:0,n:0,g:0,s:0,b:0,mem:0,team:/체조|경연|단체/.test(k)});
+    /* 단체전: 입상 팀 팀원 모두에게 메달 → 조마다 팀원이 가장 많은 팀 기준으로 넉넉하게 */
+    const mx=o.team?Math.max(1,...(d.groups||[]).flat().map(memN)):1;
+    o.divs++;o.n+=d.n;o.g+=m[0]*mx;o.s+=m[1]*mx;o.b+=m[2]*mx;if(o.team)o.mem+=(d.groups||[]).flat().reduce((t,p)=>t+memN(p),0);const zk=Math.min(d.n,5),z=sz[zk]||(sz[zk]={n:zk,divs:0,g:0,s:0,b:0});z.divs++;z.g+=m[0];z.s+=m[1];z.b+=m[2];});
   const rows=HD_MEDROW.filter(k=>by[k]).map(k=>by[k]).concat(Object.values(by).filter(o=>!HD_MEDROW.includes(o.k)));
   const tot=rows.reduce((a,o)=>({divs:a.divs+o.divs,n:a.n+o.n,g:a.g+o.g,s:a.s+o.s,b:a.b+o.b}),{divs:0,n:0,g:0,s:0,b:0});
   return {rows,tot,sizes:Object.values(sz).sort((a,b)=>a.n-b.n)};}
 function hdMedalCard(divs){if(!divs.length)return '';const M=hdMedals(divs);
-  return `<section class="card stack"><div class="row between"><b>🏅 메달 집계 (추첨 기준)</b><span class="small mute">2명 조 금·은 · 3명 조 금·은·동 · 4명 이상 금·은·동 2 · 팀 종목은 팀 기준</span></div>
+  return `<section class="card stack"><div class="row between"><b>🏅 메달 집계 (추첨 기준)</b><span class="small mute">2명 조 금·은 · 3명 조 금·은·동 · 4명 이상 금·은·동 2 · 단체전은 팀원 수만큼(조마다 팀원이 가장 많은 팀 기준)</span></div>
     <div style="overflow-x:auto"><table class="nonum"><tr><th>종목</th><th>부문</th><th>출전</th><th>🥇 금</th><th>🥈 은</th><th>🥉 동</th><th>합계</th></tr>
-    ${M.rows.map(o=>`<tr><td><b>${esc(o.k)}</b></td><td>${o.divs}</td><td>${o.n}${o.team?'팀':'명'}</td><td>${o.g}</td><td>${o.s}</td><td>${o.b}</td><td><b>${o.g+o.s+o.b}</b></td></tr>`).join('')}
+    ${M.rows.map(o=>`<tr><td><b>${esc(o.k)}</b></td><td>${o.divs}</td><td>${o.n}${o.team?`팀 (${o.mem}명)`:'명'}</td><td>${o.g}</td><td>${o.s}</td><td>${o.b}</td><td><b>${o.g+o.s+o.b}</b></td></tr>`).join('')}
     <tr class="tot"><td><b>전체 합계</b></td><td>${M.tot.divs}</td><td>${M.tot.n}</td><td><b>${M.tot.g}</b></td><td><b>${M.tot.s}</b></td><td><b>${M.tot.b}</b></td><td><b>${M.tot.g+M.tot.s+M.tot.b}</b></td></tr></table></div></section>`;}
 function hdBkMedal(c,divs,land,no,total){const M=hdMedals(divs),PW=land?1123:794,PH=land?794:1123,coin=(c1,c2,l)=>`<span class="md" style="background:radial-gradient(circle at 35% 30%,${c1},${c2})">${l}</span>`;
   const G=coin('#FFF1B8','#C9962E','금'),S=coin('#FFFFFF','#9AA3B2','은'),B=coin('#F3C9A0','#A0632E','동');
@@ -1950,13 +1958,13 @@ function hdBkMedal(c,divs,land,no,total){const M=hdMedals(divs),PW=land?1123:794
     <div class="bd" style="flex-direction:column;gap:0"><div class="evh"><i></i><div><span><b>메달 집계</b><small>Medal Summary</small></span><em>추첨 결과 기준 · 부문 ${M.tot.divs}개 · 출전 ${M.tot.n}</em></div></div>
     <table class="mdt"><colgroup><col><col style="width:12%"><col style="width:13%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:12%"></colgroup>
       <tr><th>종목</th><th class="c">부문</th><th class="c">출전</th><th class="c">${G}</th><th class="c">${S}</th><th class="c">${B}</th><th class="c">합계</th></tr>
-      ${M.rows.map(o=>`<tr><td class="nm">${esc(o.k)}${o.team?' <small>팀 기준</small>':''}</td><td class="c">${o.divs}</td><td class="c">${o.n}${o.team?'팀':'명'}</td><td class="c n">${o.g}</td><td class="c n">${o.s}</td><td class="c n">${o.b}</td><td class="c n">${o.g+o.s+o.b}</td></tr>`).join('')}
+      ${M.rows.map(o=>`<tr><td class="nm">${esc(o.k)}${o.team?' <small>팀원 수 기준</small>':''}</td><td class="c">${o.divs}</td><td class="c">${o.n}${o.team?`팀<br><small style="color:#7A8196">${o.mem}명</small>`:'명'}</td><td class="c n">${o.g}</td><td class="c n">${o.s}</td><td class="c n">${o.b}</td><td class="c n">${o.g+o.s+o.b}</td></tr>`).join('')}
       <tr class="tt"><td class="nm">전체 합계</td><td class="c">${M.tot.divs}</td><td class="c">${M.tot.n}</td><td class="c n">${M.tot.g}</td><td class="c n">${M.tot.s}</td><td class="c n">${M.tot.b}</td><td class="c n">${M.tot.g+M.tot.s+M.tot.b}</td></tr></table>
     <div class="mdk">${[['금',M.tot.g,G],['은',M.tot.s,S],['동',M.tot.b,B]].map(([l,n,ic])=>`<div>${ic}<b>${n}</b><small>${l}메달</small></div>`).join('')}<div class="sum"><b>${M.tot.g+M.tot.s+M.tot.b}</b><small>메달 합계</small></div></div>
-    <h4 class="mdh">조 인원별 기준</h4>
+    <h4 class="mdh">조 인원별 기준 <small style="font-weight:500;color:#7A8196">(단체전은 팀 수로 셈)</small></h4>
     <table class="mdt sm"><tr><th>조 인원</th><th class="c">조 수</th><th class="c">한 조에 주는 메달</th><th class="c">금</th><th class="c">은</th><th class="c">동</th></tr>
       ${M.sizes.map(z=>`<tr><td class="nm">${z.n>=5?'5명 이상':z.n+'명'}</td><td class="c">${z.divs}</td><td class="c">${['','금','금 · 은','금 · 은 · 동','금 · 은 · 동 2','금 · 은 · 동 2'][z.n]}</td><td class="c n">${z.g}</td><td class="c n">${z.s}</td><td class="c n">${z.b}</td></tr>`).join('')}</table>
-    <p class="mdn">· 태권체조·팀 경연·기술격파 단체전은 <b>팀 수 기준</b>입니다. 팀원 모두에게 메달을 줄 때는 입상 팀의 팀원 수만큼 더 준비해 주세요.<br>· 접수 변동이나 실격·기권이 생기면 숫자가 달라질 수 있습니다. 여유분을 함께 준비하시길 권합니다.</p></div>
+    <p class="mdn">· 태권체조·팀 경연·기술격파 단체전은 입상 팀 <b>팀원 모두에게</b> 메달을 주는 것으로 셉니다. 어느 팀이 입상할지 모르므로 조마다 <b>팀원이 가장 많은 팀</b> 기준으로 넉넉하게 셉니다.<br>· 접수 변동이나 실격·기권이 생기면 숫자가 달라질 수 있습니다. 여유분을 함께 준비하시길 권합니다.</p></div>
     <div class="ft"><span><b>KICKSTART UP</b> &nbsp;Official Draw Book · ${esc(fmtDate(c.date)||'')}</span><span>대진은 경기 진행에 따라 바뀔 수 있습니다</span><span class="pg">${no} / ${total}</span></div></div>`;}
 function hdBkPages(c,divs,land){const PW=land?1123:794,PH=land?794:1123,cols=land?2:1,colW=(PW-64-(cols-1)*22)/cols,colH=PH-70-46;
   const items=[],ctr={};let last=null;
@@ -1975,6 +1983,7 @@ function hdBkPages(c,divs,land){const PW=land?1123:794,PH=land?794:1123,cols=lan
       <div class="ft"><span><b>KICKSTART UP</b> &nbsp;Official Draw Book · ${esc(fmtDate(c.date)||'')}</span><span>대진은 경기 진행에 따라 바뀔 수 있습니다</span><span class="pg">${i+2} / ${total}</span></div></div>`;}),hdBkMedal(c,divs,land,total,total)];}
 /* v1.4.86 빠르게: 쪽을 따로 떼어 낸 빈 창(iframe)에서 한 쪽씩 찍음 — 관리자 화면 전체(수천 줄 표)를 쪽마다 복사하지 않아 멈추지 않음 */
 async function hdPdf(c,ori){const land=(ori||HD.ori)==='l';await loadDraw(c.id);const divs=hdAllDivs(c);if(!divs.length)return toast('대진표가 없습니다');
+  const old=!HD.res[c.id]&&hdSports(c).some(sp=>{const P=hdPub(c,sp);return P&&P.data&&P.data.home&&(P.data.v||0)<4;});if(old&&isOps(me()))toast('⚠ 홈페이지에 올린 예전 추첨으로 만듭니다 · 새 방식은 「모두 다시 추첨」 뒤 내려받으세요');
   if(!document.getElementById('hdCss')){const s=document.createElement('style');s.id='hdCss';s.textContent=HD_CSS;document.head.appendChild(s);}
   toast(`대진 책자 PDF(${land?'가로형':'세로형'})를 만드는 중…`);try{await document.fonts.ready;}catch(e){}
   const [lib,h2c]=await Promise.all([loadJsPDF(),loadH2C()]);const PW=land?1123:794,PH=land?794:1123;
@@ -1988,7 +1997,7 @@ async function hdPdf(c,ori){const land=(ori||HD.ori)==='l';await loadDraw(c.id);
       const cv=await h2c(fd.body.firstElementChild,{scale:1.6,backgroundColor:'#ffffff',logging:false,width:PW,height:PH,windowWidth:PW,windowHeight:PH,useCORS:true});
       if(i)doc.addPage('a4',land?'landscape':'portrait');doc.addImage(cv.toDataURL('image/jpeg',.86),'JPEG',0,0,land?297:210,land?210:297,undefined,'FAST');cv.width=cv.height=0;
       if(Date.now()-t0>1200)toast(`대진 책자 PDF 만드는 중… ${i+1} / ${pages.length}쪽`);await new Promise(r=>setTimeout(r,0));}
-    doc.save(`${c.name}_대진책자_${land?'가로':'세로'}.pdf`.replace(/[\\/:*?"<>|]/g,'_'));toast(`대진 책자 PDF ${pages.length}쪽을 내려받았습니다`);}finally{F.remove();}}
+    doc.save(`${c.name}_대진책자_${land?'가로':'세로'}.pdf`.replace(/[\\/:*?"<>|]/g,'_'));toast(`대진 책자 PDF ${pages.length}쪽을 내려받았습니다${old?" · ⚠ 예전 추첨 기준":""}`);}finally{F.remove();}}
 /* ---------- 관리자 ---------- */
 const ATABS_ALL=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['results','결과 · 상장'],['board','📢 공지 · 팝업'],['setup','대회 고치기 · 숨기기 · 요강'],['lic','허가 코드'],['acct','💰 회계'],['quote','🧾 견적서'],['draw','🎲 대진 추첨']];
 const OWNER_TABS=['setup','lic','acct','quote'];
@@ -2946,7 +2955,7 @@ async function saveBytes(data,name,mime,okMsg){
   catch(e){toast('이 화면에서는 파일을 내려받을 수 없습니다');}
 }
 /* v1.4.86 맥·휴대폰에서 적은 한글(자모가 풀린 NFD)·겹친 빈칸 때문에 같은 부문이 둘로 갈리던 문제 → 모든 칸을 한 모양(NFC)·한 칸 띄어쓰기로 */
-const nfc=v=>typeof v==='string'?v.normalize('NFC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():v;
+const nfc=v=>typeof v==='string'?v.normalize('NFKC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():v;
 function exportRows(c,sport){return exportRows1(c,sport).map(r=>r.map(nfc));}
 function exportRows1(c,sport){const rows=exportRows0(c,sport);
   const E=D().entries.filter(e=>e.compId===c.id&&e.sport===sport&&e.status!=='cancel'),ath=id=>D().athletes.find(a=>a.id===id)||{};
