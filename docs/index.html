@@ -901,7 +901,7 @@ const drN=s=>String(s||'').toLowerCase().replace(/\s+/g,'');
 function drHit(p,q,mine){if(!p)return false;if(mine&&mine.has(p.n))return true;return !!q&&(drN(p.n).includes(q)||drN(p.t).includes(q));}
 /* 토너먼트 대진표를 거미줄(계단) 모양 SVG로 — 지도자 화면·관리자 화면·PDF 공통 */
 function hdBrSvg(d,o){o=Object.assign({h:30,nameW:190,colW:96,fs:12.5,hit:()=>false},o||{});const rs=d.rounds||[];if(!rs.length)return '';
-  const R=rs.length,M1=rs[0].m.length,top=22,h=o.h,H=top+M1*2*h+6,W=o.nameW+R*o.colW+8,BL='#2F6BE0',RD='#D9343A',GD='#C9A45A';
+  const R=rs.length,M1=rs[0].m.length,top=22,h=o.h,H=top+M1*2*h+6,W=o.nameW+(R-1)*o.colW+8+((rs[R-1].m[0]||{}).w?o.colW:0),BL='#2F6BE0',RD='#D9343A',GD='#C9A45A';
   const ex=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
   let g='';const ln=(x1,y1,x2,y2)=>{g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-opacity=".38" stroke-width="1.3"/>`;};
   const nm=(p,x,y,maxW,side,lose,win)=>{if(!p){g+=`<text x="${x+10}" y="${y-6}" font-size="${o.fs-1.5}" fill="currentColor" fill-opacity=".35">—</text>`;return;}
@@ -914,8 +914,7 @@ function hdBrSvg(d,o){o=Object.assign({h:30,nameW:190,colW:96,fs:12.5,hit:()=>fa
     const yb=c-h/2,yr=c+h/2;ln(0,yb,o.nameW,yb);ln(0,yr,o.nameW,yr);ln(o.nameW,yb,o.nameW,yr);
     nm(m.b,0,yb,o.nameW,'b',m.w==='r',m.w==='b');nm(m.r,0,yr,o.nameW,'r',m.w==='b',m.w==='r');outs.push(c);});
   for(let k=1;k<=R;k++){const x0=o.nameW+(k-1)*o.colW,x1=x0+o.colW,nxt=[],r=rs[k];
-    if(k===R){const y=outs[0];ln(x0,y,x1-10,y);g+=`<text x="${x0+4}" y="${y+o.fs+2}" font-size="${o.fs-3}" fill="${GD}" font-weight="800">우승</text>`;
-      const f=rs[R-1].m[0],wp=f&&f.w?(f.w==='b'?f.b:f.r):(f&&f.bye?(f.b||f.r):null);if(wp)nm(wp,x0,y,o.colW,null,false,true);break;}
+    if(k===R){const y=outs[0],f=rs[R-1].m[0],wp=f&&f.w?(f.w==='b'?f.b:f.r):null;if(wp){ln(x0,y,x1-10,y);nm(wp,x0,y,o.colW,null,false,true);g+=`<text x="${x0+4}" y="${y+o.fs+2}" font-size="${o.fs-3}" fill="${GD}" font-weight="800">우승</text>`;}break;}
     for(let j=0;j<outs.length;j+=2){const ya=outs[j],yb=outs[j+1],m=r.m[j/2]||{};ln(x0,ya,x1,ya);ln(x0,yb,x1,yb);ln(x1,ya,x1,yb);
       nm(m.b,x0,ya,o.colW,m.b?'b':null,m.w==='r',m.w==='b');nm(m.r,x0,yb,o.colW,m.r?'r':null,m.w==='b',m.w==='r');nxt.push((ya+yb)/2);}
     outs=nxt;}
@@ -1761,7 +1760,15 @@ function hdDeal(units,sizes){const by=new Map();hdShuffle(units).forEach(u=>{con
     (best||gs[gs.length-1]).u.push(u);});
   return gs.map(g=>hdSep(g.u));}
 const hdDup=parts=>parts.reduce((t,p)=>{const m={};p.forEach(u=>{const k=hdOrg(u);if(k)m[k]=(m[k]||0)+1;});return t+Object.values(m).reduce((s,v)=>s+Math.max(0,v-1),0);},0);
-function hdDrawGroup(g){if(HD.comm){let best=null;for(let t=0;t<8;t++){const p=hdDeal(g.units,hdSizes(g.units.length));if(!best||hdDup(p)<hdDup(best))best=p;if(!hdDup(p))break;}return {...g,parts:best,order:best.flat()};}
+/* 토너먼트: 경기 앱 buildRound1과 같은 짝짓기로, 같은 도장이 첫 경기(→ 준결승 → …)에서 되도록 늦게 만나게 */
+function hdR1Pairs(n){let size=1;while(size<n)size*=2;const byes=size-n,bp=[],full=[];for(let i=0;i<byes;i++)bp.push(i);for(let i=byes;i<n;i+=2)full.push(i);
+  const mi=new Array(n);let m=0;while(bp.length||full.length){if(bp.length){mi[bp.shift()]=m++;}if(full.length){const i=full.shift();mi[i]=m;mi[i+1]=m;m++;}}return mi;}
+function hdMeet(us){const n=us.length,mi=hdR1Pairs(n);let sc=0,r1=0;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=hdOrg(us[i]);if(!a||a!==hdOrg(us[j]))continue;
+  let x=mi[i],y=mi[j],r=1;while(x!==y){x>>=1;y>>=1;r++;}if(r===1)r1++;sc+=Math.pow(10,6-Math.min(r,6));}return {sc,r1};}
+function hdTourOrder(us){let best=null,bs=null;for(let t=0;t<400;t++){const o=hdShuffle(us),s=hdMeet(o).sc;if(best===null||s<bs){best=o;bs=s;if(!s)break;}}return best;}
+const hdGDup=g=>hdIsTour(g)?g.parts.reduce((t,p)=>t+hdMeet(p).r1,0):HD.comm?hdDup(g.parts):hdSame(g.order);
+function hdDrawGroup(g){const r=hdDrawGroup0(g);if(!hdIsTour(g))return r;const parts=r.parts.map(hdTourOrder);return {...r,parts,order:parts.flat()};}
+function hdDrawGroup0(g){if(HD.comm){let best=null;for(let t=0;t<8;t++){const p=hdDeal(g.units,hdSizes(g.units.length));if(!best||hdDup(p)<hdDup(best))best=p;if(!hdDup(p))break;}return {...g,parts:best,order:best.flat()};}
   let best=null;for(let t=0;t<6;t++){const o=hdSep(g.units);if(!best||hdSame(o)<hdSame(best))best=o;if(!hdSame(o))break;}return {...g,parts:[best],order:best};}
 /* 추첨 결과(한 종목 앱) → 대진표(draws) 자료 */
 /* 공인 품새는 토너먼트(청·홍 → 결승), 나머지는 컷오프(출전 순서) — 경기 앱 buildRound1과 같은 짝짓기 */
@@ -1811,7 +1818,7 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
   const pubs=SP.map(sp=>({sp,P:hdPub(c,sp)})),pubHome=pubs.filter(x=>x.P&&x.P.data&&x.P.data.home),pubApp=pubs.filter(x=>x.P&&x.P.data&&!x.P.data.home),ch=hdChanges(c);
   const divs=R||pubHome.length?hdAllDivs(c):[];
   const evs=HD_EVN.filter(e=>divs.some(d=>d.ev===e));
-  const dup=R?SP.reduce((t,sp)=>t+(R[sp]||[]).reduce((s,g)=>s+(HD.comm?hdDup(g.parts):hdSame(g.order)),0),0):0;
+  const dup=R?SP.reduce((t,sp)=>t+(R[sp]||[]).reduce((s,g)=>s+hdGDup(g),0),0):0;
   return `<div class="stack">
     <div><h2>🎲 대진 추첨 · 출전 순서</h2><p class="small mute" style="margin:4px 0 0">접수가 끝나면 「모두 한 번에 추첨」 → 확인 → 「홈페이지에 올리기」. 지도자는 「대진표」 화면에서 바로 보고, 대회 날에는 이 순서 그대로 코트로 갑니다 (코트에서는 다시 추첨할 수 없습니다).</p></div>
     ${pubApp.length?`<div class="notice"><b>지금 홈페이지에는 경기 앱에서 올린 ${pubApp.map(x=>SPORTS[x.sp].n).join('·')} 대진표가 있습니다</b><div>여기서 추첨해 올리면 그 대진표를 바꿉니다.</div></div>`:''}
@@ -1827,7 +1834,7 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
         ${R?`<button class="btn gold" type="button" data-a="hdPub">${HD.arm==='pub'?'한 번 더 누르면 홈페이지에 올립니다':'📤 이 추첨을 홈페이지에 올리기'}</button><button class="btn ghost" type="button" data-a="hdCancel">추첨 버리기</button>`:''}
         ${divs.length?`<span class="seg"><button type="button" class="${HD.ori!=='l'?'on':''}" data-a="hdOri" data-v="p">세로형</button><button type="button" class="${HD.ori==='l'?'on':''}" data-a="hdOri" data-v="l">가로형</button></span><button class="btn" type="button" data-a="hdPdf" data-c="${c.id}">📄 대진 책자 PDF (전체 종목)</button>`:''}${pubHome.length?`<a class="btn" href="#draw-${c.id}">지도자 화면으로 보기</a>`:''}</div>
       ${R?'<span class="small" style="color:var(--warn)">아직 올리지 않은 추첨입니다. 마음에 들면 「홈페이지에 올리기」를, 아니면 「모두 다시 추첨」을 누르세요.</span>':''}
-      ${divs.length?`<span class="small mute">부문 ${divs.length}개 · ${divs.reduce((t,d)=>t+d.n,0)}건${R?` · ${dup?`같은 도장 ${HD.comm?'한 조에 겹침':'연달아'} ${dup}곳 (한 도장 인원이 많아 다 떨어뜨리지 못함)`:'같은 도장 겹침 ✓ 없음'}`:''}</span>`:''}</section>
+      ${divs.length?`<span class="small mute">부문 ${divs.length}개 · ${divs.reduce((t,d)=>t+d.n,0)}건${R?` · ${dup?`같은 도장 겹침 ${dup}곳 (토너먼트는 첫 경기 맞대결 · 컷오프는 ${HD.comm?'같은 조':'연달아 출전'} · 한 도장 인원이 많아 다 떨어뜨리지 못함)`:'같은 도장 겹침 ✓ 없음 (토너먼트 첫 경기 맞대결도 없음)'}`:''}</span>`:''}</section>
     ${divs.length?hdMedalCard(divs):''}
     ${divs.length?evs.map(e=>`<h3 class="hd-ev">${e} <span class="small mute">${divs.filter(d=>d.ev===e).length}개 부문</span></h3><div class="hd-grid">${divs.filter(d=>d.ev===e).map(hdDivCard).join('')}</div>`).join(''):'<div class="empty">아직 추첨하지 않았습니다.</div>'}
   </div>`;}
@@ -1842,12 +1849,12 @@ async function hdPublish(c){const R=HD.res[c.id];if(!R)return;
 const HD_EVEN={'공인 품새':'Recognized Poomsae','자유 품새':'Freestyle Poomsae','겨루기':'Kyorugi','격파':'Breaking','태권체조':'Taekwondo Aerobics','팀 경연':'Team Competition'};
 const HD_CSS=`.bk{position:relative;overflow:hidden;box-sizing:border-box;background:#fff;color:#141B2D;font:11px/1.45 "Noto Sans KR","Malgun Gothic",sans-serif;letter-spacing:0}
 .bk *{box-sizing:border-box}
-.bk .rh{position:absolute;left:0;right:0;top:0;height:40px;background:#0B1530;display:flex;align-items:center;justify-content:space-between;padding:0 32px;color:#fff}
+.bk .rh{position:absolute;left:0;right:0;top:0;height:52px;background:#0B1530;display:flex;align-items:center;justify-content:space-between;padding:0 32px;color:#fff}
 .bk .rh:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#7C5B26,#E9CF94 45%,#B8924A 70%,#7C5B26)}
 .bk .rh .lg{font:900 11.5px/1 Cinzel,"Noto Sans KR",serif;letter-spacing:.28em;color:#E2C27F}
-.bk .rh .cn{font:700 11px/1.2 "Noto Sans KR",sans-serif;color:#E8ECF5;max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk .rh .cn{font:900 16px/1.2 "Noto Sans KR",sans-serif;color:#fff;letter-spacing:-.01em;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bk .rh .ev{font:800 10px/1 "Noto Sans KR",sans-serif;color:#0B1530;background:#E2C27F;border-radius:20px;padding:5px 11px;letter-spacing:.04em}
-.bk .bd{position:absolute;left:32px;right:32px;top:58px;bottom:46px;display:flex;gap:22px}
+.bk .bd{position:absolute;left:32px;right:32px;top:70px;bottom:46px;display:flex;gap:22px}
 .bk .col{flex:1 1 0;min-width:0}
 .bk .ft{position:absolute;left:32px;right:32px;bottom:16px;display:flex;justify-content:space-between;align-items:center;font-size:8.5px;color:#8A90A0;border-top:1px solid #E6DCC4;padding-top:7px}
 .bk .ft b{color:#0B1530;font:800 9px Cinzel,serif;letter-spacing:.2em}
@@ -1951,7 +1958,7 @@ function hdBkMedal(c,divs,land,no,total){const M=hdMedals(divs),PW=land?1123:794
       ${M.sizes.map(z=>`<tr><td class="nm">${z.n>=5?'5명 이상':z.n+'명'}</td><td class="c">${z.divs}</td><td class="c">${['','금','금 · 은','금 · 은 · 동','금 · 은 · 동 2','금 · 은 · 동 2'][z.n]}</td><td class="c n">${z.g}</td><td class="c n">${z.s}</td><td class="c n">${z.b}</td></tr>`).join('')}</table>
     <p class="mdn">· 태권체조·팀 경연·기술격파 단체전은 <b>팀 수 기준</b>입니다. 팀원 모두에게 메달을 줄 때는 입상 팀의 팀원 수만큼 더 준비해 주세요.<br>· 접수 변동이나 실격·기권이 생기면 숫자가 달라질 수 있습니다. 여유분을 함께 준비하시길 권합니다.</p></div>
     <div class="ft"><span><b>KICKSTART UP</b> &nbsp;Official Draw Book · ${esc(fmtDate(c.date)||'')}</span><span>대진은 경기 진행에 따라 바뀔 수 있습니다</span><span class="pg">${no} / ${total}</span></div></div>`;}
-function hdBkPages(c,divs,land){const PW=land?1123:794,PH=land?794:1123,cols=land?2:1,colW=(PW-64-(cols-1)*22)/cols,colH=PH-58-46;
+function hdBkPages(c,divs,land){const PW=land?1123:794,PH=land?794:1123,cols=land?2:1,colW=(PW-64-(cols-1)*22)/cols,colH=PH-70-46;
   const items=[],ctr={};let last=null;
   divs.forEach(d=>{if(d.ev!==last){items.push({ev:d.ev,html:hdBkEvHead(d.ev,divs.filter(x=>x.ev===d.ev))});last=d.ev;ctr[d.ev]={n:0};}items.push({ev:d.ev,html:hdBkBlock(d,d.kind==='t'?[]:hdBkRows(d,ctr[d.ev]),land),d});});
   const M2=document.createElement('div');M2.className='bk';M2.style.cssText=`position:fixed;left:0;top:0;visibility:hidden;z-index:-9;width:${colW}px;height:auto;overflow:visible`;document.body.appendChild(M2);
@@ -3027,7 +3034,7 @@ document.addEventListener('click',e=>{
     const x=(M.ledger||[]).find(r=>r.id===id);run(async()=>{await q(sb.from('ledger').delete().eq('id',id));if(x&&x.receipt){try{await sb.storage.from('receipts').remove([x.receipt]);}catch(e){}}UI.acArm=null;await reload();toast('장부에서 지웠습니다');});}
   else if(a==='acRc'){const x=(M.ledger||[]).find(r=>r.id===b.dataset.id);if(x&&x.receipt)run(async()=>{const {data,error}=await sb.storage.from('receipts').createSignedUrl(x.receipt,600);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');});}
   else if(a==='hdMode'){HD.comm=b.dataset.v==='comm';const c=S.comps.find(x=>x.id===UI.adminComp);if(c)delete HD.res[c.id];HD.arm=null;render();}
-  else if(a==='hdFmt'){HD.fmt={...HD.fmt,[b.dataset.e]:b.dataset.v};HD.arm=null;render();}
+  else if(a==='hdFmt'){HD.fmt={...HD.fmt,[b.dataset.e]:b.dataset.v};HD.arm=null;const c=S.comps.find(x=>x.id===UI.adminComp);if(c&&HD.res[c.id]){delete HD.res[c.id];toast('경기 방식을 바꿔 추첨을 비웠습니다 · 「모두 한 번에 추첨」을 다시 눌러 주세요');}render();}
   else if(a==='hdOri'){HD.ori=b.dataset.v;render();}
   else if(a==='hdDraw'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)hdDoDraw(c);}
   else if(a==='hdCancel'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c){delete HD.res[c.id];HD.arm=null;render();}}
