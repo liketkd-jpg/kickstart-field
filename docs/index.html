@@ -1241,7 +1241,7 @@ function bulkParse(wb,c){
     const ix={name:col('이름'),gender:col('성별'),birth:col('생년월일'),org:col('소속'),kind:col('종목'),div:col('부별'),grade:col('학년'),team:col('팀 이름','팀이름','팀명'),tg:col('팀 성별','팀성별'),weight:col('체급'),kg:col('체중'),height:col('신장'),cls:col('실력조','실력 조')};
     if(ix.name<0){errs.push([sh,1,'「이름」 칸을 찾지 못했습니다']);continue;}
     if(!c.sports.includes(meta.sp)){if(A.slice(1).some(r=>String(r[ix.name]||'').trim()&&!/\(예시\)/.test(r[ix.name])))errs.push([sh,'',`이 대회에는 ${SPORTS[meta.sp].n} 종목이 없습니다. 이 시트는 접수하지 않습니다`]);continue;}
-    for(let i=1;i<A.length;i++){const R=A[i],g=k=>ix[k]>=0?R[ix[k]]:'';const nm=String(g('name')||'').trim();if(!nm||/\(예시\)/.test(nm))continue;rowsN++;
+    for(let i=1;i<A.length;i++){const R=A[i],g=k=>ix[k]>=0?(typeof R[ix[k]]==='string'?R[ix[k]].normalize('NFC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():R[ix[k]]):'';const nm=String(g('name')||'').trim();if(!nm||/\(예시\)/.test(nm))continue;rowsN++;
       const ri=i+1,r={name:nm,gender:g('gender'),birth:g('birth'),org:g('org'),weight:meta.sp==='kyorugi'||meta.sp==='gyeokpa'?g('kg'):'',height:g('height')};
       let div=String(g('div')||'').trim();const team=String(g('team')||'').trim();let grade=String(g('grade')||'').trim();
       if(div==='유치부'&&/^[3-7]$/.test(grade))grade+='세';
@@ -1735,7 +1735,8 @@ function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries
     return {id:e.id,sp:sport,key:[ev,det,dv.div,grp,sex,kind?'k':''].join('|'),ev,evName,det,div:dv.div,grp,sex,name,org,mem};}).filter(Boolean);}
 function hdGroups(units){const m=new Map();units.forEach(u=>{if(!m.has(u.key))m.set(u.key,{key:u.key,sp:u.sp,ev:u.ev,evName:u.evName,div:u.div,name:[u.evName,u.sex==='남'?'남자':u.sex==='여'?'여자':u.sex,u.div,u.grp].filter(Boolean).join(' ').replace(/\s+/g,' '),units:[]});m.get(u.key).units.push(u);});
   const gi=n=>{const i=HD_GEV.indexOf(n);return i<0?99:i;};
-  return [...m.values()].sort((a,b)=>hdEvRank(a.evName)-hdEvRank(b.evName)||gi(a.evName)-gi(b.evName)||a.evName.localeCompare(b.evName,'ko')||hdDivRank(a.div)-hdDivRank(b.div)||a.name.localeCompare(b.name,'ko',{numeric:true}));}
+  const grk=g=>/B/i.test(g||'')?0:/A/i.test(g||'')?1:2,sk=s=>s==='남'?0:s==='여'?1:2;
+  return [...m.values()].sort((a,b)=>{const x=a.units[0],y=b.units[0];return hdEvRank(a.evName)-hdEvRank(b.evName)||gi(a.evName)-gi(b.evName)||a.evName.localeCompare(b.evName,'ko')||hdDivRank(a.div)-hdDivRank(b.div)||a.div.localeCompare(b.div,'ko',{numeric:true})||grk(x.grp)-grk(y.grp)||String(x.grp).localeCompare(String(y.grp),'ko')||sk(x.sex)-sk(y.sex);});}
 function hdShuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const b=new Uint32Array(1);crypto.getRandomValues(b);const j=b[0]%(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
 const hdRand=n=>{const b=new Uint32Array(1);crypto.getRandomValues(b);return b[0]%n;};
 const hdOrg=u=>(u.org||'').replace(/\s+/g,'');
@@ -2900,7 +2901,10 @@ async function saveBytes(data,name,mime,okMsg){
   try{const u=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},3000);toast(okMsg);}
   catch(e){toast('이 화면에서는 파일을 내려받을 수 없습니다');}
 }
-function exportRows(c,sport){const rows=exportRows0(c,sport);
+/* v1.4.86 맥·휴대폰에서 적은 한글(자모가 풀린 NFD)·겹친 빈칸 때문에 같은 부문이 둘로 갈리던 문제 → 모든 칸을 한 모양(NFC)·한 칸 띄어쓰기로 */
+const nfc=v=>typeof v==='string'?v.normalize('NFC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():v;
+function exportRows(c,sport){return exportRows1(c,sport).map(r=>r.map(nfc));}
+function exportRows1(c,sport){const rows=exportRows0(c,sport);
   const E=D().entries.filter(e=>e.compId===c.id&&e.sport===sport&&e.status!=='cancel'),ath=id=>D().athletes.find(a=>a.id===id)||{};
   if(E.some(e=>e.f&&e.f.cls)){rows[0]=[...rows[0],'실력조'];E.forEach((e,i)=>{if(rows[i+1])rows[i+1]=[...rows[i+1],(e.f&&e.f.cls)||''];});}
   if(!M.hasNat)return rows;
