@@ -77,8 +77,24 @@ textarea{width:100%;resize:vertical}
 @keyframes urgb{50%{background:#FFF3A8;box-shadow:0 0 0 3px rgba(255,212,0,.45)}}
 .btn.urgb{background:#FFD400!important;color:#111!important;border-color:#FFD400!important}
 .opsx .rmphs .btn{font-size:13px;padding:5px 10px}.ops-wait{max-height:560px;overflow:auto}
-.ops2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;align-items:start}
-@media (max-width:980px){.ops2{grid-template-columns:minmax(0,1fr)}}
+.ops3{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.95fr);gap:14px;align-items:start}
+@media (max-width:1280px){.ops3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ops3>.ops-r{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}}
+@media (max-width:860px){.ops3,.ops3>.ops-r{grid-template-columns:minmax(0,1fr)}}
+.ops-r{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ops-mon{border:1px solid var(--line);border-radius:12px;padding:10px}
+.ops-monv{aspect-ratio:16/9;border-radius:10px;background:#05070D;display:grid;place-items:center}
+.ops-more{display:flex;flex-direction:column;gap:14px}
+.opsx .ops-r .panel{padding:12px;gap:8px}.opsx .ops-r textarea{min-height:0}
+html.inframe .tapv,html.inframe .ksribbon{display:none!important}
+/* 전체 화면: 이 판만 화면 가득, 글씨·단추 조금 작게 → 한 화면에 다 보이게 */
+body.opsfs .opsx{position:fixed;inset:0;z-index:9000;border-radius:0!important;overflow:auto;padding:12px 16px;gap:10px;background:var(--bg,#0B0D12)!important}
+body.opsfs .opsx h2{font-size:18px}body.opsfs .opsx .btn{font-size:13px;padding:6px 10px}
+body.opsfs .ops3{min-height:calc(100vh - 120px);gap:12px}
+body.opsfs .ops-big{font-size:clamp(20px,1.9vw,30px)}body.opsfs .ops-now{padding:12px 14px}
+body.opsfs .ops-wait{max-height:calc(100vh - 130px)}body.opsfs .ops-ct{padding:8px 10px}body.opsfs .ops-ch b{font-size:16px}
+body.opsfs .ops-nm span{font-size:12px;padding:1px 7px}body.opsfs .ops-tk{padding:6px 10px}body.opsfs .ops-tkw{font-size:16px}
+body.opsfs .opsx .ops-r .panel h2{font-size:15px}body.opsfs .opsx textarea{font-size:14px}
+body.opsfs #toast,body.opsfs .toast{z-index:9100}
 .ops-l{display:flex;flex-direction:column;gap:10px}
 .ops-k{font-size:13px;font-weight:900;letter-spacing:.04em;opacity:.8;margin-bottom:6px}
 .ops-now{border-radius:16px;padding:16px 18px;border:2px solid rgba(212,175,55,.6);background:linear-gradient(135deg,rgba(212,175,55,.16),rgba(212,175,55,.04))}
@@ -305,6 +321,10 @@ details summary{cursor:pointer}
 const $=s=>document.querySelector(s);
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let toastT=null;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2800);}
+/* v1.4.79 본부 화면 안의 「본부 모니터 미리보기」(iframe)는 소리를 내지 않고, 방송 담당 창도 맡지 않음 */
+const KS_INFRAME=(()=>{try{return window.self!==window.top;}catch(e){return true;}})();
+if(KS_INFRAME){document.documentElement.classList.add('inframe');try{Object.defineProperty(window,'speechSynthesis',{value:undefined,configurable:true});}catch(e){}try{window.AudioContext=undefined;window.webkitAudioContext=undefined;}catch(e){}
+  try{HTMLMediaElement.prototype.play=function(){const a=this;setTimeout(()=>{try{a.dispatchEvent(new Event('ended'));}catch(e){}},30);return Promise.resolve();};}catch(e){}}
 const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results','print'].includes(h)||/^room-r[1-6]$/.test(h)?h:'admin';};
 const S={courts:{},cfg:{},announce:null,log:[],ready:false,moves:{},mvArm:null};window.KS_HQS=()=>S;
 let DB=null,DL=null;
@@ -581,9 +601,21 @@ function opsWaitBox(){const U=upcoming(null,true),by={},seen=new Set();U.forEach
 function vOps(cf,n,callP,noticeP){
   const tk=n.mode!=='off'&&n.text?`<div class="ops-tk ${n.urgent?'urg':''}"><span class="ops-tkl">${n.urgent?'⚠ 급한 공지':'📢 공지'}${n.mode==='full'?' · 전체 화면':''}</span><div class="ops-tkw"><span style="--d:${Math.max(14,n.text.length*0.35)}s">${esc(n.text)}</span></div>${n.until?`<span class="ops-tkt">${mmss(n.until-NOW())}</span>`:''}<button class="btn sm" data-a="notice" data-m="off">내리기</button></div>`
     :`<div class="ops-tk off"><span class="ops-tkl">📢 공지</span><div class="ops-tkw"><span class="small muted" style="animation:none;padding:0">지금 띄운 공지가 없습니다 · 아래 「공지」 칸에서 띄웁니다</span></div></div>`;
-  return `<div class="panel opsx"><div class="row between"><h2>🎯 호출 · 대기 · 공지 한눈에</h2><span class="row"><button class="btn sm ${cf.autoCall?'on':''}" data-a="autoCall">자동 호출 ${cf.autoCall?'켜짐':'꺼짐'}</button><button class="btn sm ${cf.voice?'on':''}" data-a="voice">음성 ${cf.voice?'켜짐':'꺼짐'}</button></span></div>
-    ${tk}<div class="ops2"><div class="ops-l">${opsNowBox()}</div>${opsWaitBox()}</div>
-    <div class="grid2">${callP}${noticeP}</div>${vRoomPanel()}</div>`;}
+  return `<div class="panel opsx"><div class="row between"><h2>🎯 호출 · 대기 · 공지 한눈에</h2><span class="row"><button class="btn sm primary" data-a="opsFs">${document.body.classList.contains('opsfs')?'⤢ 전체 화면 끝내기':'⛶ 전체 화면'}</button><button class="btn sm ${cf.autoCall?'on':''}" data-a="autoCall">자동 호출 ${cf.autoCall?'켜짐':'꺼짐'}</button><button class="btn sm ${cf.voice?'on':''}" data-a="voice">음성 ${cf.voice?'켜짐':'꺼짐'}</button></span></div>
+    ${tk}<div class="ops3"><div class="ops-l">${opsNowBox()}</div>${opsWaitBox()}<div class="ops-r"><div class="ops-mon"><div class="ops-k row between"><span>📺 본부 모니터 · 지금 나가는 화면</span><a class="small" href="#board" target="_blank">크게 열기 ↗</a></div><div class="ops-monv" id="opsMonV"><span class="small muted">불러오는 중…</span></div></div>${noticeP}</div></div>
+    <div class="ops-more">${callP}${vRoomPanel()}</div></div>`;}
+/* 미리보기 창(iframe)은 한 번만 만들어 화면이 새로 그려져도 다시 불러오지 않음 → 자리(#opsMonV) 위에 겹쳐 둠 */
+let OPSIF=null;
+function opsMonSync(){if(KS_INFRAME)return;const ph=document.getElementById('opsMonV'),vis=ph&&ph.offsetParent!==null&&route()==='admin';
+  if(!vis){if(OPSIF)OPSIF.style.display='none';return;}
+  if(!OPSIF){OPSIF=document.createElement('iframe');OPSIF.src=location.pathname+'#board';OPSIF.title='본부 모니터 미리보기';OPSIF.setAttribute('tabindex','-1');
+    OPSIF.style.cssText='position:fixed;left:0;top:0;width:1600px;height:900px;border:0;transform-origin:0 0;pointer-events:none;z-index:9001;border-radius:10px;background:#000';document.body.appendChild(OPSIF);}
+  const r=ph.getBoundingClientRect(),z=r.width/1600;OPSIF.style.display=r.width<10||r.bottom<0||r.top>innerHeight?'none':'block';
+  OPSIF.style.transform=`translate(${r.left}px,${r.top}px) scale(${z})`;
+  const top=Math.max(0,-r.top/z),bot=Math.max(0,(r.bottom-innerHeight)/z);OPSIF.style.clipPath=`inset(${top}px 0 ${bot}px 0 round 10px)`;}
+setInterval(opsMonSync,250);addEventListener('scroll',opsMonSync,true);addEventListener('resize',opsMonSync);
+function opsFs(on){document.body.classList.toggle('opsfs',on);try{if(on&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});}catch(e){}schedule();setTimeout(opsMonSync,60);}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('opsfs')){document.body.classList.remove('opsfs');schedule();}});
 function vAdmin(){
   const list=courtList(),cf=CFG(),al=alerts(list),n=noticeNow(cf),nd=cf.noticeDur==null?180:cf.noticeDur;
   const rows=list.length?list.map(c=>{const b=c.app&&c.app.board;
@@ -846,7 +878,7 @@ const hasNatural=()=>koVoices().some(v=>/Natural|Neural/i.test(v.name));
 const amSpeaker=()=>SPK.id===WIN;
 function onSpk(d){d=d||{};if(d.id!==SPK.id||d.beat!==SPK.beat)SPK.seen=Date.now();SPK={id:d.id||null,natural:!!d.natural,where:d.where||'',beat:d.beat,seen:SPK.seen};}
 const spkStale=()=>!SPK.id||Date.now()-SPK.seen>16000;
-function spkTick(){if(!LOCALWIN||route()!=='board')return;
+function spkTick(){if(KS_INFRAME||!LOCALWIN||route()!=='board')return;
   const better=!amSpeaker()&&hasNatural()&&!SPK.natural;
   if(amSpeaker()||spkStale()||better){spkBeat++;const d={id:WIN,beat:spkBeat,natural:hasNatural(),where:/Edg\//.test(navigator.userAgent)?'엣지':'크롬'};onSpk(d);DB.doc('hq/speaker').set(d).catch(()=>{});}}
 setInterval(spkTick,5000);
@@ -1067,6 +1099,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   else if(a==='annSave'){const v=($('#annText').value||'').trim();if(!v)return toast('저장할 문구를 위 칸에 써 주세요');await saveCfg({annPh:[...(cf.annPh||PH_ANN),v].slice(0,30)});$('#annText').value='';toast('방송 문구를 저장했습니다');}
   else if(a==='annPhDel'){if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='지울까요?';setTimeout(()=>{b.dataset.arm='';b.textContent='×';},3000);return;}const L=[...(cf.annPh||PH_ANN)];L.splice(Number(b.dataset.i),1);await saveCfg({annPh:L});}
   else if(a==='callNext'){const c=courtList().find(x=>x.id===b.dataset.id);const bd=c&&c.app&&c.app.board;if(bd&&bd.nextDiv)await announce(`${c.court}코트, ${bd.nextDiv} 선수는 준비해 주세요.`,{court:c.court});}
+  else if(a==='opsFs'){opsFs(!document.body.classList.contains('opsfs'));}
   else if(a==='noticeUrg'){NURG=!NURG;schedule();}
   else if(a==='opsDel'){const id=b.dataset.id;if(id){try{await DB.doc('calllog/'+id).delete();}catch(x){}S.log=S.log.filter(l=>l._id!==id);schedule();}}
   else if(a==='opsClr'){const L=opsCalls();for(const l of L){try{await DB.doc('calllog/'+l._id).delete();}catch(x){}}S.log=S.log.filter(l=>!L.includes(l));schedule();toast('최근 호출을 지웠습니다');}
