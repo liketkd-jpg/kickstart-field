@@ -1721,6 +1721,9 @@ function hdEvGroup(name){name=String(name||'');if(/태권\s*체조|팀 태권체
   if(/겨루기/.test(name))return '겨루기';if(/자유/.test(name))return '자유 품새';return '공인 품새';}
 const hdEvRank=n=>{const i=HD_EVN.indexOf(hdEvGroup(n));return i<0?9:i;};
 /* 엑셀 한 줄 → 본부 운영표와 같은 부문 열쇠 */
+/* 실력조·성별 적는 방식이 달라도 같은 부문으로: 「b」「B」「B조」「b 조」→ B조 · 「남자」「M」→ 남 */
+const hdGrpN=s=>{s=String(s||'').trim();const m=/^([A-Za-z])\s*조?$/.exec(s);return m?m[1].toUpperCase()+'조':s;};
+const hdSexN=s=>{s=String(s||'').trim();return /^(남|M$|male)/i.test(s)?'남':/^(여|F$|W$|female)/i.test(s)?'여':s;};
 function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries.filter(e=>e.compId===c.id&&e.sport===sport&&e.status!=='cancel');
   const col=(r,re)=>{const i=H.findIndex(h=>re.test(HD_KEYN(h)));return i<0?'':String(r[i]==null?'':r[i]).trim();};
   return rows.slice(1).map((r,i)=>{const e=E[i];if(!e)return null;
@@ -1729,7 +1732,7 @@ function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries
     if(!ev)ev=sport==='gyeokpa'?'개인 격파':'품새';
     const gr=col(r,/^학년$/),dv=hdDivOf(col(r,/^(부별|부문|구분|부)$/)||gr,gr,ev,HD.comm),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
     const det=ev==='개인 격파'&&!kind?(HD_GEV.find(g=>g.replace(/\s/g,'')===kindRaw.replace(/\s/g,''))||kindRaw||'격파'):'';
-    const grp=dv.merge?'':col(r,/^(조|실력|조구분|등급|레벨|실력조)$/),sex=HD_TEAM(ev)||kind?'':col(r,/^성별$/);
+    const grp=dv.merge?'':hdGrpN(col(r,/^(조|실력|조구분|등급|레벨|실력조)$/)),sex=HD_TEAM(ev)||kind?'':hdSexN(col(r,/^성별$/));
     const name=col(r,/^(이름|선수|선수명|성명)$/),org=col(r,/^(도장|소속|도장명|단체|소속도장)$/),mem=col(r,/^(팀원|선수명단)$/);
     const evName=kind&&/격파/.test(ev)?'기술격파 단체전':det?det:ev==='품새'?'공인 품새':ev==='팀 태권체조'?'태권체조':ev==='팀 종합경연'?'팀 경연':ev;
     return {id:e.id,sp:sport,key:[ev,det,dv.div,grp,sex,kind?'k':''].join('|'),ev,evName,det,div:dv.div,grp,sex,name,org,mem};}).filter(Boolean);}
@@ -1825,6 +1828,7 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
         ${divs.length?`<span class="seg"><button type="button" class="${HD.ori!=='l'?'on':''}" data-a="hdOri" data-v="p">세로형</button><button type="button" class="${HD.ori==='l'?'on':''}" data-a="hdOri" data-v="l">가로형</button></span><button class="btn" type="button" data-a="hdPdf" data-c="${c.id}">📄 대진 책자 PDF (전체 종목)</button>`:''}${pubHome.length?`<a class="btn" href="#draw-${c.id}">지도자 화면으로 보기</a>`:''}</div>
       ${R?'<span class="small" style="color:var(--warn)">아직 올리지 않은 추첨입니다. 마음에 들면 「홈페이지에 올리기」를, 아니면 「모두 다시 추첨」을 누르세요.</span>':''}
       ${divs.length?`<span class="small mute">부문 ${divs.length}개 · ${divs.reduce((t,d)=>t+d.n,0)}건${R?` · ${dup?`같은 도장 ${HD.comm?'한 조에 겹침':'연달아'} ${dup}곳 (한 도장 인원이 많아 다 떨어뜨리지 못함)`:'같은 도장 겹침 ✓ 없음'}`:''}</span>`:''}</section>
+    ${divs.length?hdMedalCard(divs):''}
     ${divs.length?evs.map(e=>`<h3 class="hd-ev">${e} <span class="small mute">${divs.filter(d=>d.ev===e).length}개 부문</span></h3><div class="hd-grid">${divs.filter(d=>d.ev===e).map(hdDivCard).join('')}</div>`).join(''):'<div class="empty">아직 추첨하지 않았습니다.</div>'}
   </div>`;}
 async function hdDoDraw(c){const R={};let n=0,k=0;
@@ -1866,6 +1870,12 @@ const HD_CSS=`.bk{position:relative;overflow:hidden;box-sizing:border-box;backgr
 .bk td.c,.bk th.c{text-align:center}.bk td.no{font-weight:800;color:#7C5B26}.bk td.nm{font-weight:800}.bk td.nm small{font-weight:400;color:#7A8196;margin-left:4px}.bk td.dvn{color:#4A5268;white-space:normal;line-height:1.25;font-size:9.5px}.bk td{padding:3px 6px}
 .bk td .ph{color:#9AA0AE;font-weight:500;font-style:italic}
 .bk .st{display:inline-block;min-width:20px;text-align:center;border-radius:4px;padding:1px 5px;font-weight:800;font-size:9px;color:#fff}.bk .st.b{background:#2F6BE0}.bk .st.r{background:#D9343A}.bk .st.n{background:#EEF1F6;color:#0B1530}
+.bk .md{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font:900 9.5px "Noto Sans KR",sans-serif;color:#3A2A08;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.12)}
+.bk .mdt{font-size:12px;margin-top:4px}.bk .mdt th{font-size:10px;padding:8px 8px}.bk .mdt td{padding:8px 8px;font-size:12px}.bk .mdt td.n{font:800 14px "Noto Sans KR",sans-serif;color:#0B1530}.bk .mdt td.nm small{font-weight:600;color:#8E6A30;font-size:9.5px}
+.bk .mdt tr.tt td{background:#0B1530!important;color:#fff;border:0}.bk .mdt tr.tt td.n{color:#E2C27F;font-size:15px}.bk .mdt.sm td{padding:5px 8px;font-size:11px}.bk .mdt.sm td.n{font-size:12px}
+.bk .mdk{display:flex;gap:12px;margin:18px 0 6px}.bk .mdk div{flex:1;border:1px solid #E6DCC4;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#FFFDF8,#F8F3E7)}
+.bk .mdk div .md{width:30px;height:30px;font-size:11px}.bk .mdk b{font:900 24px "Noto Sans KR",sans-serif;color:#0B1530}.bk .mdk small{font-size:10px;color:#7A8196;margin-left:auto}.bk .mdk .sum{background:#0B1530;border-color:#0B1530}.bk .mdk .sum b{color:#E2C27F}.bk .mdk .sum small{color:#C9CFDB}
+.bk .mdh{margin:18px 0 2px;font:800 11px "Noto Sans KR",sans-serif;color:#0B1530;letter-spacing:.06em}.bk .mdn{margin:12px 0 0;font-size:10px;line-height:1.7;color:#4A5268}
 .bk.cv{background:#0B1530;color:#fff}
 .bk.cv .fr{position:absolute;inset:22px;border:1px solid rgba(226,194,127,.55);border-radius:4px}.bk.cv .fr:after{content:"";position:absolute;inset:6px;border:1px solid rgba(226,194,127,.22);border-radius:2px}
 .bk.cv .glow{position:absolute;inset:0;background:radial-gradient(ellipse at 70% 0%,rgba(226,194,127,.18),transparent 55%),radial-gradient(ellipse at 0% 100%,rgba(47,107,224,.16),transparent 50%)}
@@ -1898,25 +1908,52 @@ function hdBkBlock(d,rows,land){const team=/체조|경연|단체|팀/.test(d.nam
     +(r.p&&r.p.ph?`<td colspan="2"><span class="ph">${esc(r.p.n)}</span></td>`:`<td>${esc(r.p&&r.p.t||'')}</td><td class="nm">${r.p?esc(r.p.n):'<span class="ph">—</span>'}${r.p&&r.p.m?`<small>${esc(r.p.m)}</small>`:''}</td>`)+'</tr>').join('');
   const W=land?[30,30,0,44,26,23]:[38,38,0,52,26,22];
   return `<div class="dv"><div class="dh"><b>${esc(d.name)}</b><span><span class="chip">${d.n}${team?'팀':'명'}</span><span class="chip ${d.kind==='t'?'t':'o'}">${d.kind==='t'?'토너먼트':'컷오프 · '+esc(rows[0]?rows[0].stage:'결선')}</span></span></div>
-    ${d.kind==='t'?`<div class="br">${hdBrSvg(d,{h:land?20:19,nameW:land?170:230,colW:land?74:118,fs:10.5})}</div>`:''}
-    <table><colgroup><col style="width:${W[0]}px"><col style="width:${W[1]}px"><col><col style="width:${W[3]}px"><col style="width:${W[4]}%"><col style="width:${W[5]}%"></colgroup>
-    <tr><th class="c">경기</th><th class="c">${d.kind==='t'?'청·홍':'출전'}</th><th>부문</th><th class="c">강수</th><th>${team?'소속':'팀명'}</th><th>${team?'팀 · 팀원':'이름'}</th></tr>${tr}</table></div>`;}
+    ${d.kind==='t'?`<div class="br">${hdBrSvg(d,{h:land?22:24,nameW:land?200:300,colW:land?60:110,fs:land?11:12})}</div></div>`:`<table><colgroup><col style="width:${W[0]}px"><col style="width:${W[1]}px"><col><col style="width:${W[3]}px"><col style="width:${W[4]}%"><col style="width:${W[5]}%"></colgroup>
+    <tr><th class="c">경기</th><th class="c">${d.kind==='t'?'청·홍':'출전'}</th><th>부문</th><th class="c">강수</th><th>${team?'소속':'팀명'}</th><th>${team?'팀 · 팀원':'이름'}</th></tr>${tr}</table></div>`}`;}
 function hdBkEvHead(ev,divs){const n=divs.reduce((t,d)=>t+d.n,0),tour=divs.some(d=>d.kind==='t'),cut=divs.some(d=>d.kind!=='t');
   return `<div class="evh"><i></i><div><span><b>${esc(ev)}</b><small>${HD_EVEN[ev]||''}</small></span><em>부문 ${divs.length}개 · ${n}${/체조|경연/.test(ev)?'팀':'건'}<br>${tour?'<u>토너먼트</u>':''}${cut?'<u>컷오프</u>':''}</em></div></div>`;}
 function hdBkCover(c,divs,toc,land,total){const evs=HD_EVN.filter(e=>divs.some(d=>d.ev===e));const D=new Date(),at=`${D.getFullYear()}.${String(D.getMonth()+1).padStart(2,'0')}.${String(D.getDate()).padStart(2,'0')} ${String(D.getHours()).padStart(2,'0')}:${String(D.getMinutes()).padStart(2,'0')}`;
   const left=`<div><div class="kick">OFFICIAL DRAW BOOK</div><h1>${esc(c.name)}</h1><div class="sub">대진표 · 출전 순서</div><div class="rule"></div>
     <div class="info"><span>일시</span><b>${esc(fmtDate(c.date)||'')}</b>${c.place?`<span>장소</span><b>${esc(c.place)}</b>`:''}${c.host?`<span>주최</span><b>${esc(c.host)}</b>`:''}</div>
     <div class="stats"><div><b>${evs.length}</b><small>종목 EVENTS</small></div><div><b>${divs.length}</b><small>부문 DIVISIONS</small></div><div><b>${divs.reduce((t,d)=>t+d.n,0)}</b><small>출전 ENTRIES</small></div></div></div>`;
-  const right=`<div class="toc"><h3>CONTENTS</h3>${evs.map(e=>{const L=divs.filter(d=>d.ev===e);return `<div class="ti"><b>${esc(e)}</b><small>${HD_EVEN[e]||''}</small><i></i><em>${L.length}개 부문 · ${L.some(d=>d.kind==='t')?'토너먼트':'컷오프'}</em><u>${toc[e]||''}</u></div>`;}).join('')}
+  const right=`<div class="toc"><h3>CONTENTS</h3>${evs.map(e=>{const L=divs.filter(d=>d.ev===e);return `<div class="ti"><b>${esc(e)}</b><small>${HD_EVEN[e]||''}</small><i></i><em>${L.length}개 부문 · ${L.some(d=>d.kind==='t')?'토너먼트':'컷오프'}</em><u>${toc[e]||''}</u></div>`;}).join('')}<div class="ti"><b>메달 집계</b><small>Medal Summary</small><i></i><em>종목별 금·은·동 · 전체 합계</em><u>${toc['메달 집계']||''}</u></div>
     <div class="lgd"><span><span class="st b">청</span><span class="st r">홍</span>토너먼트 · 청·홍이 함께 연기, 이긴 선수가 다음 라운드로</span><span><span class="st n">1</span>컷오프 · 출전 순서대로 연기, 점수 순위로 결정</span></div></div>`;
-  return `<div class="bk cv" style="width:${land?1123:794}px;height:${land?794:1123}px"><div class="glow"></div><div class="fr"></div><div class="in" style="${land?'grid-template-columns:1.05fr 1fr;align-content:center;align-items:center;gap:46px':''}">
+  return `<div class="bk cv" data-notr style="width:${land?1123:794}px;height:${land?794:1123}px"><div class="glow"></div><div class="fr"></div><div class="in" style="${land?'grid-template-columns:1.05fr 1fr;align-content:center;align-items:center;gap:46px':''}">
     ${land?'':`<div class="brand">KICKSTART UP<small>COMPETITION OPERATING SYSTEM</small></div>`}${land?`<div><div class="brand" style="margin-bottom:40px">KICKSTART UP<small>COMPETITION OPERATING SYSTEM</small></div>${left}</div>`:left}${right}
     ${land?'':`<div class="bot"><span>발행 ${at} · 총 ${total}쪽</span><span>대진은 경기 진행에 따라 바뀔 수 있습니다</span></div>`}</div>
     ${land?`<div class="bot" style="position:absolute;left:60px;right:60px;bottom:40px"><span>발행 ${at} · 총 ${total}쪽</span><span>대진은 경기 진행에 따라 바뀔 수 있습니다</span></div>`:''}</div>`;}
 /* 항목(종목 제목·부문 블록)을 재서 단·쪽에 채움 — 블록은 자르지 않고, 종목 제목은 다음 블록과 같은 단에 */
+/* 메달 집계: 2명 조 금·은 / 3명 조 금·은·동 / 4명 이상 조 금·은·동 2 (1명 조는 금) — 태권체조·팀 경연·단체전은 팀 기준 */
+const hdMedalOf=n=>n>=4?[1,1,2]:n===3?[1,1,1]:n===2?[1,1,0]:n===1?[1,0,0]:[0,0,0];
+const HD_MEDROW=['공인 품새','자유 품새','겨루기','개인 격파','기술격파 단체전','태권체조','팀 경연'];
+function hdMedals(divs){const by={},sz={};
+  divs.forEach(d=>{const k=d.ev==='격파'?(/단체/.test(d.name)?'기술격파 단체전':'개인 격파'):d.ev,m=hdMedalOf(d.n),o=by[k]||(by[k]={k,divs:0,n:0,g:0,s:0,b:0,team:/체조|경연|단체/.test(k)});
+    o.divs++;o.n+=d.n;o.g+=m[0];o.s+=m[1];o.b+=m[2];const zk=Math.min(d.n,5),z=sz[zk]||(sz[zk]={n:zk,divs:0,g:0,s:0,b:0});z.divs++;z.g+=m[0];z.s+=m[1];z.b+=m[2];});
+  const rows=HD_MEDROW.filter(k=>by[k]).map(k=>by[k]).concat(Object.values(by).filter(o=>!HD_MEDROW.includes(o.k)));
+  const tot=rows.reduce((a,o)=>({divs:a.divs+o.divs,n:a.n+o.n,g:a.g+o.g,s:a.s+o.s,b:a.b+o.b}),{divs:0,n:0,g:0,s:0,b:0});
+  return {rows,tot,sizes:Object.values(sz).sort((a,b)=>a.n-b.n)};}
+function hdMedalCard(divs){if(!divs.length)return '';const M=hdMedals(divs);
+  return `<section class="card stack"><div class="row between"><b>🏅 메달 집계 (추첨 기준)</b><span class="small mute">2명 조 금·은 · 3명 조 금·은·동 · 4명 이상 금·은·동 2 · 팀 종목은 팀 기준</span></div>
+    <div style="overflow-x:auto"><table class="nonum"><tr><th>종목</th><th>부문</th><th>출전</th><th>🥇 금</th><th>🥈 은</th><th>🥉 동</th><th>합계</th></tr>
+    ${M.rows.map(o=>`<tr><td><b>${esc(o.k)}</b></td><td>${o.divs}</td><td>${o.n}${o.team?'팀':'명'}</td><td>${o.g}</td><td>${o.s}</td><td>${o.b}</td><td><b>${o.g+o.s+o.b}</b></td></tr>`).join('')}
+    <tr class="tot"><td><b>전체 합계</b></td><td>${M.tot.divs}</td><td>${M.tot.n}</td><td><b>${M.tot.g}</b></td><td><b>${M.tot.s}</b></td><td><b>${M.tot.b}</b></td><td><b>${M.tot.g+M.tot.s+M.tot.b}</b></td></tr></table></div></section>`;}
+function hdBkMedal(c,divs,land,no,total){const M=hdMedals(divs),PW=land?1123:794,PH=land?794:1123,coin=(c1,c2,l)=>`<span class="md" style="background:radial-gradient(circle at 35% 30%,${c1},${c2})">${l}</span>`;
+  const G=coin('#FFF1B8','#C9962E','금'),S=coin('#FFFFFF','#9AA3B2','은'),B=coin('#F3C9A0','#A0632E','동');
+  return `<div class="bk" data-notr style="width:${PW}px;height:${PH}px"><div class="rh"><span class="lg">KICKSTART UP</span><span class="cn">${esc(c.name)}</span><span class="ev">메달 집계</span></div>
+    <div class="bd" style="flex-direction:column;gap:0"><div class="evh"><i></i><div><span><b>메달 집계</b><small>Medal Summary</small></span><em>추첨 결과 기준 · 부문 ${M.tot.divs}개 · 출전 ${M.tot.n}</em></div></div>
+    <table class="mdt"><colgroup><col><col style="width:12%"><col style="width:13%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:12%"></colgroup>
+      <tr><th>종목</th><th class="c">부문</th><th class="c">출전</th><th class="c">${G}</th><th class="c">${S}</th><th class="c">${B}</th><th class="c">합계</th></tr>
+      ${M.rows.map(o=>`<tr><td class="nm">${esc(o.k)}${o.team?' <small>팀 기준</small>':''}</td><td class="c">${o.divs}</td><td class="c">${o.n}${o.team?'팀':'명'}</td><td class="c n">${o.g}</td><td class="c n">${o.s}</td><td class="c n">${o.b}</td><td class="c n">${o.g+o.s+o.b}</td></tr>`).join('')}
+      <tr class="tt"><td class="nm">전체 합계</td><td class="c">${M.tot.divs}</td><td class="c">${M.tot.n}</td><td class="c n">${M.tot.g}</td><td class="c n">${M.tot.s}</td><td class="c n">${M.tot.b}</td><td class="c n">${M.tot.g+M.tot.s+M.tot.b}</td></tr></table>
+    <div class="mdk">${[['금',M.tot.g,G],['은',M.tot.s,S],['동',M.tot.b,B]].map(([l,n,ic])=>`<div>${ic}<b>${n}</b><small>${l}메달</small></div>`).join('')}<div class="sum"><b>${M.tot.g+M.tot.s+M.tot.b}</b><small>메달 합계</small></div></div>
+    <h4 class="mdh">조 인원별 기준</h4>
+    <table class="mdt sm"><tr><th>조 인원</th><th class="c">조 수</th><th class="c">한 조에 주는 메달</th><th class="c">금</th><th class="c">은</th><th class="c">동</th></tr>
+      ${M.sizes.map(z=>`<tr><td class="nm">${z.n>=5?'5명 이상':z.n+'명'}</td><td class="c">${z.divs}</td><td class="c">${['','금','금 · 은','금 · 은 · 동','금 · 은 · 동 2','금 · 은 · 동 2'][z.n]}</td><td class="c n">${z.g}</td><td class="c n">${z.s}</td><td class="c n">${z.b}</td></tr>`).join('')}</table>
+    <p class="mdn">· 태권체조·팀 경연·기술격파 단체전은 <b>팀 수 기준</b>입니다. 팀원 모두에게 메달을 줄 때는 입상 팀의 팀원 수만큼 더 준비해 주세요.<br>· 접수 변동이나 실격·기권이 생기면 숫자가 달라질 수 있습니다. 여유분을 함께 준비하시길 권합니다.</p></div>
+    <div class="ft"><span><b>KICKSTART UP</b> &nbsp;Official Draw Book · ${esc(fmtDate(c.date)||'')}</span><span>대진은 경기 진행에 따라 바뀔 수 있습니다</span><span class="pg">${no} / ${total}</span></div></div>`;}
 function hdBkPages(c,divs,land){const PW=land?1123:794,PH=land?794:1123,cols=land?2:1,colW=(PW-64-(cols-1)*22)/cols,colH=PH-58-46;
   const items=[],ctr={};let last=null;
-  divs.forEach(d=>{if(d.ev!==last){items.push({ev:d.ev,html:hdBkEvHead(d.ev,divs.filter(x=>x.ev===d.ev))});last=d.ev;ctr[d.ev]={n:0};}items.push({ev:d.ev,html:hdBkBlock(d,hdBkRows(d,ctr[d.ev]),land),d});});
+  divs.forEach(d=>{if(d.ev!==last){items.push({ev:d.ev,html:hdBkEvHead(d.ev,divs.filter(x=>x.ev===d.ev))});last=d.ev;ctr[d.ev]={n:0};}items.push({ev:d.ev,html:hdBkBlock(d,d.kind==='t'?[]:hdBkRows(d,ctr[d.ev]),land),d});});
   const M2=document.createElement('div');M2.className='bk';M2.style.cssText=`position:fixed;left:0;top:0;visibility:hidden;z-index:-9;width:${colW}px;height:auto;overflow:visible`;document.body.appendChild(M2);
   items.forEach(it=>{M2.innerHTML=it.html;const el=M2.firstElementChild,cs=getComputedStyle(el);it.h=el.getBoundingClientRect().height+parseFloat(cs.marginTop)+parseFloat(cs.marginBottom);});M2.remove();
   const pages=[];let pg=null,ci=0,used=0;const newPage=()=>{pg={cols:Array.from({length:cols},()=>[])};pages.push(pg);ci=0;used=0;};const nextCol=()=>{if(ci+1<cols){ci++;used=0;}else newPage();};
@@ -1924,11 +1961,11 @@ function hdBkPages(c,divs,land){const PW=land?1123:794,PH=land?794:1123,cols=lan
   for(let i=0;i<items.length;i++){const it=items[i],need=it.d?it.h:it.h+(items[i+1]?items[i+1].h:0);
     if(used>0&&used+need>colH)nextCol();pg.cols[ci].push(it);used+=it.h;}
   const toc={};pages.forEach((p,i)=>p.cols.flat().forEach(it=>{if(!it.d&&!toc[it.ev])toc[it.ev]=i+2;}));
-  const total=pages.length+1;
+  const total=pages.length+2;toc['메달 집계']=total;
   return [hdBkCover(c,divs,toc,land,total),...pages.map((p,i)=>{const evs=[...new Set(p.cols.flat().map(x=>x.ev))];
-    return `<div class="bk" style="width:${PW}px;height:${PH}px"><div class="rh"><span class="lg">KICKSTART UP</span><span class="cn">${esc(c.name)}</span><span class="ev">${esc(evs.join(' · '))}</span></div>
+    return `<div class="bk" data-notr style="width:${PW}px;height:${PH}px"><div class="rh"><span class="lg">KICKSTART UP</span><span class="cn">${esc(c.name)}</span><span class="ev">${esc(evs.join(' · '))}</span></div>
       <div class="bd">${p.cols.map(cl=>`<div class="col">${cl.map(x=>x.html).join('')}</div>`).join('')}</div>
-      <div class="ft"><span><b>KICKSTART UP</b> &nbsp;Official Draw Book · ${esc(fmtDate(c.date)||'')}</span><span>대진은 경기 진행에 따라 바뀔 수 있습니다</span><span class="pg">${i+2} / ${total}</span></div></div>`;})];}
+      <div class="ft"><span><b>KICKSTART UP</b> &nbsp;Official Draw Book · ${esc(fmtDate(c.date)||'')}</span><span>대진은 경기 진행에 따라 바뀔 수 있습니다</span><span class="pg">${i+2} / ${total}</span></div></div>`;}),hdBkMedal(c,divs,land,total,total)];}
 /* v1.4.86 빠르게: 쪽을 따로 떼어 낸 빈 창(iframe)에서 한 쪽씩 찍음 — 관리자 화면 전체(수천 줄 표)를 쪽마다 복사하지 않아 멈추지 않음 */
 async function hdPdf(c,ori){const land=(ori||HD.ori)==='l';await loadDraw(c.id);const divs=hdAllDivs(c);if(!divs.length)return toast('대진표가 없습니다');
   if(!document.getElementById('hdCss')){const s=document.createElement('style');s.id='hdCss';s.textContent=HD_CSS;document.head.appendChild(s);}
@@ -1937,7 +1974,7 @@ async function hdPdf(c,ori){const land=(ori||HD.ori)==='l';await loadDraw(c.id);
   const pages=hdBkPages(c,divs,land);
   const F=document.createElement('iframe');F.setAttribute('aria-hidden','true');F.style.cssText=`position:fixed;left:-30000px;top:0;width:${PW}px;height:${PH}px;border:0;visibility:hidden`;document.body.appendChild(F);
   try{const fl=[...document.querySelectorAll('link[href*="fonts.googleapis"]')].map(l=>l.outerHTML).join('');const fd=F.contentDocument;
-    fd.open();fd.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8">${fl}<style>${HD_CSS}html,body{margin:0;padding:0;background:#fff}</style></head><body></body></html>`);fd.close();
+    fd.open();fd.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8">${fl}<style>${HD_CSS}html,body{margin:0;padding:0;background:#fff}</style></head><body data-notr></body></html>`);fd.close();
     await new Promise(r=>{if(fd.readyState==='complete')r();else F.onload=()=>r();setTimeout(r,3000);});
     const doc=new lib.jsPDF({orientation:land?'landscape':'portrait',unit:'mm',format:'a4',compress:true}),t0=Date.now();
     for(let i=0;i<pages.length;i++){fd.body.innerHTML=pages[i];try{await fd.fonts.ready;}catch(e){}
@@ -2260,7 +2297,7 @@ function vSetup(c){const n=D().entries.filter(e=>e.compId===c.id).length;
       <div class="row"><button class="btn danger" type="button" data-a="delComp" data-id="${c.id}">${UI.delCompArm===c.id?`정말 지웁니다 · 한 번 더 누르기`:'이 대회 지우기'}</button></div></section>`:''}`;}
 function compForm(c){const E=!!c;c=c||{sports:Object.keys(SPORTS),fee:{poomsae:30000,kyorugi:40000,gyeokpa:30000,hero:30000}};const f=k=>esc(c[k]||'');
   return `<form class="form" id="fComp" data-id="${E?c.id:''}"><div class="row between"><h3>${E?'대회 고치기':'새 대회 만들기'}</h3>${E?'':'<button class="btn sm ghost" type="button" data-a="newCompClose">닫기</button>'}</div>
-  <div class="grid2"><label class="f"><span>대회 이름 <i>*</i></span><input type="text" id="cName" required value="${f('name')}"></label><label class="f"><span>장소 <i>*</i></span><input type="text" id="cPlace" required value="${f('place')}"></label>
+  <div class="grid2"><label class="f"><span>대회 이름 <i>*</i></span><input type="text" id="cName" required value="${f('name')}"></label><label class="f"><span>장소 <i>*</i></span><input type="text" id="cPlace" required value="${f('place')}"></label><label class="f"><span>주최</span><input type="text" id="cHost" value="${f('host')}" placeholder="예: 세계태권도문화예술협회"></label>
     <label class="f"><span>대회일 <i>*</i></span><input type="date" id="cDate" required value="${f('date')}"></label><label class="f"><span>접수 마감일 <i>*</i></span><input type="date" id="cDead" required value="${f('deadline')}"></label></div>
   ${M.musicOk?`<div class="grid2"><label class="f"><span>음원 제출 마감일 (자유 품새 · 태권체조 · 팀 경연)</span><input type="date" id="cMusDue" value="${esc(c.musicDue||'')}"></label><span class="small mute" style="align-self:end;padding-bottom:10px">비워 두면 대회 7일 전까지 받습니다. 대회가 끝나고 7일 뒤 음원은 자동으로 지워집니다.</span></div>`:''}
   <div class="grid3">${Object.entries(SPORTS).map(([k,s])=>`<label class="f"><span><input type="checkbox" id="cS_${k}" ${c.sports.includes(k)?'checked':''} style="accent-color:var(--gold)"> ${s.n} 참가비</span><input type="number" id="cF_${k}" value="${c.fee[k]??(k==='kyorugi'?40000:30000)}" step="1000"></label>`).join('')}</div>
@@ -3143,7 +3180,7 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
     if(link&&!/^https?:\/\//i.test(link)){formErr(f,'요강 링크는 https:// 로 시작하는 주소로 넣어 주세요');return;}
     if(file&&file[0]&&file[0].size>20*1024*1024){formErr(f,'요강 파일은 20MB까지 올릴 수 있습니다');return;}
     const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:{...Object.fromEntries(sports.map(k=>[k,Number(v('cF_'+k))||0])),gym:!!(document.getElementById('cO_gym')||{}).checked,team100:!!(document.getElementById('cO_team100')||{}).checked,cls:!!(document.getElementById('cO_cls')||{}).checked,teamW:!!(document.getElementById('cO_teamW')||{}).checked},account:v('cAcct').trim()||'입금 계좌를 적어 주세요',note:v('cNote').trim(),notice:v('cNotice').trim(),contact:v('cContact').trim()};
-    if(!editId)c.host='KICKSTART UP';
+    c.host=(document.getElementById('cHost')?v('cHost').trim():'')||(editId?((D().comps.find(x=>x.id===editId)||{}).host||''):'KICKSTART UP');
     if(M.musicOk&&document.getElementById('cMusDue')){const md=v('cMusDue');if(md&&md>v('cDate')){formErr(f,'음원 제출 마감일은 대회일보다 앞이어야 합니다');return;}c.music_due=md||null;}
     run(async()=>{let doc=null;
       if(file&&file[0]){const F=file[0],ext=(F.name.match(/\.[A-Za-z0-9]{1,5}$/)||['.pdf'])[0].toLowerCase(),path=`${editId||'new'}/${Date.now()}${ext}`;

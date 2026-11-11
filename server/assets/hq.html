@@ -1841,7 +1841,8 @@ function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
     if(!ev)ev=normEv(kindRaw);if(!ev&&GEV.some(([k,l])=>l.replace(/\s/g,'')===kindRaw.replace(/\s/g,'')))ev='개인 격파';if(!ev||/히어로/.test(ev+sh))return;
     const gr=col(o,/^학년$/),dv=divOf(col(o,/^(부별|부문|구분|부)$/)||gr,gr,ev,std),div=dv.div;
     const mem=col(o,/^(팀원|선수명단)$/),tn=col(o,/^(팀명|팀|팀이름)$/),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
-    const r={ev,div,grp:dv.merge?'':col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),sex:col(o,/^성별$/),
+    const g0=col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),gm=/^([A-Za-z])\s*조?$/.exec(g0),s0=col(o,/^성별$/);
+    const r={ev,div,grp:dv.merge?'':(gm?gm[1].toUpperCase()+'조':g0),sex:/^(남|M$|male)/i.test(s0)?'남':/^(여|F$|W$|female)/i.test(s0)?'여':s0,
       name:name0,dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0,drawNo:Number(col(o,/^(추첨|추첨번호)$/))||0};
     /* v1.4.85 개인 격파는 세부 종목(체공 도약·수직축 회전 …)별로 따로 부문 */
     if(/격파/.test(ev)&&!kind&&!isTeam(ev)){const kr=kindRaw.replace(/\s/g,''),hit=GEV.find(([k,l])=>l.replace(/\s/g,'')===kr||k===kindRaw);if(hit)r.gev=hit[0];}
