@@ -624,7 +624,12 @@ function opsMonSync(){if(KS_INFRAME)return;const ph=document.getElementById('ops
   OPSIF.style.transform=`translate(${r.left}px,${r.top}px) scale(${z})`;
   const top=Math.max(0,-r.top/z),bot=Math.max(0,(r.bottom-innerHeight)/z);OPSIF.style.clipPath=`inset(${top}px 0 ${bot}px 0 round 10px)`;}
 function opsFit(){const g=document.getElementById('ops3');if(!g)return;if(document.body.classList.contains('opsfs')){g.style.height='';return;}const t=g.getBoundingClientRect().top+scrollY,h=Math.max(520,innerHeight-t-14)+'px';if(g.style.height!==h)g.style.height=h;}
-setInterval(()=>{opsFit();opsMonSync();},250);addEventListener('scroll',opsMonSync,true);addEventListener('resize',opsMonSync);
+setInterval(()=>{opsFit();opsMonSync();},250);
+/* v1.4.81 크롬 화면이 축소(Ctrl −)되어 글씨가 작게 보이면 알려 줌 → Ctrl + 0 으로 원래 크기 */
+setInterval(()=>{if(KS_INFRAME)return;let el=document.getElementById('kszoom');const z=window.outerWidth&&window.innerWidth?window.outerWidth/window.innerWidth:1,small=z<0.85&&route()!=='board';
+  if(small&&!el){el=document.createElement('button');el.id='kszoom';el.type='button';el.style.cssText='position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:9500;background:#FFD400;color:#111;border:0;border-radius:999px;padding:10px 20px;font:800 18px sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer';
+    el.onclick=()=>el.remove();document.body.appendChild(el);}
+  if(el){if(!small)el.remove();else el.textContent=`🔍 화면이 ${Math.round(z*100)}%로 작게 줄어 있습니다 · 키보드 Ctrl + 0 을 누르면 원래 크기로 돌아옵니다`;}},1500);addEventListener('scroll',opsMonSync,true);addEventListener('resize',opsMonSync);
 function opsFs(on){document.body.classList.toggle('opsfs',on);try{if(on&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});}catch(e){}schedule();setTimeout(opsMonSync,60);}
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('opsfs')){document.body.classList.remove('opsfs');schedule();}});
 function vAdmin(){
