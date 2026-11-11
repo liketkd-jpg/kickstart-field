@@ -17,3 +17,17 @@ window.KS_SEQ=(function(){
     return {B,cur,all,active:act||null};}
   return {seq,evOf,EVN,active};
 })();
+
+/* v1.4.84 홈페이지에서 추첨한 순서로 본부가 보낸 명단이면 → 이 코트에서는 「랜덤 추첨」·「전체 추첨」·「접수 순서로」를 잠금 */
+(function(){if(!/\/(poomsae|gyeokpa|kyorugi)\//.test(location.pathname))return;window.KS_HOMEDRAW=false;
+  const chk=async()=>{try{const r=await fetch('api/get?path=inbox/roster',{cache:'no-store'});const j=await r.json();window.KS_HOMEDRAW=!!(j&&j.exists&&j.data&&j.data.homeDraw);
+    document.documentElement.classList.toggle('kshd',window.KS_HOMEDRAW);}catch(e){}};
+  chk();setInterval(chk,4000);
+  const st=document.createElement('style');st.textContent='html.kshd [data-do="drawDiv"],html.kshd [data-act="drawDiv"],html.kshd [data-act="drawAll"],html.kshd [data-do="drawAll"],html.kshd [data-act="orderDiv"],html.kshd [data-do="orderDiv"]{opacity:.4;filter:grayscale(1)}'+
+    '#kshdt{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:99999;background:#1B2440;color:#FFE7B8;border:2px solid #C9A35A;border-radius:14px;padding:12px 18px;font:800 15px/1.4 "Noto Sans KR",sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.5);max-width:90vw;text-align:center}';
+  document.head.appendChild(st);
+  const say=t=>{let el=document.getElementById('kshdt');if(!el){el=document.createElement('div');el.id='kshdt';document.body.appendChild(el);}el.textContent=t;clearTimeout(say.t);say.t=setTimeout(()=>el.remove(),4200);};
+  window.addEventListener('click',e=>{if(!window.KS_HOMEDRAW)return;const b=e.target.closest&&e.target.closest('[data-act],[data-do]');if(!b)return;
+    const k=b.dataset.do||b.dataset.act;if(!/^(drawDiv|drawAll|orderDiv)$/.test(k))return;e.preventDefault();e.stopImmediatePropagation();
+    say('🎲 홈페이지에서 추첨한 출전 순서로 고정되어 있습니다 · 지도자에게 공개된 대진이라 코트에서는 다시 추첨할 수 없습니다');},true);
+})();

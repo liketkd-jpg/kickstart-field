@@ -1633,10 +1633,10 @@ function regenerateDivs(){
     const base={ev:a.ev,level:EV[a.ev]&&(EV[a.ev].kind==='power'||EV[a.ev].kind==='powerc')?powerLevel(a.level):(a.level||''),gender:EV[a.ev]?genderLabel(a,EV[a.ev]).replace('자',''):''};
     if(prev){
       const keep=(prev.order||[]).filter(x=>g.ids.includes(x)),added=g.ids.filter(x=>!keep.includes(x));
-      const order=[...keep,...shuffle(added)],changed=added.length||keep.length!==(prev.order||[]).length;
+      const order=[...keep,...(window.KS_HOMEDRAW?added:shuffle(added))],changed=added.length||keep.length!==(prev.order||[]).length;
       return changed&&!divHasResults(prev)?{...prev,...base,order,stages:null}:{...prev,...base,order:changed?order:prev.order};
     }
-    {const nd={id,key:g.key,name:g.key,...base,order:g.ids,G:null,adv:null,tech:null,stages:null};nd.order=COMM()?g.ids:gyDraw(nd);return nd;}
+    {const nd={id,key:g.key,name:g.key,...base,order:g.ids,G:null,adv:null,tech:null,stages:null};nd.order=COMM()||window.KS_HOMEDRAW?g.ids:gyDraw(nd);return nd;}
   }).sort((x,y)=>(EV_KEYS.indexOf(x.ev)-EV_KEYS.indexOf(y.ev))||(LEVELS.indexOf(x.level)-LEVELS.indexOf(y.level))||x.name.localeCompare(y.name,'ko',{numeric:true}));
   return saveDivs(list).then(async()=>{const cur=curOf();if(cur&&!list.some(d=>d.id===cur.divId)){await saveState({...ST(),status:'idle',current:null,epoch:(ST().epoch||0)+1,timer:null,prep:null,readyAt:null});}
     const um=list.filter(d=>/부별 미정|종목 미정/.test(d.name)).length;toast(`부문 ${list.length}개를 편성했습니다${um?` · 부별·종목을 알 수 없는 부문 ${um}개가 있습니다 (선수 등록에서 확인)`:''}`);});
