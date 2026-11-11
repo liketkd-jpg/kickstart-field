@@ -695,6 +695,8 @@ const mapEnt=e=>({id:e.id,compId:e.comp_id,coachId:e.coach_id,sport:e.sport,athl
 const mapRes=r=>({id:r.id,compId:r.comp_id,sport:r.sport,kind:r.kind,div:r.div,rank:r.rank,name:r.name,team:r.team,coach:r.coach,members:r.members,coachId:r.coach_id,nat:r.nat||'',nameEn:r.name_en||''});
 const mapUser=p=>({id:p.id,role:p.role,name:p.name,org:p.org,phone:p.phone,email:p.email,license:p.license||'',country:p.country||'KOR',at:String(p.created_at||'').slice(0,10)});
 async function q(p){const {data,error}=await p;if(error)throw error;return data;}
+/* v1.4.85 Supabase는 한 번에 1,000줄까지만 돌려줌 → 1,000줄씩 끝까지 나눠 불러오기 (접수·선수가 1,000줄을 넘으면 뒤쪽 도장이 안 보이던 문제) */
+async function qAll(mk){const out=[],N=1000;for(let from=0;from<200000;from+=N){const {data,error}=await mk().range(from,from+N-1);if(error)throw error;const d=data||[];out.push(...d);if(d.length<N)break;}return out;}
 document.addEventListener('change',ev=>{const t=ev.target;if(!t||!t.dataset)return;
   if(t.dataset.cartmus!=null){const F=t.files&&t.files[0];if(!F)return;const bad=musicCheck(F);if(bad){toast(bad);t.value='';return;}
     const c=route().slice(6),L=(UI.cart||[]).filter(x=>x.compId===c),x=L[Number(t.dataset.cartmus)];if(x){x.music=F;render();toast('음원을 첨부했습니다. 「접수하기」를 누르면 함께 올라갑니다');}return;}
@@ -714,14 +716,14 @@ async function reload(){
     if(session){
       const prof=await q(sb.from('profiles').select('*').eq('id',session.user.id));
       M.profile=prof&&prof[0]?mapUser(prof[0]):{id:session.user.id,role:'coach',name:session.user.email,org:'',phone:'',email:session.user.email};
-      M.athletes=(await q(sb.from('athletes').select('*').order('created_at',{ascending:true}))).map(mapAth);
+      M.athletes=(await qAll(()=>sb.from('athletes').select('*').order('created_at',{ascending:true}).order('id',{ascending:true}))).map(mapAth);
       try{const t=await sb.from('athletes').select('country,name_en').limit(1);M.hasNat=!t.error;}catch(e){M.hasNat=false;}
-      M.entries=(await q(sb.from('entries').select('*').order('created_at',{ascending:true}))).map(mapEnt);
-      try{const {data,error}=await sb.from('entry_music').select('*');M.musicOk=!error;M.music=error?[]:(data||[]).map(m=>({entryId:m.entry_id,compId:m.comp_id,coachId:m.coach_id,path:m.path,name:m.name||'',size:m.size||0,at:m.updated_at}));}catch(e){M.musicOk=false;M.music=[];}
-      M.users=isOps(M.profile)?(await q(sb.from('profiles').select('*'))).map(mapUser):[M.profile];
-      try{M.results=(await q(sb.from('results').select('*').order('rank',{ascending:true}))).map(mapRes);}catch(e){M.results=[];}
-      M.ledger=[];M.ledgerOk=false;if(isOwner(M.profile)){try{const {data,error}=await sb.from('ledger').select('*').order('day',{ascending:false});M.ledgerOk=!error;M.ledger=error?[]:(data||[]);}catch(e){}}
-      M.licenses=[];M.licErr='';M.plans=[];if(isOwner(M.profile)){try{M.licenses=await q(sb.from('licenses').select('*').order('created_at',{ascending:false}));}catch(e){M.licErr=msgOf(e);}try{M.plans=await q(sb.from('license_plans').select('*'))||[];}catch(e){M.plans=null;}}
+      M.entries=(await qAll(()=>sb.from('entries').select('*').order('created_at',{ascending:true}).order('id',{ascending:true}))).map(mapEnt);
+      try{let data=null,error=null;try{data=await qAll(()=>sb.from('entry_music').select('*').order('entry_id',{ascending:true}));}catch(x){error=x;}M.musicOk=!error;M.music=error?[]:(data||[]).map(m=>({entryId:m.entry_id,compId:m.comp_id,coachId:m.coach_id,path:m.path,name:m.name||'',size:m.size||0,at:m.updated_at}));}catch(e){M.musicOk=false;M.music=[];}
+      M.users=isOps(M.profile)?(await qAll(()=>sb.from('profiles').select('*').order('id',{ascending:true}))).map(mapUser):[M.profile];
+      try{M.results=(await qAll(()=>sb.from('results').select('*').order('rank',{ascending:true}).order('id',{ascending:true}))).map(mapRes);}catch(e){M.results=[];}
+      M.ledger=[];M.ledgerOk=false;if(isOwner(M.profile)){try{let data=null,error=null;try{data=await qAll(()=>sb.from('ledger').select('*').order('day',{ascending:false}).order('id',{ascending:true}));}catch(x){error=x;}M.ledgerOk=!error;M.ledger=error?[]:(data||[]);}catch(e){}}
+      M.licenses=[];M.licErr='';M.plans=[];if(isOwner(M.profile)){try{M.licenses=await qAll(()=>sb.from('licenses').select('*').order('created_at',{ascending:false}));}catch(e){M.licErr=msgOf(e);}try{M.plans=await q(sb.from('license_plans').select('*'))||[];}catch(e){M.plans=null;}}
     }else{M.profile=null;M.athletes=[];M.entries=[];M.users=[];M.results=[];M.music=[];}
     M.loadErr='';
   }catch(e){M.loadErr=msgOf(e);}
