@@ -1704,7 +1704,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.4.94'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.4.95'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1950,7 +1950,7 @@ const HD_CSS=`.bk{position:relative;overflow:hidden;box-sizing:border-box;backgr
 .bk td{padding:3.5px 6px;border:0;border-bottom:1px solid #EEF0F5;color:#141B2D;background:#fff;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bk tr.mt td{border-top:1px solid #C9CFDB}.bk tr:nth-child(even) td{background:#FAFBFD}
 .bk td.c,.bk th.c{text-align:center}.bk td.no{font-weight:800;color:#7C5B26}.bk td.nm{font-weight:800}.bk td.nm small{font-weight:400;color:#7A8196;margin-left:4px}.bk td.dvn{color:#4A5268;white-space:normal;line-height:1.25;font-size:9.5px}.bk td{padding:3px 6px}
-.bk td .ph{color:#9AA0AE;font-weight:500;font-style:italic}
+.bk tr.mem td{white-space:normal;overflow:visible;text-overflow:clip;font-size:9.5px;line-height:1.55;color:#4A5268;padding:2px 6px 6px;background:#FAFBFD;border-bottom:1px solid #E3E7EF}.bk tr.mem td span{font-weight:800;color:#7C5B26;margin-right:6px}.bk td .ph{color:#9AA0AE;font-weight:500;font-style:italic}
 .bk .st{display:inline-block;min-width:20px;text-align:center;border-radius:4px;padding:1px 5px;font-weight:800;font-size:9px;color:#fff}.bk .st.b{background:#2F6BE0}.bk .st.r{background:#D9343A}.bk .st.n{background:#EEF1F6;color:#0B1530}
 .bk .md{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font:900 9.5px "Noto Sans KR",sans-serif;color:#3A2A08;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.12)}
 .bk .mdt{font-size:12px;margin-top:4px}.bk .mdt th{font-size:10px;padding:8px 8px}.bk .mdt td{padding:8px 8px;font-size:12px}.bk .mdt td.n{font:800 14px "Noto Sans KR",sans-serif;color:#0B1530}.bk .mdt td.nm small{font-weight:600;color:#8E6A30;font-size:9.5px}
@@ -1988,7 +1988,7 @@ function hdBkRows(d,ctr){const R=[];
 function hdBkBlock(d,rows,land){const team=/체조|경연|단체|팀/.test(d.name+(d.ev||''));
   const head=`<div class="dh"><b>${esc(d.name)}</b><span><span class="chip">${d.n}${team?'팀':'명'}</span><span class="chip ${d.kind==='t'?'t':'o'}">${d.kind==='t'?'토너먼트':'컷오프 · '+esc(rows[0]?rows[0].stage:'결선')}</span></span></div>`;
   if(d.kind==='t')return `<div class="dv">${head}<div class="br">${hdBrSvg(d,{fitW:land?390:560,h:land?24:26,fs:land?11.5:12.5,orgX:land?104:128})}</div></div>`;
-  const tr=rows.map(r=>`<tr class="${r.mt?'mt':''}"><td class="c"><span class="st n">${r.seat}</span></td><td class="dvn">${esc(r.div)}</td><td class="c">${esc(r.stage)}</td><td>${esc(r.p&&r.p.t||'')}</td><td class="nm">${r.p?esc(r.p.n):'—'}${r.p&&r.p.m?`<small>${esc(r.p.m)}</small>`:''}</td></tr>`).join('');
+  const tr=rows.map(r=>`<tr class="${r.mt?'mt':''}"><td class="c"><span class="st n">${r.seat}</span></td><td class="dvn">${esc(r.div)}</td><td class="c">${esc(r.stage)}</td><td>${esc(r.p&&r.p.t||'')}</td><td class="nm">${r.p?esc(r.p.n):'—'}</td></tr>${r.p&&r.p.m?`<tr class="mem"><td></td><td colspan="4"><span>팀원 ${String(r.p.m).split(/[,，·]/).filter(s=>s.trim()).length}명</span> ${esc(String(r.p.m).split(/[,，·]/).map(s=>s.trim()).filter(Boolean).join(' · '))}</td></tr>`:''}`).join('');
   return `<div class="dv">${head}<table><colgroup><col style="width:${land?52:62}px"><col><col style="width:${land?44:54}px"><col style="width:${land?27:26}%"><col style="width:${land?25:24}%"></colgroup>
     <tr><th class="c">출전 번호</th><th>부문</th><th class="c">강수</th><th>${team?'소속':'팀명'}</th><th>${team?'팀 · 팀원':'이름'}</th></tr>${tr}</table></div>`;}
 function hdBkEvHead(ev,divs){const n=divs.reduce((t,d)=>t+d.n,0),tour=divs.some(d=>d.kind==='t'),cut=divs.some(d=>d.kind!=='t');
