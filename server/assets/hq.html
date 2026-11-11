@@ -1830,7 +1830,7 @@ function divOf(div,gr,ev,std){div=String(div||'').trim();gr=String(gr||'').trim(
   const gm=/(\d)/.exec(gr);if(/^초등부$/.test(div)&&gm&&!isTeam(ev)){const n=+gm[1];return {div:n<=2?'초등 1·2학년':n<=4?'초등 3·4학년':'초등 5·6학년',merge:false};}
   return {div:div||'일반',merge:false};}
 function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
-  const col=(o,re)=>{const k=Object.keys(o).find(k=>k!=='__sheet'&&re.test(KEYN(k)));return k?String(o[k]==null?'':o[k]).normalize('NFKC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():'';};
+  const col=(o,re)=>{const k=Object.keys(o).find(k=>k!=='__sheet'&&re.test(KEYN(k)));return k?String(o[k]==null?'':o[k]).normalize('NFKC').replace(/\p{Cf}+/gu,'').replace(/[\s\p{Z}]+/gu,' ').trim():'';};
   const out=[],teams={};
   rows.forEach(o=>{const sh=String(o.__sheet||'');if(/목록|작성|방법|안내/.test(sh.replace(/\s/g,'')))return;
     const name0=col(o,/^(이름|선수|선수명|성명)$/);if(/\(예시\)|^예시/.test(name0)||/\(예시\)/.test(col(o,/^(팀명|팀|팀이름)$/)))return;

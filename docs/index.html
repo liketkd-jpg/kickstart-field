@@ -1242,7 +1242,7 @@ function bulkParse(wb,c){
     const ix={name:col('이름'),gender:col('성별'),birth:col('생년월일'),org:col('소속'),kind:col('종목'),div:col('부별'),grade:col('학년'),team:col('팀 이름','팀이름','팀명'),tg:col('팀 성별','팀성별'),weight:col('체급'),kg:col('체중'),height:col('신장'),cls:col('실력조','실력 조')};
     if(ix.name<0){errs.push([sh,1,'「이름」 칸을 찾지 못했습니다']);continue;}
     if(!c.sports.includes(meta.sp)){if(A.slice(1).some(r=>String(r[ix.name]||'').trim()&&!/\(예시\)/.test(r[ix.name])))errs.push([sh,'',`이 대회에는 ${SPORTS[meta.sp].n} 종목이 없습니다. 이 시트는 접수하지 않습니다`]);continue;}
-    for(let i=1;i<A.length;i++){const R=A[i],g=k=>ix[k]>=0?(typeof R[ix[k]]==='string'?R[ix[k]].normalize('NFKC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():R[ix[k]]):'';const nm=String(g('name')||'').trim();if(!nm||/\(예시\)/.test(nm))continue;rowsN++;
+    for(let i=1;i<A.length;i++){const R=A[i],g=k=>ix[k]>=0?(typeof R[ix[k]]==='string'?R[ix[k]].normalize('NFKC').replace(/\p{Cf}+/gu,'').replace(/[\s\p{Z}]+/gu,' ').trim():R[ix[k]]):'';const nm=String(g('name')||'').trim();if(!nm||/\(예시\)/.test(nm))continue;rowsN++;
       const ri=i+1,r={name:nm,gender:g('gender'),birth:g('birth'),org:g('org'),weight:meta.sp==='kyorugi'||meta.sp==='gyeokpa'?g('kg'):'',height:g('height')};
       let div=String(g('div')||'').trim();const team=String(g('team')||'').trim();let grade=String(g('grade')||'').trim();
       if(div==='유치부'&&/^[3-7]$/.test(grade))grade+='세';
@@ -1703,6 +1703,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
+const HD_VER='v1.4.89'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={res:{},arm:null,comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1726,7 +1727,7 @@ const hdEvRank=n=>{const i=HD_EVN.indexOf(hdEvGroup(n));return i<0?9:i;};
 const hdGrpN=s=>{s=String(s||'').trim();const m=/^([A-Za-z])\s*조?$/.exec(s);return m?m[1].toUpperCase()+'조':s;};
 const hdSexN=s=>{s=String(s||'').trim();return /^(남|M$|male)/i.test(s)?'남':/^(여|F$|W$|female)/i.test(s)?'여':s;};
 /* 부문 열쇠 = 사람이 보는 부문 이름(글자 모양·빈칸·전각 문자 정리) — 화면에 같은 이름이면 반드시 한 부문 */
-const hdK=s=>String(s||'').normalize('NFKC').replace(/[\s\u00a0\u200b\u200c\u200d\u3000\ufeff]+/g,'');
+const hdK=s=>String(s||'').normalize('NFKC').replace(/[\s\p{Z}\p{Cf}\p{P}]+/gu,'');
 function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries.filter(e=>e.compId===c.id&&e.sport===sport&&e.status!=='cancel');
   const col=(r,re)=>{const i=H.findIndex(h=>re.test(HD_KEYN(h)));return i<0?'':String(r[i]==null?'':r[i]).trim();};
   return rows.slice(1).map((r,i)=>{const e=E[i];if(!e)return null;
@@ -1825,7 +1826,7 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
   const evs=HD_EVN.filter(e=>divs.some(d=>d.ev===e));
   const dup=R?SP.reduce((t,sp)=>t+(R[sp]||[]).reduce((s,g)=>s+hdGDup(g),0),0):0;
   return `<div class="stack">
-    <div><h2>🎲 대진 추첨 · 출전 순서</h2><p class="small mute" style="margin:4px 0 0">접수가 끝나면 「모두 한 번에 추첨」 → 확인 → 「홈페이지에 올리기」. 지도자는 「대진표」 화면에서 바로 보고, 대회 날에는 이 순서 그대로 코트로 갑니다 (코트에서는 다시 추첨할 수 없습니다).</p></div>
+    <div><h2>🎲 대진 추첨 · 출전 순서 <span class="small mute" style="font-weight:500">홈페이지 ${HD_VER}</span></h2><p class="small mute" style="margin:4px 0 0">접수가 끝나면 「모두 한 번에 추첨」 → 확인 → 「홈페이지에 올리기」. 지도자는 「대진표」 화면에서 바로 보고, 대회 날에는 이 순서 그대로 코트로 갑니다 (코트에서는 다시 추첨할 수 없습니다).</p></div>
     ${pubApp.length?`<div class="notice"><b>지금 홈페이지에는 경기 앱에서 올린 ${pubApp.map(x=>SPORTS[x.sp].n).join('·')} 대진표가 있습니다</b><div>여기서 추첨해 올리면 그 대진표를 바꿉니다.</div></div>`:''}
     ${pubHome.some(x=>(x.P.data.v||0)<4)&&!R?`<div class="notice" style="border-color:var(--warn)"><b>⚠ 홈페이지에 올린 대진이 예전 방식으로 만들어졌습니다</b><div>그 뒤 고친 점(같은 부문 합치기·격파 세부 종목·토너먼트 도장 떨어뜨리기 등)이 들어 있지 않습니다. 「모두 다시 추첨」 → 「홈페이지에 올리기」를 해 주세요. 책자 PDF도 그다음에 내려받아야 반영됩니다.</div></div>`:''}
     ${pubHome.length?`<div class="notice" style="border-color:#24563C"><b>✓ 홈페이지에 올린 추첨: ${pubHome.map(x=>`${SPORTS[x.sp].n} ${fmtAt(x.P.updated_at)} (${x.P.data.n}건${x.P.data.comm?' · 생활체육':''})`).join(' · ')}</b><div>${ch.length?`<b style="color:var(--warn)">추첨 뒤 접수가 바뀌었습니다: ${ch.map(x=>`${SPORTS[x.sp].n} 새로 ${x.miss}건 · 빠진 ${x.gone}건`).join(' · ')}.</b> 새로 들어온 건은 각 부문 맨 뒤에 붙습니다. 공정하게 하려면 「모두 다시 추첨」하세요.`:'추첨 뒤 접수 변동이 없습니다.'}</div></div>`:''}
@@ -2955,7 +2956,7 @@ async function saveBytes(data,name,mime,okMsg){
   catch(e){toast('이 화면에서는 파일을 내려받을 수 없습니다');}
 }
 /* v1.4.86 맥·휴대폰에서 적은 한글(자모가 풀린 NFD)·겹친 빈칸 때문에 같은 부문이 둘로 갈리던 문제 → 모든 칸을 한 모양(NFC)·한 칸 띄어쓰기로 */
-const nfc=v=>typeof v==='string'?v.normalize('NFKC').replace(/[\s\u00a0\u200b\u3000]+/g,' ').trim():v;
+const nfc=v=>typeof v==='string'?v.normalize('NFKC').replace(/\p{Cf}+/gu,'').replace(/[\s\p{Z}]+/gu,' ').trim():v;
 function exportRows(c,sport){return exportRows1(c,sport).map(r=>r.map(nfc));}
 function exportRows1(c,sport){const rows=exportRows0(c,sport);
   const E=D().entries.filter(e=>e.compId===c.id&&e.sport===sport&&e.status!=='cancel'),ath=id=>D().athletes.find(a=>a.id===id)||{};
