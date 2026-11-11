@@ -834,7 +834,7 @@ const isOwner=u=>!!u&&u.role==='admin';
 const ROLE_N={admin:'대표',manager:'관리자',staff:'직원',coach:'지도자'};
 /* 권한 세 단계: 대표 > 관리자 > 직원 (지도자는 0). 관리자 화면 칸마다 필요한 단계 */
 const RANK={coach:0,staff:1,manager:2,admin:3};
-const TAB_MIN={status:'staff',dojang:'staff',members:'manager',results:'manager',board:'manager',setup:'manager',lic:'admin',acct:'admin'};
+const TAB_MIN={status:'staff',dojang:'staff',members:'manager',results:'manager',board:'manager',setup:'manager',lic:'admin',acct:'admin',quote:'admin'};
 const canTab=(u,k)=>!!u&&(RANK[u.role]||0)>=RANK[TAB_MIN[k]||'admin'];
 function need(role,fn){const u=me();if(!u)return `<div class="auth"><div class="card"><h2>로그인이 필요합니다</h2><p class="mute">선수 등록과 대회 접수는 지도자 계정으로 로그인한 뒤 할 수 있습니다.</p><div class="row"><a class="btn gold" href="#login">로그인</a><a class="btn" href="#signup">지도자 회원가입</a></div></div></div>`;
   if(role==='admin'?!isOps(u):u.role!==role)return `<div class="empty">${role==='admin'?'대회 본부(대표·관리자·직원) 계정만 볼 수 있는 화면입니다.':'지도자 계정으로 로그인해 주세요.'}</div>`;return fn();}
@@ -1315,9 +1315,357 @@ function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id)
           ${UI.edit===e.id?editRow(e,L.some(needMusic)&&M.musicOk):''}`;}).join('')}</table></div>
         ${c.notice?`<div class="notice"><b>대회 본부 공지</b><div>${esc(c.notice)}</div></div>`:''}<span class="small mute">입금 계좌: ${esc(c.account)}${c.contact?' · 문의 '+esc(c.contact):''}</span></section>`;}).join(''):'<div class="empty" data-trh="entries0">아직 접수한 대회가 없습니다. <a href="#home">대회 일정</a>에서 대회를 골라 주세요.</div>'}</div>`;}
 
+/*@@QUOTE v1.4.78 대표 전용 「견적서」: 단가표(고치기·더하기·빼기) · 견적 작성(코트·일수 자동 계산, 할인) · 고급 한·영 견적서 PDF · 직인 세 가지 안 자동 날인 */
+const QT_UNITS={evday:['종목 수 × 일수','per discipline · day'],courtday:['코트 수 × 일수','per court · day'],day:['일수','per day'],perday:['개수(직접) × 일수','per unit · day'],once:['대회 1식','lump sum'],ea:['개수(직접)','per unit']};
+const QT_DISC=[['poomsae','품새','Poomsae'],['gyeokpa','격파','Breaking'],['kyorugi','겨루기','Kyorugi']];
+const QT_PRICES0=[
+ {id:'ops',ko:'경기 운영 시스템',en:'Competition Management System',desc:'종목별 운영 · 공유기·채점 태블릿 등 운영 장비 포함',descEn:'Per discipline · router, judging tablets and equipment included',price:560000,unit:'evday',on:true},
+ {id:'score',ko:'채점 시스템 (5심)',en:'Scoring System (5 judges)',desc:'코트별 심판 채점기 · 점수 기록',descEn:'Per court · judge scoring devices and score records',price:280000,unit:'courtday',on:true},
+ {id:'monitor',ko:'모니터 대여',en:'Display Monitor Rental',desc:'코트 점수 화면 · 대회장에 모니터가 있으면 뺍니다',descEn:'Court score display · omitted if the venue provides monitors',price:70000,unit:'courtday',on:true},
+ {id:'cert',ko:'상장 출력',en:'Certificate Printing',desc:'입상자 상장 현장 출력',descEn:'On-site award certificate printing',price:175000,unit:'day',on:true},
+ {id:'rtds',ko:'실시간 경기 정보',en:'Real-time Results Service',desc:'지도자·관중 핸드폰 진행 현황 · 결과',descEn:'Live progress and results for coaches and spectators',price:70000,unit:'day',on:true},
+ {id:'video',ko:'영상 판독',en:'Instant Video Replay',desc:'코트별 다시 보기 판독',descEn:'Per court video review',price:200000,unit:'courtday',on:false},
+ {id:'live',ko:'실시간 라이브 중계',en:'Live Streaming',desc:'코트별 유튜브 생중계',descEn:'Per court YouTube live broadcast',price:150000,unit:'courtday',on:false},
+ {id:'reg',ko:'온라인 접수 프로그램',en:'Online Registration',desc:'지도자 가입 · 선수 접수 · 참가비 관리',descEn:'Coach sign-up, athlete entries and fee management',price:700000,unit:'once',on:true},
+ {id:'draw',ko:'대진 추첨',en:'Draw and Brackets',desc:'부문 편성 · 대진표',descEn:'Division grouping and brackets',price:385000,unit:'once',on:true},
+ {id:'freight',ko:'화물 운송',en:'Equipment Transport',desc:'장비 운반 · 설치 · 철수',descEn:'Equipment delivery, setup and removal',price:700000,unit:'once',on:true},
+ {id:'staff',ko:'운영 인력',en:'Technical Staff',desc:'운영 요원 (인원 × 일수)',descEn:'Operators (persons × days)',price:150000,unit:'perday',on:false}];
+const QT_TERMS0='대표자 회의 이후 대진표를 다시 고치는 경우 1회 70,000원이 추가됩니다.\n기술 지원 인력의 대회 전날부터 종료일까지 숙박과 식사(1일 3식)는 주최 측에서 제공해 주시기 바랍니다.\n대회장에 모니터가 준비되어 있으면 모니터 대여 금액은 빠집니다.';
+const QT_TERMS0_EN='A fee of KRW 70,000 applies to each bracket revision requested after the team managers\' meeting.\nAccommodation and meals (three per day) for technical staff, from the day before the event until its close, are to be provided by the organizer.\nMonitor rental is excluded if the venue provides display monitors.';
+const QT_CO0={name:'KICKSTART UP',nameKo:'킥스타트업',rep:'노정환',repEn:'',bizNo:'',addr:'',addrEn:'',tel:'',email:'',web:'',bank:'',person:'노정환',seal:'round',sealImg:'',prefix:'KS',valid:30,terms:QT_TERMS0,termsEn:QT_TERMS0_EN};
+const QT_ST=[['draft','작성 중'],['sent','보냄'],['won','계약됨'],['lost','안 됨']];
+const QT={loaded:false,loading:false,ok:false,err:'',prices:null,co:null,quotes:[],view:'list',cur:null,armDel:null,saving:'',seals:{}};
+const qtClone=o=>JSON.parse(JSON.stringify(o));
+const qtNum=v=>{const n=Number(String(v??'').replace(/[^\d.-]/g,''));return isFinite(n)?n:0;};
+const qtW=n=>Math.round(Number(n)||0).toLocaleString('ko-KR');
+const qtToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const qtAdd=(s,n)=>{const d=new Date((s||qtToday())+'T00:00:00');d.setDate(d.getDate()+n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+
+/* ---- 저장: Supabase quote_store (대표만) · 표가 없으면 이 컴퓨터 브라우저에 ---- */
+const QT_LS='ks_quote_store';
+function qtLsAll(){try{return JSON.parse(localStorage.getItem(QT_LS)||'{}')||{};}catch(e){return {};}}
+async function qtLoad(){if(QT.loading)return;QT.loading=true;let rows=null;
+  try{const {data,error}=await sb.from('quote_store').select('*');if(error)throw error;rows=data||[];QT.ok=true;}catch(e){QT.ok=false;QT.err=msgOf(e);}
+  const all={};if(rows)rows.forEach(r=>all[r.key]=r.value);else Object.assign(all,qtLsAll());
+  QT.prices=all.prices&&all.prices.length?all.prices:qtClone(QT_PRICES0);
+  QT.co={...QT_CO0,...(all.company||{})};
+  QT.quotes=Object.keys(all).filter(k=>k.startsWith('q:')).map(k=>all[k]).filter(Boolean).sort((a,b)=>String(b.no).localeCompare(String(a.no)));
+  QT.loaded=true;QT.loading=false;qtRefresh();}
+const QT_PEND={};
+function qtSave(key,val){QT_PEND[key]=val;clearTimeout(qtSave.t);QT.saving='저장 중…';qtStat();qtSave.t=setTimeout(qtFlush,700);}
+async function qtFlush(){const P={...QT_PEND};Object.keys(QT_PEND).forEach(k=>delete QT_PEND[k]);
+  try{if(QT.ok){for(const k of Object.keys(P)){const v=P[k];const r=v===null?await sb.from('quote_store').delete().eq('key',k):await sb.from('quote_store').upsert({key:k,value:v,updated_at:new Date().toISOString()});if(r.error)throw r.error;}}
+    else{const all=qtLsAll();Object.keys(P).forEach(k=>{if(P[k]===null)delete all[k];else all[k]=P[k];});localStorage.setItem(QT_LS,JSON.stringify(all));}
+    QT.saving='저장됨';}catch(e){QT.saving='저장하지 못했습니다: '+msgOf(e);Object.assign(QT_PEND,P);}
+  qtStat();}
+function qtStat(){const el=document.getElementById('qtSave');if(el)el.textContent=QT.saving;}
+
+/* ---- 계산 ---- */
+function qtAuto(q,l){const nd=Math.max(0,(q.disc||[]).length),d=Math.max(1,qtNum(q.days)||1),c=Math.max(1,qtNum(q.courts)||1);
+  if(!l.auto)return;
+  if(l.unit==='evday'){l.qty=nd;l.days=d;}else if(l.unit==='courtday'){l.qty=c;l.days=d;}else if(l.unit==='day'){l.qty=1;l.days=d;}
+  else if(l.unit==='perday'){l.qty=l.qty||1;l.days=d;}else if(l.unit==='once'){l.qty=1;l.days=1;}else{l.qty=l.qty||1;l.days=1;}}
+const qtGross=l=>qtNum(l.price)*qtNum(l.qty)*qtNum(l.days);
+const qtAmt=l=>Math.max(0,qtGross(l)-qtNum(l.disc));
+function qtTot(q){const L=(q.lines||[]).filter(l=>l.on!==false);const gross=L.reduce((s,l)=>s+qtGross(l),0),ld=L.reduce((s,l)=>s+Math.min(qtGross(l),qtNum(l.disc)),0),ex=qtNum(q.extraDisc);
+  const net=Math.max(0,gross-ld-ex),vat=q.vat==='excl'?Math.round(net*0.1):0;return {L,gross,disc:ld+ex,ld,ex,net,vat,total:net+vat};}
+function qtLineOf(p,q){const l={key:p.id,ko:p.ko,en:p.en,desc:p.desc||'',descEn:p.descEn||'',price:qtNum(p.price),unit:p.unit||'once',qty:1,days:1,disc:0,note:'',on:true,auto:true};qtAuto(q,l);return l;}
+function qtRecalc(q){(q.lines||[]).forEach(l=>qtAuto(q,l));}
+function qtNew(){const co=QT.co,d=qtToday(),pre=(co.prefix||'KS').replace(/[^\w-]/g,'')||'KS',k=`${pre}-${d.replace(/-/g,'')}-`;
+  const n=QT.quotes.filter(x=>String(x.no||'').startsWith(k)).length+1;
+  const q={id:'q'+Date.now().toString(36),no:k+String(n).padStart(2,'0'),status:'draft',date:d,valid:co.valid||30,to:'',attn:'',event:'',venue:'',start:'',days:1,courts:3,disc:['poomsae','gyeokpa'],vat:'incl',lang:'both',extraDisc:0,terms:co.terms||'',termsEn:co.termsEn||'',memo:'',lines:[]};
+  q.lines=QT.prices.filter(p=>p.on).map(p=>qtLineOf(p,q));return q;}
+
+/* ---- 숫자 → 한글·영어 금액 ---- */
+function qtHangul(n){n=Math.round(n);if(!n)return '영';const D='영일이삼사오육칠팔구',U=['','십','백','천'],B=['','만','억','조'];let s='',i=0;
+  while(n>0){const g=n%10000;n=Math.floor(n/10000);if(g){const ds=String(g).padStart(4,'0');let t='';for(let k=0;k<4;k++){const v=+ds[k];if(v)t+=D[v]+U[3-k];}s=t+B[i]+s;}i++;}return s;}
+function qtEnglish(n){n=Math.round(n);if(!n)return 'zero';const o=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'],t=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  const h=x=>{let s='';if(x>=100){s=o[Math.floor(x/100)]+' hundred';x%=100;if(x)s+=' ';}if(x>=20){s+=t[Math.floor(x/10)];if(x%10)s+='-'+o[x%10];}else if(x)s+=o[x];return s;};
+  const S=[[1e9,'billion'],[1e6,'million'],[1e3,'thousand']];let s='';for(const [v,w] of S){if(n>=v){s+=h(Math.floor(n/v))+' '+w+' ';n%=v;}}if(n)s+=h(n);s=s.trim();return s.charAt(0).toUpperCase()+s.slice(1);}
+
+/* ---- 직인 세 가지 안 (캔버스로 그려 PNG로 · 웹글꼴 사용) ---- */
+const QT_SEALS=[['round','둥근 직인','영문 테두리 + 한글 상호'],['square','네모 인감','전통 인감 여섯 글자 + 영문 띠'],['emblem','로고 직인','KS 로고 + 영문·한글 테두리']];
+function qtRng(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646;};}
+async function qtSealUrl(kind){if(QT.seals[kind])return QT.seals[kind];
+  try{await Promise.all(['900 60px "Noto Serif KR"','900 60px Cinzel','700 30px Cinzel'].map(f=>document.fonts.load(f,'KICKSTARUP킥스타트업인OFFICALSEKR★·')));}catch(e){}
+  const S=520,cv=document.createElement('canvas');cv.width=cv.height=S;const x=cv.getContext('2d'),R='#C0262D',SER='"Noto Serif KR","Nanum Myeongjo",serif',CIN='Cinzel,"Times New Roman",serif';
+  x.fillStyle=x.strokeStyle=R;x.translate(S/2,S/2);
+  const ring=(r,w)=>{x.lineWidth=w;x.beginPath();x.arc(0,0,r,0,Math.PI*2);x.stroke();};
+  const arc=(t,r,font,bottom,sp)=>{x.font=font;x.textAlign='center';x.textBaseline='middle';const ch=[...t],w=ch.map(c=>x.measureText(c).width+sp);let a=-(w.reduce((p,v)=>p+v,0)-sp)/r/2;
+    ch.forEach((c,i)=>{const m=a+(w[i]-sp)/2/r;x.save();x.rotate(bottom?-m:m);x.translate(0,bottom?r:-r);x.fillText(c,0,0);x.restore();a+=w[i]/r;});};
+  const star=(cx,cy,r)=>{x.beginPath();for(let i=0;i<10;i++){const rr=i%2?r*.42:r,an=-Math.PI/2+i*Math.PI/5;x.lineTo(cx+rr*Math.cos(an),cy+rr*Math.sin(an));}x.closePath();x.fill();};
+  if(kind==='round'){ring(244,15);ring(222,3.5);ring(150,3.5);arc('KICKSTART UP',186,`900 54px ${CIN}`,false,7);arc('OFFICIAL SEAL',188,`700 34px ${CIN}`,true,8);star(-186,0,15);star(186,0,15);
+    x.textAlign='center';x.textBaseline='middle';x.font=`900 50px ${SER}`;x.fillText('킥스타트업',0,-4);x.fillRect(-70,-62,140,4);x.fillRect(-70,40,140,4);x.font=`700 22px ${CIN}`;x.fillText('K O R E A',0,74);star(0,-90,10);}
+  else if(kind==='square'){const rr=(i,r,w)=>{x.lineWidth=w;x.beginPath();x.roundRect(-S/2+i,-S/2+i,S-2*i,S-2*i,r);x.stroke();};rr(16,34,18);rr(40,16,4);
+    x.fillRect(-212,124,424,4);x.textAlign='center';x.textBaseline='middle';x.font=`900 42px ${CIN}`;
+    {const t='KICKSTART UP';let tw=0;const sp=5;[...t].forEach(c=>tw+=x.measureText(c).width+sp);let px=-(tw-sp)/2;[...t].forEach(c=>{const cw=x.measureText(c).width;x.fillText(c,px+cw/2,180);px+=cw+sp;});}
+    x.font=`900 104px ${SER}`;const G=[['킥',104,-148],['스',104,-40],['타',104,68],['트',-104,-148],['업',-104,-40],['인',-104,68]];
+    G.forEach(([c,cx,cy])=>{x.save();x.translate(cx,cy);x.scale(1.62,1);x.fillText(c,0,4);x.restore();});x.fillRect(-2,-205,4,322);}
+  else{ring(244,15);ring(224,3.5);ring(156,4);arc('KICKSTART UP',190,`900 52px ${CIN}`,false,7);arc('킥스타트업',192,`900 46px ${SER}`,true,22);star(-190,0,14);star(190,0,14);
+    const P=KS_LOGO,z=3.7;x.save();x.translate(-32*z,-32*z-2);x.scale(z,z);x.lineWidth=2.6;x.lineJoin='round';x.stroke(new Path2D(P[0]));P.slice(1).forEach(d=>x.fill(new Path2D(d)));x.restore();}
+  /* 도장 잉크 느낌: 작은 빈 점 · 가장자리 거칠게 */
+  const rnd=qtRng(kind.length*7919+13);x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation='destination-out';
+  for(let i=0;i<1700;i++){x.globalAlpha=.25+rnd()*.6;x.beginPath();x.arc(rnd()*S,rnd()*S,.6+rnd()*1.9,0,7);x.fill();}
+  for(let i=0;i<26;i++){x.globalAlpha=.06+rnd()*.12;x.beginPath();x.arc(rnd()*S,rnd()*S,10+rnd()*34,0,7);x.fill();}
+  x.globalAlpha=1;x.globalCompositeOperation='source-over';
+  return QT.seals[kind]=cv.toDataURL('image/png');}
+function qtSealOf(co){return co.seal==='custom'?co.sealImg:co.seal==='none'?'':QT.seals[co.seal]||'';}
+
+/* ---- 견적서 종이 (A4 794×1123) ---- */
+const QT_CSS=`.qpage{width:794px;height:1123px;background:#fff;color:#1A2133;position:relative;overflow:hidden;box-sizing:border-box;font:11.5px/1.5 "Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-variant-numeric:tabular-nums;text-align:left;letter-spacing:0}
+.qpage *{box-sizing:border-box}
+.qpage .qh{height:116px;background:#0B1530;background-image:linear-gradient(115deg,#0B1530 0%,#0F1D40 55%,#13265200 56%),linear-gradient(115deg,#0B1530 60%,#102148 100%);color:#fff;padding:0 46px;display:flex;align-items:center;justify-content:space-between;position:relative}
+.qpage .qh:after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#8E6A30,#E9CF94 30%,#C9A35A 60%,#8E6A30)}
+.qpage .qbrand{display:flex;align-items:center;gap:16px}.qpage .qbrand img{width:62px;height:62px}
+.qpage .qbn{font:900 25px/1 Cinzel,"Times New Roman",serif;letter-spacing:.14em;color:#F3DFAE}
+.qpage .qbs{font:600 9.5px/1 "Noto Sans KR",sans-serif;letter-spacing:.32em;color:#9FB0D6;margin-top:9px;text-transform:uppercase}
+.qpage .qtt{text-align:right}.qpage .qtk{font:900 34px/1 "Noto Serif KR",serif;letter-spacing:.42em;margin-right:-.42em;color:#fff}
+.qpage .qte{font:700 13px/1 Cinzel,serif;letter-spacing:.5em;margin-right:-.5em;color:#D8B46E;margin-top:12px}
+.qpage .qb{padding:20px 46px 0}
+.qpage .qinfo{display:grid;grid-template-columns:1.25fr 1fr;gap:26px}
+.qpage .qlab{font:800 9px/1 "Noto Sans KR",sans-serif;letter-spacing:.22em;color:#A0823F;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.qpage .qlab:after{content:"";flex:1;height:1px;background:#E6DCC4}
+.qpage .qto{font:800 19px/1.3 "Noto Serif KR",serif;color:#0B1530}.qpage .qto small{font:500 12px "Noto Sans KR";color:#5A6276;margin-left:6px}
+.qpage dl{margin:6px 0 0;display:grid;grid-template-columns:auto 1fr;gap:3px 14px}.qpage dt{color:#7A8194;font-size:10.5px;white-space:nowrap}.qpage dt em{font-style:normal;color:#A9AEBB;font-size:9px;margin-left:4px;letter-spacing:.04em}
+.qpage dd{margin:0;font-weight:600;color:#1A2133}
+.qpage .qtotal{margin-top:16px;display:flex;align-items:stretch;border:1px solid #E6DCC4;border-left:5px solid #C9A35A;background:linear-gradient(90deg,#FBF7EE,#fff)}
+.qpage .qtotal>div{padding:9px 20px}.qpage .qtl{flex:1}.qpage .qtl b{display:block;font:800 13px "Noto Serif KR",serif;color:#0B1530}.qpage .qtl span{font-size:10px;color:#7A8194;letter-spacing:.04em}
+.qpage .qtl i{display:block;font-style:normal;margin-top:5px;color:#4A5266;font-size:11px}
+.qpage .qtv{text-align:right;display:flex;flex-direction:column;justify-content:center}.qpage .qtv b{font:800 30px/1 Archivo,"Noto Sans KR",sans-serif;color:#0B1530;letter-spacing:-.01em}.qpage .qtv b small{font-size:15px;color:#A0823F;margin-right:6px;font-weight:700}
+.qpage .qtv span{font-size:9.5px;color:#7A8194;margin-top:6px}
+.qpage table{width:100%;border-collapse:collapse;margin-top:0;font-size:11.5px}.qpage tr:last-child td{border-bottom:1px solid #E9ECF2}.qpage .qsum tr:last-child td{border-bottom:0}
+.qpage th{background:#0B1530;color:#F3DFAE;font:700 10px/1.25 "Noto Sans KR",sans-serif;padding:7px 8px;text-align:center;white-space:nowrap;border-bottom:0}.qpage th small{display:block;font:600 8px Cinzel,serif;letter-spacing:.14em;color:#8E9BC0;margin-top:2px}
+.qpage td{padding:5px 8px;color:#1A2133;font-size:11.5px;border-bottom:1px solid #E9ECF2;vertical-align:middle;text-align:center}
+.qpage tr.z td{background:#FAFBFD}.qpage td.n{color:#A0823F;font-weight:800;width:30px}
+.qpage td.it{text-align:left}.qpage td.it b{display:block;font-size:12px;color:#0B1530}.qpage td.it b .en{display:inline;margin-left:7px}.qpage td.it b .se{color:#A0823F;margin-left:3px}.qpage td.it span{display:block;font-size:9.5px;color:#7A8194;line-height:1.4}.qpage td.it .en{color:#8E6A30;font-size:9.5px;font-weight:600}
+.qpage td.r{text-align:right;white-space:nowrap}.qpage td.am{font-weight:800;color:#0B1530}.qpage td.nt{font-size:9.5px;color:#7A8194;text-align:left;max-width:120px}.qpage td.nt .dc{color:#B03030;font-weight:700;display:block}
+.qpage .qsum{margin-bottom:14px}.qpage .qsum table{width:100%;margin:0}.qpage .qsum td{padding:4px 2px;border:0;text-align:right}.qpage .qsum td:first-child{text-align:left;color:#7A8194}
+.qpage .qsum tr.g td{border-top:2px solid #0B1530;font:800 15px Archivo,"Noto Sans KR",sans-serif;color:#0B1530;padding-top:9px}.qpage .qsum tr.g td:first-child{font:800 12px "Noto Serif KR",serif;color:#0B1530}
+.qpage .qfoot2{display:grid;grid-template-columns:1.25fr 1fr;gap:30px;margin-top:4px}
+.qpage ol{margin:0;padding-left:16px;color:#4A5266;font-size:10.2px;line-height:1.6}.qpage ol li{margin-bottom:2px}
+.qpage .qbank{margin-top:12px;background:#F5F7FB;border-radius:6px;padding:10px 12px;font-size:10.5px}.qpage .qbank b{color:#0B1530}
+.qpage .qsup{position:relative}.qpage .qsup .co{font:900 15px/1.2 Cinzel,serif;letter-spacing:.08em;color:#0B1530}.qpage .qsup .ck{font:700 11px "Noto Serif KR",serif;color:#4A5266;margin-top:3px}
+.qpage .qrep{display:flex;align-items:center;gap:8px;margin:22px 0 16px;font-size:12px;position:relative}.qpage .qrep b{font:800 15px "Noto Serif KR",serif;color:#0B1530;letter-spacing:.2em}.qpage .qrep .in{color:#B9BDC8;font-size:11px;margin-left:4px;position:relative;display:inline-block}
+.qpage .qseal{position:absolute;left:50%;top:50%;width:80px;height:80px;margin:-40px 0 0 -22px;transform:rotate(-7deg);opacity:.92;max-width:none}
+.qpage .qseal.sq{width:76px;height:76px;margin:-38px 0 0 -24px}
+.qpage .qf{position:absolute;left:46px;right:46px;bottom:26px;display:flex;justify-content:space-between;align-items:center;font-size:8.5px;color:#9AA0AE;letter-spacing:.16em;border-top:1px solid #E6DCC4;padding-top:10px}
+.qpage .qf b{font:700 9px Cinzel,serif;color:#A0823F;letter-spacing:.24em}
+.qpage .qcont{font:700 10px "Noto Sans KR";color:#A0823F;letter-spacing:.2em;margin-top:6px}
+.qpage .qmini{height:64px;background:#0B1530;display:flex;align-items:center;justify-content:space-between;padding:0 46px;position:relative}.qpage .qmini:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#8E6A30,#E9CF94,#8E6A30)}
+.qpage .qmini span{font:900 15px Cinzel,serif;letter-spacing:.16em;color:#F3DFAE}.qpage .qmini i{font-style:normal;color:#9FB0D6;font-size:10px;letter-spacing:.2em}
+.qt-wrap{display:grid;grid-template-columns:minmax(330px,520px) 1fr;gap:18px;align-items:start}
+.qt-prev{position:sticky;top:12px;background:#2A2E37;border-radius:12px;padding:14px;overflow:hidden}
+.qt-prev .qsc{transform-origin:0 0}.qt-prev .qpage{margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.qt-lines{display:flex;flex-direction:column;gap:8px}
+.qt-line{display:grid;grid-template-columns:26px 1fr;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px}
+.qt-line.off{opacity:.5}.qt-line .g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.qt-line input,.qt-line select{width:100%;min-width:0;padding:6px 8px;font-size:13px}
+.qt-line .nm{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:6px}
+.qt-line small{display:block;font-size:11px;color:var(--mute);margin-bottom:2px}
+.qt-line .amt{font-weight:800;color:var(--gold2);text-align:right;white-space:nowrap;align-self:center}
+.qt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.qt-grid label.f input,.qt-grid label.f select{width:100%}
+.qt-chk{display:flex;gap:8px;flex-wrap:wrap}.qt-chk label{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);padding:7px 10px;border-radius:9px;cursor:pointer;font-weight:700}
+.qt-chk label.on{border-color:var(--gold3);color:var(--gold2)}
+.qt-seals{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.qt-seal{background:#fff;border:3px solid transparent;border-radius:14px;padding:14px;text-align:center;color:#1A2133;cursor:pointer}.qt-seal img{width:130px;height:130px;display:block;margin:0 auto 8px}
+.qt-seal.on{border-color:var(--gold)}.qt-seal b{display:block;font-size:14px}.qt-seal span{font-size:12px;color:#6A7080}
+.qt-ptab td{vertical-align:top}.qt-ptab input,.qt-ptab select{width:100%;min-width:0;padding:6px 8px;font-size:13px}
+@media(max-width:1100px){.qt-wrap{grid-template-columns:1fr}.qt-prev{position:static}}
+@media(max-width:560px){.qt-line .g{grid-template-columns:repeat(2,1fr)}}`;
+function qtCss(){if(document.getElementById('qtCss'))return;const s=document.createElement('style');s.id='qtCss';s.textContent=QT_CSS;document.head.appendChild(s);}
+async function qtLogoPng(){if(QT.logo)return QT.logo;const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.scale(4,4);x.strokeStyle=x.fillStyle='#E2C27F';x.lineWidth=2.4;x.lineJoin='round';x.stroke(new Path2D(KS_LOGO[0]));KS_LOGO.slice(1).forEach(d=>x.fill(new Path2D(d)));return QT.logo=c.toDataURL('image/png');}
+const qtLogoImg=()=>QT.logo||'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="${KS_LOGO[0]}" fill="none" stroke="#E2C27F" stroke-width="2.4" stroke-linejoin="round"/>${KS_LOGO.slice(1).map(d=>`<path d="${d}" fill="#E2C27F"/>`).join('')}</svg>`);
+function qtFmtD(s,lang){if(!s)return '';const d=new Date(s+'T00:00:00');if(isNaN(d))return s;if(lang==='en')return d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+  return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}. (${'일월화수목금토'[d.getDay()]})`;}
+function qtPeriod(q,lang){if(!q.start)return '';const n=Math.max(1,qtNum(q.days)||1);return n>1?`${qtFmtD(q.start,lang)} ~ ${qtFmtD(qtAdd(q.start,n-1),lang)}`:qtFmtD(q.start,lang);}
+/* 블록들을 만들어 A4에 나눠 담기 */
+function qtBlocks(q,co){const lg=q.lang||'both',K=(ko,en)=>lg==='en'?en:lg==='ko'?ko:`${ko} <em>${en}</em>`,E=esc,T=qtTot(q);
+  const discN=(q.disc||[]).map(k=>{const d=QT_DISC.find(x=>x[0]===k);return d?(lg==='en'?d[2]:d[1]):'';}).filter(Boolean).join(' · ');
+  const head=`<div class="qh"><div class="qbrand"><img src="${qtLogoImg()}" alt=""><div><div class="qbn">${E(co.name||'KICKSTART UP')}</div><div class="qbs">Taekwondo Competition Systems</div></div></div>
+    <div class="qtt">${lg==='en'?'<div class="qtk" style="font:900 30px/1 Cinzel,serif;letter-spacing:.22em;margin-right:-.22em">QUOTATION</div>':`<div class="qtk">견적서</div><div class="qte">QUOTATION</div>`}</div></div>`;
+  const row=(k,e,v)=>v?`<dt>${lg==='en'?e:lg==='ko'?k:`${k}<em>${e}</em>`}</dt><dd>${v}</dd>`:'';
+  const info=`<div class="qinfo"><div><div class="qlab">${lg==='en'?'Prepared for':lg==='ko'?'수신':'수신 · Prepared for'}</div>
+      <div class="qto">${E(q.to||(lg==='en'?'(Client)':'(수신처)'))}${lg!=='en'?' <small>귀하</small>':''}</div>
+      <dl>${row('담당','Attn.',E(q.attn))}${row('대회명','Event',E(q.event))}${row('장소','Venue',E(q.venue))}${row('기간','Dates',E(qtPeriod(q,lg)))}${row('규모','Scale',E([discN,`${qtNum(q.courts)}${lg==='en'?' courts':'코트'}`,`${Math.max(1,qtNum(q.days)||1)}${lg==='en'?(qtNum(q.days)>1?' days':' day'):'일'}`].filter(Boolean).join(' · ')))}</dl></div>
+    <div><div class="qlab">${lg==='en'?'Quotation details':lg==='ko'?'견적 정보':'견적 정보 · Details'}</div>
+      <dl>${row('견적 번호','No.',`<b>${E(q.no)}</b>`)}${row('견적 일자','Date',E(qtFmtD(q.date,lg)))}${row('유효 기간','Valid until',E(qtFmtD(qtAdd(q.date,qtNum(q.valid)||30),lg)))}${row('담당자','Contact',E(co.person||co.rep))}${row('연락처','Tel.',E(co.tel))}${row('이메일','E-mail',E(co.email))}</dl></div></div>
+    <div class="qtotal"><div class="qtl"><b>${lg==='en'?'Total Amount':'견적 합계 금액'}</b><span>${lg==='both'?'Total Amount · ':''}${q.vat==='excl'?(lg==='en'?'VAT included (10% added)':'부가세 10% 포함'):(lg==='en'?'VAT included':'부가세 포함')}</span>
+      <i>${lg==='en'?`Korean Won ${E(qtEnglish(T.total).replace(/\b[a-z]/g,c=>c.toUpperCase()))} Only`:`일금 ${qtHangul(T.total)}원정`}</i></div>
+      <div class="qtv"><b><small>KRW</small>${qtW(T.total)}</b><span>${lg==='en'?'':'₩ '+qtW(T.total)+' · '}${lg==='ko'?'':'Korean Won'}</span></div></div>`;
+  const th=`<thead><tr><th>No</th><th style="text-align:left">${K('품목 · 내용','Item · Description').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('단가','Unit Price').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('수량','Qty').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('일수','Days').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('금액','Amount').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('비고','Remarks').replace('<em>','<small>').replace('</em>','</small>')}</th></tr></thead>`;
+  const rows=T.L.map((l,i)=>{const dc=Math.min(qtGross(l),qtNum(l.disc));const dsc=l.key==='ops'&&discN?`${lg==='en'?(l.descEn||l.desc):l.desc}${l.desc?' · ':''}${discN}`:(lg==='en'?(l.descEn||l.desc):l.desc);
+    return `<tr class="${i%2?'z':''}"><td class="n">${String(i+1).padStart(2,'0')}</td><td class="it"><b>${E(lg==='en'?(l.en||l.ko):l.ko)}${dc?'<span class="se" style="display:inline">*</span>':''}${lg==='both'&&l.en?`<span class="en">${E(l.en)}</span>`:''}</b>${dsc?`<span>${E(dsc)}</span>`:''}</td>
+      <td class="r">${qtW(l.price)}</td><td>${qtW(l.qty)}</td><td>${qtW(l.days)}</td><td class="r am">${qtW(qtAmt(l))}</td><td class="nt">${dc?`<span class="dc">${lg==='en'?'Discount':'할인'} −${qtW(dc)}</span>`:''}${E(l.note||'')}</td></tr>`;});
+  const srow=(k,e,v,c)=>`<tr class="${c||''}"><td>${lg==='en'?e:lg==='ko'?k:`${k} <span style="color:#B0B5C0;font-size:9px">${e}</span>`}</td><td>${v}</td></tr>`;
+  const sum=!T.disc&&q.vat!=='excl'?'':`<div class="qsum"><table>${srow('공급가 합계','Subtotal',qtW(T.gross))}${T.disc?srow('할인','Discount','<span style="color:#B03030">−'+qtW(T.disc)+'</span>'):''}${q.vat==='excl'?srow('부가세 (10%)','VAT (10%)',qtW(T.vat)):''}${srow('합계','Total',qtW(T.total),'g')}</table></div>`;
+  const terms=(lg==='en'?(q.termsEn||''):(q.terms||'')).split('\n').map(s=>s.trim()).filter(Boolean);
+  terms.unshift(q.vat==='excl'?(lg==='en'?'Prices exclude VAT; 10% VAT is added to the total.':'단가는 부가세 별도이며, 합계에 부가세 10%를 더했습니다.'):(lg==='en'?'All prices include VAT.':'위 금액은 부가세가 포함된 금액입니다.'));
+  if(T.disc)terms.push(lg==='en'?'Items marked * are discounted.':'「*」 표시 항목은 할인이 적용된 금액입니다.');
+  const sealU=qtSealOf(co);
+  const foot=`<div class="qfoot2"><div><div class="qlab">${lg==='en'?'Terms & Conditions':lg==='ko'?'조건 및 안내':'조건 및 안내 · Terms'}</div><ol>${terms.map(t=>`<li>${E(t)}</li>`).join('')}</ol>
+      ${co.bank?`<div class="qbank">${lg==='en'?'Bank account':'입금 계좌'}${lg==='both'?' <span style="color:#A9AEBB;font-size:9px">Bank account</span>':''}<br><b>${E(co.bank)}</b></div>`:''}</div>
+    <div>${sum}<div class="qsup"><div class="qlab">${lg==='en'?'Supplier':lg==='ko'?'공급자':'공급자 · Supplier'}</div><div class="co">${E(co.name||'KICKSTART UP')}${lg!=='en'&&co.nameKo?` <span class="ck" style="font:700 11px 'Noto Serif KR',serif;letter-spacing:0;color:#4A5266;margin-left:6px">${E(co.nameKo)}</span>`:''}</div>
+      <div class="qrep"><span style="color:#7A8194">${lg==='en'?'CEO':'대표'}</span><b>${E(lg==='en'?(co.repEn||co.rep):co.rep)}</b><span class="in">${lg==='en'?'(Seal)':'(인)'}${sealU?`<img class="qseal ${co.seal==='square'?'sq':''}" src="${sealU}" alt="">`:''}</span></div>
+      <dl style="margin-top:12px">${row('사업자등록번호','Reg. No.',E(co.bizNo))}${row('주소','Address',E(lg==='en'?(co.addrEn||co.addr):co.addr))}${row('웹사이트','Web',E(co.web))}</dl></div></div></div>`;
+  return {head,info,th,rows,sum,foot,memo:''};}
+function qtFootHtml(co,i,n){return `<div class="qf"><b>${esc(co.name||'KICKSTART UP')}</b><span>TAEKWONDO COMPETITION SYSTEMS${co.web?' · '+esc(co.web):''}</span><span>${i} / ${n}</span></div>`;}
+function qtPages(q,co){const B=qtBlocks(q,co),M=document.createElement('div');M.style.cssText='position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;z-index:-9';document.body.appendChild(M);
+  const LIM=1123-66,mini=`<div class="qmini"><span>${esc(co.name||'KICKSTART UP')}</span><i>${esc(q.no)} · ${q.lang==='en'?'continued':'계속'}</i></div>`;
+  const build=(top,rows,tail)=>`<div class="qpage">${top?B.head+`<div class="qb">${B.info}</div>`:mini}${rows.length?`<div class="qb"><table>${B.th}<tbody>${rows.map(r=>B.rows[r]).join('')}</tbody></table></div>`:''}${tail?`<div class="qb">${B.foot}</div>`:''}</div>`;
+  const pages=[];let rest=B.rows.map((_,i)=>i),top=true,guard=0;
+  while(guard++<60){M.innerHTML=build(top,rest,true);const pg=M.firstElementChild,t0=pg.getBoundingClientRect().top,bot=el=>el.getBoundingClientRect().bottom-t0;
+    const trs=[...pg.querySelectorAll('tbody tr')];let k=trs.findIndex(tr=>bot(tr)>LIM);
+    if(k<0){const ft=pg.querySelector('.qfoot2');if(bot(ft)<=LIM){pages.push({top,rows:rest,tail:true});break;}
+      const keep=rest.length>3?rest.length-2:rest.length;pages.push({top,rows:rest.slice(0,keep),tail:false});rest=rest.slice(keep);top=false;if(!rest.length){pages.push({top:false,rows:[],tail:true});break;}continue;}
+    k=Math.max(1,k);pages.push({top,rows:rest.slice(0,k),tail:false});rest=rest.slice(k);top=false;}
+  M.remove();const n=pages.length;
+  return pages.map((p,i)=>build(p.top,p.rows,p.tail).replace(/<\/div>$/,qtFootHtml(co,i+1,n)+'</div>'));}
+async function qtPreview(){const box=document.getElementById('qtPrev');if(!box)return;const q=QT.cur;if(!q)return;qtCss();if(!QT.logo)await qtLogoPng();
+  const co=QT.co;if(co.seal&&!['none','custom'].includes(co.seal)&&!QT.seals[co.seal]){qtSealUrl(co.seal).then(()=>qtPreview());}
+  if(document.fonts&&document.fonts.status==='loading')document.fonts.ready.then(()=>qtPreviewSoon());
+  const P=qtPages(q,co),w=box.clientWidth-28,s=Math.min(1,w/794);
+  box.innerHTML=`<div class="qsc" style="transform:scale(${s});width:794px;height:${P.length*(1123+16)}px;margin-bottom:${-(P.length*(1123+16))*(1-s)}px">${P.join('')}</div>`;}
+let QT_PT=null;function qtPreviewSoon(){clearTimeout(QT_PT);QT_PT=setTimeout(qtPreview,180);}
+
+/* ---- PDF 내려받기 · 인쇄 ---- */
+function loadH2C(){if(window.html2canvas)return Promise.resolve(window.html2canvas);return new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=()=>res(window.html2canvas);s.onerror=()=>rej(new Error('PDF 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요'));document.head.appendChild(s);});}
+async function qtPdf(){const q=QT.cur;if(!q)return;toast('견적서 PDF를 만드는 중…');const co=QT.co;
+  if(co.seal&&!['none','custom'].includes(co.seal))await qtSealUrl(co.seal);
+  await qtLogoPng();const [lib,h2c]=await Promise.all([loadJsPDF(),loadH2C()]);try{await document.fonts.ready;}catch(e){}
+  const W=document.createElement('div');W.style.cssText='position:fixed;left:0;top:0;z-index:-50;pointer-events:none';W.setAttribute('data-notr','');W.innerHTML=qtPages(q,co).join('');document.body.appendChild(W);
+  try{await Promise.all([...W.querySelectorAll('img')].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r;})));
+    const doc=new lib.jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});const pg=[...W.querySelectorAll('.qpage')];
+    for(let i=0;i<pg.length;i++){const cv=await h2c(pg[i],{scale:2.5,backgroundColor:'#ffffff',useCORS:true,logging:false,width:794,height:1123,windowWidth:1200});
+      if(i)doc.addPage();doc.addImage(cv.toDataURL('image/jpeg',.93),'JPEG',0,0,210,297,undefined,'FAST');}
+    const nm=`견적서_${q.no}${q.to?'_'+q.to:''}.pdf`.replace(/[\\/:*?"<>|]/g,'_');doc.save(nm);toast('견적서 PDF를 내려받았습니다');}
+  finally{W.remove();}}
+async function qtPrint(){const q=QT.cur;if(!q)return;const co=QT.co;await qtLogoPng();if(co.seal&&!['none','custom'].includes(co.seal))await qtSealUrl(co.seal);
+  const w=window.open('','_blank');if(!w){toast('팝업이 막혀 있습니다. 「PDF 내려받기」를 써 주세요');return;}
+  const fl=[...document.querySelectorAll('link[href*="fonts.googleapis"]')].map(l=>l.outerHTML).join('');
+  w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>견적서 ${esc(q.no)}</title>${fl}<style>${QT_CSS}@page{size:A4;margin:0}body{margin:0;background:#777}.qpage{margin:0 auto 12px;page-break-after:always}@media print{body{background:#fff}.qpage{margin:0}}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${qtPages(q,co).join('')}<script>document.fonts.ready.then(()=>setTimeout(()=>print(),300))<\/script></body></html>`);w.document.close();}
+
+/* ---- 관리 화면 ---- */
+function vQuote(){if(!isOwner(me()))return '<div class="empty">견적서는 대표만 볼 수 있습니다.</div>';qtCss();
+  if(!QT.loaded){setTimeout(qtLoad,0);return '<div id="qt"><div class="empty">견적서를 불러오는 중…</div></div>';}
+  setTimeout(qtAfter,0);return `<div id="qt">${qtInner()}</div>`;}
+function qtAfter(){if(QT.view==='edit')qtPreview();if(QT.view==='co')qtSealsFill();}
+function qtRefresh(){const el=document.getElementById('qt');if(!el)return;el.innerHTML=qtInner();qtAfter();}
+function qtInner(){const V=QT.view,tabs=[['list','📋 견적 목록'],['edit','✍️ 견적 작성'],['price','💲 단가표'],['co','🏢 회사 정보 · 직인']];
+  const warn=QT.ok?'':`<div class="notice"><b>지금은 이 컴퓨터 브라우저에만 저장됩니다</b><div>Supabase에서 14단계 SQL(schema14.sql)을 한 번 실행하면 견적서가 회사 저장소에 안전하게 저장되고, 다른 컴퓨터에서도 볼 수 있습니다. (대표 계정만 보고 고칠 수 있습니다)</div></div>`;
+  let b='';if(V==='edit'&&QT.cur)b=qtEdit();else if(V==='price')b=qtPriceV();else if(V==='co')b=qtCoV();else b=qtListV();
+  return `<div class="stack"><div class="row between"><div><h2>🧾 견적서 <span class="small mute" style="font-weight:600">대표만 보는 화면</span></h2></div><span class="small mute" id="qtSave">${esc(QT.saving)}</span></div>${warn}
+    <div class="atabs" role="tablist">${tabs.filter(([k])=>k!=='edit'||QT.cur).map(([k,l])=>`<button type="button" class="${k===V?'on':''}" data-q="view" data-v="${k}">${l}</button>`).join('')}</div>${b}</div>`;}
+function qtListV(){const Q=QT.quotes;
+  return `<div class="row"><button class="btn gold" type="button" data-q="new">＋ 새 견적서 만들기</button><span class="small mute">단가표의 「기본으로 넣기」 항목이 자동으로 들어갑니다. 코트 수와 일수를 넣으면 수량이 저절로 계산됩니다.</span></div>
+   ${Q.length?`<div class="tablewrap"><table><tr><th>견적 번호</th><th>수신</th><th>대회명</th><th>견적일</th><th>합계</th><th>상태</th><th></th></tr>
+   ${Q.map(q=>`<tr><td class="num"><b>${esc(q.no)}</b></td><td>${esc(q.to||'—')}</td><td class="small">${esc(q.event||'—')}</td><td class="small num">${esc(q.date)}</td><td class="num"><b>${won(qtTot(q).total)}</b></td>
+     <td><select data-qs="${q.id}">${QT_ST.map(([k,l])=>`<option value="${k}" ${q.status===k?'selected':''}>${l}</option>`).join('')}</select></td>
+     <td style="white-space:nowrap"><button class="btn sm gold" type="button" data-q="open" data-id="${q.id}">열기</button> <button class="btn sm" type="button" data-q="dup" data-id="${q.id}">복사해서 새로</button> <button class="btn sm danger" type="button" data-q="del" data-id="${q.id}">${QT.armDel===q.id?'한 번 더 누르면 지움':'지우기'}</button></td></tr>`).join('')}</table></div>`
+   :'<div class="empty">아직 만든 견적서가 없습니다. 「새 견적서 만들기」를 눌러 주세요.</div>'}`;}
+const qtIn=(f,v,type='text',ex='')=>`<input type="${type}" data-qf="${f}" value="${esc(v??'')}" ${ex}>`;
+function qtEdit(){const q=QT.cur,T=qtTot(q);
+  const lines=q.lines.map((l,i)=>`<div class="qt-line ${l.on===false?'off':''}"><label style="padding-top:6px"><input type="checkbox" data-ql="${i}:on" ${l.on!==false?'checked':''} title="견적서에 넣기"></label><div>
+    <div class="nm"><input data-ql="${i}:ko" value="${esc(l.ko)}" placeholder="품목 이름"><span class="amt" data-qa="${i}">${won(qtAmt(l))}</span></div>
+    ${q.lang!=='ko'?`<input data-ql="${i}:en" value="${esc(l.en||'')}" placeholder="영문 품목 이름" style="margin-bottom:6px">`:''}
+    <input data-ql="${i}:${q.lang==='en'?'descEn':'desc'}" value="${esc(q.lang==='en'?l.descEn:l.desc)}" placeholder="내용 (견적서에 작게 나옴)" style="margin-bottom:6px">
+    <div class="g"><label><small>단가</small><input type="number" step="1000" min="0" data-ql="${i}:price" value="${qtNum(l.price)}"></label>
+      <label><small>수량 ${l.auto&&['evday','courtday','day','once'].includes(l.unit)?'(자동)':''}</small><input type="number" min="0" data-ql="${i}:qty" value="${qtNum(l.qty)}"></label>
+      <label><small>일수 ${l.auto&&l.unit!=='ea'?'(자동)':''}</small><input type="number" min="0" data-ql="${i}:days" value="${qtNum(l.days)}"></label>
+      <label><small>할인 (원)</small><input type="number" step="1000" min="0" data-ql="${i}:disc" value="${qtNum(l.disc)||''}" placeholder="0"></label></div>
+    <div class="row" style="margin-top:6px;gap:6px"><input data-ql="${i}:note" value="${esc(l.note||'')}" placeholder="비고" style="flex:1;min-width:120px"><span class="small mute">${QT_UNITS[l.unit]?QT_UNITS[l.unit][0]:''}</span>
+      ${!l.auto?`<button class="btn sm ghost" type="button" data-q="lauto" data-i="${i}">자동 계산으로</button>`:''}<button class="btn sm ghost" type="button" data-q="lup" data-i="${i}" ${i?'':'disabled'} title="위로">↑</button><button class="btn sm danger" type="button" data-q="ldel" data-i="${i}">빼기</button></div></div></div>`).join('');
+  const notIn=QT.prices.filter(p=>!q.lines.some(l=>l.key===p.id));
+  return `<div class="qt-wrap"><div class="stack">
+   <div class="row" style="gap:8px"><button class="btn gold" type="button" data-q="pdf">⬇ PDF 내려받기</button><button class="btn" type="button" data-q="print">🖨 인쇄</button><button class="btn ghost" type="button" data-q="view" data-v="list">← 목록</button></div>
+   <section class="card stack"><h3>받는 곳 · 대회</h3><div class="qt-grid">
+     <label class="f"><span>수신 (협회·단체)</span>${qtIn('to',q.to,'text','placeholder="예: 세계태권도문화예술협회"')}</label><label class="f"><span>담당자</span>${qtIn('attn',q.attn)}</label>
+     <label class="f" style="grid-column:1/-1"><span>대회명</span>${qtIn('event',q.event)}</label><label class="f" style="grid-column:1/-1"><span>장소</span>${qtIn('venue',q.venue)}</label>
+     <label class="f"><span>대회 시작일</span>${qtIn('start',q.start,'date')}</label><label class="f"><span>대회 일수</span>${qtIn('days',q.days,'number','min="1"')}</label><label class="f"><span>코트 수</span>${qtIn('courts',q.courts,'number','min="1"')}</label></div>
+     <div><span class="small mute" style="font-weight:800">운영 종목 (경기 운영 시스템 수량)</span><div class="qt-chk" style="margin-top:6px">${QT_DISC.map(([k,l])=>`<label class="${(q.disc||[]).includes(k)?'on':''}"><input type="checkbox" data-qd="${k}" ${(q.disc||[]).includes(k)?'checked':''}>${l}</label>`).join('')}</div><span class="small mute">태권체조·팀 경연은 품새·격파 시스템 안에 들어갑니다.</span></div></section>
+   <section class="card stack"><h3>견적 정보</h3><div class="qt-grid">
+     <label class="f"><span>견적 번호</span>${qtIn('no',q.no)}</label><label class="f"><span>견적 일자</span>${qtIn('date',q.date,'date')}</label><label class="f"><span>유효 기간 (일)</span>${qtIn('valid',q.valid,'number','min="1"')}</label>
+     <label class="f"><span>부가세</span><select data-qf="vat"><option value="incl" ${q.vat!=='excl'?'selected':''}>단가에 포함</option><option value="excl" ${q.vat==='excl'?'selected':''}>별도 (10% 더하기)</option></select></label>
+     <label class="f"><span>견적서 언어</span><select data-qf="lang"><option value="both" ${q.lang==='both'?'selected':''}>한국어 + English</option><option value="ko" ${q.lang==='ko'?'selected':''}>한국어만</option><option value="en" ${q.lang==='en'?'selected':''}>English only</option></select></label>
+     <label class="f"><span>전체 할인 (원)</span>${qtIn('extraDisc',qtNum(q.extraDisc)||'','number','step="10000" min="0" placeholder="0"')}</label></div></section>
+   <section class="card stack"><div class="row between"><h3>항목</h3><b class="num" style="font-size:20px;color:var(--gold2)" id="qtTotal">${won(T.total)}</b></div>
+     <div class="qt-lines">${lines}</div>
+     <div class="row" style="gap:8px">${notIn.length?`<select id="qtAddSel">${notIn.map(p=>`<option value="${p.id}">${esc(p.ko)} · ${qtW(p.price)}원</option>`).join('')}</select><button class="btn sm" type="button" data-q="ladd">＋ 단가표에서 넣기</button>`:''}<button class="btn sm" type="button" data-q="lblank">＋ 빈 줄 넣기</button></div>
+     <span class="small mute" id="qtSumTxt">공급가 ${won(T.gross)}${T.disc?` · 할인 −${won(T.disc)}`:''}${T.vat?` · 부가세 ${won(T.vat)}`:''} → 합계 ${won(T.total)}</span></section>
+   <section class="card stack"><h3>조건 및 안내 (견적서 아래쪽)</h3>${q.lang!=='en'?`<label class="f"><span>한국어 · 한 줄에 하나씩</span><textarea data-qf="terms" rows="4">${esc(q.terms||'')}</textarea></label>`:''}
+     ${q.lang!=='ko'?`<label class="f"><span>English · one per line</span><textarea data-qf="termsEn" rows="4">${esc(q.termsEn||'')}</textarea></label>`:''}
+     <label class="f"><span>내부 메모 (견적서에는 안 나옴)</span><textarea data-qf="memo" rows="2">${esc(q.memo||'')}</textarea></label></section>
+  </div><div class="qt-prev" id="qtPrev" data-notr></div></div>`;}
+function qtPriceV(){const P=QT.prices;
+  return `<section class="card stack"><div class="row between"><div><h3>단가표</h3><p class="small mute" style="margin:4px 0 0">여기서 고친 단가는 <b>새로 만드는 견적서</b>에 들어갑니다. 이미 만든 견적서는 그 견적서에서 고쳐 주세요. 고치면 바로 저장됩니다.</p></div>
+    <button class="btn sm ghost" type="button" data-q="preset">${QT.armPreset?'한 번 더 누르면 처음 단가로':'처음 단가로 되돌리기'}</button></div>
+   <div class="tablewrap"><table class="qt-ptab"><tr><th>기본</th><th>품목 · 영문</th><th>내용 · 영문</th><th style="width:120px">단가 (원)</th><th style="width:150px">매기는 방식</th><th></th></tr>
+   ${P.map((p,i)=>`<tr><td><input type="checkbox" data-qp="${i}:on" ${p.on?'checked':''} title="새 견적서에 기본으로 넣기"></td>
+     <td><input data-qp="${i}:ko" value="${esc(p.ko)}"><input data-qp="${i}:en" value="${esc(p.en||'')}" placeholder="English" style="margin-top:4px"></td>
+     <td><input data-qp="${i}:desc" value="${esc(p.desc||'')}"><input data-qp="${i}:descEn" value="${esc(p.descEn||'')}" placeholder="English" style="margin-top:4px"></td>
+     <td><input type="number" step="1000" min="0" data-qp="${i}:price" value="${qtNum(p.price)}"></td>
+     <td><select data-qp="${i}:unit">${Object.entries(QT_UNITS).map(([k,[l]])=>`<option value="${k}" ${p.unit===k?'selected':''}>${l}</option>`).join('')}</select></td>
+     <td style="white-space:nowrap"><button class="btn sm ghost" type="button" data-q="pup" data-i="${i}" ${i?'':'disabled'}>↑</button> <button class="btn sm danger" type="button" data-q="pdel" data-i="${i}">${QT.armP===i?'한 번 더':'빼기'}</button></td></tr>`).join('')}</table></div>
+   <div class="row"><button class="btn" type="button" data-q="padd">＋ 항목 더하기</button><span class="small mute">「기본」에 표시한 항목이 새 견적서에 자동으로 들어갑니다.</span></div></section>`;}
+const qtCi=(f,lab,v,ex='')=>`<label class="f"><span>${lab}</span><input data-qc="${f}" value="${esc(v??'')}" ${ex}></label>`;
+function qtCoV(){const c=QT.co;
+  return `<section class="card stack"><h3>직인 고르기</h3><p class="small mute" style="margin:0">고른 직인이 모든 견적서의 대표 이름 옆에 자동으로 찍힙니다. 실제 인감을 쓰시려면 흰 종이에 찍어 사진으로 올려 주세요 (배경은 자동으로 지웁니다).</p>
+    <div class="qt-seals">${QT_SEALS.map(([k,l,d])=>`<div class="qt-seal ${c.seal===k?'on':''}" data-q="seal" data-k="${k}"><img data-seal="${k}" alt="${l}"><b>${c.seal===k?'✓ ':''}${l}</b><span>${d}</span></div>`).join('')}
+      <div class="qt-seal ${c.seal==='custom'?'on':''}" data-q="seal" data-k="custom">${c.sealImg?`<img src="${c.sealImg}" alt="내 도장">`:'<div style="height:130px;display:grid;place-items:center;color:#8A90A0;margin-bottom:8px">사진 없음</div>'}<b>${c.seal==='custom'?'✓ ':''}내 도장 사진</b><span><label class="btn sm" style="margin-top:6px">사진 올리기<input type="file" accept="image/*" data-qsimg hidden></label></span></div>
+      <div class="qt-seal ${c.seal==='none'?'on':''}" data-q="seal" data-k="none"><div style="height:130px;display:grid;place-items:center;color:#8A90A0;margin-bottom:8px">—</div><b>${c.seal==='none'?'✓ ':''}직인 없이</b><span>직접 찍을 때</span></div></div></section>
+   <section class="card stack"><h3>회사 정보 (견적서 공급자 칸)</h3><div class="qt-grid">
+     ${qtCi('name','상호 (영문)',c.name)}${qtCi('nameKo','상호 (한글)',c.nameKo)}${qtCi('rep','대표',c.rep)}${qtCi('repEn','대표 영문 이름',c.repEn,'placeholder="예: Jeonghwan Noh"')}
+     ${qtCi('bizNo','사업자등록번호',c.bizNo)}${qtCi('person','견적 담당자',c.person)}${qtCi('tel','연락처',c.tel)}${qtCi('email','이메일',c.email)}${qtCi('web','홈페이지',c.web)}${qtCi('prefix','견적 번호 앞글자',c.prefix)}
+     ${qtCi('valid','유효 기간 기본 (일)',c.valid,'type="number" min="1"')}</div>
+     ${qtCi('addr','주소',c.addr)}${qtCi('addrEn','영문 주소',c.addrEn)}${qtCi('bank','입금 계좌 (은행 · 번호 · 예금주)',c.bank)}
+     <label class="f"><span>조건 및 안내 기본 문구 (새 견적서에 들어감 · 한 줄에 하나)</span><textarea data-qc="terms" rows="4">${esc(c.terms||'')}</textarea></label>
+     <label class="f"><span>English terms (default)</span><textarea data-qc="termsEn" rows="4">${esc(c.termsEn||'')}</textarea></label></section>`;}
+async function qtSealsFill(){for(const [k] of QT_SEALS){const im=document.querySelector(`img[data-seal="${k}"]`);if(im&&!im.src)im.src=await qtSealUrl(k);}}
+const qtSaveQ=()=>{const q=QT.cur;if(!q)return;const i=QT.quotes.findIndex(x=>x.id===q.id);if(i<0)QT.quotes.unshift(q);qtSave('q:'+q.id,q);};
+function qtLive(){const q=QT.cur;if(!q)return;const T=qtTot(q);q.lines.forEach((l,i)=>{const el=document.querySelector(`[data-qa="${i}"]`);if(el)el.textContent=won(qtAmt(l));
+    ['qty','days'].forEach(f=>{const inp=document.querySelector(`[data-ql="${i}:${f}"]`);if(inp&&document.activeElement!==inp)inp.value=qtNum(l[f]);});});
+  const t=document.getElementById('qtTotal');if(t)t.textContent=won(T.total);const s=document.getElementById('qtSumTxt');if(s)s.textContent=`공급가 ${won(T.gross)}${T.disc?` · 할인 −${won(T.disc)}`:''}${T.vat?` · 부가세 ${won(T.vat)}`:''} → 합계 ${won(T.total)}`;
+  qtPreviewSoon();qtSaveQ();}
+/* 숫자 입력은 그 자리에서 · 구조가 바뀌면 다시 그림 */
+document.addEventListener('input',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#qt'))return;const d=t.dataset;
+  if(d.qf!=null&&QT.cur){const f=d.qf,q=QT.cur;q[f]=['days','courts','valid','extraDisc'].includes(f)?qtNum(t.value):t.value;if(['days','courts'].includes(f))qtRecalc(q);if(f==='lang'){qtRefresh();qtSaveQ();return;}qtLive();}
+  else if(d.ql!=null&&QT.cur){const [i,f]=d.ql.split(':'),l=QT.cur.lines[+i];if(!l)return;if(f==='on'){l.on=t.checked;t.closest('.qt-line').classList.toggle('off',!t.checked);}
+    else if(['price','qty','days','disc'].includes(f)){l[f]=qtNum(t.value);if(f==='qty'||f==='days')l.auto=false;}else l[f]=t.value;qtLive();}
+  else if(d.qp!=null){const [i,f]=d.qp.split(':'),p=QT.prices[+i];if(!p)return;p[f]=f==='on'?t.checked:f==='price'?qtNum(t.value):t.value;qtSave('prices',QT.prices);}
+  else if(d.qc!=null){QT.co[d.qc]=d.qc==='valid'?qtNum(t.value):t.value;qtSave('company',QT.co);}});
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#qt'))return;const d=t.dataset;
+  if(d.qd!=null&&QT.cur){const q=QT.cur;q.disc=QT_DISC.map(x=>x[0]).filter(k=>k===d.qd?t.checked:(q.disc||[]).includes(k));t.closest('label').classList.toggle('on',t.checked);qtRecalc(q);qtLive();}
+  else if(d.qs!=null){const q=QT.quotes.find(x=>x.id===d.qs);if(q){q.status=t.value;qtSave('q:'+q.id,q);}}
+  else if(d.qf==='vat'||d.qf==='lang'){QT.cur[d.qf]=t.value;qtSaveQ();if(d.qf==='lang')qtRefresh();else qtLive();}
+  else if(d.qp!=null&&d.qp.endsWith(':unit')){qtSave('prices',QT.prices);}
+  else if(d.qsimg!=null){const F=t.files&&t.files[0];if(F)qtSealPhoto(F);t.value='';}});
+async function qtSealPhoto(F){try{const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('사진을 읽지 못했습니다'));i.src=URL.createObjectURL(F);});
+  const z=Math.min(1,500/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*z);c.height=Math.round(im.height*z);const x=c.getContext('2d');x.drawImage(im,0,0,c.width,c.height);
+  const D=x.getImageData(0,0,c.width,c.height),p=D.data;for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],red=r-(g+b)/2;const a=Math.max(0,Math.min(255,(red-25)*3.2));p[i]=192;p[i+1]=38;p[i+2]=45;p[i+3]=a;}x.putImageData(D,0,0);
+  QT.co.sealImg=c.toDataURL('image/png');QT.co.seal='custom';qtSave('company',QT.co);qtRefresh();toast('도장 사진을 넣었습니다');}catch(err){toast(msgOf(err));}}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-q]');if(!b||!b.closest('#qt'))return;if(e.target.closest('input[type=file]')||e.target.closest('label.btn'))return;const a=b.dataset.q,q=QT.cur;
+  if(a!=='del')QT.armDel=null;if(a!=='pdel')QT.armP=null;if(a!=='preset')QT.armPreset=false;
+  if(a==='view'){QT.view=b.dataset.v;qtRefresh();}
+  else if(a==='new'){QT.cur=qtNew();QT.view='edit';qtSaveQ();qtRefresh();}
+  else if(a==='open'){QT.cur=QT.quotes.find(x=>x.id===b.dataset.id)||null;QT.view=QT.cur?'edit':'list';qtRefresh();}
+  else if(a==='dup'){const s=QT.quotes.find(x=>x.id===b.dataset.id);if(!s)return;const n=qtNew();QT.cur={...qtClone(s),id:n.id,no:n.no,date:n.date,status:'draft'};QT.view='edit';qtSaveQ();qtRefresh();toast('복사한 새 견적서입니다');}
+  else if(a==='del'){const id=b.dataset.id;if(QT.armDel!==id){QT.armDel=id;qtRefresh();return;}QT.armDel=null;QT.quotes=QT.quotes.filter(x=>x.id!==id);if(QT.cur&&QT.cur.id===id)QT.cur=null;qtSave('q:'+id,null);qtRefresh();toast('견적서를 지웠습니다');}
+  else if(a==='pdf')run(qtPdf);
+  else if(a==='print')run(qtPrint);
+  else if(a==='ldel'&&q){q.lines.splice(+b.dataset.i,1);qtSaveQ();qtRefresh();}
+  else if(a==='lup'&&q){const i=+b.dataset.i;if(i>0){[q.lines[i-1],q.lines[i]]=[q.lines[i],q.lines[i-1]];qtSaveQ();qtRefresh();}}
+  else if(a==='lauto'&&q){const l=q.lines[+b.dataset.i];if(l){l.auto=true;qtAuto(q,l);qtSaveQ();qtRefresh();}}
+  else if(a==='ladd'&&q){const s=document.getElementById('qtAddSel'),p=s&&QT.prices.find(x=>x.id===s.value);if(p){q.lines.push(qtLineOf(p,q));qtSaveQ();qtRefresh();}}
+  else if(a==='lblank'&&q){q.lines.push({key:'x'+Date.now().toString(36),ko:'',en:'',desc:'',descEn:'',price:0,unit:'ea',qty:1,days:1,disc:0,note:'',on:true,auto:false});qtSaveQ();qtRefresh();}
+  else if(a==='padd'){QT.prices.push({id:'p'+Date.now().toString(36),ko:'새 항목',en:'',desc:'',descEn:'',price:0,unit:'once',on:false});qtSave('prices',QT.prices);qtRefresh();}
+  else if(a==='pdel'){const i=+b.dataset.i;if(QT.armP!==i){QT.armP=i;qtRefresh();return;}QT.armP=null;QT.prices.splice(i,1);qtSave('prices',QT.prices);qtRefresh();}
+  else if(a==='pup'){const i=+b.dataset.i,P=QT.prices;if(i>0){[P[i-1],P[i]]=[P[i],P[i-1]];qtSave('prices',P);qtRefresh();}}
+  else if(a==='preset'){if(!QT.armPreset){QT.armPreset=true;qtRefresh();return;}QT.armPreset=false;QT.prices=qtClone(QT_PRICES0);qtSave('prices',QT.prices);qtRefresh();toast('처음 단가로 되돌렸습니다');}
+  else if(a==='seal'){const k=b.dataset.k;if(k==='custom'&&!QT.co.sealImg){toast('「사진 올리기」로 도장 사진을 먼저 넣어 주세요');return;}QT.co.seal=k;qtSave('company',QT.co);qtRefresh();}});
+
 /* ---------- 관리자 ---------- */
-const ATABS_ALL=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['results','결과 · 상장'],['board','📢 공지 · 팝업'],['setup','대회 고치기 · 숨기기 · 요강'],['lic','허가 코드'],['acct','💰 회계']];
-const OWNER_TABS=['setup','lic','acct'];
+const ATABS_ALL=[['status','접수 현황 · 명단'],['dojang','도장별 참가비'],['members','회원 관리'],['results','결과 · 상장'],['board','📢 공지 · 팝업'],['setup','대회 고치기 · 숨기기 · 요강'],['lic','허가 코드'],['acct','💰 회계'],['quote','🧾 견적서']];
+const OWNER_TABS=['setup','lic','acct','quote'];
 let ATABS=ATABS_ALL;
 function vAdmin(){ATABS=ATABS_ALL.filter(([k])=>canTab(me(),k));if(!ATABS.some(([k])=>k===UI.atab))UI.atab='status';const C=D().comps;if(!UI.adminComp||!C.find(c=>c.id===UI.adminComp))UI.adminComp=C[0]&&C[0].id;
   const c=C.find(x=>x.id===UI.adminComp),tab=UI.atab||'status';
@@ -1326,6 +1674,7 @@ function vAdmin(){ATABS=ATABS_ALL.filter(([k])=>canTab(me(),k));if(!ATABS.some((
   let body='';
   if(tab==='members')body=vMembers();
   else if(tab==='acct')body=vAcct();
+  else if(tab==='quote')body=vQuote();
   else if(tab==='lic')body=vLic();
   else if(tab==='board')body=vBoard();
   else if(!c)body='<div class="empty">대회가 없습니다. 「새 대회 만들기」를 눌러 주세요.</div>';
@@ -1335,8 +1684,8 @@ function vAdmin(){ATABS=ATABS_ALL.filter(([k])=>canTab(me(),k));if(!ATABS.some((
   else body=vStatus(c,E);
   return `<div class="stack"><div class="row between"><div><span class="eyebrow">Admin</span><h1>대회 관리 · 명단 내보내기</h1>${me().role==='staff'?'<span class="small mute">직원 계정 · 접수 현황 확인과 입금 확인을 합니다</span>':me().role==='manager'?'<span class="small mute">관리자 계정 · 대회 만들기·고치기·숨기기, 명단 보내기, 결과·상장, 공지·팝업을 합니다 (허가 코드·회계·권한 바꾸기는 대표만)</span>':''}</div>${isMgr(me())?'<button class="btn" type="button" data-a="newComp">+ 새 대회 만들기</button>':''}</div>
     ${UI.newComp?compForm(null):''}
-    <div class="row">${!['members','lic','acct','board'].includes(tab)?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.hidden?'(숨김) ':''}${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
-    ${c&&!['members','lic','acct','board'].includes(tab)?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
+    <div class="row">${!['members','lic','acct','board','quote'].includes(tab)?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.hidden?'(숨김) ':''}${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
+    ${c&&!['members','lic','acct','board','quote'].includes(tab)?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
     <div class="atabs" role="tablist">${ATABS.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''}" data-a="atab" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}</div>`;}
 /* 경기 앱 주소: 주소 끝 #ksreg-대회번호 로 열면 경기 앱이 그 대회 명단 가져오기 창을 바로 엽니다 */
