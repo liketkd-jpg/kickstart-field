@@ -1703,7 +1703,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.4.90'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.4.91'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={sel:new Set(),res:{},arm:null,comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1820,6 +1820,14 @@ function hdDivCard(d){const N=`${d.n}${/체조|경연|단체/.test(d.name)?'팀'
   if(d.kind==='t')return `<div class="card hd-g hd-wide ${sel?'hd-sel':''}"><div class="row between"><b>${esc(d.name)}</b><span class="small mute">${N} · 토너먼트 ${mg}</span></div>${drawDivHtml(d,'',null)}</div>`;
   return `<div class="card hd-g ${sel?'hd-sel':''}"><div class="row between"><b>${esc(d.name)}</b><span class="small mute">${N} · 컷오프 ${esc(d.stage||'')}${d.groups.length>1?` · ${d.groups.length}개 조`:''} ${mg}</span></div>
   ${d.groups.map((g,gi)=>`${d.groups.length>1?`<div class="hd-jo">${gi+1}조</div>`:''}<ol>${g.map(p=>`<li><b>${esc(p.n)}</b> <small>${esc(p.t||'')}</small></li>`).join('')}</ol>`).join('')}</div>`;}
+/* 관리자가 선수 부별을 바로 고침 (조기 입학 등 · 마감 뒤에도) — 대진은 생년월일이 아니라 접수된 부별로 나뉩니다 */
+function hdFixPanel(c){const q=String(UI.hdFixQ||'').trim(),E=D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'&&(e.sport==='poomsae'||e.sport==='gyeokpa'));
+  const hit=q?E.filter(e=>{const l=entryLabel(e),A=e.athleteIds.map(id=>(D().athletes.find(a=>a.id===id)||{}));return (l.who+' '+A.map(a=>a.org||'').join(' ')+' '+coachOf(e.coachId).org).includes(q);}).slice(0,30):[];
+  return `<details class="card" ${q?'open':''}><summary><b>✏️ 선수 부별 고치기</b> <span class="small mute">일찍 입학한 학생처럼 실제 학년이 다른 선수 · 마감 뒤에도 관리자가 고칠 수 있습니다</span></summary>
+    <div class="stack" style="margin-top:10px"><span class="small mute">대진은 <b>생년월일이 아니라 접수된 부별·학년</b>으로 나뉩니다. 접수할 때 생년월일로 미리 채워진 부별을 지도자가 그대로 두었으면 실제 학년과 다를 수 있습니다. 여기서 고친 뒤 「모두 다시 추첨」을 눌러 주세요.</span>
+    <div class="row" style="gap:8px"><input type="text" id="hdFixQ" placeholder="선수 이름 또는 도장 이름" value="${esc(q)}" style="max-width:280px"><button class="btn" type="button" data-a="hdFixFind">찾기</button>${q?`<button class="btn ghost" type="button" data-a="hdFixClr">지우기</button>`:''}</div>
+    ${q?(hit.length?`<div class="tablewrap"><table class="nonum"><tr><th>선수</th><th>종목</th><th>지금 부문</th><th>생년월일</th><th></th></tr>${hit.map(e=>{const l=entryLabel(e),a=D().athletes.find(x=>x.id===e.athleteIds[0])||{};
+      return `<tr><td><b>${esc(l.who)}</b><div class="small mute">${esc(a.org||coachOf(e.coachId).org||'')}</div></td><td>${esc(EVN(e))}</td><td class="small">${esc(l.what)}</td><td class="small mute">${esc(a.birth||'')}${a.birth?' · '+esc(schoolTxt(a.birth)):''}</td><td><button class="btn sm ghost" type="button" data-a="editEntry" data-id="${e.id}">${UI.edit===e.id?'닫기':'부별 고치기'}</button></td></tr>${UI.edit===e.id?editRow(e,false):''}`;}).join('')}</table></div>`:'<div class="empty">찾는 선수가 없습니다.</div>'):''}</div></details>`;}
 function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저장소가 아직 없습니다</b><div>Supabase에서 10단계 SQL(schema10.sql)을 먼저 실행해 주세요.</div></div>`;
   const X=(M.drawData||{})[c.id];if(!X||X.at!==drawLast(c.id)){loadDraw(c.id).then(()=>render());return '<div class="empty">대진표를 불러오는 중…</div>';}
   const SP=hdSports(c);if(!SP.length)return '<div class="empty">이 대회에는 홈페이지에서 추첨할 종목(품새·격파·태권체조·팀 경연)이 없습니다. 겨루기는 경기 앱에서 추첨합니다.</div>';
@@ -1846,6 +1854,7 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
       ${R?'<span class="small" style="color:var(--warn)">아직 올리지 않은 추첨입니다. 마음에 들면 「홈페이지에 올리기」를, 아니면 「모두 다시 추첨」을 누르세요.</span>':''}
       ${divs.length?`<span class="small mute">부문 ${divs.length}개 · ${divs.reduce((t,d)=>t+d.n,0)}건${R?` · ${dup?`같은 도장 겹침 ${dup}곳 (토너먼트는 첫 경기 맞대결 · 컷오프는 ${HD.comm?'같은 조':'연달아 출전'} · 한 도장 인원이 많아 다 떨어뜨리지 못함)`:'같은 도장 겹침 ✓ 없음 (토너먼트 첫 경기 맞대결도 없음)'}`:''}</span>`:''}</section>
     ${R&&HD.sel.size?`<div class="notice" style="position:sticky;top:8px;z-index:5"><b>🔗 부문 합치기 · ${new Set([...HD.sel].map(k=>k.split('|')[1]+'|'+k.split('|')[0])).size}개 선택</b><div class="row" style="gap:8px;margin-top:6px"><button class="btn gold" type="button" data-a="hdMerge">선택한 부문을 하나로 합치기</button><button class="btn ghost" type="button" data-a="hdSelX">선택 풀기</button><span class="small mute">맨 위(먼저 나온) 부문 이름으로 합치고, 그 부문만 다시 추첨합니다. 같은 종목(품새끼리·격파끼리)만 합칠 수 있습니다.</span></div></div>`:''}
+    ${hdFixPanel(c)}
     ${divs.length?hdMedalCard(divs):''}
     ${divs.length?evs.map(e=>`<h3 class="hd-ev">${e} <span class="small mute">${divs.filter(d=>d.ev===e).length}개 부문</span></h3><div class="hd-grid">${divs.filter(d=>d.ev===e).map(hdDivCard).join('')}</div>`).join(''):'<div class="empty">아직 추첨하지 않았습니다.</div>'}
   </div>`;}
@@ -3057,6 +3066,8 @@ document.addEventListener('click',e=>{
   else if(a==='hdMode'){HD.comm=b.dataset.v==='comm';const c=S.comps.find(x=>x.id===UI.adminComp);if(c)delete HD.res[c.id];HD.arm=null;render();}
   else if(a==='hdFmt'){HD.fmt={...HD.fmt,[b.dataset.e]:b.dataset.v};HD.arm=null;const c=S.comps.find(x=>x.id===UI.adminComp);if(c&&HD.res[c.id]){delete HD.res[c.id];toast('경기 방식을 바꿔 추첨을 비웠습니다 · 「모두 한 번에 추첨」을 다시 눌러 주세요');}render();}
   else if(a==='hdOri'){HD.ori=b.dataset.v;render();}
+  else if(a==='hdFixFind'){UI.hdFixQ=(document.getElementById('hdFixQ')||{}).value||'';UI.edit=null;render();}
+  else if(a==='hdFixClr'){UI.hdFixQ='';UI.edit=null;render();}
   else if(a==='hdSel'){const k=b.dataset.k;if(HD.sel.has(k))HD.sel.delete(k);else HD.sel.add(k);render();}
   else if(a==='hdSelX'){HD.sel.clear();render();}
   else if(a==='hdMerge'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)hdMerge(c);}
@@ -3082,7 +3093,7 @@ document.addEventListener('click',e=>{
       const u=me(),have=new Set(S.entries.filter(e=>e.compId===c&&e.coachId===u.id&&e.status!=='cancel').map(dupKey)),seen=new Set(),dups=[];
       L.forEach(x=>{const k=dupKey({...x,compId:c});if(have.has(k)||seen.has(k))dups.push(entryLabel(x).who+' · '+EVN(x));seen.add(k);});
       if(dups.length){toast(`같은 선수가 같은 종목에 이미 접수되어 있습니다: ${dups.slice(0,3).join(', ')}${dups.length>3?` 외 ${dups.length-3}건`:''} · 장바구니에서 빼 주세요`);return;}
-      const ws=L.map(x=>ageWarn(x)).filter(Boolean);if(ws.length&&!confirm(`생년과 부별이 맞지 않는 것 같은 선수가 있습니다:\n${ws.slice(0,6).join('\n')}${ws.length>6?`\n… 외 ${ws.length-6}건`:''}\n\n그래도 접수할까요? (부별을 고치려면 「취소」)`))return;}
+      const ws=L.map(x=>ageWarn(x)).filter(Boolean);if(ws.length&&!confirm(`생년과 부별이 맞지 않는 것 같은 선수가 있습니다:\n${ws.slice(0,6).join('\n')}${ws.length>6?`\n… 외 ${ws.length-6}건`:''}\n\n일찍 입학한 학생처럼 실제 학년이 다르면 그대로 접수하셔도 됩니다. 대진은 생년월일이 아니라 지금 고른 부별로 나뉩니다.\n그래도 접수할까요? (부별을 고치려면 「취소」)`))return;}
     run(async()=>{const ins=await q(sb.from('entries').insert(L.map(x=>({comp_id:x.compId,sport:x.sport,athlete_ids:x.athleteIds,f:x.f,fee:x.fee}))).select());
       let up=0,fail=0;const withM=L.map((x,i)=>[x,(ins||[])[i]]).filter(([x,r])=>x.music&&r);
       for(const [x,r] of withM){try{await uploadMusic(mapEnt(r),x.music);up++;}catch(err){fail++;console.warn(err);}}
@@ -3098,10 +3109,10 @@ document.addEventListener('click',e=>{
   else if(a==='statsXlsx'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c)statsXlsx(c);}
   else if(a==='statOpen'){UI.statOpen={...(UI.statOpen||{}),[b.dataset.k]:!(UI.statOpen||{})[b.dataset.k]};render();}
   else if(a==='editEntry'){UI.edit=UI.edit===b.dataset.id?null:b.dataset.id;UI.edF=null;render();}
-  else if(a==='editSave'){const id=b.dataset.id,x=S.entries.find(y=>y.id===id);if(!x)return;const c=S.comps.find(y=>y.id===x.compId);if(!c||compState(c)[0]==='closed')return toast('접수가 마감되어 고칠 수 없습니다 · 대회 본부에 문의해 주세요');
+  else if(a==='editSave'){const id=b.dataset.id,x=S.entries.find(y=>y.id===id);if(!x)return;const c=S.comps.find(y=>y.id===x.compId);if(!c||(compState(c)[0]==='closed'&&!isOps(me())))return toast('접수가 마감되어 고칠 수 없습니다 · 대회 본부에 문의해 주세요');
     const v=k=>(document.getElementById('ed_'+k)||{}).value;const f={...x.f,div:v('div')??x.f.div,grade:v('grade')??x.f.grade,cls:v('cls')??x.f.cls};
-    const tmp={...x,f},w=ageWarn(tmp);if(w&&!confirm('생년과 부별이 맞지 않는 것 같습니다:\n'+w+'\n\n그래도 고칠까요?'))return;
-    run(async()=>{await q(sb.from('entries').update({f}).eq('id',id));UI.edit=null;UI.edF=null;await reload();toast('접수 부문을 고쳤습니다');});}
+    const tmp={...x,f},w=isOps(me())?'':ageWarn(tmp);if(w&&!confirm('생년과 부별이 맞지 않는 것 같습니다:\n'+w+'\n\n일찍 입학한 학생처럼 실제 학년이 다르면 그대로 고치셔도 됩니다. 고칠까요?'))return;
+    run(async()=>{await q(sb.from('entries').update({f}).eq('id',id));UI.edit=null;UI.edF=null;await reload();toast(isOps(me())&&route()==='admin'?'부별을 고쳤습니다 · 대진에 반영하려면 「모두 다시 추첨」을 눌러 주세요':'접수 부문을 고쳤습니다');});}
   else if(a==='flashX'){UI.flash='';render();}
   else if(a==='planSave'){const g=id=>(document.getElementById(id)||{}).value;const rows=['week','month','year','life'].map(k=>({kind:k,price:Number(g('pl_'+k))||0,currency:(g('plc_'+k)||'USD').trim()||'USD',updated_at:new Date().toISOString()}));
     run(async()=>{await q(sb.from('license_plans').upsert(rows));await reload();toast('금액표를 저장했습니다');});}
