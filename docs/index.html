@@ -1704,7 +1704,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.5.2'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.5.3'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1712,6 +1712,8 @@ const HD_TEAM=e=>/체조|시범|팀|경연/.test(e);
 const HD_GEV=['체공 도약 격파','수직축 회전 격파','수평축 회전 격파','종합 격파','높이 뛰어차기','제자리 연속 뒤 후려차기','주먹 격파','발 격파'];
 function hdNormEv(v){v=String(v||'').trim();if(/자유|프리스타일/.test(v)&&/품새/.test(v))return '자유 품새';if(/품새/.test(v))return '품새';if(/격파/.test(v))return '개인 격파';if(/체조/.test(v))return '팀 태권체조';if(/종합\s*경연|팀\s*경연/.test(v))return '팀 종합경연';if(/시범/.test(v))return '종합시범';if(/겨루기/.test(v))return '겨루기';return '';}
 function hdDivOf(div,gr,ev,comm){div=String(div||'').trim();gr=String(gr||'').trim();const all=/통합/.test(gr);
+  /* v1.5.3 태권체조: 초등부는 그대로 · 중등부·고등부·통합부는 「중·고등부」 한 부문 */
+  if(/체조/.test(ev)&&/^(중등|고등|통합|중·고|중고)/.test(div))return {div:'중·고등부',merge:false};
   if(/^유치/.test(div)){const m=/(\d)/.exec(div+' '+gr);return {div:comm||all||!m?'유치부 통합':`유치부 ${m[1]}세`,merge:comm||all||!m};}
   if(/^실버/.test(div)){const m=/([12])/.exec(div+' '+gr);return {div:comm||all||!m?'실버부 통합':`실버${m[1]}부`,merge:comm||all||!m};}
   if(all)return {div:/통합/.test(div)?div:div+' 통합',merge:false};
