@@ -5619,7 +5619,8 @@ async function certs(){
     for(const x of v.rows){let no='';if(meta.serial){ST.cn=(Number(localStorage.getItem('ks_certno_'+APPK))||0)+1;try{localStorage.setItem('ks_certno_'+APPK,ST.cn);}catch(e){}no=`${meta.serial}${(window.KS_FIELD&&KS_FIELD.court)||''}${String(ST.cn).padStart(3,'0')}`;}
       await AW.drawCert(ctx,AW.medalCert(x),no,seal);pages.push(CV.toDataURL('image/jpeg',.82));await new Promise(r=>setTimeout(r,0));}
     const job={kind:'cert',v:1,app:APPK,comp:comp(),court:(window.KS_FIELD&&KS_FIELD.court)||'',div:v.d.name,sig,at:Date.now(),
-      people:v.rows.map(x=>({rank:x.rank,name:x.name,team:x.team})),pages,again:!!SENT[id]};
+      people:v.rows.map(x=>({rank:x.rank,name:x.name,team:x.team,members:x.members||''})),pages,again:!!SENT[id],
+      design:{aw:s0.aw||{},comp:comp(),seal:g('SEAL')||null,lic:!!(window.KS_LIC&&!KS_LIC.ok())}}; /* v1.5.9 본부 「직접 입력 상장」이 같은 모양으로 그리게 */
     await post(`${base()}_상장_${safe(v.d.name)}.cert.json`,new Blob([JSON.stringify(job)],{type:'application/json'}));
     SENT[id]=sig;sentSave();ST.cat=Date.now();made++;
   }

@@ -977,7 +977,13 @@ setInterval(async()=>{const cf=CFG();if(!DB||!cf.backupAuto||BK.busy||route()===
   if(PR.station)return; /* 자동 출력 창은 인쇄만 */ backupNow(false);},20000);
 /* 자동 출력 창: 차례로 인쇄 */
 async function printLoop(){
-  if(route()!=='print'||PR.busy||!PR.ready||PR.pause||PR.real===false||Date.now()<PR.next)return;if(PR.real===null){chkPrinter();return;}const f=certFiles().find(needPrint);if(!f)return;
+  if(route()!=='print'||PR.busy||!PR.ready||PR.pause||PR.real===false||Date.now()<PR.next)return;if(PR.real===null){chkPrinter();return;}const f=certFiles().find(needPrint);
+  if(!f){const m=mcJobs().slice().reverse().find(j=>!PR.done['man|'+j.id]&&NOW()-j.at<6*3600e3);if(!m)return;PR.busy=true;PR.now='직접 입력 · '+m.label;schedule();
+    try{const box=document.getElementById('prt');box.innerHTML=(m.pages||[]).map(p=>`<img class="prtp" src="${p}" alt="">`).join('');await Promise.all([...box.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):Promise.resolve()));window.print();await new Promise(r=>setTimeout(r,1500));box.innerHTML='';
+      const done={...PR.done,['man|'+m.id]:NOW()};PR.done=done;await DB.doc('hqprint/main').set({done,req:PR.req});
+      await DB.doc('hqprint/log').set({list:[{at:NOW(),court:'본부',div:'직접 입력 · '+m.label,n:(m.pages||[]).length,again:false},...((S.plog&&S.plog.list)||[])].slice(0,60)});}
+    catch(e){PR.err=e.message||String(e);const done={...PR.done,['man|'+m.id]:NOW()};PR.done=done;try{await DB.doc('hqprint/main').set({done,req:PR.req});}catch(x){}}
+    finally{PR.busy=false;PR.now='';PR.next=Date.now()+4000;schedule();}return;}
   PR.busy=true;PR.now=certLabel(f.name)+' · '+f.court;PR.err='';schedule();
   try{const r=await fetch(`/api/hq/cfile?court=${encodeURIComponent(f.court)}&name=${encodeURIComponent(f.name)}`,{cache:'no-store'});if(!r.ok)throw new Error('파일을 읽지 못했습니다');
     const job=await r.json(),box=document.getElementById('prt');box.innerHTML=(job.pages||[]).map(p=>`<img class="prtp" src="${p}" alt="">`).join('');
@@ -989,6 +995,77 @@ async function printLoop(){
   finally{PR.busy=false;PR.now='';PR.next=Date.now()+4000;schedule();}
 }
 setInterval(printLoop,3000);setInterval(()=>{if(route()==='print')chkPrinter();},60000);
+/* ---------- v1.5.9 상장 직접 입력 · 고쳐서 인쇄 ----------
+   이름·소속·부문·상을 직접 적거나(받은 상장에서 불러와) 고쳐서 상장을 만듭니다. 상장 모양(주최·대표·직인·날짜)은 코트 경기 앱 「상장·시상」 설정을
+   받은 상장 파일에서 가져옵니다(없으면 기본 모양). 「자동 출력 창으로 보내기」는 상장 프린터로 바로, 「이 화면에서 인쇄」는 인쇄 창을 엽니다. */
+const MC={design:null,dAt:-1,img:'',pick:null,busy:false};
+const MC_AW=[['g','금메달 · 제1위','medal'],['s','은메달 · 제2위','medal'],['b','동메달 · 제3위','medal'],['mvp','최우수 선수상','mvp'],['coach','최우수 지도자상','coach'],['t1','종합 우승','team'],['t2','종합 준우승','team'],['t3','종합 3위','team'],['x','직접 쓰기','medal']];
+async function mcDesign(){const fs=certFiles();for(let i=fs.length-1;i>=0&&i>=fs.length-6;i--){const f=fs[i];if(MC.dAt===f.at&&MC.design)return MC.design;
+    try{const r=await fetch(`/api/hq/cfile?court=${encodeURIComponent(f.court)}&name=${encodeURIComponent(f.name)}`,{cache:'no-store'});if(!r.ok)continue;const j=await r.json();if(j.design){MC.design=j.design;MC.dAt=f.at;return MC.design;}}catch(e){}}
+  return MC.design;}
+const mcSerif='"Noto Serif KR","Nanum Myeongjo","Batang",serif';
+function mcWrap(ctx,text,maxW){const out=[];let line='';for(const w of String(text||'').split(' ')){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w;}else line=t;}if(line)out.push(line);return out;}
+function mcBody(c,comp,en){if(en){const b={medal:`has achieved outstanding results at the ${comp} and is hereby awarded this certificate.`,team:`has achieved the above result in the overall team standings of the ${comp} and is hereby awarded this certificate.`,mvp:`has displayed outstanding skill and sportsmanship at the ${comp} and is hereby named the Most Valuable Player.`,coach:`has led the team with dedication at the ${comp}, achieving excellent results, and is hereby awarded this certificate.`};return b[c.kind]||b.medal;}
+  const b={medal:`위 선수는 ${comp}에서 위와 같이 우수한 성적을 거두었으므로 이 상장을 수여합니다.`,team:`위 팀은 ${comp}에서 우수한 성적으로 위와 같이 입상하였으므로 이 상장을 수여합니다.`,mvp:`위 선수는 ${comp}에서 뛰어난 기량과 모범적인 경기 태도로 타의 귀감이 되었으므로 최우수 선수로 선정하여 이 상장을 수여합니다.`,coach:`위 지도자는 ${comp}에서 열정적인 지도로 선수들을 이끌어 우수한 성적을 거두었으므로 이 상장을 수여합니다.`};return b[c.kind]||b.medal;}
+/* 코트 경기 앱 drawCert와 같은 모양 (A4 세로 1240×1754) */
+async function mcDraw(ctx,c,no,seal,D){const CW=1240,CH=1754,SERIF=mcSerif,cf={lang:'ko',host:'',title:'회장',rep:'',date:'',...((D&&D.aw)||{})},en=cf.lang==='en',comp=(D&&D.comp)||String(CFG().compName||'').replace(/\s*\n\s*/g,' ').trim()||'태권도 대회';
+  ctx.fillStyle='#FFFDF6';ctx.fillRect(0,0,CW,CH);
+  const gold=ctx.createLinearGradient(0,0,CW,CH);gold.addColorStop(0,'#D9BC7E');gold.addColorStop(.5,'#9A7339');gold.addColorStop(1,'#C9A262');
+  ctx.strokeStyle=gold;ctx.lineWidth=10;ctx.strokeRect(60,60,CW-120,CH-120);ctx.lineWidth=2;ctx.strokeRect(84,84,CW-168,CH-168);
+  ctx.fillStyle=gold;[[84,84],[CW-84,84],[84,CH-84],[CW-84,CH-84]].forEach(([x,y])=>{ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4);ctx.fillRect(-13,-13,26,26);ctx.restore();});
+  ctx.textBaseline='alphabetic';ctx.fillStyle='#1A1A1A';
+  if(no){ctx.font=`500 26px ${SERIF}`;ctx.textAlign='left';ctx.fillText(en?`No. ${no}`:`제 ${no} 호`,150,190);}
+  ctx.textAlign='center';
+  if(en){ctx.font=`700 92px ${SERIF}`;ctx.fillText('CERTIFICATE',CW/2,370);ctx.font=`500 34px ${SERIF}`;ctx.fillStyle='#6B5A3A';ctx.fillText('OF ACHIEVEMENT',CW/2,425);}
+  else{ctx.font=`800 150px ${SERIF}`;ctx.fillText('상     장',CW/2,400);}
+  ctx.fillStyle='#8E6A30';ctx.font=`700 50px ${SERIF}`;ctx.fillText(c.award,CW/2,en?545:540);
+  ctx.strokeStyle='#C9A262';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(CW/2-260,585);ctx.lineTo(CW/2+260,585);ctx.stroke();
+  ctx.fillStyle='#1A1A1A';ctx.textAlign='left';const lx=230;let y=700;
+  const row=(k,v,big)=>{if(!v)return;ctx.font=`500 34px ${SERIF}`;ctx.fillStyle='#555';ctx.fillText(k,lx,y);ctx.font=`${big?800:600} ${big?54:38}px ${SERIF}`;ctx.fillStyle='#111';const lh=big?62:48,parts=mcWrap(ctx,v,CW-lx-260-180);parts.forEach((p,i)=>ctx.fillText(p,lx+190,y+i*lh));y+=Math.max(1,parts.length)*lh+(big?34:26);};
+  const isTeam=c.kind==='team',isCoach=c.kind==='coach';
+  if(en){row('Division',c.div);row(isTeam?'Team':'Club',isTeam?'':c.team);row(isTeam?'Team':isCoach?'Coach':'Name',c.name,true);if(c.members)row('Members',c.members);}
+  else{row('부   문',c.div);row('소   속',isTeam?'':c.team);row(isTeam?'팀   명':isCoach?'지도자':'성   명',c.name,true);if(c.members)row('팀   원',c.members);}
+  ctx.textAlign='center';ctx.font=`500 39px ${SERIF}`;ctx.fillStyle='#222';
+  const lines=mcWrap(ctx,mcBody(c,comp,en),CW-400);const by=Math.max(y+70,1060);lines.forEach((l,i)=>ctx.fillText(l,CW/2,by+i*68));
+  const d=cf.date&&/^\d{4}-\d{1,2}-\d{1,2}$/.test(cf.date)?new Date(cf.date+'T00:00:00'):new Date();
+  ctx.font=`500 38px ${SERIF}`;ctx.fillText(en?d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}):`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`,CW/2,1390);
+  ctx.font=`700 46px ${SERIF}`;ctx.fillText(cf.host||(en?'Organizing Committee':'대회 조직위원회'),CW/2,1500);
+  const sig=en?`${cf.rep||''}${cf.title?', '+cf.title:''}`:`${cf.title||''}  ${cf.rep||''}`.trim();
+  if(sig){ctx.font=`800 54px ${SERIF}`;ctx.fillText(sig,CW/2,1590);const w=ctx.measureText(sig).width;
+    if(seal){const s=150;ctx.globalAlpha=.92;ctx.drawImage(seal,CW/2+w/2-40,1590-s+40,s,s);ctx.globalAlpha=1;}
+    else if(!en){ctx.save();ctx.strokeStyle='rgba(200,40,40,.55)';ctx.lineWidth=3;ctx.strokeRect(CW/2+w/2+20,1520,96,96);ctx.fillStyle='rgba(200,40,40,.55)';ctx.font=`600 24px ${SERIF}`;ctx.fillText('(직인)',CW/2+w/2+68,1578);ctx.restore();}}
+  ctx.font='600 15px Archivo, sans-serif';ctx.fillStyle='#B9A47A';ctx.fillText('KICKSTART UP · Taekwondo Systems',CW/2,CH-100);
+  if(D&&D.lic){ctx.save();ctx.translate(CW/2,CH/2);ctx.rotate(-.55);ctx.textAlign='center';ctx.font='900 150px "Noto Sans KR",sans-serif';ctx.fillStyle='rgba(200,30,40,.12)';ctx.fillText('연습용',0,-20);ctx.font='900 90px Archivo,sans-serif';ctx.fillText('PRACTICE',0,90);ctx.restore();}}
+function mcForm(){const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};const k=v('mcAw')||'g',o=MC_AW.find(x=>x[0]===k)||MC_AW[0];
+  return {kind:o[2],award:k==='x'?(v('mcAwT')||'특별상'):o[1],div:v('mcDiv'),team:v('mcTeam'),name:v('mcName'),members:v('mcMem'),no:v('mcNo')};}
+async function mcMake(){const c=mcForm();if(!c.name){toast('이름(팀명)을 적어 주세요');return null;}
+  const D=await mcDesign();try{await Promise.all([document.fonts.load(`800 60px "Noto Serif KR"`),document.fonts.load(`500 40px "Noto Serif KR"`)]);}catch(e){}
+  const cv=document.createElement('canvas');cv.width=1240;cv.height=1754;const ctx=cv.getContext('2d');
+  const seal=D&&D.seal?await new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=D.seal;}):null;
+  await mcDraw(ctx,c,c.no,seal,D);return {c,url:cv.toDataURL('image/jpeg',.85),D};}
+const mcJobs=()=>((S.mcert&&S.mcert.list)||[]);
+function mcPanel(){const cs=certFiles(),aw=MC.pick?MC.pick:null;
+  return `<div class="mcbox" style="border-top:1px solid var(--line);margin-top:6px;padding-top:12px;display:flex;flex-direction:column;gap:8px"><div class="row between"><h3 style="margin:0">✍️ 상장 직접 입력 · 고쳐서 인쇄</h3>${MC.design?`<span class="chip ok">상장 모양 · 코트 설정 받음${MC.design.aw&&MC.design.aw.host?' · '+esc(MC.design.aw.host):''}</span>`:'<span class="chip warn">받은 상장이 없어 기본 모양</span>'}</div>
+    <span class="small muted">명단에 없는 선수, 이름·소속이 틀린 선수의 상장을 여기서 바로 만듭니다. 상장 모양(주최·대표·직인·날짜)은 코트 경기 앱 「상장·시상」 설정을 받은 상장에서 가져옵니다. 받은 상장을 고치려면 아래 「받은 상장 목록」의 「고쳐서 인쇄」를 누르세요.</span>
+    ${aw?`<div class="alert"><b>${esc(aw.div||'')}</b> ${esc(aw.court||'')} — 고칠 사람을 누르세요: ${(aw.people||[]).map((p,i)=>`<button class="btn sm" data-a="mcFill" data-i="${i}">${p.rank}위 ${esc(p.name)}</button>`).join(' ')} <button class="btn sm" data-a="mcPickX">닫기</button></div>`:''}
+    <div class="row" style="flex-wrap:wrap;gap:8px"><label class="small">상 <select id="mcAw">${MC_AW.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select></label><input id="mcAwT" placeholder="직접 쓰기: 상 이름 (예: 특별상)" style="min-width:200px"><input id="mcNo" placeholder="상장 번호 (비우면 없음)" style="width:170px"></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px"><input id="mcDiv" placeholder="부문 (예: 공인 품새 초등 3학년부 A조 남)" style="flex:2;min-width:260px"><input id="mcTeam" placeholder="소속 (도장 이름)" style="flex:1;min-width:160px"><input id="mcName" placeholder="성명 (팀 상장은 팀명) *" style="flex:1;min-width:150px"></div>
+    <input id="mcMem" placeholder="팀원 (단체 종목만 · 쉼표로)">
+    <div class="row"><button class="btn" data-a="mcPrev" ${MC.busy?'disabled':''}>👁 미리 보기</button><button class="btn primary" data-a="mcQueue" ${MC.busy?'disabled':''}>🖨 자동 출력 창으로 보내기</button><button class="btn" data-a="mcHere" ${MC.busy?'disabled':''}>이 화면에서 인쇄</button></div>
+    ${MC.img?`<img src="${MC.img}" alt="상장 미리 보기" style="width:260px;border:1px solid var(--line);border-radius:6px;background:#fff">`:''}
+    ${mcJobs().length?`<span class="small muted">보낸 직접 입력 상장: ${mcJobs().slice(0,6).map(j=>`${esc(j.label)}${PR.done['man|'+j.id]?' ✓':' (대기)'}`).join(' · ')}</span>`:''}</div>`;}
+async function mcAct(a,b){
+  if(a==='mcPickX'){MC.pick=null;schedule();return;}
+  if(a==='mcLoad'){const [court,...rest]=String(b.dataset.k).split('|'),name=rest.join('|');try{const r=await fetch(`/api/hq/cfile?court=${encodeURIComponent(court)}&name=${encodeURIComponent(name)}`,{cache:'no-store'});const j=await r.json();MC.pick={court,div:String(j.div||certLabel(name)).replace(/^\d+\s+/,''),people:j.people||[]};if(j.design){MC.design=j.design;}}catch(e){toast('상장 파일을 읽지 못했습니다');}schedule();setTimeout(()=>{const el=document.getElementById('mcDiv');if(el)el.scrollIntoView({block:'center'});},200);return;}
+  if(a==='mcFill'){const p=(MC.pick&&MC.pick.people||[])[+b.dataset.i];if(!p)return;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';};
+    set('mcAw',p.rank===1?'g':p.rank===2?'s':'b');set('mcDiv',MC.pick.div);set('mcTeam',p.team);set('mcName',p.name);set('mcMem',p.members||'');toast('불러왔습니다 · 고친 뒤 인쇄하세요');return;}
+  MC.busy=true;schedule();
+  try{const m=await mcMake();if(!m)return;MC.img=m.url;
+    if(a==='mcQueue'){const id=Date.now().toString(36),label=`${m.c.name}${m.c.div?' · '+m.c.div:''}`;
+      await DB.doc('hqprint/manual').set({list:[{id,at:NOW(),label,pages:[m.url]},...mcJobs()].slice(0,8)});toast(CFG().certAuto?'자동 출력 창으로 보냈습니다 · 곧 인쇄됩니다':'자동 출력 창으로 보냈습니다 · 「자동 출력 창」이 열려 있어야 인쇄됩니다');}
+    if(a==='mcHere'){const box=document.getElementById('prt');box.innerHTML=`<img class="prtp" src="${m.url}" alt="">`;await new Promise(r=>setTimeout(r,200));document.body.classList.add('prtst');window.print();setTimeout(()=>{document.body.classList.remove('prtst');box.innerHTML='';},800);}
+  }catch(e){toast('상장을 만들지 못했습니다: '+(e.message||e));}
+  finally{MC.busy=false;schedule();}}
 function vPrint(){
   PR.station=true;const cf=CFG(),q=certFiles().filter(needPrint),log=(S.plog&&S.plog.list)||[];
   return `<div class="panel"><div class="row between"><h2>🖨 상장 자동 출력 창</h2><span class="chip ${cf.certAuto?'ok':'warn'}">${cf.certAuto?'자동 출력 켜짐':'자동 출력 꺼짐'}</span></div>
@@ -1002,7 +1079,8 @@ function hqAutoPanels(){
   return `<div class="panel"><div class="row between"><h2>🖨 상장 자동 출력</h2><span class="row"><button class="btn sm ${cf.certAuto?'on':''}" data-a="certAuto">자동 출력 ${cf.certAuto?'켜짐':'꺼짐'}</button><button class="btn sm primary" data-a="printWin">자동 출력 창 열기</button></span></div>
     <span class="small muted">코트에서 부문(조)의 경기가 모두 끝나면 입상자 상장(1위 금·2위 은·3위 동)이 본부로 오고, <b>자동 출력 창</b>이 이 노트북의 기본 프린터로 바로 인쇄합니다. 켠 뒤에 끝난 부문부터 인쇄합니다. 점수를 고쳐 입상자가 바뀌면 고친 상장을 다시 인쇄합니다. 상장 글자·직인은 각 코트 경기 앱의 「상장·시상」 설정을 씁니다.</span>
     <div class="row"><span class="chip">받은 상장 묶음 ${cs.length}개</span><span class="chip ${q.length?'warn':'ok'}">인쇄 대기 ${q.length}개</span><span class="chip">인쇄함 ${log.length}번</span></div>
-    ${cs.length?`<details><summary class="small"><b>받은 상장 목록</b> (다시 인쇄)</summary><div style="overflow-x:auto"><table><tr><th>코트</th><th>부문</th><th>받은 시각</th><th></th></tr>${cs.slice().reverse().slice(0,80).map(f=>`<tr><td>${esc(f.court)}</td><td>${esc(certLabel(f.name))}</td><td>${new Date(f.at).toTimeString().slice(0,5)}</td><td>${needPrint(f)?'<span class="chip warn">대기</span>':`<button class="btn sm" data-a="reprint" data-k="${esc(f.key)}" data-at="${f.at}">인쇄</button>`}</td></tr>`).join('')}</table></div></details>`:''}
+    ${cs.length?`<details><summary class="small"><b>받은 상장 목록</b> (다시 인쇄)</summary><div style="overflow-x:auto"><table><tr><th>코트</th><th>부문</th><th>받은 시각</th><th></th></tr>${cs.slice().reverse().slice(0,80).map(f=>`<tr><td>${esc(f.court)}</td><td>${esc(certLabel(f.name))}</td><td>${new Date(f.at).toTimeString().slice(0,5)}</td><td>${needPrint(f)?'<span class="chip warn">대기</span>':`<button class="btn sm" data-a="reprint" data-k="${esc(f.key)}" data-at="${f.at}">인쇄</button>`} <button class="btn sm" data-a="mcLoad" data-k="${esc(f.key)}">고쳐서 인쇄</button></td></tr>`).join('')}</table></div></details>`:''}
+  ${mcPanel()}
   </div>
   <div class="panel"><div class="row between"><h2>☁️ Supabase 자동 백업</h2><span class="row"><button class="btn sm ${cf.backupAuto?'on':''}" data-a="backupAuto">자동 백업 ${cf.backupAuto?'켜짐':'꺼짐'}</button><select id="bkMin" data-hqbk title="백업 간격">${[3,5,10,15].map(m=>`<option value="${m}" ${(Number(cf.backupMin)||5)===m?'selected':''}>${m}분마다</option>`).join('')}</select><button class="btn sm" data-a="backupNow" ${BK.busy?'disabled':''}>지금 백업</button></span></div>
     <span class="small muted">코트들이 보낸 대회 데이터(명단·부문·점수·기록)를 접수 홈페이지 데이터베이스(Supabase)에 올려 둡니다. 노트북이 고장 나도 홈페이지에서 되살릴 수 있습니다. 인터넷이 필요하고, 관리자·직원 계정 로그인이 한 번 필요합니다.</span>
@@ -1015,6 +1093,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(a==='certAuto')saveCfg(cf.certAuto?{certAuto:false}:{certAuto:true,certSince:NOW()});
   else if(a==='printWin'){try{const r=await fetch('/api/hq/printwin',{method:'POST'});const j=await r.json();toast(j.how==='noprinter'?`실제 프린터가 기본으로 정해져 있지 않습니다 (지금: ${j.printer||'없음'}). 프린터를 연결하고 기본값으로 설정한 뒤 다시 눌러 주세요`:j.how==='kiosk'?'자동 출력 창을 열었습니다 (인쇄 창 없이 바로 인쇄)':'자동 출력 창을 열었습니다. 엣지·크롬을 찾지 못해 인쇄할 때 확인 창이 뜹니다');}catch(x){toast('자동 출력 창을 열지 못했습니다');}}
   else if(a==='prPause'){PR.pause=!PR.pause;schedule();}
+  else if(/^mc(Load|Fill|PickX|Prev|Queue|Here)$/.test(a)){mcAct(a,b);}
   else if(a==='reprint'){const req={...PR.req,[b.dataset.k]:Number(b.dataset.at)+1};PR.req=req;const done={...PR.done};delete done[b.dataset.k];PR.done=done;await DB.doc('hqprint/main').set({done,req});toast('자동 출력 창에서 다시 인쇄합니다');}
   else if(a==='backupAuto')saveCfg({backupAuto:!cf.backupAuto});
   else if(a==='backupNow')backupNow(true);
@@ -1492,6 +1571,7 @@ document.addEventListener('change',e=>{if(e.target&&e.target.dataset&&e.target.d
   DB.doc('hqcfg/main').onSnapshot(s=>{S.cfg=s.exists?s.data():{};S.ready=true;schedule();});
   DB.doc('hqprint/main').onSnapshot(s=>{const d=s.exists?s.data():{};PR.done=d.done||{};PR.req=d.req||{};PR.ready=true;schedule();});
   DB.doc('hqprint/log').onSnapshot(s=>{S.plog=s.exists?s.data():null;schedule();});
+  DB.doc('hqprint/manual').onSnapshot(s=>{S.mcert=s.exists?s.data():null;schedule();});
   DB.doc('hqbackup/main').onSnapshot(s=>{S.bk=s.exists?s.data():null;schedule();});
   DB.doc('hq/announce').onSnapshot(s=>{onAnnounce(s.exists?s.data():null);schedule();});
   DB.doc('hq/speaker').onSnapshot(s=>{onSpk(s.exists?s.data():null);});setTimeout(spkTick,1500);
