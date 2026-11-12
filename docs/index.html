@@ -1713,7 +1713,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.6.4'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.6.6'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1731,10 +1731,10 @@ function hdDivOf(div,gr,ev,comm){div=String(div||'').trim();gr=String(gr||'').tr
 /* v1.5.7 부 나누기 설정 — 종목마다 따로 (관리자 브라우저에 대회별로 기억) */
 const HD_RULEO={kid:['유치부',[['all','통합'],['age','나이별']]],elem:['초등부',[['g','학년별 (1~6)'],['b','저·중·고학년'],['all','초등부 통합']]],
   mid:['중·고등부',[['g','학년별'],['lv','중등부·고등부'],['all','중·고등부 통합']]],silver:['실버부',[['all','통합'],['lv','실버1·2부']]],
-  sex:['남녀',[['split','나눔 (유치부 통합·실버부는 남녀 통합)'],['splitall','모두 나눔'],['all','모두 통합']]],grp:['실력조',[['split','A조·B조 나눔'],['all','통합']]],
+  sex:['남녀',[['split','나눔 (유치부 통합·실버부는 남녀 통합)'],['splitall','모두 나눔'],['all','모두 통합']]],esex:['초등부 남녀',[['split','나눔'],['all','초등부만 남녀 통합']]],grp:['실력조',[['split','A조·B조 나눔'],['all','통합']]],
   grpn:['초등부 실력조 이름',[['ab','A조 · B조'],['kup','유품자부 · 유급자부']]]};
 const HD_RULEK_T=['mid'];/* 단체(태권체조·팀 경연)는 중·고등부만 고름 · 초등부는 한 부문 */
-function hdRuleDef(ev,c){const k=ctypeOf(c);return /체조|경연/.test(ev)?{kid:'all',elem:'all',mid:'all',silver:'all',sex:'all',grp:'all',grpn:'ab'}:{kid:k==='comm'?'all':'age',elem:'g',mid:'g',silver:k==='comm'?'all':'lv',sex:'split',grp:'split',grpn:k==='kta'?'kup':'ab'};}
+function hdRuleDef(ev,c){const k=ctypeOf(c);return /체조|경연/.test(ev)?{kid:'all',elem:'all',mid:'all',silver:'all',sex:'all',grp:'all',grpn:'ab'}:{kid:k==='comm'?'all':'age',elem:'g',mid:'g',silver:k==='comm'?'all':'lv',sex:'split',esex:'split',grp:'split',grpn:k==='kta'?'kup':'ab'};}
 function hdRuleAll(c){if(!HD.rule)HD.rule={};if(!HD.rule[c.id]){let o={};try{o=JSON.parse(localStorage.getItem('ks_hdrule_'+c.id)||'{}')||{};}catch(e){}HD.rule[c.id]=o;}return HD.rule[c.id];}
 const hdRule=(c,ev)=>({...hdRuleDef(ev,c),...(hdRuleAll(c)[ev]||{})});
 function hdRuleSet(c,ev,k,v){const A=hdRuleAll(c);A[ev]={...(A[ev]||{}),[k]:v};try{localStorage.setItem('ks_hdrule_'+c.id,JSON.stringify(A));}catch(e){}}
@@ -1787,7 +1787,7 @@ function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries
     const dv=hdDivR(divFix(col(r,/^(부별|부문|구분|부)$/))||gr,gr,ev,RL,ath&&ath.birth,HD_TEAM(ev));
     let grp=dv.merge||RL.grp==='all'||HD_TEAM(ev)?'':hdGrpN(col(r,/^(조|실력|조구분|등급|레벨|실력조)$/));
     if(grp&&RL.grpn==='kup'&&/^초등/.test(dv.div))grp=grp==='A조'?'유품자부':grp==='B조'?'유급자부':grp; /* 초등부 A조=유품자부 · B조=유급자부 */
-    const sex=team||RL.sex==='all'||(RL.sex==='split'&&/^(실버|유치부 통합)/.test(dv.div))?'':hdSexN(col(r,/^성별$/)); /* v1.6.1 유치부 통합도 실버부처럼 남녀 통합 */
+    const sex=team||RL.sex==='all'||(RL.sex==='split'&&/^(실버|유치부 통합)/.test(dv.div))||(RL.esex==='all'&&/^초등/.test(dv.div))?'':hdSexN(col(r,/^성별$/)); /* v1.6.6 초등부만 남녀 통합 */ /* v1.6.1 유치부 통합도 실버부처럼 남녀 통합 */
     const name=col(r,/^(이름|선수|선수명|성명)$/),org=col(r,/^(도장|소속|도장명|단체|소속도장)$/),mem=col(r,/^(팀원|선수명단)$/);
     const shown=[evName,sex==='남'?'남자':sex==='여'?'여자':sex,dv.div,grp].filter(Boolean).join(' ');
     return {id:e.id,sp:sport,key:hdK(shown)+'|'+(kind?'k':''),ev,evName,det,div:dv.div,grp,sex,name,org,mem};}).filter(Boolean);}
