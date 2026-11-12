@@ -932,14 +932,17 @@ function drawList(cid){const X=(M.drawData||{})[cid];if(!X)return '';const rows=
   const sp=rows.find(r=>r.sport===UI.drSp)?UI.drSp:(rows[0]||{}).sport,row=rows.find(r=>r.sport===sp);if(!row)return '<div class="empty">아직 올라온 대진표가 없습니다.</div>';
   const q=drN(UI.drQ),u=me(),mine=UI.drMine&&u&&u.role==='coach'?new Set(myAth().map(a=>a.name)):null;
   const divs=(row.data.divs||[]).filter(d=>{if(!q&&!mine)return true;const all=d.kind==='t'?d.rounds.flatMap(r=>r.m.flatMap(m=>[m.b,m.r])):d.groups.flat();return all.some(p=>drHit(p,q,mine))||(!mine&&drN(d.name).includes(q));});
+  const brief=!q&&!mine&&!UI.drAll&&(row.data.divs||[]).length>6;
   return `<div class="row between"><div class="tabs">${rows.map(r=>`<button type="button" class="${r.sport===sp?'on':''}" data-a="drSp" data-s="${r.sport}">${SPORTS[r.sport]?SPORTS[r.sport].n:r.sport}</button>`).join('')}</div>
-      <span class="row" style="gap:8px"><span class="small mute">${fmtAt(row.updated_at)} 올림 · 부문 ${(row.data.divs||[]).length}개${q||mine?` · 찾은 부문 ${divs.length}개`:''}</span><button class="btn sm" type="button" data-a="hdPdf" data-c="${cid}" data-o="p">📄 대진 책자 PDF · 세로</button><button class="btn sm" type="button" data-a="hdPdf" data-c="${cid}" data-o="l">가로</button></span></div>
-    ${divs.length?divs.map((d,i)=>`<details class="card drd" ${q||mine||divs.length<=3?'open':''}><summary><b>${esc(d.name)}</b><span class="row" style="gap:6px">${d.court?`<span class="chip open">${esc(d.court)}코트</span>`:''}<span class="small mute">${d.n}${/단체|팀|체조|종합/.test(d.name)?'팀':'명'} · ${d.kind==='t'?'토너먼트':`${d.stage?esc(d.stage)+' ':''}출전 순서`}</span></span></summary>${drawDivHtml(d,q,mine)}</details>`).join('')
+      <span class="row" style="gap:8px"><span class="small mute">${fmtAt(row.updated_at)} 올림 · 부문 ${(row.data.divs||[]).length}개${q||mine?` · 찾은 부문 ${divs.length}개`:''}</span></span></div>
+    ${brief?`<div class="empty">부문이 ${(row.data.divs||[]).length}개라 화면에 다 펼치면 아주 길어집니다. 위 「대진표 파일 내려받기」로 보시거나, 선수 이름·도장으로 찾기${u&&u.role==='coach'?' 또는 「내 선수만」':''}을 쓰시면 해당 부문만 나옵니다.<div style="margin-top:10px"><button class="btn sm" type="button" data-a="drAll">화면에서 모든 부문 보기</button></div></div>`
+      :divs.length?divs.map((d,i)=>`<details class="card drd" ${q||mine||divs.length<=3?'open':''}><summary><b>${esc(d.name)}</b><span class="row" style="gap:6px">${d.court?`<span class="chip open">${esc(d.court)}코트</span>`:''}<span class="small mute">${d.n}${/단체|팀|체조|종합/.test(d.name)?'팀':'명'} · ${d.kind==='t'?'토너먼트':`${d.stage?esc(d.stage)+' ':''}출전 순서`}</span></span></summary>${drawDivHtml(d,q,mine)}</details>`).join('')
       :'<div class="empty">찾는 선수가 없습니다.</div>'}`;}
 function vDraw(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class="empty">대회를 찾지 못했습니다.</div>';
   const X=(M.drawData||{})[id];if(!X||X.at!==drawLast(id)){loadDraw(id);}const u=me();
   return `<div class="stack">
     <div><span class="eyebrow">Draw · Order</span><h1>${esc(c.name)} 대진표 · 출전 순서</h1><p class="mute" style="margin:6px 0 0">${fmtDate(c.date)} · ${esc(c.place)} · 경기 진행에 따라 바뀔 수 있으니 대회장 안내를 함께 확인해 주세요.</p></div>
+    ${X&&!X.err&&(X.rows||[]).length?`<div class="card row" style="gap:8px;flex-wrap:wrap;align-items:center;border-color:var(--gold3)"><b>📄 대진표 파일</b><button class="btn gold" type="button" data-a="hdPdf" data-c="${id}" data-o="p">내려받기 (PDF · 세로)</button><button class="btn" type="button" data-a="hdPdf" data-c="${id}" data-o="l">가로형</button><span class="small mute">모든 종목·부문이 한 파일에 들어 있습니다 · 인쇄해서 쓰기 좋습니다</span></div>`:''}
     <div class="row"><input type="search" id="drSearch" placeholder="선수 이름이나 소속(도장)으로 찾기" value="${esc(UI.drQ||'')}" style="flex:1;min-width:220px" autocomplete="off">${u&&u.role==='coach'?`<label class="check"><input type="checkbox" data-a="drMine" ${UI.drMine?'checked':''}><span>내 선수만</span></label>`:''}</div>
     <div id="drList" class="stack">${!X?'<div class="empty">대진표를 불러오는 중…</div>':X.err?`<div class="note">대진표를 불러오지 못했습니다: ${esc(X.err)}</div>`:drawList(id)}</div></div>`;}
 document.addEventListener('input',ev=>{if(ev.target&&ev.target.id==='drSearch'){UI.drQ=ev.target.value;const el=document.getElementById('drList'),id=route().slice(5);if(el)el.innerHTML=drawList(id);}});
@@ -1352,6 +1355,7 @@ function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id)
     ${byComp.length?byComp.map(c=>{const L=E.filter(e=>e.compId===c.id),live=L.filter(e=>e.status!=='cancel'),open=compState(c)[0]!=='closed';
       return `<section class="card stack"><div class="row between"><div><h3>${esc(c.name)}</h3><span class="small mute">${fmtDate(c.date)} · 마감 ${fmtDate(c.deadline)}</span></div>
         <div class="row">${open?`<a class="btn sm" href="#enter-${c.id}">선수 더 접수</a>`:''}<span class="num" style="font-size:20px;color:var(--gold2)">${won(live.reduce((s,e)=>s+e.fee,0))}</span></div></div>
+        ${drawsOf(c.id).length?`<div class="notice drn"><b>📋 대진표가 올라왔습니다</b><div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap"><button class="btn gold sm" type="button" data-a="hdPdf" data-c="${c.id}" data-o="p">📄 대진표 파일 내려받기 (PDF · 세로)</button><button class="btn sm" type="button" data-a="hdPdf" data-c="${c.id}" data-o="l">가로형</button><a class="btn sm ghost" href="#draw-${c.id}">화면에서 우리 선수 찾기</a></div></div>`:''}
         ${musSummary(c,L)}<div class="tablewrap"><table><tr><th>종목</th><th>선수</th><th>부문</th>${L.some(needMusic)&&M.musicOk?'<th>음원</th>':''}<th>참가비</th><th>상태</th><th></th></tr>
         ${L.map(e=>{const l=entryLabel(e),[k,t]=STS[e.status];return `<tr><td><span class="chip ${SPORTS[e.sport].c}">${SPORTS[e.sport].n}</span></td><td><b>${esc(l.who)}</b>${M.hasNat?' '+entryNats(e):''}</td><td class="small">${esc(l.what)}</td>${L.some(needMusic)&&M.musicOk?`<td>${e.status!=='cancel'?musCell(e,c):''}</td>`:''}<td class="num">${won(e.fee)}</td><td><span class="st ${k}">${t}</span></td>
           <td>${open&&e.status!=='cancel'&&e.sport!=='kyorugi'?`<button class="btn sm ghost" type="button" data-a="editEntry" data-id="${e.id}">${UI.edit===e.id?'닫기':'고치기'}</button> `:''}${open&&e.status==='wait'?`<button class="btn sm danger" type="button" data-a="cancelEntry" data-id="${e.id}">${UI.cArm===e.id?'한 번 더 누르면 취소':'접수 취소'}</button>`:''}</td></tr>
@@ -1711,7 +1715,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.6.1'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.6.2'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -3239,6 +3243,7 @@ document.addEventListener('click',e=>{
   else if(a==='ecMore'){UI.ecMore=!UI.ecMore;render();}
   else if(a==='drSp'){UI.drSp=b.dataset.s;render();}
   else if(a==='drMine'){UI.drMine=!UI.drMine;render();}
+  else if(a==='drAll'){UI.drAll=true;render();}
   else if(a==='drDel'){const c=UI.adminComp,sp=b.dataset.s;if(UI.drArm!==sp){UI.drArm=sp;render();setTimeout(()=>{UI.drArm=null;},4000);return;}
     run(async()=>{await q(sb.from('draws').delete().eq('comp_id',c).eq('sport',sp));UI.drArm=null;await reload();toast('홈페이지 대진표를 내렸습니다');});}
   else if(a==='bankUndo'){bankUndo();}
