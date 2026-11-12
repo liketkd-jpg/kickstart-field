@@ -1345,8 +1345,16 @@ function payCard(u,E){const P=UI.payDone;if(!P)return '';const c=D().comps.find(
 function editRow(e,mus){const f={...(e.f||{}),...(UI.edF&&UI.edF.id===e.id?UI.edF:{})},divs=e.sport==='gyeokpa'?GP_LV:PS_DIV,gl=e.sport==='gyeokpa'?null:gradeList(f.div);
   return `<tr class="edrow"><td colspan="${mus?7:6}"><div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
     <label class="f"><span>부별</span>${sel('ed_div',divs,f.div||'')}</label>${gl?`<label class="f"><span>${gradeLbl(f.div)}</span>${sel('ed_grade',gl,f.grade||'')}</label>`:''}
-    <label class="f"><span>실력조</span>${sel('ed_cls',['',...CLS],f.cls||'')}</label>
-    <button class="btn gold" type="button" data-a="editSave" data-id="${e.id}">저장</button><span class="small mute">선수나 종목을 바꾸려면 「접수 취소」 후 다시 접수해 주세요 · 참가비는 그대로입니다</span></div></td></tr>`;}
+    <label class="f"><span>실력조</span>${sel('ed_cls',['',...CLS],f.cls||'')}</label>${edExtra(e,f)}
+    <button class="btn gold" type="button" data-a="editSave" data-id="${e.id}">저장</button><span class="small mute">부별·학년·실력조${e.sport==='gyeokpa'&&e.athleteIds.length===1?'·세부 종목':''}${e.athleteIds.length>1?'·팀원·팀 이름':''}을 고칠 수 있습니다 · 다시 접수하지 않아도 되고 참가비·입금 상태는 그대로입니다</span></div></td></tr>`;}
+/* v1.6.8 고치기 넓힘: 격파 세부 종목 · 단체(팀) 팀원과 팀 이름 — 다시 접수하지 않고 그 자리에서 */
+const edTeamMin=e=>e.sport==='gyeokpa'?5:/체조/.test((e.f||{}).type||'')?7:/경연|종합/.test((e.f||{}).type||'')?9:2;
+function edExtra(e,f){let h='';
+  if(e.sport==='gyeokpa'&&e.athleteIds.length===1&&f.ev!=='기술격파 단체전')h+=`<label class="f"><span>세부 종목</span>${sel('ed_ev',GP_EV.filter(x=>x.k!=='team').map(x=>x.n),f.ev||'')}</label>`;
+  if(e.athleteIds.length>1){const L=D().athletes.filter(a=>a.coachId===e.coachId).sort((a,b)=>(e.athleteIds.includes(b.id)-e.athleteIds.includes(a.id))||String(a.name).localeCompare(String(b.name),'ko'));
+    h+=`<label class="f"><span>팀 이름</span><input type="text" id="ed_team" value="${esc(f.team||'')}" style="min-width:160px"></label>
+    <div class="stack" style="gap:4px;flex-basis:100%"><span class="small"><b>팀원</b> (지금 ${e.athleteIds.length}명 · ${edTeamMin(e)}명 이상)</span><div class="row" style="gap:4px 12px;flex-wrap:wrap;max-height:180px;overflow:auto">${L.map(a=>`<label class="check"><input type="checkbox" class="edm" value="${a.id}" ${e.athleteIds.includes(a.id)?'checked':''}><span>${esc(a.name)}</span></label>`).join('')}</div></div>`;}
+  return h;}
 function vEntries(){const u=me();const E=D().entries.filter(e=>e.coachId===u.id);
   const byComp=D().comps.filter(c=>E.some(e=>e.compId===c.id));
   return `<div class="stack"><div><span class="eyebrow">My Entries</span><h1>내 접수 내역</h1></div>
@@ -1714,7 +1722,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.6.7'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.6.8'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -3294,9 +3302,12 @@ document.addEventListener('click',e=>{
   else if(a==='editEntry'){UI.edit=UI.edit===b.dataset.id?null:b.dataset.id;UI.edF=null;render();}
   else if(a==='editSave'){const id=b.dataset.id,x=S.entries.find(y=>y.id===id);if(!x)return;const c=S.comps.find(y=>y.id===x.compId);if(!c||(compState(c)[0]==='closed'&&!isOps(me())))return toast('접수가 마감되어 고칠 수 없습니다 · 대회 본부에 문의해 주세요');
     const v=k=>(document.getElementById('ed_'+k)||{}).value;const f={...x.f,div:v('div')??x.f.div,grade:v('grade')??x.f.grade,cls:v('cls')??x.f.cls};
+    if(v('ev')!=null&&v('ev')!=='')f.ev=v('ev');if(v('team')!=null)f.team=v('team').trim();
+    let ids=x.athleteIds;if(x.athleteIds.length>1){ids=[...document.querySelectorAll('.edrow .edm:checked')].map(i=>i.value);if(ids.length<edTeamMin(x))return toast(`팀원은 ${edTeamMin(x)}명 이상이어야 합니다 (지금 ${ids.length}명)`);}
+    {const k=dupKey({...x,f,athleteIds:ids}),other=S.entries.find(y=>y.id!==x.id&&y.compId===x.compId&&y.status!=='cancel'&&dupKey(y)===k);if(other)return toast('같은 선수가 같은 종목에 이미 접수되어 있습니다 · 그 접수를 먼저 취소하거나 다른 세부 종목을 골라 주세요');}
     const tmp={...x,f},w=isOps(me())?'':ageWarn(tmp);if(w&&!confirm('⚠ 생년월일과 학년이 다릅니다:\n'+w+'\n\n조기 입학 등으로 학년이 맞으면 「확인」을 눌러 주세요 (대회 본부가 한 번 더 확인합니다).'))return;
     if(w)f.ageOk=true;if(isOps(me()))f.ageAdm=true;
-    run(async()=>{await q(sb.from('entries').update({f}).eq('id',id));UI.edit=null;UI.edF=null;await reload();toast(isOps(me())&&route()==='admin'?'부별을 고쳤습니다 · 대진에 반영하려면 「모두 다시 추첨」을 눌러 주세요':'접수 부문을 고쳤습니다');});}
+    run(async()=>{const upd=ids===x.athleteIds?{f}:{f,athlete_ids:ids};try{await q(sb.from('entries').update(upd).eq('id',id));}catch(err){if(/입금 확인 전|취소할 수/.test(String(err&&err.message||err)))throw new Error('홈페이지 데이터베이스가 아직 「고치기」를 막고 있습니다 · 대회 본부가 Supabase에서 schema15.sql을 한 번 실행해야 합니다');throw err;}UI.edit=null;UI.edF=null;await reload();toast(isOps(me())&&route()==='admin'?'부별을 고쳤습니다 · 대진에 반영하려면 「모두 다시 추첨」을 눌러 주세요':'접수 부문을 고쳤습니다');});}
   else if(a==='flashX'){UI.flash='';render();}
   else if(a==='planSave'){const g=id=>(document.getElementById(id)||{}).value;const rows=['week','month','year','life'].map(k=>({kind:k,price:Number(g('pl_'+k))||0,currency:(g('plc_'+k)||'USD').trim()||'USD',updated_at:new Date().toISOString()}));
     run(async()=>{await q(sb.from('license_plans').upsert(rows));await reload();toast('금액표를 저장했습니다');});}
