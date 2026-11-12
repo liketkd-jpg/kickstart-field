@@ -1685,11 +1685,15 @@ const appOf=e=>/격파|종합경연/.test(e)?'gyeokpa':/겨루기/.test(e)?'kyor
 const APPN={poomsae:'품새',gyeokpa:'격파',kyorugi:'겨루기'};
 
 /* ---------- 명단 → 경기 카드 ---------- */
+function hdParse(h){const t=String(h||'').replace(/\s+/g,' ').trim(),gm=/ (유품자부|유급자부|[A-Z]조)$/.exec(t),rest=gm?t.slice(0,gm.index):t;
+  const dm=/(유치|초등|중등|고등|중·고|실버|일반|대학|성인|시니어|마스터|통합부|장년|청년)/.exec(rest),pre=dm?rest.slice(0,dm.index):rest,sm=/(남자|여자) *$/.exec(pre);
+  return {div:dm?rest.slice(dm.index).trim():'',grp:gm?gm[1]:'',sex:sm?(sm[1]==='남자'?'남':'여'):''};}
 function rebuild(){
   G={};
   /* v1.4.90 홈페이지에서 추첨해 온 명단은 홈페이지가 정한 부문(「추첨부문」 칸) 그대로 묶음 — 관리자가 합친 부문도 그대로 */
   P.roster.forEach((r,i)=>{const id=r.hdDiv?'hd|'+r.ev+'|'+r.hdDiv:[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||''),r.gev||''].join('|');
-    const g=G[id]||(G[id]={id,ev:r.ev,div:r.div,grp:r.grp||'',sex:isTeam(r.ev)?'':(r.sex||''),gev:r.gev||'',units:0,people:0,members:[]});
+    const x=r.hdDiv?hdParse(r.hdDiv):null; /* v1.5.8 홈페이지가 정한 부문 이름(학년별·유품자부 등)을 그대로 경기 이름으로 */
+    const g=G[id]||(G[id]={id,ev:r.ev,div:x&&x.div?x.div:r.div,grp:x?x.grp:(r.grp||''),sex:isTeam(r.ev)?'':x?x.sex:(r.sex||''),gev:r.gev||'',units:0,people:0,members:[]});
     g.units++;g.people+=isTeam(r.ev)?(+r.cnt||1):1;g.members.push(i);});
 }
 const perOf=e=>{const v=Number(P.per[e]);return v>0?v:(DEFPER[e]||(isTeam(e)?4:1.5));};
@@ -1697,7 +1701,7 @@ const dur=g=>g.units*perOf(g.ev);
 const gap=()=>Math.max(0,Number(P.gap)||0);
 const events=()=>[...new Set(Object.values(G).map(g=>g.ev))].sort((a,b)=>evRank(a)-evRank(b)||a.localeCompare(b));
 /* v1.4.59 같은 부별 안에서는 B조 먼저, A조 다음 */
-const grpRank=g=>/B/i.test(g||'')?0:/A/i.test(g||'')?1:2;
+const grpRank=g=>/B|유급/i.test(g||'')?0:/A|유품/i.test(g||'')?1:2;
 const gevRank=g=>{const i=GEV.findIndex(x=>x[0]===(g||''));return i<0?-1:i;};
 const cmpG=(a,b)=>evRank(a.ev)-evRank(b.ev)||gevRank(a.gev)-gevRank(b.gev)||divRank(a.div)-divRank(b.div)||a.div.localeCompare(b.div)||grpRank(a.grp)-grpRank(b.grp)||a.grp.localeCompare(b.grp)||(a.sex==='남'?0:1)-(b.sex==='남'?0:1);
 const gamesOf=e=>Object.values(G).filter(g=>g.ev===e).sort(cmpG);
