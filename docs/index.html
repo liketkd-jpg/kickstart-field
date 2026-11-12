@@ -1704,7 +1704,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.5.4'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.5.5'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1744,7 +1744,7 @@ function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries
     if(!ev)ev=sport==='gyeokpa'?'개인 격파':'품새';
     const gr=col(r,/^학년$/),dv=hdDivOf(divFix(col(r,/^(부별|부문|구분|부)$/))||gr,gr,ev,HD.comm),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
     const det=ev==='개인 격파'&&!kind?(HD_GEV.find(g=>hdK(g)===hdK(kindRaw))||kindRaw||'격파'):'';
-    const grp=dv.merge?'':hdGrpN(col(r,/^(조|실력|조구분|등급|레벨|실력조)$/)),sex=HD_TEAM(ev)||kind?'':hdSexN(col(r,/^성별$/));
+    const grp=dv.merge?'':hdGrpN(col(r,/^(조|실력|조구분|등급|레벨|실력조)$/)),sex=HD_TEAM(ev)||kind||/^실버/.test(dv.div)?'':hdSexN(col(r,/^성별$/)); /* v1.5.5 실버부는 남녀 통합 */
     const name=col(r,/^(이름|선수|선수명|성명)$/),org=col(r,/^(도장|소속|도장명|단체|소속도장)$/),mem=col(r,/^(팀원|선수명단)$/);
     const evName=kind&&/격파/.test(ev)?'기술격파 단체전':det?det:ev==='품새'?'공인 품새':ev==='팀 태권체조'?'태권체조':ev==='팀 종합경연'?'팀 경연':ev;
     const shown=[evName,sex==='남'?'남자':sex==='여'?'여자':sex,dv.div,grp].filter(Boolean).join(' ');
