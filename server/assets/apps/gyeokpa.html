@@ -6084,7 +6084,12 @@ const FX=(()=>{
   /* 소리: 파일 없이 직접 합성 */
   let AC=null;
   function ac(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}return AC;}
-  addEventListener('pointerdown',()=>{if(soundHere())ac();},true);addEventListener('keydown',()=>{if(soundHere())ac();},true);
+  addEventListener('pointerdown',()=>{if(soundHere())ac();},true);
+  /* v1.4.99 전광판 컴퓨터는 브라우저 규칙상 화면을 한 번 눌러야 소리가 남 → 소리가 잠겨 있으면 구석에 「눌러서 효과음 켜기」 */
+  setInterval(()=>{try{const need=isDisp()&&soundHere()&&(!AC||AC.state!=='running');let el=document.getElementById('ksfxSnd');
+    if(need&&!el){el=document.createElement('button');el.id='ksfxSnd';el.type='button';el.textContent='🔊 눌러서 효과음 켜기';el.style.cssText='position:fixed;right:14px;bottom:14px;z-index:60;padding:10px 16px;border-radius:24px;border:1px solid rgba(217,181,106,.7);background:rgba(11,12,15,.85);color:#F3DFAE;font:700 15px "Noto Sans KR",sans-serif;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.4)';
+      el.onclick=()=>{ac();setTimeout(()=>{if(AC&&AC.state==='running')el.remove();},300);};document.body.appendChild(el);}
+    else if(!need&&el)el.remove();}catch(e){}},2000);addEventListener('keydown',()=>{if(soundHere())ac();},true);
   function noise(c,d){const b=c.createBuffer(1,Math.max(1,c.sampleRate*d|0),c.sampleRate),x=b.getChannelData(0);for(let i=0;i<x.length;i++)x[i]=Math.random()*2-1;const s=c.createBufferSource();s.buffer=b;return s;}
   function env(g,t,a,pk,dec){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(pk,t+a);g.gain.exponentialRampToValueAtTime(.0001,t+a+dec);}
   const SND={
@@ -6267,11 +6272,12 @@ function fxPanel(){const f=FX.fxs(),b=(k,v,l,on)=>`<button class="${on?'on':''}"
   return `<div class="panel ksfx-set"><h2>화면 디자인 · 효과음</h2>
     <div class="field"><span class="label">점수·승리 효과음이 나올 컴퓨터</span><div class="seg">${b('fxSound','display','전광판',f.snd==='display')}${b('fxSound','admin','운영석',f.snd==='admin')}${b('fxSound','both','둘 다',f.snd==='both')}${b('fxSound','off','끄기',f.snd==='off')}</div></div>
     <div class="field"><span class="label">운영석 화면 디자인</span><div class="seg">${b('opTheme','brand','브랜드 (어두운 흑연·금색)',settings().opTheme!=='light')}${b('opTheme','light','밝은 화면',settings().opTheme==='light')}</div></div>
+    <div class="field"><span class="label">전광판 모양</span><div class="seg">${b('board','brand','브랜드 (점수 효과·소리)',settings().board!=='classic')}${b('board','classic','클래식 (예전 모양 · 효과 없음)',settings().board==='classic')}</div></div>
     <div class="field"><span class="label">화면 효과 (번개·불꽃·나무 조각·금빛)</span><div class="seg">${b('fxVisual','on','켬',f.vis)}${b('fxVisual','off','끔',!f.vis)}</div></div>
     <span class="small muted">겨루기는 득점(3점 이상은 번개 소리)·감점·승리, 품새·격파는 점수 공개·격파 때 소리가 납니다. 전광판 컴퓨터에서 소리를 내려면 전광판 화면을 처음에 한 번 눌러 주세요(브라우저 규칙). 운영석과 전광판을 한 노트북에서 띄우면 「둘 다」는 소리가 겹치니 한쪽만 고르세요.</span>
     <div><button class="btn sm" data-ksfxset="test">🔊 효과음 들어보기</button></div></div>`;}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ksfxset]');if(!b)return;e.preventDefault();e.stopPropagation();
-  const k=b.dataset.ksfxset;if(k==='test'){try{const a=new (window.AudioContext||window.webkitAudioContext)();a.close();}catch(x){}FX.testPlay();return;}FX.setFx({[k]:b.dataset.v});},true);
+  const k=b.dataset.ksfxset;if(k==='board'){setBoard(b.dataset.v==='classic'?'classic':'brand');return;}if(k==='test'){try{const a=new (window.AudioContext||window.webkitAudioContext)();a.close();}catch(x){}FX.testPlay();return;}FX.setFx({[k]:b.dataset.v});},true);
 (function hookSettings(n){const f=window.aSettings;if(typeof f!=='function'||f.__ksfx){if(n<40&&typeof f!=='function')setTimeout(()=>hookSettings(n+1),250);return;}
   const w=function(){const h=f.apply(this,arguments);try{return fxPanel()+h;}catch(e){return h;}};w.__ksfx=true;window.aSettings=w;})(0);
 window.KS_BOARD={classic,setBoard,kyBoard,app:APP,fx:FX};
