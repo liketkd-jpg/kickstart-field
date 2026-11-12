@@ -113,19 +113,29 @@ func checkForUpdate(exe string) bool {
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", "kickstart-field/"+version)
 	res, err := c.Do(req)
-	if err != nil {
-		updateNote = "인터넷 없음 · 업데이트 확인 건너뜀"
-		return false
-	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		updateNote = "아직 올라온 업데이트가 없습니다"
-		return false
-	}
 	var rel ghRelease
-	if json.NewDecoder(io.LimitReader(res.Body, 2<<20)).Decode(&rel) != nil || rel.Draft || rel.Pre {
-		updateNote = "업데이트 정보를 읽지 못했습니다"
-		return false
+	if err == nil && res.StatusCode == 200 {
+		dec := json.NewDecoder(io.LimitReader(res.Body, 2<<20)).Decode(&rel)
+		res.Body.Close()
+		if dec != nil || rel.Draft || rel.Pre {
+			updateNote = "업데이트 정보를 읽지 못했습니다"
+			return false
+		}
+	} else {
+		if err == nil {
+			res.Body.Close()
+		}
+		// v1.6.5 깃허브 API가 막혀도(노트북 여러 대 · 1시간 60번 제한) 웹 주소로 다시 확인
+		tag, a, werr := latestViaWeb(err)
+		if werr != nil || a == nil {
+			if err != nil {
+				updateNote = "인터넷 없음 · 업데이트 확인 건너뜀"
+			} else {
+				updateNote = "업데이트 확인이 잠시 막혔습니다 (잠시 뒤 다시 켜 주세요)"
+			}
+			return false
+		}
+		rel = ghRelease{Tag: tag, Assets: []ghAsset{*a}}
 	}
 	if !newerThan(rel.Tag, version) {
 		updateNote = "최신 버전입니다"

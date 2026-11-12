@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -44,11 +45,12 @@ func fetchLatest() (string, *ghAsset, error) {
 	req.Header.Set("User-Agent", "kickstart-field/"+version)
 	res, err := c.Do(req)
 	if err != nil {
-		return "", nil, err
+		return latestViaWeb(err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		return "", nil, fmt.Errorf("응답 %d", res.StatusCode)
+		// v1.6.5 깃허브 API는 같은 인터넷(공유기)에서 1시간 60번까지만 → 노트북이 여러 대면 막힐 수 있어 웹 주소로 다시 확인
+		return latestViaWeb(fmt.Errorf("응답 %d", res.StatusCode))
 	}
 	var rel ghRelease
 	if err := json.NewDecoder(io.LimitReader(res.Body, 2<<20)).Decode(&rel); err != nil || rel.Draft || rel.Pre {
@@ -60,6 +62,33 @@ func fetchLatest() (string, *ghAsset, error) {
 		}
 	}
 	return rel.Tag, nil, nil
+}
+
+// v1.6.5 깃허브 API가 막혔을 때: github.com/…/releases/latest 가 넘겨주는 주소(…/tag/v1.6.5)에서 버전을 읽고
+// 파일은 …/releases/download/<버전>/<파일 이름> 으로 받음 (횟수 제한 없음)
+func latestViaWeb(prev error) (string, *ghAsset, error) {
+	web := os.Getenv("KS_UPDATE_WEB")
+	if web == "" {
+		web = "https://github.com"
+	}
+	c := &http.Client{Timeout: 8 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	req, _ := http.NewRequest("GET", web+"/"+updateRepo+"/releases/latest", nil)
+	req.Header.Set("User-Agent", "kickstart-field/"+version)
+	res, err := c.Do(req)
+	if err != nil {
+		return "", nil, prev
+	}
+	res.Body.Close()
+	loc := res.Header.Get("Location")
+	i := strings.LastIndex(loc, "/tag/")
+	if i < 0 {
+		return "", nil, prev
+	}
+	tag := loc[i+5:]
+	if parseVer(tag) == nil {
+		return "", nil, prev
+	}
+	return tag, &ghAsset{Name: assetName(), URL: web + "/" + updateRepo + "/releases/download/" + tag + "/" + assetName()}, nil
 }
 
 func checkLatestNow() {
