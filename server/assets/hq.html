@@ -1825,8 +1825,8 @@ const KEYN=k=>String(k).normalize('NFKC').replace(/\(.*?\)/g,'').replace(/[\s*�
 /* v1.4.55 유치부·실버부·「통합」: 접수 양식에서 유치부는 3~7세·통합, 실버부는 실버 1·실버 2·통합, 학년은 1~6학년·통합을 고름.
    생활체육 기준(본부 종목 설정)이면 유치부·실버부는 나이·띠(실력조) 상관없이 「유치부 통합」·「실버부 통합」 한 부문으로 묶음 (성별은 나눔) */
 function divOf(div,gr,ev,std){div=String(div||'').trim();gr=String(gr||'').trim();const comm=std==='comm',all=/통합/.test(gr);
-  /* v1.5.3 태권체조: 초등부는 그대로 · 중등부·고등부·통합부는 「중·고등부」 한 부문 */
-  if(/체조/.test(ev)&&/^(중등|고등|통합|중·고|중고)/.test(div))return {div:'중·고등부',merge:false};
+  /* v1.5.3~4 태권체조·팀 경연: 초등부는 그대로 · 중등부·고등부·통합부는 「중·고등부」 한 부문 */
+  if(/체조|경연|시범/.test(ev)&&/^(중등|고등|통합|중·고|중고)/.test(div))return {div:'중·고등부',merge:false};
   if(/^유치/.test(div)){const m=/(\d)/.exec(div+' '+gr);return {div:comm||all||!m?'유치부 통합':`유치부 ${m[1]}세`,merge:comm||all||!m};}
   if(/^실버/.test(div)){const m=/([12])/.exec(div+' '+gr);return {div:comm||all||!m?'실버부 통합':`실버${m[1]}부`,merge:comm||all||!m};}
   if(all)return {div:/통합/.test(div)?div:div+' 통합',merge:false};
