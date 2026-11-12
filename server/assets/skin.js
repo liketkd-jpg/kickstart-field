@@ -103,9 +103,9 @@ body.disp .board.sk{position:fixed;inset:0;margin:0;padding:0;border:0;border-ra
 .board.sk{--u:min(calc(100vw/1920),calc(100vh/1080));position:relative;min-height:60vh;overflow:hidden;font-family:"Noto Sans KR","Malgun Gothic",sans-serif;color:#fff}
 .board.sk>.sk-bg{position:absolute!important;inset:0!important;z-index:0!important;width:auto;height:auto}
 .board.sk>.sk-s{position:absolute!important;z-index:1!important;left:50%;top:50%;width:${U(1920)};height:${U(1080)};transform:translate(-50%,-50%)}
-.sk-top{position:absolute;left:${U(70)};right:${U(70)};top:${U(50)};display:flex;justify-content:space-between;align-items:center;gap:${U(30)}}
+.sk-top{position:absolute;left:${U(70)};right:${U(70)};top:${U(50)};height:${U(64)};display:flex;justify-content:space-between;align-items:center;gap:${U(30)}}
 .sk-brand{font:900 ${U(26)} Cinzel,"Noto Sans KR",serif;letter-spacing:.42em}
-.sk-comp{font-weight:800;text-align:center;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sk-comp{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:${U(1200)};font-weight:800;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sk-court{font:900 ${U(26)} "Noto Sans KR";padding:${U(10)} ${U(26)};border-radius:${U(30)}}
 .sk-div{position:absolute;left:0;right:0;top:${U(150)};text-align:center;font:700 ${U(38)} "Noto Sans KR";opacity:.85}
 .sk-center{position:absolute;left:${U(100)};right:${U(100)};top:${U(230)};bottom:${U(120)};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
