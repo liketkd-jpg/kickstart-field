@@ -5429,7 +5429,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
     try{S.E=await roster(S.comp.id);S.step='preview';}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 명단을 가져올 수 있습니다. 관리자 계정으로 다시 로그인해 주세요.':err.message;if(!A)S.step='login';}
     S.busy=false;draw();}
   else if(a==='go'){const E=S.paidOnly?S.E.filter(x=>x.status==='paid'):S.E;S.busy=true;draw();
-    try{const f=toFile(rows(sport(),E),`${S.comp.name}_${SP[sport()]}_접수명단.xlsx`);close_();await feed(f);say(`접수 홈페이지에서 ${E.length}건을 가져왔습니다`);
+    try{const f=toFile(rows(sport(),E),`${S.comp.name}_${SP[sport()]}_접수명단.xlsx`);close_();await feed(f);say(`접수 홈페이지에서 ${E.length}건을 가져왔습니다`);try{window.KS_CHAIN&&KS_CHAIN.done(S.comp.id,sport(),E.length);}catch(e){}
       const nm=E.filter(e=>e.music&&e.music.path).length;
       if(sport()==='poomsae'&&nm&&window.LMUS)setTimeout(()=>{say(`음원 ${nm}곡을 이 노트북에 받는 중…`);fetchMusic(E).then(r=>say(`음원 ${r.n}곡을 이 노트북 음악 폴더에 담았습니다${r.fail?` (${r.fail}곡은 받지 못함)`:''}`)).catch(err=>say('음원을 받지 못했습니다: '+netErr(err)));},1500);}
     catch(err){S.busy=false;S.err=err.message;draw();}}

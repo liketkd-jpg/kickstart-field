@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.6.1" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.6.4" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -387,6 +387,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/skin.js":
 		serveAsset(w, "assets/skin.js", "application/javascript; charset=utf-8")
 		return
+	case p == "/chain.js":
+		serveAsset(w, "assets/chain.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/together.js":
 		serveAsset(w, "assets/together.js", "application/javascript; charset=utf-8")
 		return
@@ -521,6 +524,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/mode.js"></script>`)     // 시험 모드 표시 · 실제 대회 모드 잠금
 		out.WriteString(`<script src="/skin.js"></script>`)     // 컷오프 전광판 왕실·불꽃 디자인 (종목별)
 		out.WriteString(`<script src="/together.js"></script>`) // 같이 경기하기 (본부에서 묶은 부문)
+		out.WriteString(`<script src="/chain.js"></script>`)    // 홈페이지 「모든 종목 보내기」 차례 안내
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)
