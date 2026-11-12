@@ -248,6 +248,7 @@ body.mon #mon>*:not(.mwm){position:relative;z-index:1}
 .chip.livec{background:#C8102E;color:#fff;border-color:#E2334F}
 .chip.livec .dot{background:#fff}
 #prt{display:none}
+.tgck{width:16px;height:16px;flex:none;accent-color:#C9A45A}.mvr.tgin{background:rgba(201,164,90,.12);border-radius:8px}.tgbox{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid #C9A45A;border-radius:10px;padding:6px 10px;margin:6px 0;background:rgba(201,164,90,.08)}
 .hqs{display:flex;flex-direction:column;gap:14px}.hqs [hidden]{display:none!important}
 .hqs-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 @media (max-width:900px){.hqs-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (max-width:620px){.hqs-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -451,6 +452,27 @@ function mvPlan(L,busy){const now=NOW(),C={};
 function mvPlanText(plan){const g={};plan.forEach(p=>{const k=p.from+'|'+p.app+'|'+p.to;(g[k]=g[k]||[]).push(p);});
   return Object.values(g).map(a=>{const ps=a.map(p=>p.pos).sort((x,y)=>x-y),n=a.reduce((t,p)=>t+p.n,0);
     return `<b>${esc(a[0].from)}코트 ${esc(APPN[a[0].app]||'')}</b> ${ps.length>1&&ps[ps.length-1]-ps[0]===ps.length-1?`${ps[0]}~${ps[ps.length-1]}번째`:`${ps.join('·')}번째`} 부문 ${a.length}개(${n}경기) → <b>${esc(a[0].to)}코트</b>`;}).join('<br>');}
+/* ---------- v1.6.0 같이 경기하기: 한 코트의 아직 시작하지 않은 부문 여러 개를 묶어 이어서 경기 (순위·메달·상장은 원래 부문대로) ---------- */
+const TG={sel:new Set(),busy:false};
+const tgList=()=>((S.tog&&S.tog.list)||[]);
+const tgOf=(court,app,name)=>tgList().find(t=>t.court===court&&t.app===app&&(t.divs||[]).includes(name));
+function tgLane(x){if(x.app==='kyorugi')return '';const mine=tgList().filter(t=>t.court===x.court&&t.app===x.app),sel=[...TG.sel].filter(k=>k.startsWith(x.court+'|'+x.app+'|'));
+  return `${mine.map(t=>`<div class="tgbox"><b>🤝 같이 경기</b> <span class="small">${t.divs.map(n=>esc(n.replace(/^\d{1,3}\s+/,''))).join(' · ')}</span> <button class="btn sm" data-a="tgOff" data-id="${esc(t.id)}">묶음 풀기</button></div>`).join('')}
+    ${sel.length?`<div class="tgbox"><span class="small">고른 부문 ${sel.length}개</span> <button class="btn sm primary" data-a="tgOn" data-c="${esc(x.court)}" data-app="${esc(x.app)}" ${sel.length<2||TG.busy?'disabled':''}>🤝 고른 부문 같이 경기하기</button> <button class="btn sm" data-a="tgSelX" data-c="${esc(x.court)}" data-app="${esc(x.app)}">고르기 풀기</button>${sel.length<2?'<span class="small muted"> 두 개 이상 골라 주세요</span>':''}</div>`:''}`;}
+async function tgSend(court,app){const groups=tgList().filter(t=>t.court===court&&t.app===app).map(t=>({id:t.id,divs:t.divs}));
+  const r=await fetch('/api/hq/tocourt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({court,app,kind:'tog',id:'main',doc:{groups,at:NOW()}})});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error((j.error||('HTTP '+r.status))+' · 코트 노트북이 연결된 뒤 다시 눌러 주세요');}}
+async function tgAct(a,b){
+  if(a==='tgSelX'){[...TG.sel].filter(k=>k.startsWith(b.dataset.c+'|'+b.dataset.app+'|')).forEach(k=>TG.sel.delete(k));schedule();return;}
+  if(TG.busy)return;TG.busy=true;schedule();
+  try{if(a==='tgOn'){const court=b.dataset.c,app=b.dataset.app,L=lanes().find(x=>x.court===court&&x.app===app);if(!L)throw new Error(court+'코트 진행 상황을 찾지 못했습니다');
+      const names=[...TG.sel].filter(k=>k.startsWith(court+'|'+app+'|')).map(k=>k.slice((court+'|'+app+'|').length));
+      const ds=L.rem.filter(d=>names.includes(d.name));const bad=ds.filter(d=>!d.fresh);if(bad.length)throw new Error(`이미 시작한 부문은 묶을 수 없습니다: ${bad.map(d=>d.name).join(', ')}`);
+      if(ds.length<2)throw new Error('두 개 이상 골라 주세요');
+      const list=[...tgList().map(t=>t.court===court&&t.app===app?{...t,divs:t.divs.filter(n=>!names.includes(n))}:t).filter(t=>(t.divs||[]).length>1),{id:'t'+NOW().toString(36),court,app,divs:ds.map(d=>d.name),at:NOW()}];
+      await DB.doc('hqtog/main').set({list});S.tog={list};await tgSend(court,app);names.forEach(n=>TG.sel.delete(court+'|'+app+'|'+n));toast(`${court}코트 ${ds.length}개 부문을 같이 경기로 묶었습니다 · 순위·메달·상장은 부문마다 따로 나옵니다`);}
+    if(a==='tgOff'){const t=tgList().find(x=>x.id===b.dataset.id);if(!t)return;const list=tgList().filter(x=>x.id!==t.id);await DB.doc('hqtog/main').set({list});S.tog={list};await tgSend(t.court,t.app);toast('묶음을 풀었습니다 · 원래대로 부문마다 따로 진행합니다');}
+  }catch(e){toast(e.message||String(e));}finally{TG.busy=false;schedule();}}
 function vMove(){const L=lanes();if(!L.length)return '';const MV=Object.values(S.moves||{}).sort((a,b)=>b.at-a.at);
   const busy=new Set(MV.filter(m=>['req','sending','sent'].includes(m.state)).map(m=>m.from+'|'+m.app+'|'+m.div));
   const act=L.filter(x=>x.left>0),late=act.length>1?act.reduce((a,b)=>b.end>a.end?b:a):null,early=act.length>1?L.reduce((a,b)=>b.end<a.end?b:a):null;
@@ -461,9 +483,9 @@ function vMove(){const L=lanes();if(!L.length)return '';const MV=Object.values(S
   return `<div class="panel"><div class="row between"><h2>🔀 코트 진행 · 부문 옮기기</h2><span class="small muted">끝나는 시각은 진행 속도로 어림합니다 · 점수가 들어간 부문은 옮기지 않습니다</span></div>${tip}
     <div class="mvgrid">${L.map(x=>{const to=[...new Set(courtList().filter(c=>c.online&&c.court!==x.court).map(c=>c.court))].sort();
       return `<div class="mvc ${late&&x===late&&gap>=20?'late':''}"><div class="row between"><b style="font-size:18px">${esc(x.court)}코트 <span class="chip">${esc(APPN[x.app]||x.app)}</span></b>${x.left?`<span class="chip ${late&&x===late&&gap>=20?'warn':'ok'}">끝 약 ${hhmm(x.end)}</span>`:'<span class="chip ok">모두 끝</span>'}</div>
-        <span class="small muted">남은 부문 ${x.rem.length}개 · 남은 경기 ${x.left} · 1경기 약 ${x.p.min.toFixed(1)}분${x.p.real?'':' (기본값)'}</span>
+        <span class="small muted">남은 부문 ${x.rem.length}개 · 남은 경기 ${x.left} · 1경기 약 ${x.p.min.toFixed(1)}분${x.p.real?'':' (기본값)'}</span>${tgLane(x)}
         <div class="mvl">${x.rem.map(d=>{const k=x.court+'|'+x.app+'|'+d.name,sid='mvto_'+btoa(unescape(encodeURIComponent(k))).replace(/[^A-Za-z0-9]/g,'');
-          const rec=pk.get(k);return `<div class="mvr${rec?' mvrec':''}"><span class="small muted" style="width:18px;text-align:right">${x.rem.indexOf(d)+1}</span><span class="mvn" title="${esc(d.name)}">${esc(d.name)}</span>${rec?`<span class="chip warn">→ ${esc(rec.to)}코트 추천</span>`:''}<span class="small muted">${d.done}/${d.total}</span>${d.live?'<span class="chip ok">진행 중</span>':d.fresh?(busy.has(k)?'<span class="chip warn">옮기는 중</span>':to.length?`<select id="${sid}" class="mvsel">${to.map(c=>`<option value="${esc(c)}" ${rec&&rec.to===c?'selected':''}>${esc(c)}코트로</option>`).join('')}</select><button class="btn sm ${S.mvArm===k?'primary':''}" data-a="mv" data-k="${esc(k)}" data-sel="${sid}">${S.mvArm===k?'한 번 더 누르면 옮김':'옮기기'}</button>`:'<span class="small muted">옮길 코트 없음</span>'):'<span class="chip">진행 중</span>'}</div>`;}).join('')||'<span class="small muted">남은 부문이 없습니다</span>'}</div></div>`;}).join('')}</div>
+          const rec=pk.get(k),tg=tgOf(x.court,x.app,d.name),canT=x.app!=='kyorugi'&&d.fresh&&!tg;return `<div class="mvr${rec?' mvrec':''}${tg?' tgin':''}">${canT?`<input type="checkbox" class="tgck" data-tg="${esc(k)}" ${TG.sel.has(k)?'checked':''} title="같이 경기할 부문 고르기">`:'<span style="width:16px"></span>'}<span class="small muted" style="width:18px;text-align:right">${x.rem.indexOf(d)+1}</span><span class="mvn" title="${esc(d.name)}">${tg?'🤝 ':''}${esc(d.name)}</span>${rec?`<span class="chip warn">→ ${esc(rec.to)}코트 추천</span>`:''}<span class="small muted">${d.done}/${d.total}</span>${d.live?'<span class="chip ok">진행 중</span>':d.fresh?(busy.has(k)?'<span class="chip warn">옮기는 중</span>':to.length?`<select id="${sid}" class="mvsel">${to.map(c=>`<option value="${esc(c)}" ${rec&&rec.to===c?'selected':''}>${esc(c)}코트로</option>`).join('')}</select><button class="btn sm ${S.mvArm===k?'primary':''}" data-a="mv" data-k="${esc(k)}" data-sel="${sid}">${S.mvArm===k?'한 번 더 누르면 옮김':'옮기기'}</button>`:'<span class="small muted">옮길 코트 없음</span>'):'<span class="chip">진행 중</span>'}</div>`;}).join('')||'<span class="small muted">남은 부문이 없습니다</span>'}</div></div>`;}).join('')}</div>
     ${MV.length?`<div><span class="small muted">옮긴 기록</span><table>${MV.slice(0,8).map(mvLine).join('')}</table></div>`:''}</div>`;}
 
 /* ---------- 본부 운영 ---------- */
@@ -1088,12 +1110,14 @@ function hqAutoPanels(){
     <div class="row"><span class="chip">모인 백업 파일 ${bf.length}개</span>${bk.at?`<span class="chip ok">마지막 백업 ${ago(bk.at)} · ${bk.n||0}개 올림</span>`:'<span class="chip">아직 백업 안 함</span>'}${BK.busy?'<span class="chip">올리는 중…</span>':''}${BK.err?`<span class="chip bad">${esc(BK.err)}</span>`:''}</div>
   </div>`;
 }
+document.addEventListener('change',e=>{const t=e.target.closest&&e.target.closest('[data-tg]');if(t){if(t.checked)TG.sel.add(t.dataset.tg);else TG.sel.delete(t.dataset.tg);schedule();}});
 document.addEventListener('change',e=>{const s=e.target.closest&&e.target.closest('[data-hqbk]');if(s)saveCfg({backupMin:Number(s.value)||5});});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
   if(a==='certAuto')saveCfg(cf.certAuto?{certAuto:false}:{certAuto:true,certSince:NOW()});
   else if(a==='printWin'){try{const r=await fetch('/api/hq/printwin',{method:'POST'});const j=await r.json();toast(j.how==='noprinter'?`실제 프린터가 기본으로 정해져 있지 않습니다 (지금: ${j.printer||'없음'}). 프린터를 연결하고 기본값으로 설정한 뒤 다시 눌러 주세요`:j.how==='kiosk'?'자동 출력 창을 열었습니다 (인쇄 창 없이 바로 인쇄)':'자동 출력 창을 열었습니다. 엣지·크롬을 찾지 못해 인쇄할 때 확인 창이 뜹니다');}catch(x){toast('자동 출력 창을 열지 못했습니다');}}
   else if(a==='prPause'){PR.pause=!PR.pause;schedule();}
   else if(/^mc(Load|Fill|PickX|Prev|Queue|Here)$/.test(a)){mcAct(a,b);}
+  else if(/^tg(On|Off|SelX)$/.test(a)){tgAct(a,b);}
   else if(a==='reprint'){const req={...PR.req,[b.dataset.k]:Number(b.dataset.at)+1};PR.req=req;const done={...PR.done};delete done[b.dataset.k];PR.done=done;await DB.doc('hqprint/main').set({done,req});toast('자동 출력 창에서 다시 인쇄합니다');}
   else if(a==='backupAuto')saveCfg({backupAuto:!cf.backupAuto});
   else if(a==='backupNow')backupNow(true);
@@ -1571,6 +1595,7 @@ document.addEventListener('change',e=>{if(e.target&&e.target.dataset&&e.target.d
   DB.doc('hqcfg/main').onSnapshot(s=>{S.cfg=s.exists?s.data():{};S.ready=true;schedule();});
   DB.doc('hqprint/main').onSnapshot(s=>{const d=s.exists?s.data():{};PR.done=d.done||{};PR.req=d.req||{};PR.ready=true;schedule();});
   DB.doc('hqprint/log').onSnapshot(s=>{S.plog=s.exists?s.data():null;schedule();});
+  DB.doc('hqtog/main').onSnapshot(s=>{S.tog=s.exists?s.data():null;schedule();});
   DB.doc('hqprint/manual').onSnapshot(s=>{S.mcert=s.exists?s.data():null;schedule();});
   DB.doc('hqbackup/main').onSnapshot(s=>{S.bk=s.exists?s.data():null;schedule();});
   DB.doc('hq/announce').onSnapshot(s=>{onAnnounce(s.exists?s.data():null);schedule();});

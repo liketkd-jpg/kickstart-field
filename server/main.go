@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.5.9" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.6.0" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -387,6 +387,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/skin.js":
 		serveAsset(w, "assets/skin.js", "application/javascript; charset=utf-8")
 		return
+	case p == "/together.js":
+		serveAsset(w, "assets/together.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/bat.js":
 		serveAsset(w, "assets/bat.js", "application/javascript; charset=utf-8")
 		return
@@ -513,10 +516,11 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/jauto.js"></script>`) // 코트 심판 링크: 종목 바뀌면 채점기 자동 전환
 		out.WriteString(`<script src="/rules.js"></script>`) // 본부 종목별 경기 규칙 받기
 		out.WriteString(`<script src="/courtseq.js"></script>`)
-		out.WriteString(`<script src="/next.js"></script>`) // 한 종목이 끝나면 다음 종목 운영석으로
-		out.WriteString(`<script src="/bat.js"></script>`)  // 심판 태블릿 배터리 → 본부
-		out.WriteString(`<script src="/mode.js"></script>`) // 시험 모드 표시 · 실제 대회 모드 잠금
-		out.WriteString(`<script src="/skin.js"></script>`) // 컷오프 전광판 왕실·불꽃 디자인 (종목별)
+		out.WriteString(`<script src="/next.js"></script>`)     // 한 종목이 끝나면 다음 종목 운영석으로
+		out.WriteString(`<script src="/bat.js"></script>`)      // 심판 태블릿 배터리 → 본부
+		out.WriteString(`<script src="/mode.js"></script>`)     // 시험 모드 표시 · 실제 대회 모드 잠금
+		out.WriteString(`<script src="/skin.js"></script>`)     // 컷오프 전광판 왕실·불꽃 디자인 (종목별)
+		out.WriteString(`<script src="/together.js"></script>`) // 같이 경기하기 (본부에서 묶은 부문)
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)

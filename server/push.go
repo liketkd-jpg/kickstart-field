@@ -229,7 +229,7 @@ type roomFwd struct {
 var roomIDRe = regexp.MustCompile(`^[A-Za-z0-9_-]{1,80}$`)
 
 func (m *roomFwd) ok() bool {
-	return (m.Kind == "att" || m.Kind == "note") && roomIDRe.MatchString(m.ID) && m.Doc != nil && (m.App == "" || validApp(m.App))
+	return (m.Kind == "att" || m.Kind == "note" || m.Kind == "tog") && roomIDRe.MatchString(m.ID) && m.Doc != nil && (m.App == "" || validApp(m.App))
 }
 
 func handleHQToCourt(w http.ResponseWriter, r *http.Request) {
@@ -271,6 +271,8 @@ func handleInboxRoom(w http.ResponseWriter, r *http.Request) {
 	col := "hqatt/"
 	if m.Kind == "note" {
 		col = "hqnote/"
+	} else if m.Kind == "tog" {
+		col = "hqtog/" // v1.6.0 같이 경기하기 묶음
 	}
 	for _, a := range apps {
 		if m.App != "" && a.Key != m.App {
