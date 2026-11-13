@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Taekwon Heroes World Ranking</title>
+<meta name="description" content="KICKSTART UP 태권 히어로 세계 랭킹 · 부모 동의 · 본사 관리">
+<meta name="theme-color" content="#0b0726">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0726;--bg2:#120c38;--card:#171046;--card2:#1f1659;--line:#33287a;--ink:#05021a;
+  --text:#eef1ff;--muted:#a7a3d6;--gold:#ffd23f;--silver:#d7deef;--bronze:#e39a5c;--neon:#38e8ff;--pink:#ff4fd8;--good:#3be3a0;--bad:#ff5d73;
+  --f:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--num:"Orbitron",ui-monospace,Consolas,monospace;
+  --r:16px;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--f);font-size:16px;line-height:1.5;
+  background-image:radial-gradient(1px 1px at 12% 18%,#fff9,transparent),radial-gradient(1.2px 1.2px at 78% 12%,#9fe9ffaa,transparent),radial-gradient(1px 1px at 40% 70%,#fff6,transparent),radial-gradient(1.3px 1.3px at 88% 64%,#ff9ad8aa,transparent),radial-gradient(circle at 50% -20%,#2a1670 0%,transparent 60%);background-attachment:fixed}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+a{color:var(--neon)}
+.wrap{max-width:1040px;margin:0 auto;padding:16px 16px 48px}
+header.top{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:6px 0 14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.08em;font-size:.82rem}
+.brand svg{width:30px;height:30px}
+.brand span{color:var(--gold)}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.lang button{background:none;border:0;padding:4px 12px;font-size:.8rem;font-weight:700;color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--card2);color:var(--text)}
+.hero{text-align:center;padding:18px 0 22px}
+.hero h1{margin:0;font-weight:900;letter-spacing:.06em;font-size:clamp(1.6rem,4.6vw,2.8rem);line-height:1.1}
+.hero h1 b{background:linear-gradient(90deg,var(--neon),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin:6px 0 0;color:var(--muted)}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015)),var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}
+.filters label,.field{display:grid;gap:4px;font-size:.78rem;color:var(--muted);font-weight:700;letter-spacing:.04em}
+select,input[type=text],input[type=email],input[type=password],input[type=number],textarea{background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0;width:100%;font-size:.95rem}
+textarea{resize:vertical;min-height:4.5em}
+.courseinfo{margin:10px 2px 0;font-size:.85rem;color:var(--muted)}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.pod{border-radius:var(--r);padding:14px 12px;text-align:center;border:1px solid var(--line);background:var(--card);position:relative;overflow:hidden}
+.pod::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--c)}
+.pod .m{font-family:var(--num);font-weight:800;font-size:.8rem;color:var(--c);letter-spacing:.1em}
+.pod .n{font-weight:900;font-size:1.25rem;margin-top:4px;overflow-wrap:anywhere}
+.pod .d{font-size:.8rem;color:var(--muted)}
+.pod .t{font-family:var(--num);font-weight:800;font-size:1.6rem;margin-top:6px}
+.pod.p1{--c:var(--gold)}.pod.p2{--c:var(--silver)}.pod.p3{--c:var(--bronze)}
+.pod.p1{order:2;transform:translateY(-8px)}.pod.p2{order:1}.pod.p3{order:3}
+table{width:100%;border-collapse:collapse}
+.rank th{font-size:.72rem;letter-spacing:.08em;color:var(--muted);text-align:left;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
+.rank td{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);vertical-align:middle}
+.rank tr:last-child td{border-bottom:0}
+.rank .r{font-family:var(--num);font-weight:800;width:3.2rem;color:var(--muted)}
+.rank .nm b{font-weight:900}.rank .nm small{display:block;font-family:var(--num);font-size:.68rem;color:var(--neon);letter-spacing:.06em}
+.rank .tm{font-family:var(--num);font-weight:800;text-align:right;white-space:nowrap}
+.rank .tm small{display:block;font-family:var(--f);font-weight:500;font-size:.7rem;color:var(--muted)}
+.rank .dj{color:var(--muted);font-size:.88rem}
+.flag{font-size:1.15em;margin-right:4px}
+.muted{color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:36px 10px}
+.btn{border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:9px 16px;font-weight:700}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#1b1300}
+.btn.danger{background:none;border-color:var(--bad);color:var(--bad)}
+.btn.sm{padding:4px 10px;font-size:.8rem;border-radius:9px}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.err{background:color-mix(in srgb,var(--bad) 18%,transparent);border:1px solid var(--bad);color:#ffd6dc;border-radius:12px;padding:10px 12px}
+.ok{background:color-mix(in srgb,var(--good) 15%,transparent);border:1px solid var(--good);border-radius:12px;padding:12px}
+footer{margin-top:28px;text-align:center;font-size:.78rem;color:var(--muted)}
+/* 부모 동의 */
+.consent{max-width:560px;margin:0 auto;display:grid;gap:14px}
+.kid{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.kid .av{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--neon),var(--pink));display:grid;place-items:center;font-weight:900;font-size:1.6rem;color:var(--ink)}
+.kid b{font-size:1.3rem;font-weight:900}.kid small{display:block;color:var(--muted)}
+.kid .id{display:block;font-family:var(--num);color:var(--neon);font-size:.8rem;letter-spacing:.06em}
+dl.pi{margin:0;display:grid;grid-template-columns:7.5em 1fr;gap:8px 12px;font-size:.9rem}
+dl.pi dt{color:var(--muted);font-weight:700}dl.pi dd{margin:0}
+.check{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:.92rem}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--gold)}
+.consent h2{margin:0;font-size:1.05rem}
+/* 관리 */
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--card2);color:var(--text);border-color:var(--neon)}
+.adm td,.adm th{padding:8px;border-bottom:1px solid var(--line);font-size:.86rem;text-align:left;vertical-align:top}
+.adm th{color:var(--muted);font-size:.72rem;letter-spacing:.06em}
+.pill{display:inline-block;font-size:.75rem;padding:2px 10px;border-radius:999px;background:var(--card2);color:var(--muted);white-space:nowrap}
+.pill.approved,.pill.given,.pill.on{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}
+.pill.pending{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
+.pill.rejected,.pill.suspended,.pill.withdrawn,.pill.off{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.stlist{display:grid;gap:6px}
+.stlist .st{display:grid;grid-template-columns:2rem 1fr 6rem auto;gap:6px;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scroll{overflow:auto}
+@media (max-width:720px){
+  .filters{grid-template-columns:1fr 1fr}.filters label:first-child{grid-column:1/-1}
+  .podium{gap:8px}.pod .t{font-size:1.15rem}.pod .n{font-size:1rem}
+  .rank .dj{display:none}.rank .r{width:2.4rem}
+  .grid2{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:no-preference){.pod,.card{animation:in .35s ease both}@keyframes in{from{opacity:0;transform:translateY(6px)}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38e8ff"/><stop offset="1" stop-color="#ff4fd8"/></linearGradient></defs><circle cx="20" cy="20" r="14" fill="url(#lg)" stroke="#05021a" stroke-width="3"/><ellipse cx="20" cy="21" rx="19" ry="5.5" fill="none" stroke="#ffd23f" stroke-width="2.5" transform="rotate(-18 20 20)"/><path d="M22 9 14 22h6l-2 9 8-13h-6z" fill="#fff" stroke="#05021a" stroke-width="1.6" stroke-linejoin="round"/></svg>KICKSTART <span>UP</span></div>
+  <div class="lang" role="group" aria-label="language"><button data-lang="ko">KO</button><button data-lang="en">EN</button></div>
+ </header>
+ <main id="app" aria-live="polite"></main>
+ <footer id="foot"></footer>
+</div>
+<script>
+'use strict';
+const SB_URL='https://nwdptjumclgzbwbsaoxr.supabase.co',SB_KEY='sb_publishable_IdccZOLa0qHGA80kLLD15g__obCiOiG';
+const CONSENT_VERSION='v1';
+const STATIONS=[{id:'s1',ko:'허들 점프',en:'Hurdle Jump',pen:3,ic:'hurdle'},{id:'s2',ko:'터널 기어가기',en:'Tunnel Crawl',pen:2,ic:'tunnel'},{id:'s3',ko:'지그재그 콘',en:'Zigzag Cones',pen:3,ic:'cone'},
+  {id:'s4',ko:'발 격파',en:'Kick Break',pen:5,ic:'kick'},{id:'s5',ko:'링 점프',en:'Ring Hop',pen:2,ic:'ring'},{id:'s6',ko:'주먹 격파',en:'Punch Break',pen:5,ic:'punch'}];
+const T={ko:{
+  title:'<b>TAEKWON HEROES</b> WORLD RANKING',sub:'태권 히어로 세계 랭킹 · 공식 코스 기록',course:'공식 코스',age:'나이',gender:'성별',country:'나라',all:'전체',boys:'남자',girls:'여자',
+  ageOpt:'{a}세 ({y}년생)',rank:'순위',hero:'히어로',dojang:'도장',time:'기록',pen:'감점 {p}초 포함',empty:'아직 이 조건의 공식 기록이 없습니다.',noCourse:'공식 코스가 아직 없습니다.',
+  loading:'불러오는 중…',net:'인터넷에 연결할 수 없습니다. 잠시 뒤 다시 시도해 주세요.',total:'선수 {n}명',setup:'설치 기준',
+  foot:'공개 랭킹에는 별명과 히어로 아이디만 보이며, 부모 동의를 받은 기록만 올라갑니다. · KICKSTART UP',
+  cTitle:'세계 랭킹 참가 부모 동의',cIntro:'{d}에서 태권 히어로 세계 랭킹 참가 동의를 요청했습니다. 아래 내용을 읽고 동의 여부를 정해 주세요.',
+  cWhat:'모으는 정보',cWhatV:'별명, 출생 연도, 성별, 기록(시간·날짜·대회 이름), 소속 도장. 실명·연락처·사진은 모으지 않습니다.',
+  cPub:'공개되는 정보',cPubV:'별명, 히어로 아이디, 나라, 도장 이름, 나이, 기록 — 세계 랭킹 페이지에 누구나 볼 수 있게 공개됩니다.',
+  cProof:'동의 기록',cProofV:'보호자 이름, 관계, 동의 날짜·시간 — 동의 증빙으로만 보관하며 공개하지 않습니다.',
+  cWhy:'목적',cWhyV:'태권 히어로 공식 코스 기록의 세계 랭킹 운영',cKeep:'보관 기간',cKeepV:'동의를 철회할 때까지. 철회하면 기록이 바로 지워지고 랭킹에서 빠집니다.',
+  cWho:'운영',cWhoV:'KICKSTART UP',cNo:'거부할 권리',cNoV:'동의하지 않아도 대회 참가와 수업에는 아무 불이익이 없습니다. 세계 랭킹에만 오르지 않습니다.',
+  gName:'보호자 이름',gRel:'관계',father:'아버지',mother:'어머니',guardian:'법정대리인',
+  chk1:'위 내용을 모두 읽었습니다.',chk2:'저는 이 어린이의 부모(법정대리인)이며, 세계 랭킹 참가와 위 정보의 수집·공개에 동의합니다.',
+  agree:'동의합니다',given:'✅ 동의가 완료되었습니다',givenAt:'동의 날짜: {d}',records:'올라간 공식 기록 {n}개',withdraw:'동의 철회하기',
+  wConfirm:'동의를 철회하면 이 어린이의 기록이 모두 지워지고 세계 랭킹에서 빠집니다. 철회할까요?',withdrawn:'동의를 철회했습니다. 기록은 모두 지워졌습니다.',
+  again:'다시 동의하려면 도장 지도자에게 새 링크를 요청해 주세요.',notFound:'링크가 올바르지 않거나 만료되었습니다. 도장 지도자에게 새 링크를 요청해 주세요.',
+  e_guardian:'보호자 이름을 2~40자로 써 주세요',e_relation:'관계를 골라 주세요',viewRank:'세계 랭킹 보기',born:'{y}년생',
+  M:'남',F:'여',
+  aTitle:'본사 관리 · 세계 랭킹',aLogin:'접수 홈페이지 관리자 계정으로 로그인',email:'이메일',pw:'비밀번호',login:'로그인',logout:'로그아웃',noAuth:'대표·관리자만 쓸 수 있는 화면입니다.',
+  tD:'공인 도장',tC:'공식 코스',tK:'아이디·기록',approve:'승인',reject:'반려',suspend:'중지',restore:'다시 승인',reason:'반려·중지 사유 (도장 앱에 보입니다)',
+  st_pending:'승인 대기',st_approved:'승인',st_rejected:'반려',st_suspended:'중지',ks_pending:'동의 대기',ks_given:'동의',ks_withdrawn:'철회',
+  newCourse:'새 공식 코스',code:'코스 코드',nameKo:'이름(한국어)',nameEn:'이름(영어)',active:'사용 중',off:'끔',save:'저장',addSt:'장애물 추가',stLocked:'이미 만든 코스의 장애물은 바꿀 수 없습니다. 바꾸려면 새 코드로 만드세요 (같은 코드의 기존 기록과 섞이지 않게).',
+  saved:'저장했습니다',hide:'숨기기',show:'보이기',recent:'최근 기록',kids:'히어로 아이디',lic:'허가 코드',created:'신청일',
+ },en:{
+  title:'<b>TAEKWON HEROES</b> WORLD RANKING',sub:'Official-course records from certified dojangs worldwide',course:'Official course',age:'Age',gender:'Gender',country:'Country',all:'All',boys:'Boys',girls:'Girls',
+  ageOpt:'Age {a} (born {y})',rank:'Rank',hero:'Hero',dojang:'Dojang',time:'Time',pen:'incl. {p}s penalty',empty:'No official records for this selection yet.',noCourse:'No official course yet.',
+  loading:'Loading…',net:'Cannot connect. Please try again shortly.',total:'{n} heroes',setup:'Setup',
+  foot:'The public ranking shows nicknames and Hero IDs only, and includes records only with parent consent. · KICKSTART UP',
+  cTitle:'Parent consent for the World Ranking',cIntro:'{d} has asked for your consent for your child to join the Taekwon Heroes World Ranking. Please read the details below.',
+  cWhat:'What we collect',cWhatV:'Nickname, birth year, gender, records (time, date, event name) and dojang. We never collect real names, contacts or photos.',
+  cPub:'What is public',cPubV:'Nickname, Hero ID, country, dojang name, age and records — shown to anyone on the World Ranking page.',
+  cProof:'Consent record',cProofV:'Guardian name, relationship and date/time of consent — kept only as proof of consent, never shown publicly.',
+  cWhy:'Purpose',cWhyV:'Running the Taekwon Heroes official-course World Ranking',cKeep:'Retention',cKeepV:'Until consent is withdrawn. Withdrawing deletes all records immediately.',
+  cWho:'Operator',cWhoV:'KICKSTART UP',cNo:'Your right to refuse',cNoV:'Saying no has no effect on competitions or classes. Your child simply will not appear in the World Ranking.',
+  gName:'Guardian name',gRel:'Relationship',father:'Father',mother:'Mother',guardian:'Legal guardian',
+  chk1:'I have read all of the above.',chk2:'I am this child’s parent or legal guardian and agree to the World Ranking and the collection and publication described above.',
+  agree:'I agree',given:'✅ Consent given',givenAt:'Given on {d}',records:'{n} official records',withdraw:'Withdraw consent',
+  wConfirm:'Withdrawing deletes all of this child’s records and removes them from the World Ranking. Withdraw?',withdrawn:'Consent withdrawn. All records were deleted.',
+  again:'To consent again, ask your dojang coach for a new link.',notFound:'This link is not valid. Please ask your dojang coach for a new link.',
+  e_guardian:'Please enter the guardian name (2–40 characters)',e_relation:'Please choose the relationship',viewRank:'Open World Ranking',born:'born {y}',
+  M:'M',F:'F',
+  aTitle:'HQ Admin · World Ranking',aLogin:'Log in with your entry-site admin account',email:'Email',pw:'Password',login:'Log in',logout:'Log out',noAuth:'Only owners and managers can use this page.',
+  tD:'Dojangs',tC:'Official courses',tK:'IDs · records',approve:'Approve',reject:'Reject',suspend:'Suspend',restore:'Approve again',reason:'Reason (shown in the dojang app)',
+  st_pending:'Pending',st_approved:'Approved',st_rejected:'Rejected',st_suspended:'Suspended',ks_pending:'Pending',ks_given:'Given',ks_withdrawn:'Withdrawn',
+  newCourse:'New official course',code:'Course code',nameKo:'Name (Korean)',nameEn:'Name (English)',active:'Active',off:'Off',save:'Save',addSt:'Add obstacle',stLocked:'Obstacles of an existing course cannot change. Create a new code instead so old records stay comparable.',
+  saved:'Saved',hide:'Hide',show:'Show',recent:'Recent records',kids:'Hero IDs',lic:'License',created:'Applied',
+ }};
+let LANG='ko';
+try{const q=new URLSearchParams(location.search).get('lang');if(q==='ko'||q==='en')LANG=q;else LANG=localStorage.getItem('tkrank.lang')||((navigator.language||'ko').slice(0,2)==='ko'?'ko':'en')}catch(e){}
+const t=(k,v)=>{let s=(T[LANG][k]??T.ko[k]??k);if(v)for(const x in v)s=s.split('{'+x+'}').join(v[x]);return s};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const flag=c=>/^[A-Z]{2}$/.test(c||'')?String.fromCodePoint(...[...c].map(x=>127397+x.charCodeAt(0))):'';
+const cname=c=>{try{return new Intl.DisplayNames([LANG],{type:'region'}).of(c)}catch(e){return c}};
+const fmt=ms=>{const s=ms/1000;if(s<60)return s.toFixed(2);const m=Math.floor(s/60);return m+':'+(s-m*60).toFixed(2).padStart(5,'0')};
+const day=d=>{try{return new Date(d).toLocaleDateString(LANG==='ko'?'ko-KR':'en-GB',{year:'numeric',month:'short',day:'numeric'})}catch(e){return String(d).slice(0,10)}};
+async function rpc(fn,body){let r;try{r=await fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body||{})})}catch(e){throw new Error(t('net'))}
+  const j=await r.json().catch(()=>null);if(!r.ok||j==null)throw new Error(t('net'));return j}
+const $app=document.getElementById('app');
+function route(){const h=location.hash.slice(1);const m=h.match(/^consent=([0-9a-f-]{36})$/i);
+  document.getElementById('foot').textContent=m?'KICKSTART UP':t('foot');
+  document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===LANG)));
+  document.documentElement.lang=LANG;
+  if(m)return consentView(m[1]);if(h==='admin')return adminView();return rankView()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-lang]');if(b){LANG=b.dataset.lang;try{localStorage.setItem('tkrank.lang',LANG)}catch(x){}route()}});
+window.addEventListener('hashchange',route);
+
+/* ================= 공개 세계 랭킹 ================= */
+const RF={course:'',year:'',g:'',c:''};let COURSES=null;
+async function rankView(){
+  $app.innerHTML=`<section class="hero"><h1>${t('title')}</h1><p>${esc(t('sub'))}</p></section><div class="card"><p class="empty">${esc(t('loading'))}</p></div>`;
+  try{if(!COURSES)COURSES=await rpc('hero_courses_list',{});}catch(e){$app.querySelector('.card').innerHTML=`<p class="empty">${esc(e.message)}</p>`;return}
+  if(!COURSES.length){$app.querySelector('.card').innerHTML=`<p class="empty">${esc(t('noCourse'))}</p>`;return}
+  if(!RF.course||!COURSES.find(c=>c.code===RF.course))RF.course=COURSES[0].code;
+  await loadRank()}
+async function loadRank(){const cur=COURSES.find(c=>c.code===RF.course);let j;
+  try{j=await rpc('hero_ranking',{p_course:RF.course,p_birth_year:RF.year?+RF.year:null,p_gender:RF.g||null,p_country:RF.c||null,p_limit:200})}
+  catch(e){$app.innerHTML=`<section class="hero"><h1>${t('title')}</h1></section><div class="card"><p class="empty">${esc(e.message)}</p></div>`;return}
+  let all=RF._all;if(!RF.year&&!RF.g&&!RF.c)all=RF._all={years:j.years||[],countries:j.countries||[]};all=all||{years:j.years||[],countries:j.countries||[]};
+  const yr=new Date().getFullYear(),rows=j.rows||[],top=rows.slice(0,3);
+  const cn=c=>LANG==='en'&&c.name_en?c.name_en:c.name;
+  $app.innerHTML=`<section class="hero"><h1>${t('title')}</h1><p>${esc(t('sub'))}</p></section>
+   <div class="card"><div class="filters">
+    <label>${esc(t('course'))}<select data-f="course">${COURSES.map(c=>`<option value="${esc(c.code)}" ${c.code===RF.course?'selected':''}>${esc(cn(c))}</option>`).join('')}</select></label>
+    <label>${esc(t('age'))}<select data-f="year"><option value="">${esc(t('all'))}</option>${[...new Set([...(all.years||[]),...(RF.year?[+RF.year]:[])])].sort((a,b)=>b-a).map(y=>`<option value="${y}" ${+RF.year===y?'selected':''}>${esc(t('ageOpt',{a:yr-y,y}))}</option>`).join('')}</select></label>
+    <label>${esc(t('gender'))}<select data-f="g"><option value="">${esc(t('all'))}</option><option value="M" ${RF.g==='M'?'selected':''}>${esc(t('boys'))}</option><option value="F" ${RF.g==='F'?'selected':''}>${esc(t('girls'))}</option></select></label>
+    <label>${esc(t('country'))}<select data-f="c"><option value="">${esc(t('all'))}</option>${[...new Set([...(all.countries||[]),...(RF.c?[RF.c]:[])])].sort().map(c=>`<option value="${c}" ${RF.c===c?'selected':''}>${flag(c)} ${esc(cname(c))}</option>`).join('')}</select></label>
+   </div>${cur&&cur.setup?`<p class="courseinfo">${esc(t('setup'))} · ${esc(cur.setup)}</p>`:''}</div>
+   ${top.length?`<div class="podium">${top.map((r,i)=>`<div class="pod p${r.rank<=3?r.rank:i+1}"><div class="m">#${r.rank}</div><div class="n">${flag(r.country)} ${esc(r.nickname)}</div><div class="d">${esc(r.dojang)} · ${esc(t('ageOpt',{a:r.age,y:r.birth_year}))}</div><div class="t">${fmt(r.total_ms)}</div></div>`).join('')}</div>`:''}
+   <div class="card scroll">${rows.length?`<table class="rank"><thead><tr><th>${esc(t('rank'))}</th><th>${esc(t('hero'))}</th><th class="dj">${esc(t('dojang'))}</th><th>${esc(t('age'))}</th><th style="text-align:right">${esc(t('time'))}</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td class="r">${r.rank}</td><td class="nm"><b>${flag(r.country)} ${esc(r.nickname)}</b><small>${esc(r.hero_id)}</small></td><td class="dj">${esc(r.dojang)}</td><td>${r.age} <span class="muted">${esc(t(r.gender))}</span></td><td class="tm">${fmt(r.total_ms)}${r.pen_ms?`<small>${esc(t('pen',{p:r.pen_ms/1000}))}</small>`:''}<small>${esc(day(r.at))}</small></td></tr>`).join('')}
+    </tbody></table><p class="muted" style="margin:10px 2px 0;font-size:.8rem">${esc(t('total',{n:j.total}))}</p>`:`<p class="empty">${esc(t('empty'))}</p>`}</div>`;
+  $app.querySelectorAll('[data-f]').forEach(s=>s.addEventListener('change',()=>{RF[s.dataset.f]=s.value;if(s.dataset.f==='course'){RF.year='';RF.g='';RF.c='';RF._all=null}loadRank()}))}
+
+/* ================= 부모 동의 ================= */
+async function consentView(tok){$app.innerHTML=`<div class="consent"><div class="card"><p class="empty">${esc(t('loading'))}</p></div></div>`;let j;
+  try{j=await rpc('hero_consent_info',{p_token:tok})}catch(e){$app.innerHTML=`<div class="consent"><div class="err">${esc(e.message)}</div></div>`;return}
+  drawConsent(tok,j,'')}
+function drawConsent(tok,j,err){
+  if(!j.ok){$app.innerHTML=`<div class="consent"><div class="err">${esc(t('notFound'))}</div></div>`;return}
+  const kid=`<div class="card kid"><div class="av" aria-hidden="true">${esc([...j.nickname][0]||'H')}</div><div><b>${esc(j.nickname)}</b><span class="id">${esc(j.hero_id)}</span><small>${flag(j.country)} ${esc(j.dojang)}${j.city?' · '+esc(j.city):''} · ${esc(t('born',{y:j.birth_year}))}</small></div></div>`;
+  const info=`<div class="card"><dl class="pi">${[['cWhat','cWhatV'],['cPub','cPubV'],['cProof','cProofV'],['cWhy','cWhyV'],['cKeep','cKeepV'],['cNo','cNoV'],['cWho','cWhoV']].map(([a,b])=>`<dt>${esc(t(a))}</dt><dd>${esc(t(b))}</dd>`).join('')}</dl></div>`;
+  let main;
+  if(j.status==='given')main=`<div class="ok"><b>${esc(t('given'))}</b><div class="muted" style="font-size:.88rem">${esc(t('givenAt',{d:day(j.consent_at)}))} · ${esc(t('records',{n:j.records}))}</div></div>
+    <div class="row"><a class="btn" href="./">${esc(t('viewRank'))} →</a><button class="btn danger" id="wd">${esc(t('withdraw'))}</button></div>`;
+  else if(j.status==='withdrawn')main=`<div class="err">${esc(t('withdrawn'))}<br>${esc(t('again'))}</div>`;
+  else main=`<form class="card" id="cf" style="display:grid;gap:12px">
+     <div class="grid2"><label class="field">${esc(t('gName'))}<input type="text" name="g" required minlength="2" maxlength="40" autocomplete="name"></label>
+      <label class="field">${esc(t('gRel'))}<select name="r" required><option value="">—</option><option value="mother">${esc(t('mother'))}</option><option value="father">${esc(t('father'))}</option><option value="guardian">${esc(t('guardian'))}</option></select></label></div>
+     <label class="check"><input type="checkbox" name="c1" required><span>${esc(t('chk1'))}</span></label>
+     <label class="check"><input type="checkbox" name="c2" required><span>${esc(t('chk2'))}</span></label>
+     <button class="btn gold" type="submit">${esc(t('agree'))}</button></form>`;
+  $app.innerHTML=`<div class="consent"><h1 style="margin:0;font-size:1.4rem;font-weight:900">${esc(t('cTitle'))}</h1>${j.status==='pending'?`<p class="muted" style="margin:0">${esc(t('cIntro',{d:j.dojang}))}</p>`:''}${kid}${err?`<div class="err" role="alert">${esc(err)}</div>`:''}${j.status==='pending'?info:''}${main}</div>`;
+  const f=document.getElementById('cf');
+  if(f)f.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(f);f.querySelector('button').disabled=true;
+    try{const r=await rpc('hero_consent_set',{p_token:tok,p_agree:true,p_guardian:fd.get('g'),p_relation:fd.get('r'),p_version:CONSENT_VERSION});
+      drawConsent(tok,r.ok?r:j,r.ok?'':t('e_'+r.reason))}catch(x){drawConsent(tok,j,x.message)}});
+  const w=document.getElementById('wd');
+  if(w)w.addEventListener('click',async()=>{if(!confirm(t('wConfirm')))return;w.disabled=true;
+    try{const r=await rpc('hero_consent_set',{p_token:tok,p_agree:false});drawConsent(tok,r,'')}catch(x){drawConsent(tok,j,x.message)}})}
+
+/* ================= 본사 관리 ================= */
+let sb=null,ATAB='d',ACOURSE=null;
+async function sbc(){if(sb)return sb;if(!window.supabase)await new Promise((ok,no)=>{const s=document.createElement('script');s.src='../supabase.js';s.onload=ok;s.onerror=()=>no(new Error(t('net')));document.head.appendChild(s)});
+  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});return sb}
+async function adminView(msg){$app.innerHTML=`<div class="card"><p class="empty">${esc(t('loading'))}</p></div>`;
+  try{await sbc()}catch(e){$app.innerHTML=`<div class="err">${esc(e.message)}</div>`;return}
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){$app.innerHTML=`<section class="hero"><h1 style="font-size:1.6rem">${esc(t('aTitle'))}</h1><p>${esc(t('aLogin'))}</p></section>
+    <form class="card" id="lf" style="max-width:420px;margin:0 auto;display:grid;gap:10px">${msg?`<div class="err">${esc(msg)}</div>`:''}
+     <label class="field">${esc(t('email'))}<input type="email" name="e" required autocomplete="username"></label><label class="field">${esc(t('pw'))}<input type="password" name="p" required autocomplete="current-password"></label>
+     <button class="btn gold">${esc(t('login'))}</button></form>`;
+    document.getElementById('lf').addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.target);const {error}=await sb.auth.signInWithPassword({email:fd.get('e'),password:fd.get('p')});adminView(error?error.message:'')});return}
+  const {data:me}=await sb.from('profiles').select('role,name').eq('id',session.user.id).maybeSingle();
+  if(!me||!['admin','manager'].includes(me.role)){$app.innerHTML=`<div class="err">${esc(t('noAuth'))}</div><p><button class="btn" id="lo">${esc(t('logout'))}</button></p>`;document.getElementById('lo').onclick=async()=>{await sb.auth.signOut();adminView()};return}
+  $app.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><h1 style="margin:0;font-size:1.3rem;font-weight:900">${esc(t('aTitle'))}</h1><div class="row"><span class="muted">${esc(me.name||session.user.email)}</span><button class="btn sm" id="lo">${esc(t('logout'))}</button></div></div>
+   <nav class="tabs">${[['d','tD'],['c','tC'],['k','tK']].map(([k,l])=>`<button data-at="${k}" aria-pressed="${ATAB===k}">${esc(t(l))}</button>`).join('')}</nav><div id="ab"></div>`;
+  document.getElementById('lo').onclick=async()=>{await sb.auth.signOut();adminView()};
+  $app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{ATAB=b.dataset.at;adminView()});
+  const ab=document.getElementById('ab');try{await (ATAB==='d'?admDojangs:ATAB==='c'?admCourses:admKids)(ab)}catch(e){ab.innerHTML=`<div class="err">${esc(e.message||e)}</div>`}}
+const chk=r=>{if(r.error)throw new Error(r.error.message);return r.data};
+async function admDojangs(el){const rows=chk(await sb.from('hero_dojangs').select('*').order('status').order('created_at',{ascending:false}));
+  el.innerHTML=`<div class="card scroll"><table class="adm"><thead><tr><th>${esc(t('dojang'))}</th><th>${esc(t('country'))}</th><th>${esc(t('lic'))}</th><th>${esc(t('created'))}</th><th></th><th></th></tr></thead><tbody>
+   ${rows.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="muted">${esc(d.coach)}</div>${d.note?`<div class="muted">📝 ${esc(d.note)}</div>`:''}</td><td>${flag(d.country)} ${esc(d.country)} ${esc(d.city)}</td><td style="font-family:var(--num);font-size:.75rem">${esc(d.license_code)}</td><td>${esc(day(d.created_at))}</td>
+    <td><span class="pill ${d.status}">${esc(t('st_'+d.status))}</span></td><td><div class="row">${d.status!=='approved'?`<button class="btn sm gold" data-ds="approved" data-id="${d.id}">${esc(d.status==='suspended'?t('restore'):t('approve'))}</button>`:''}${d.status==='pending'?`<button class="btn sm" data-ds="rejected" data-id="${d.id}">${esc(t('reject'))}</button>`:''}${d.status==='approved'?`<button class="btn sm danger" data-ds="suspended" data-id="${d.id}">${esc(t('suspend'))}</button>`:''}</div></td></tr>`).join('')||`<tr><td colspan="6" class="empty">—</td></tr>`}
+   </tbody></table></div>`;
+  el.querySelectorAll('[data-ds]').forEach(b=>b.onclick=async()=>{const s=b.dataset.ds;let note='';if(s!=='approved'){note=prompt(t('reason'),'');if(note===null)return}
+    chk(await sb.from('hero_dojangs').update({status:s,note,decided_at:new Date().toISOString()}).eq('id',b.dataset.id));admDojangs(el)})}
+async function admCourses(el){const rows=chk(await sb.from('hero_courses').select('*').order('created_at'));
+  const ed=ACOURSE;const isNew=ed&&ed._new;
+  el.innerHTML=`<div class="card scroll" style="margin-bottom:12px"><table class="adm"><thead><tr><th>${esc(t('code'))}</th><th>${esc(t('course'))}</th><th></th><th></th></tr></thead><tbody>
+   ${rows.map(c=>`<tr><td style="font-family:var(--num);font-size:.8rem">${esc(c.code)}</td><td><b>${esc(c.name)}</b><div class="muted">${esc(c.name_en)} · ${c.stations.map(s=>esc(s.ko)).join(' → ')}</div></td><td><span class="pill ${c.active?'on':'off'}">${esc(c.active?t('active'):t('off'))}</span></td><td><button class="btn sm" data-ce="${esc(c.code)}">✏️</button></td></tr>`).join('')}
+   </tbody></table><div class="row" style="margin-top:10px"><button class="btn gold sm" id="cn">+ ${esc(t('newCourse'))}</button></div></div>
+   ${ed?`<form class="card" id="cfm" style="display:grid;gap:10px"><div class="grid2">
+     <label class="field">${esc(t('code'))}<input type="text" name="code" required pattern="[A-Z0-9-]{3,20}" value="${esc(ed.code)}" ${isNew?'':'readonly'} placeholder="HERO-STD-2"></label>
+     <label class="field">${esc(t('active'))}<select name="active"><option value="1" ${ed.active?'selected':''}>${esc(t('active'))}</option><option value="0" ${ed.active?'':'selected'}>${esc(t('off'))}</option></select></label>
+     <label class="field">${esc(t('nameKo'))}<input type="text" name="name" required value="${esc(ed.name)}"></label><label class="field">${esc(t('nameEn'))}<input type="text" name="name_en" value="${esc(ed.name_en)}"></label></div>
+     <label class="field">${esc(t('setup'))}<textarea name="setup">${esc(ed.setup)}</textarea></label>
+     ${isNew?`<div class="stlist">${ed.stations.map((s,i)=>`<div class="st"><b>${i+1}</b><select data-si="${i}">${STATIONS.map(x=>`<option value="${x.id}" ${x.id===s.id?'selected':''}>${esc(x.ko)} · ${esc(x.en)}</option>`).join('')}</select><input type="number" min="0" max="60" step="0.5" data-sp="${i}" value="${s.pen}" aria-label="penalty"><span class="row"><button type="button" class="btn sm" data-mv="${i}" ${i?'':'disabled'}>↑</button><button type="button" class="btn sm danger" data-rm="${i}">✕</button></span></div>`).join('')}
+       <div><button type="button" class="btn sm" id="as">+ ${esc(t('addSt'))}</button></div></div>`:`<p class="muted" style="margin:0">${ed.stations.map(s=>esc(s.ko)+' +'+s.pen+'s').join(' → ')}</p><p class="muted" style="margin:0;font-size:.8rem">${esc(t('stLocked'))}</p>`}
+     <div class="row"><button class="btn gold">${esc(t('save'))}</button><span id="cmsg" class="muted"></span></div></form>`:''}`;
+  el.querySelector('#cn').onclick=()=>{ACOURSE={_new:true,code:'',name:'',name_en:'',setup:'',active:true,stations:STATIONS.map(s=>({...s}))};admCourses(el)};
+  el.querySelectorAll('[data-ce]').forEach(b=>b.onclick=()=>{const c=rows.find(x=>x.code===b.dataset.ce);ACOURSE={...c};admCourses(el)});
+  const f=el.querySelector('#cfm');if(!f)return;
+  const sync=()=>{const fd=new FormData(f);['code','name','name_en','setup'].forEach(k=>ACOURSE[k]=fd.get(k)??ACOURSE[k]);ACOURSE.active=fd.get('active')==='1'};
+  f.querySelectorAll('[data-si]').forEach(s=>s.onchange=()=>{const x=STATIONS.find(y=>y.id===s.value);ACOURSE.stations[+s.dataset.si]={...x,pen:ACOURSE.stations[+s.dataset.si].pen}});
+  f.querySelectorAll('[data-sp]').forEach(s=>s.oninput=()=>{ACOURSE.stations[+s.dataset.sp].pen=+s.value||0});
+  f.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{sync();const i=+b.dataset.mv,a=ACOURSE.stations;[a[i-1],a[i]]=[a[i],a[i-1]];admCourses(el)});
+  f.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{sync();ACOURSE.stations.splice(+b.dataset.rm,1);admCourses(el)});
+  const as=f.querySelector('#as');if(as)as.onclick=()=>{sync();ACOURSE.stations.push({...STATIONS[0]});admCourses(el)};
+  f.addEventListener('submit',async e=>{e.preventDefault();sync();const c=ACOURSE;
+    const st=c.stations.map((s,i)=>({id:'s'+(i+1),ko:s.ko,en:s.en,pen:+s.pen||0,ic:s.ic}));
+    const row={code:String(c.code).toUpperCase().trim(),name:c.name.trim(),name_en:(c.name_en||'').trim(),setup:(c.setup||'').trim(),active:c.active,updated_at:new Date().toISOString()};
+    try{if(c._new)chk(await sb.from('hero_courses').insert({...row,stations:st}));else chk(await sb.from('hero_courses').update(row).eq('code',row.code));
+      ACOURSE=null;await admCourses(el)}catch(x){f.querySelector('#cmsg').textContent=x.message}})}
+async function admKids(el){const [kids,recs]=await Promise.all([sb.from('hero_kids').select('hero_id,nickname,birth_year,gender,consent_status,guardian_name,guardian_relation,consent_at,hidden,created_at,hero_dojangs(name,country)').order('created_at',{ascending:false}).limit(300),
+    sb.from('hero_records').select('id,hero_id,course_code,total_ms,pen_ms,event_name,recorded_at,hidden,hero_kids(nickname)').order('recorded_at',{ascending:false}).limit(200)]).then(a=>a.map(chk));
+  el.innerHTML=`<h2 style="font-size:1rem">${esc(t('recent'))}</h2><div class="card scroll" style="margin-bottom:14px"><table class="adm"><tbody>
+    ${recs.map(r=>`<tr><td>${esc(day(r.recorded_at))}</td><td><b>${esc(r.hero_kids?r.hero_kids.nickname:'')}</b><div class="muted" style="font-family:var(--num);font-size:.72rem">${esc(r.hero_id)}</div></td><td>${esc(r.course_code)}</td><td style="font-family:var(--num)">${fmt(r.total_ms)}</td><td class="muted">${esc(r.event_name)}</td><td><button class="btn sm ${r.hidden?'':'danger'}" data-rh="${r.id}" data-v="${r.hidden?0:1}">${esc(r.hidden?t('show'):t('hide'))}</button></td></tr>`).join('')||'<tr><td class="empty">—</td></tr>'}
+   </tbody></table></div><h2 style="font-size:1rem">${esc(t('kids'))}</h2><div class="card scroll"><table class="adm"><tbody>
+    ${kids.map(k=>`<tr><td style="font-family:var(--num);font-size:.75rem">${esc(k.hero_id)}</td><td><b>${esc(k.nickname)}</b><div class="muted">${esc(k.birth_year)} · ${esc(t(k.gender))}</div></td><td>${k.hero_dojangs?flag(k.hero_dojangs.country)+' '+esc(k.hero_dojangs.name):''}</td><td><span class="pill ${k.consent_status}">${esc(t('ks_'+k.consent_status))}</span>${k.consent_at&&k.consent_status==='given'?`<div class="muted" style="font-size:.75rem">${esc(k.guardian_name)} (${esc(t(k.guardian_relation)||'')}) · ${esc(new Date(k.consent_at).toLocaleString())}</div>`:''}</td><td><button class="btn sm ${k.hidden?'':'danger'}" data-kh="${esc(k.hero_id)}" data-v="${k.hidden?0:1}">${esc(k.hidden?t('show'):t('hide'))}</button></td></tr>`).join('')||'<tr><td class="empty">—</td></tr>'}
+   </tbody></table></div>`;
+  el.querySelectorAll('[data-rh]').forEach(b=>b.onclick=async()=>{chk(await sb.from('hero_records').update({hidden:b.dataset.v==='1'}).eq('id',b.dataset.rh));admKids(el)});
+  el.querySelectorAll('[data-kh]').forEach(b=>b.onclick=async()=>{chk(await sb.from('hero_kids').update({hidden:b.dataset.v==='1'}).eq('hero_id',b.dataset.kh));admKids(el)})}
+route();
+</script>
+</body>
+</html>
