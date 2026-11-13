@@ -2325,9 +2325,11 @@ function scoresOf(d,id){
   return out;
 }
 function medalists(max){   /* max: 몇 위까지 (기본 3 · 본부 시상식 대기실은 4) */
-  const cf=CFG(),list=[],MX=max||3;
+  const cf=CFG(),list=[],AN=(()=>{try{return (SET()||{}).awardN||{};}catch(e){return {};}})();
+  /* 시상 인원: 홈페이지 「대회 설계」에서 4위까지로 정한 종목은 4위도 입상(상장) · 정하지 않았으면 예전처럼 3위까지 */
+  const awMax=d=>{const k=typeof KY!=='undefined'&&KY?'kyorugi':typeof SHEETS!=='undefined'?(d.type==='gym'?'gym':d.type==='team100'?'team100':'poomsae'):'gyeokpa';return AN[k]===4?4:3;};
   S.divs.forEach(d=>{if(!cf.small&&!official(d))return;if(!evOk(d))return;let rows=[];try{rows=rankDiv(d)||[];}catch(err){}
-    rows.forEach(x=>{if(!x||!x.rank||x.rank>MX||!x.id)return;const a=T(x.id);list.push({div:d,id:x.id,rank:x.rank,name:a.name||'',team:a.team||'',coach:a.coach||'',members:a.members||'',group:groupOf(a,d),gender:genderOf(a,d)});});});
+    const MX=max||awMax(d);rows.forEach(x=>{if(!x||!x.rank||x.rank>MX||!x.id)return;const a=T(x.id);list.push({div:d,id:x.id,rank:x.rank,name:a.name||'',team:a.team||'',coach:a.coach||'',members:a.members||'',group:groupOf(a,d),gender:genderOf(a,d)});});});
   return list;
 }
 function coachOf(team){if(COACH[team])return COACH[team];const a=S.roster.find(x=>x.team===team&&x.coach);return a?a.coach:'';}
@@ -2454,7 +2456,7 @@ document.addEventListener('change',ev=>{const el=ev.target.closest('[data-awon]'
 });
 /* ---------- 상장 내용 ---------- */
 const EN=()=>CFG().lang==='en';
-function medalCert(x){const en=EN();const aw=en?(x.rank===1?'GOLD MEDAL · 1st Place':x.rank===2?'SILVER MEDAL · 2nd Place':'BRONZE MEDAL · 3rd Place'):(x.rank===1?'금메달 · 제1위':x.rank===2?'은메달 · 제2위':'동메달 · 제3위');
+function medalCert(x){const en=EN();const aw=en?(x.rank===1?'GOLD MEDAL · 1st Place':x.rank===2?'SILVER MEDAL · 2nd Place':x.rank===4?'4th Place':'BRONZE MEDAL · 3rd Place'):(x.rank===1?'금메달 · 제1위':x.rank===2?'은메달 · 제2위':x.rank===4?'제4위':'동메달 · 제3위');
   return {kind:'medal',award:aw,name:x.name,team:x.team,div:x.div.name,members:x.members};}
 function teamCert(r){const en=EN();return {kind:'team',award:en?(r.rank===1?'OVERALL CHAMPION':r.rank===2?'OVERALL RUNNER-UP':'OVERALL 3rd PLACE'):(r.rank===1?'종합 우승':r.rank===2?'종합 준우승':'종합 3위'),name:r.team,team:'',coach:r.coach,div:''};}
 function mvpCert(r,k){const en=EN();return {kind:'mvp',award:en?'MOST VALUABLE PLAYER':'최우수 선수상',name:r.name,team:r.team,div:k==='대회 전체'?r.div.name:`${k} · ${r.div.name}`};}
@@ -3043,7 +3045,8 @@ function results(){
   list.forEach(x=>{const k=x.div.id;if(!by.has(k))by.set(k,{div:x.div.name,podium:[]});const p={rank:x.rank,name:x.name,team:x.team};if(x.rank<=3)by.get(k).podium.push(p);else (by.get(k).fourth=by.get(k).fourth||[]).push(p);});
   const divs=[...by.entries()].map(([id,v])=>{const d=S.divs.find(x=>x.id===id);let pending=0;try{pending=itemsOf(d).filter(x=>!x.done).length;}catch(e){}
     v.podium.sort((a,b)=>a.rank-b.rank);return {...v,done:pending===0&&v.podium.some(p=>p.rank===1)};}).filter(v=>v.podium.length);
-  return {v:1,app:APP,appName:APPNAME,court:F.court||'',divs};
+  let awardN=null;try{awardN=(g('SET')()||{}).awardN||null;}catch(e){}
+  return {v:1,app:APP,appName:APPNAME,court:F.court||'',divs,awardN};
 }
 let lastB='',lastR='',lastAt=0,busy=false,lastDiv=null;
 /* 통합 본부(Claude): 서버가 없으니 코트 운영석이 새 부문 시작을 직접 본부에 알림 */
@@ -4226,7 +4229,9 @@ async function login(email,pw){const j=await call('/auth/v1/token?grant_type=pas
 async function token(){if(!A)return null;if(Date.now()<A.x-60000)return A.t;
   try{const j=await call('/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:H(),body:JSON.stringify({refresh_token:A.r})});A={...A,t:j.access_token,r:j.refresh_token,x:Date.now()+(j.expires_in||3600)*1000};saveA();return A.t;}
   catch(e){if(e.status){A=null;saveA();}throw e;}}
-async function comps(){const sp=sport();const L=await call('/rest/v1/comps?select=id,name,date,deadline,sports&order=date.desc',{headers:H()});return (L||[]).filter(c=>(c.sports||[]).includes(sp));}
+/* v1.7.3 홈페이지 「대회 설계」의 시상 인원(종목마다 3·4위)을 이 앱 설정에 담아 본부 시상식 대기실로 전달 */
+function dsgSync(c){try{const d=c&&c.fee&&c.fee.design;if(!d||!d.ev)return;const aw={};Object.entries(d.ev).forEach(([k,v])=>{if(v&&v.award)aw[k]=v.award===3?3:4;});const sv=g0('saveSettings'),SET=g0('SET');if(sv&&SET)sv({...SET(),awardN:aw,dsgComp:c.id});}catch(e){}}
+async function comps(){const sp=sport();const L=await call('/rest/v1/comps?select=id,name,date,deadline,sports,fee&order=date.desc',{headers:H()});return (L||[]).filter(c=>(c.sports||[]).includes(sp));}
 async function roster(comp){const t=await token();if(!t)throw new Error('로그인이 필요합니다');
   return await call('/rest/v1/rpc/get_roster',{method:'POST',headers:H(t),body:JSON.stringify({p_comp:comp,p_sport:sport()})})||[];}
 /* 접수 홈페이지의 엑셀 내보내기와 같은 모양 (각 앱 불러오기 형식) */
@@ -4319,7 +4324,7 @@ function draw(){if(!BOX)return;const sp=sport();let b='';
 async function loadList(){S.busy=true;S.err='';draw();try{S.L=await comps();S.step='list';}catch(e){S.err=e.message;}S.busy=false;draw();if(S.deep&&S.L.length)pickDeep();}
 /* 접수 홈페이지 「경기 앱으로 보내기」: 주소 #ksreg-대회번호 로 열리면 그 대회 명단을 바로 보여 줍니다 */
 async function pickDeep(){const id=S.deep;S.deep=null;const c=S.L.find(x=>x.id===id);if(!c){S.err='접수 홈페이지에서 보낸 대회를 이 종목 목록에서 찾지 못했습니다';draw();return;}
-  S.comp=c;S.busy=true;S.err='';draw();try{S.E=await roster(c.id);S.step='preview';}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 명단을 가져올 수 있습니다. 관리자 계정으로 다시 로그인해 주세요.':err.message;if(!A)S.step='login';}
+  S.comp=c;dsgSync(c);S.busy=true;S.err='';draw();try{S.E=await roster(c.id);S.step='preview';}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 명단을 가져올 수 있습니다. 관리자 계정으로 다시 로그인해 주세요.':err.message;if(!A)S.step='login';}
   S.busy=false;draw();}
 function deepCheck(first){const m=(location.hash||'').match(/^#ksreg-([0-9A-Za-z_-]+)/);if(!m)return;S.deep=m[1];
   setTimeout(()=>{try{location.hash='admin-players';}catch(e){}setTimeout(()=>open_(),first?600:200);},first?700:50);}
@@ -4346,7 +4351,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
   else if(a==='send'){S.busy=true;S.err='';draw();
     try{S.sent=await publish(S.comp.id,S.res);say(`결과 ${S.sent.rows}건을 접수 홈페이지로 보냈습니다`);}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 결과를 보낼 수 있습니다.':/publish_results|function/i.test(err.message)?'홈페이지 데이터베이스에 결과 기능이 아직 없습니다. Supabase에서 3단계 SQL을 실행해 주세요.':err.message;}
     S.busy=false;draw();}
-  else if(a==='pick'){S.comp=S.L.find(c=>c.id===b.dataset.id);S.busy=true;S.err='';draw();
+  else if(a==='pick'){S.comp=S.L.find(c=>c.id===b.dataset.id);dsgSync(S.comp);S.busy=true;S.err='';draw();
     try{S.E=await roster(S.comp.id);S.step='preview';}catch(err){S.err=/관리자/.test(err.message)?'대회 본부(관리자) 계정만 명단을 가져올 수 있습니다. 관리자 계정으로 다시 로그인해 주세요.':err.message;if(!A)S.step='login';}
     S.busy=false;draw();}
   else if(a==='go'){const E=S.paidOnly?S.E.filter(x=>x.status==='paid'):S.E;S.busy=true;draw();

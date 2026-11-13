@@ -1494,7 +1494,8 @@ function vRoom(id){
 const AW_EV=[['poomsae','품새'],['kyorugi','겨루기'],['gyeokpa','격파'],['gym','태권체조'],['team100','팀 경연']];
 const AWS={tab:'wait',unlocked:false,seen:null,first:{}};
 const awEvOf=(app,div)=>{const e=MONG_EV(app,div);return e==='태권체조'?'gym':e==='팀 경연'?'team100':e==='격파'?'gyeokpa':e==='겨루기'?'kyorugi':'poomsae';};
-const awN=k=>{const n=Number((CFG().awardN||{})[k]);return n===3?3:4;};
+/* 시상 인원: 본부에서 고른 값 → 없으면 코트 앱이 홈페이지 「대회 설계」에서 받아 온 값 → 없으면 4위 */
+const awN=k=>{const h=(CFG().awardN||{})[k];if(h===3||h===4)return h;for(const c of courtList())for(const v of Object.values(c.apps||{})){const a=v&&v.results&&v.results.awardN;if(a&&(a[k]===3||a[k]===4))return a[k];}return 4;};
 function awList(){const out=[];courtList().forEach(c=>{for(const [k,v] of Object.entries(c.apps||{})){const r=v&&v.results;if(!r||!r.divs)continue;
     r.divs.forEach(d=>{if(!d.done)return;const ev=awEvOf(k,d.div),N=awN(ev),ppl=[...(d.podium||[]),...(d.fourth||[])].filter(p=>p.rank<=N).sort((a,b)=>a.rank-b.rank);
       const id=attKey(c.court,k,d.div);if(!AWS.first[id])AWS.first[id]=NOW();const st=(S.awd||{})[id]||{};
