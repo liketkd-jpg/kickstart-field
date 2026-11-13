@@ -334,7 +334,7 @@ let toastT=null;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=f
 const KS_INFRAME=(()=>{try{return window.self!==window.top;}catch(e){return true;}})();
 if(KS_INFRAME){document.documentElement.classList.add('inframe');try{Object.defineProperty(window,'speechSynthesis',{value:undefined,configurable:true});}catch(e){}try{window.AudioContext=undefined;window.webkitAudioContext=undefined;}catch(e){}
   try{HTMLMediaElement.prototype.play=function(){const a=this;setTimeout(()=>{try{a.dispatchEvent(new Event('ended'));}catch(e){}},30);return Promise.resolve();};}catch(e){}}
-const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results','print'].includes(h)||/^room-r[1-6]$/.test(h)?h:'admin';};
+const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results','print','award'].includes(h)||/^room-r[1-6]$/.test(h)?h:'admin';};
 const S={courts:{},cfg:{},announce:null,log:[],ready:false,moves:{},mvArm:null};window.KS_HQS=()=>S;
 let DB=null,DL=null;
 const CFGDEF={autoCall:true,voice:true,notice:{text:'',mode:'off'},manual:[],points:[3,2,1]};
@@ -1228,20 +1228,21 @@ function render(){
   if(r==='board'){vMon();return;}
   $('#ovl').innerHTML='';
   const keep={};document.querySelectorAll('#app input[id],#app textarea[id],#app select[id]').forEach(el=>keep[el.id]=el.value);const fid=document.activeElement&&document.activeElement.id;
-  document.body.classList.toggle('prtst',r==='print');document.body.classList.toggle('rmode',r.startsWith('room-'));
-  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r.startsWith('room-')?vRoom(r.slice(5)):r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
+  document.body.classList.toggle('prtst',r==='print');document.body.classList.toggle('rmode',r.startsWith('room-')||r==='award');
+  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r.startsWith('room-')?vRoom(r.slice(5)):r==='award'?vAward():r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
   for(const [k,v] of Object.entries(keep)){const el=document.getElementById(k);if(el)el.value=v;}
   if(fid){const el=document.getElementById(fid);if(el)el.focus();}
   if(r==='admin')$('#ovl').innerHTML=roomOverlay();
 }
 window.addEventListener('hashchange',render);
-setInterval(()=>{const r=route();if(r==='board'||r==='admin'||r.startsWith('room-'))schedule();},3000);   /* "○초 전" 갱신 */
+setInterval(()=>{const r=route();if(r==='board'||r==='admin'||r==='award'||r.startsWith('room-'))schedule();},3000);   /* "○초 전" 갱신 */
 
 /* ---------- 버튼 ---------- */
 async function hqctl(op,addr){try{await fetch('/api/hqctl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op,addr})});}catch(e){}}
 async function announce(text,extra){const id='m'+NOW().toString(36);const doc={id,text,at:NOW(),auto:false,...(extra||{})};await DB.doc('hq/announce').set(doc);await DB.doc('calllog/'+id).set({text,at:doc.at,auto:false,court:doc.court||''});toast('본부 모니터에 띄웠습니다');}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,cf=CFG();
   if(/^lv/.test(a)){e.preventDefault();try{await lvClick(a,b);}catch(err){toast(err.message||String(err));}return;}
+  if(/^awr/.test(a)){try{await awrClick(a,b);}catch(err){toast('저장하지 못했습니다: '+(err.message||err));}return;}
   if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest|hqOpenEdge|annPhDelR)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
   if(a==='hqCompSave'){saveCfg({compName:(($('#hqCompName')||{}).value||'').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,3).join('\n')});toast('대회명을 저장했습니다 · 본부 모니터에 바로 나옵니다');return;}
   if(a==='hqMonIdle'){saveCfg({monIdle:b.dataset.v||''});return;}
@@ -1402,9 +1403,10 @@ function vRoomPanel(){
       ${tileBtn('req','📥',RT.req,pend.length?`<em>${pend.length}건 새로 옴</em>`:'새 요청 없음',pend.length?'hot':'','hqRmView')}
       ${tileBtn('send','📨',RT.send,unread?`안 읽음 ${unread}건`:`${R.length}곳`,'','hqRmView')}
       ${tileBtn('att','✅',RT.attNow,att.length?`${att.length}개 부문${absent?` · 불참 ${absent}`:''}`:RT.none,absent?'warm':'','hqRmView')}
+      ${tileBtn('award','🏅','시상식 대기실',(()=>{const L=awList(),w=L.filter(x=>!x.done).length;return w?`<em>시상 대기 ${w}</em>`:`완료 ${L.length}개 부문`;})(),awList().some(x=>!x.done)?'warm':'','hqRmView')}
       ${tileBtn('log','🕘','연락 기록',M.length?`${M.length}건`:RT.none,'','hqRmView')}
       ${tileBtn('set','⚙️',RT.set,`대기실 ${R.length}곳 · 목소리`,'','hqRmView')}</div>`;}
-  else{const T={req:['📥',RT.req],send:['📨',RT.send],att:['✅',RT.attNow],log:['🕘','연락 기록'],set:['⚙️','대기실 설정 · 목소리']}[v]||['',''];
+  else{const T={req:['📥',RT.req],send:['📨',RT.send],att:['✅',RT.attNow],log:['🕘','연락 기록'],set:['⚙️','대기실 설정 · 목소리'],award:['🏅','시상식 대기실']}[v]||['',''];
     body=`<div class="rmvh"><button class="btn sm" data-a="hqRmView" data-k="">← ${RT.back}</button><b>${T[0]} ${esc(T[1])}</b></div>`;
     if(v==='req')body+=pend.length?`<div class="rmreqs">${pend.map(m=>`<div class="rmreq ${m.kind==='emg'?'emg':''}"><span class="rmti">${(RK[m.kind]||['🚪'])[0]}</span><div><b>${esc(m.text||'')}</b><span class="small muted">${esc(m.roomName||'')} · ${esc((RK[m.kind]||['',''])[1])} · ${hhmm(m.at)}</span></div>
         <div class="row">${m.kind==='wait'?'':`<button class="btn primary" data-a="hqRmOut" data-id="${esc(m.id)}">📣 방송</button>`}<button class="btn" data-a="hqRmAck" data-id="${esc(m.id)}">${m.kind==='call'||m.kind==='ann'?'닫기':'확인'}</button></div></div>`).join('')}</div>`:`<div class="empty">새 요청이 없습니다</div>`;
@@ -1416,6 +1418,7 @@ function vRoomPanel(){
     else if(v==='att')body+=att.length?`<div class="rmattg">${att.slice(0,12).map(a=>{const L=a.list||[],inn=L.filter(p=>p.st==='in').length,out=L.filter(p=>p.st==='out');
         return `<div class="rmc"><div class="row between"><b>${esc(a.court)}코트 · ${esc(a.div)}</b><span class="small muted">${esc(a.roomName||'')} ${hhmm(a.at)}</span></div><div class="rmbar"><i style="width:${L.length?Math.round(inn/L.length*100):0}%"></i></div>
           <div class="row"><span class="chip ok">${RT.arrived} ${inn}/${L.length}</span>${out.length?`<span class="chip bad">${RT.absent} ${out.map(p=>esc(p.name)).join(', ')}</span>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty">아직 출석 체크한 부문이 없습니다</div>`;
+    else if(v==='award')body+=awHQ();
     else if(v==='log')body+=M.length?`<div style="max-height:60vh;overflow:auto"><table>${M.slice(0,120).map(line).join('')}</table></div>`:`<div class="empty">${RT.none}</div>`;
     else if(v==='set')body+=`<div class="rmc">
         <label class="row">대기실 수 <select id="hqRmN">${[2,3,4,5,6].map(n=>`<option ${R.length===n?'selected':''}>${n}</option>`).join('')}</select><span class="small muted">바꾸면 바로 저장</span></label>
@@ -1482,6 +1485,59 @@ function vRoom(id){
     ${!v&&mine.length?`<div class="rmmine">${mine.map(m=>`<span class="chip ${(RST[m.st]||[''])[0]}">${(RK[m.kind]||['',''])[0]} ${esc(String(m.text||'').slice(0,24))} · ${esc((RST[m.st]||['',m.st])[1])}</span>`).join('')}</div>`:''}
     ${body}</div>`;
 }
+
+/* ---------- 🏅 시상식 대기실 (v1.7.2) ----------
+   진행 요원 휴대폰이 QR로 「#award」를 엽니다. 코트에서 결과가 확정된 부문이 바로 올라오고(알림 소리),
+   종목마다 정한 시상 인원(3위 또는 4위까지 · 처음 값 4위)만큼 이름·소속을 보여 줍니다.
+   요원: 선수 도착 체크 → 「입상자 호출」(본부 방송) → 「시상 완료」. 본부 「🚪 대기실 연결 → 🏅 시상식 대기실」에서 같은 현황을 봅니다.
+   저장: award/* (도착·완료) · hqcfg/main 의 awardN {poomsae,kyorugi,gyeokpa,gym,team100} */
+const AW_EV=[['poomsae','품새'],['kyorugi','겨루기'],['gyeokpa','격파'],['gym','태권체조'],['team100','팀 경연']];
+const AWS={tab:'wait',unlocked:false,seen:null,first:{}};
+const awEvOf=(app,div)=>{const e=MONG_EV(app,div);return e==='태권체조'?'gym':e==='팀 경연'?'team100':e==='격파'?'gyeokpa':e==='겨루기'?'kyorugi':'poomsae';};
+const awN=k=>{const n=Number((CFG().awardN||{})[k]);return n===3?3:4;};
+function awList(){const out=[];courtList().forEach(c=>{for(const [k,v] of Object.entries(c.apps||{})){const r=v&&v.results;if(!r||!r.divs)continue;
+    r.divs.forEach(d=>{if(!d.done)return;const ev=awEvOf(k,d.div),N=awN(ev),ppl=[...(d.podium||[]),...(d.fourth||[])].filter(p=>p.rank<=N).sort((a,b)=>a.rank-b.rank);
+      const id=attKey(c.court,k,d.div);if(!AWS.first[id])AWS.first[id]=NOW();const st=(S.awd||{})[id]||{};
+      out.push({id,court:c.court,app:k,ev,div:d.div,ppl,arr:st.arr||{},done:!!st.done,doneAt:st.doneAt||0,first:AWS.first[id]});});}});
+  return out.sort((a,b)=>a.first-b.first||String(a.court).localeCompare(String(b.court))||a.div.localeCompare(b.div,'ko'));}
+const awMed=r=>`<span class="awm r${Math.min(r,4)}">${r}</span>`;
+const awPk=p=>p.name+'|'+(p.team||'');
+function awCard(x,phone){const inn=x.ppl.filter(p=>x.arr[awPk(p)]).length,evn=(AW_EV.find(e=>e[0]===x.ev)||['',''])[1];
+  return `<div class="awc ${x.done?'done':''}"><div class="awh"><span class="chip">${esc(x.court)}코트 · ${esc(evn)}</span><span class="small muted">${x.done?'✓ 시상 완료 '+hhmm(x.doneAt):'결과 확정 '+hhmm(x.first)}</span></div>
+    <b class="awd">${esc(x.div)}</b>
+    <div class="awps">${x.ppl.map(p=>{const on=!!x.arr[awPk(p)];return `<div class="awp ${on?'in':''}">${awMed(p.rank)}<span><b>${esc(p.name)}</b><small>${esc(p.team||'')}</small></span>${phone&&!x.done?`<button class="btn ${on?'primary':''}" data-a="awrArr" data-id="${esc(x.id)}" data-k="${esc(awPk(p))}">${on?'✓ 도착':'도착'}</button>`:`<span class="chip ${on?'ok':''}">${on?'✓ 도착':'—'}</span>`}</div>`;}).join('')}</div>
+    <div class="awf"><span class="chip ${inn===x.ppl.length?'ok':'warn'}">도착 ${inn}/${x.ppl.length}</span>${phone?(x.done?`<button class="btn" data-a="awrUndo" data-id="${esc(x.id)}">되돌리기</button>`
+      :`<button class="btn" data-a="awrCall" data-id="${esc(x.id)}">📣 입상자 호출</button><button class="btn primary" data-a="awrDone" data-id="${esc(x.id)}">🏅 시상 완료</button>`):''}</div></div>`;}
+function vAward(){const L=awList(),W=L.filter(x=>!x.done),D=L.filter(x=>x.done).sort((a,b)=>b.doneAt-a.doneAt),st=window.KS_FIELD&&KS_FIELD.status?KS_FIELD.status():null,conn=!st||st.connected!==false;
+  const list=AWS.tab==='done'?D:W;
+  return `<div class="rm aw"><div class="rmh"><b>🏅 시상식 대기실</b><span class="chip ${conn?'ok':'bad'}"><i class="dot"></i>${conn?'연결됨':'연결 끊김'}</span><span data-clock class="small"></span></div>
+    ${!AWS.unlocked?'<button class="btn primary rmbig" data-a="awrUnlock">🔊 알림 소리 켜기 (한 번 눌러 주세요)</button>':''}
+    <div class="awtabs"><button class="${AWS.tab!=='done'?'on':''}" data-a="awrTab" data-k="wait">시상 대기 <b>${W.length}</b></button><button class="${AWS.tab==='done'?'on':''}" data-a="awrTab" data-k="done">시상 완료 <b>${D.length}</b></button></div>
+    <span class="small muted">시상 인원: ${AW_EV.map(([k,n])=>`${n} ${awN(k)}위`).join(' · ')} (본부에서 바꿉니다)</span>
+    ${list.length?list.map(x=>awCard(x,true)).join(''):`<div class="empty">${AWS.tab==='done'?'아직 시상을 마친 부문이 없습니다':'결과가 확정된 부문이 나오면 여기에 바로 올라옵니다'}</div>`}</div>`;}
+function awHQ(){const L=awList(),W=L.filter(x=>!x.done),D=L.filter(x=>x.done).sort((a,b)=>b.doneAt-a.doneAt),N=CFG().awardN||{};
+  return `<div class="rmc"><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn primary" data-a="awrQR">📱 진행 요원 휴대폰 QR</button><span class="small muted">결과가 확정된 부문이 진행 요원 휴대폰에 바로 올라옵니다</span></div>
+      <div class="awset"><b>시상 인원 (종목마다)</b>${AW_EV.map(([k,n])=>`<span class="row"><span style="min-width:64px">${n}</span><span class="seg">${[3,4].map(v=>`<button class="${awN(k)===v?'on':''}" data-a="awrN" data-k="${k}" data-v="${v}">${v}위까지</button>`).join('')}</span></span>`).join('')}</div></div>
+    <div class="row" style="gap:8px"><span class="chip warn">시상 대기 ${W.length}</span><span class="chip ok">시상 완료 ${D.length}</span></div>
+    <div class="awg">${W.slice(0,12).map(x=>awCard(x,false)).join('')||'<div class="empty">시상 대기 부문이 없습니다</div>'}</div>
+    ${D.length?`<details><summary class="small">시상 완료 ${D.length}개 부문</summary><div class="awg">${D.slice(0,30).map(x=>awCard(x,false)).join('')}</div></details>`:''}`;}
+function awWatch(){if(route()!=='award')return;const L=awList().filter(x=>!x.done),now=new Set(L.map(x=>x.id));
+  if(AWS.seen===null){AWS.seen=now;return;}const fresh=[...now].filter(k=>!AWS.seen.has(k));AWS.seen=now;
+  if(fresh.length){chime();setTimeout(chime,700);try{navigator.vibrate&&navigator.vibrate([300,150,300]);}catch(e){}const x=L.find(y=>y.id===fresh[0]);toast(`🏅 새로 확정: ${x?x.div:''}${fresh.length>1?` 외 ${fresh.length-1}개`:''}`);}}
+setInterval(awWatch,1500);
+async function awrClick(a,b){const cf=CFG();
+  const doc=id=>({...((S.awd||{})[id]||{})});const save=async(id,d)=>{S.awd={...(S.awd||{}),[id]:d};render();await DB.doc('award/'+id).set(d);};
+  switch(a){
+    case 'awrUnlock':AWS.unlocked=true;chime();render();return;
+    case 'awrTab':AWS.tab=b.dataset.k;render();scrollTo({top:0});return;
+    case 'awrArr':{const id=b.dataset.id,d=doc(id),arr={...(d.arr||{})};if(arr[b.dataset.k])delete arr[b.dataset.k];else arr[b.dataset.k]=NOW();await save(id,{...d,arr,at:NOW()});return;}
+    case 'awrDone':{const id=b.dataset.id,x=awList().find(y=>y.id===id);await save(id,{...doc(id),done:true,doneAt:NOW(),div:x&&x.div,court:x&&x.court,at:NOW()});toast('시상 완료로 옮겼습니다');return;}
+    case 'awrUndo':{const id=b.dataset.id;await save(id,{...doc(id),done:false,at:NOW()});return;}
+    case 'awrCall':{const x=awList().find(y=>y.id===b.dataset.id);if(!x)return;const text=`${x.div} 입상자는 시상대 앞으로 와 주시기 바랍니다.`;
+      await postMsg({dir:'up',room:'award',roomName:'시상식 대기실',kind:'ann',text,st:'new'});toast(cf.roomAuto?'보냈습니다 · 곧 본부 방송으로 나갑니다':'본부에 방송을 요청했습니다');return;}
+    case 'awrN':{await saveCfg({awardN:{...(cf.awardN||{}),[b.dataset.k]:+b.dataset.v}});return;}
+    case 'awrQR':{if(window.KSQR){const base=(window.KS_FIELD&&KS_FIELD.base)||location.href.split('#')[0];KSQR.open({title:'시상식 대기실 휴대폰',items:[{label:'🏅 시상식 대기실',sub:'진행 요원 휴대폰으로 찍기',url:base+'#award'}]});}else toast('QR을 열 수 없습니다');return;}
+  }}
 
 /* ----- 버튼 ----- */
 async function roomClick(a,b){
@@ -1645,6 +1701,7 @@ document.addEventListener('change',e=>{if(e.target&&e.target.dataset&&e.target.d
   DB.doc('hq/announce').onSnapshot(s=>{onAnnounce(s.exists?s.data():null);schedule();});
   DB.doc('hq/speaker').onSnapshot(s=>{onSpk(s.exists?s.data():null);});setTimeout(spkTick,1500);
   DB.collection('roommsg').onSnapshot(s=>{onRoomMsgs(s.docs.map(d=>d.data()).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,400));schedule();});
+  DB.collection('award').onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());S.awd=m;schedule();});
   DB.collection('att').onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());S.att=m;schedule();});
   DB.collection('calllog').onSnapshot(s=>{S.log=s.docs.map(d=>({...d.data(),_id:d.id})).sort((a,b)=>b.at-a.at).slice(0,30);schedule();});
   if(window.KS_FIELD&&KS_FIELD.onStatus)KS_FIELD.onStatus(()=>schedule());
@@ -2970,5 +3027,14 @@ body.monA #ovl .ann{position:fixed;inset:auto 0 0 0;display:block;background:non
 body.monA #ovl .ann>div{display:flex;flex-direction:column;gap:1vh;max-width:none;margin:0;padding:2.6vh 2.8vw;border-radius:.6vw;background:linear-gradient(90deg,rgba(7,18,43,.97),rgba(18,48,105,.95));border:0;border-left:.7vw solid #E2C27F;box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:left}
 body.monA #ovl .ann small{font:900 clamp(13px,1.1vw,22px)/1 "Noto Sans KR",sans-serif!important;letter-spacing:.12em;color:#E2C27F!important;background:none!important;padding:0!important;margin:0!important;box-shadow:none!important;border:0!important;border-radius:0!important;display:block!important;width:auto!important;text-align:left!important}
 body.monA #ovl .ann b{font:900 clamp(26px,3.4vw,72px)/1.2 "Noto Sans KR",sans-serif;color:#fff;background:none;-webkit-text-fill-color:#fff}
+/* v1.7.2 시상식 대기실 */
+.aw .awtabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.aw .awtabs button{padding:14px;border-radius:12px;border:2px solid var(--line,#ccd);background:transparent;font-size:17px;font-weight:800;color:inherit}.aw .awtabs button.on{border-color:#C9A45A;background:rgba(226,194,127,.18)}
+.awc{border:2px solid rgba(201,164,90,.55);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:rgba(226,194,127,.06)}.awc.done{opacity:.6;border-color:var(--line,#ccd)}
+.awh{display:flex;justify-content:space-between;align-items:center;gap:8px}.awd{font-size:19px;line-height:1.3}
+.awps{display:flex;flex-direction:column;gap:6px}.awp{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:6px 8px;border-radius:10px;background:rgba(127,127,127,.08)}.awp.in{background:rgba(52,199,123,.14)}
+.awp span b{display:block;font-size:17px}.awp span small{opacity:.7}.awp .btn{min-width:84px}
+.awm{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;font-weight:900;color:#1a1405}.awm.r1{background:#E8C24A}.awm.r2{background:#C9CED6}.awm.r3{background:#C98B5A}.awm.r4{background:#8FA3C7;color:#fff}
+.awf{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.awf .btn{flex:1;min-height:46px}
+.awset{display:flex;flex-direction:column;gap:6px;margin-top:8px}.awg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
 </style>
 <!--@@END-AF-->

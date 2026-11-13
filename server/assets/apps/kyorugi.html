@@ -2324,10 +2324,10 @@ function scoresOf(d,id){
   }else{const sts=stagesOf(d);sts.forEach((st,i)=>{if(!(st.order||[]).includes(id))return;const g=agg(stagePerfIds(d,st.key,id));if(g&&g.final!=null)out.push({back:sts.length-1-i,score:g.final});});}
   return out;
 }
-function medalists(){
-  const cf=CFG(),list=[];
+function medalists(max){   /* max: 몇 위까지 (기본 3 · 본부 시상식 대기실은 4) */
+  const cf=CFG(),list=[],MX=max||3;
   S.divs.forEach(d=>{if(!cf.small&&!official(d))return;if(!evOk(d))return;let rows=[];try{rows=rankDiv(d)||[];}catch(err){}
-    rows.forEach(x=>{if(!x||!x.rank||x.rank>3||!x.id)return;const a=T(x.id);list.push({div:d,id:x.id,rank:x.rank,name:a.name||'',team:a.team||'',coach:a.coach||'',members:a.members||'',group:groupOf(a,d),gender:genderOf(a,d)});});});
+    rows.forEach(x=>{if(!x||!x.rank||x.rank>MX||!x.id)return;const a=T(x.id);list.push({div:d,id:x.id,rank:x.rank,name:a.name||'',team:a.team||'',coach:a.coach||'',members:a.members||'',group:groupOf(a,d),gender:genderOf(a,d)});});});
   return list;
 }
 function coachOf(team){if(COACH[team])return COACH[team];const a=S.roster.find(x=>x.team===team&&x.coach);return a?a.coach:'';}
@@ -3038,11 +3038,11 @@ function board(){
 }
 function results(){
   const AW=window.AW,S=g('S');if(!AW||!AW.medalists||!S)return null;
-  let list=[];try{list=AW.medalists();}catch(e){return null;}
+  let list=[];try{list=AW.medalists(4);}catch(e){return null;}   /* v1.7.2 4위는 따로(fourth) — 메달·상장 셈(podium)은 그대로 3위까지 */
   const by=new Map();
-  list.forEach(x=>{const k=x.div.id;if(!by.has(k))by.set(k,{div:x.div.name,podium:[]});by.get(k).podium.push({rank:x.rank,name:x.name,team:x.team});});
+  list.forEach(x=>{const k=x.div.id;if(!by.has(k))by.set(k,{div:x.div.name,podium:[]});const p={rank:x.rank,name:x.name,team:x.team};if(x.rank<=3)by.get(k).podium.push(p);else (by.get(k).fourth=by.get(k).fourth||[]).push(p);});
   const divs=[...by.entries()].map(([id,v])=>{const d=S.divs.find(x=>x.id===id);let pending=0;try{pending=itemsOf(d).filter(x=>!x.done).length;}catch(e){}
-    v.podium.sort((a,b)=>a.rank-b.rank);return {...v,done:pending===0&&v.podium.some(p=>p.rank===1)};});
+    v.podium.sort((a,b)=>a.rank-b.rank);return {...v,done:pending===0&&v.podium.some(p=>p.rank===1)};}).filter(v=>v.podium.length);
   return {v:1,app:APP,appName:APPNAME,court:F.court||'',divs};
 }
 let lastB='',lastR='',lastAt=0,busy=false,lastDiv=null;
