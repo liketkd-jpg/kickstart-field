@@ -233,6 +233,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);bo
 .between{justify-content:space-between}
 .stack{display:flex;flex-direction:column;gap:14px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+.chip.fxed{border-color:#E8A0A0;color:#D64545;background:rgba(214,69,69,.10)}
 .chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--mute);white-space:nowrap}
 .chip.open{color:#9EF0C2;border-color:#24563C;background:#0F2219}
 .chip.soon{color:var(--warn);border-color:#5A4417;background:#211A0C}
@@ -756,6 +757,7 @@ async function reload(){
       M.entries=(await qAll(()=>sb.from('entries').select('*').order('created_at',{ascending:true}).order('id',{ascending:true}))).map(mapEnt);
       try{let data=null,error=null;try{data=await qAll(()=>sb.from('entry_music').select('*').order('entry_id',{ascending:true}));}catch(x){error=x;}M.musicOk=!error;M.music=error?[]:(data||[]).map(m=>({entryId:m.entry_id,compId:m.comp_id,coachId:m.coach_id,path:m.path,name:m.name||'',size:m.size||0,at:m.updated_at}));}catch(e){M.musicOk=false;M.music=[];}
       M.users=isOps(M.profile)?(await qAll(()=>sb.from('profiles').select('*').order('id',{ascending:true}))).map(mapUser):[M.profile];
+      try{let data=null,error=null;try{data=await qAll(()=>sb.from('draw_reqs').select('*').order('created_at',{ascending:false}).order('id',{ascending:true}));}catch(x){error=x;}M.reqOk=!error;M.reqs=error?[]:(data||[]).map(r=>({id:r.id,compId:r.comp_id,coachId:r.coach_id,entryId:r.entry_id,kind:r.kind,body:r.body||'',want:r.want||{},status:r.status,answer:r.answer||'',at:r.created_at,doneAt:r.done_at}));}catch(e){M.reqOk=false;M.reqs=[];}
       try{M.results=(await qAll(()=>sb.from('results').select('*').order('rank',{ascending:true}).order('id',{ascending:true}))).map(mapRes);}catch(e){M.results=[];}
       M.ledger=[];M.ledgerOk=false;if(isOwner(M.profile)){try{let data=null,error=null;try{data=await qAll(()=>sb.from('ledger').select('*').order('day',{ascending:false}).order('id',{ascending:true}));}catch(x){error=x;}M.ledgerOk=!error;M.ledger=error?[]:(data||[]);}catch(e){}}
       M.licenses=[];M.licErr='';M.plans=[];if(isOwner(M.profile)){try{M.licenses=await qAll(()=>sb.from('licenses').select('*').order('created_at',{ascending:false}));}catch(e){M.licErr=msgOf(e);}try{M.plans=await q(sb.from('license_plans').select('*'))||[];}catch(e){M.plans=null;}}
@@ -959,12 +961,13 @@ function drawList(cid){const X=(M.drawData||{})[cid];if(!X)return '';const rows=
   const hits=all.filter(d=>{const ps=d.kind==='t'?d.rounds.flatMap(r=>r.m.flatMap(m=>[m.b,m.r])):d.groups.flat();return ps.some(p=>drHit(p,q,null))||drN(d.name).includes(q);});
   if(!hits.length)return '<div class="empty">찾는 도장·선수가 없습니다. 글자를 줄여서 다시 찾아 보세요.</div>';
   const evs=[...new Set(hits.map(d=>d.ev))].sort((a,b)=>hdEvRank(a)-hdEvRank(b));
-  return `<span class="small mute">찾은 부문 ${hits.length}개</span>`+evs.map(e=>`<h3 class="hd-ev">${esc(e)} <span class="small mute">${hits.filter(d=>d.ev===e).length}개 부문</span></h3>`+hits.filter(d=>d.ev===e).map(d=>`<details class="card drd" open><summary><b>${esc(d.name)}</b><span class="row" style="gap:6px">${d.court?`<span class="chip open">${esc(d.court)}코트</span>`:''}<span class="small mute">${d.n}${/단체|팀|체조|경연|종합/.test(d.name)?'팀':'명'} · ${d.kind==='t'?'토너먼트':`${d.stage?esc(d.stage)+' ':''}출전 순서`}</span></span></summary>${drawDivHtml(d,q,null)}</details>`).join('')).join('');}
+  return `<span class="small mute">찾은 부문 ${hits.length}개</span>`+evs.map(e=>`<h3 class="hd-ev">${esc(e)} <span class="small mute">${hits.filter(d=>d.ev===e).length}개 부문</span></h3>`+hits.filter(d=>d.ev===e).map(d=>`<details class="card drd" open><summary><b>${esc(d.name)}</b><span class="row" style="gap:6px">${d.ed?`<span class="chip fxed" title="${esc(fmtAt(d.ed))} 고침">수정됨</span>`:''}${d.court?`<span class="chip open">${esc(d.court)}코트</span>`:''}<span class="small mute">${d.n}${/단체|팀|체조|경연|종합/.test(d.name)?'팀':'명'} · ${d.kind==='t'?'토너먼트':`${d.stage?esc(d.stage)+' ':''}출전 순서`}</span></span></summary>${drawDivHtml(d,q,null)}</details>`).join('')).join('');}
 function vDraw(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class="empty">대회를 찾지 못했습니다.</div>';
   const X=(M.drawData||{})[id];if(!X||X.at!==drawLast(id)){loadDraw(id);}const u=me();
   return `<div class="stack">
     <div><span class="eyebrow">Draw · Order</span><h1>${esc(c.name)} 대진표 · 출전 순서</h1><p class="mute" style="margin:6px 0 0">${fmtDate(c.date)} · ${esc(c.place)} · 경기 진행에 따라 바뀔 수 있으니 대회장 안내를 함께 확인해 주세요.</p></div>
     ${X&&!X.err&&(X.rows||[]).length?`<div class="card row" style="gap:8px;flex-wrap:wrap;align-items:center;border-color:var(--gold3)"><b>📄 대진표 파일</b><button class="btn gold" type="button" data-a="hdPdf" data-c="${id}" data-o="p">내려받기 (PDF · 세로)</button><button class="btn" type="button" data-a="hdPdf" data-c="${id}" data-o="l">가로형</button><span class="small mute">모든 종목·부문이 한 파일에 들어 있습니다 · 인쇄해서 쓰기 좋습니다</span></div>`:''}
+    ${fxCoachDraw(c)}
     <div class="row"><input type="search" id="drSearch" placeholder="도장 이름이나 선수 이름으로 찾기 (모든 종목)" value="${esc(UI.drQ||'')}" style="flex:1;min-width:220px" autocomplete="off"></div>
     <div id="drList" class="stack">${!X?'<div class="empty">대진표를 불러오는 중…</div>':X.err?`<div class="note">대진표를 불러오지 못했습니다: ${esc(X.err)}</div>`:drawList(id)}</div></div>`;}
 document.addEventListener('input',ev=>{if(ev.target&&ev.target.id==='drSearch'){UI.drQ=ev.target.value;const el=document.getElementById('drList'),id=route().slice(5);if(el)el.innerHTML=drawList(id);}});
@@ -1059,8 +1062,8 @@ function alertsFor(u){const A=[];if(!u||u.role!=='coach')return A;
     const wait=mine.filter(e=>e.status==='wait');
     if(wait.length)A.push({lv:'warn',t:`「${c.name}」 입금 확인 전 ${wait.length}건 · ${won(wait.reduce((s,e)=>s+e.fee,0))}`,s:`입금 계좌: ${c.account} · 입금자명은 「${u.org}」`,a:`<a class="btn sm" href="#entries">접수 내역</a>`});
     if(mine.length&&c.notice)A.push({lv:'info',t:`「${c.name}」 공지`,s:c.notice,a:''});
-    if(mine.length&&drawsOf(c.id).length)A.push({lv:'info',t:`「${c.name}」 대진표가 올라왔습니다`,s:`${drawsOf(c.id).map(d=>SPORTS[d.sport]?SPORTS[d.sport].n:d.sport).join(' · ')} · ${fmtAt(drawLast(c.id))} 올림 · 「내 선수만」으로 우리 선수 순서를 바로 볼 수 있습니다`,a:`<a class="btn sm gold" href="#draw-${c.id}">대진표 보기</a>`});}
-  return A;}
+    if(mine.length&&drawsOf(c.id).length&&!fxNotes(u,c.id).length)A.push({lv:'info',t:`「${c.name}」 대진표가 올라왔습니다`,s:`${drawsOf(c.id).map(d=>SPORTS[d.sport]?SPORTS[d.sport].n:d.sport).join(' · ')} · ${fmtAt(drawLast(c.id))} 올림 · 「내 선수만」으로 우리 선수 순서를 바로 볼 수 있습니다`,a:`<a class="btn sm gold" href="#draw-${c.id}">대진표 보기</a>`});}
+  return [...fxCoachAlerts(u),...A];}
 function vAlerts(){const A=alertsFor(me());if(!A.length)return '';
   return `<section class="alerts" aria-label="알림"><h2 class="small eyebrow" style="font-size:12px">알림 ${A.length}</h2>${A.map(x=>`<div class="al ${x.lv}"><div><b>${esc(x.t)}</b><div class="small mute">${esc(x.s)}</div></div>${x.a}</div>`).join('')}</section>`;}
 function vComp(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class="empty">대회를 찾지 못했습니다.</div>';
@@ -1380,16 +1383,16 @@ function payCard(u,E){const P=UI.payDone;if(!P)return '';const c=D().comps.find(
         <div class="row"><button class="btn sm gold" type="button" data-a="payCopy" data-t="${esc(c.account)}">계좌 복사</button><button class="btn sm" type="button" data-a="payCopy" data-t="${esc(`${c.name} 참가비 ${won(dueSum)} · ${c.account} · 입금자명 ${u.org||u.name||''}`)}">안내 문구 복사</button></div></div></div>
     <span class="small mute">대회 본부가 입금을 확인하면 아래 접수 내역에 「입금 확인」이 표시됩니다.</span></section>`;}
 /* v1.4.66 지도자: 마감 전까지 부별·학년·실력조 고치기 (선수·종목을 바꾸려면 취소 후 다시 접수) */
-function editRow(e,mus){const f={...(e.f||{}),...(UI.edF&&UI.edF.id===e.id?UI.edF:{})},divs=e.sport==='gyeokpa'?GP_LV:PS_DIV,gl=e.sport==='gyeokpa'?null:gradeList(f.div);
+function editRow(e,mus,act){const f={...(e.f||{}),...(UI.edF&&UI.edF.id===e.id?UI.edF:{})},divs=e.sport==='gyeokpa'?GP_LV:PS_DIV,gl=e.sport==='gyeokpa'?null:gradeList(f.div);
   return `<tr class="edrow"><td colspan="${mus?7:6}"><div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
     <label class="f"><span>부별</span>${sel('ed_div',divs,f.div||'')}</label>${gl?`<label class="f"><span>${gradeLbl(f.div)}</span>${sel('ed_grade',gl,f.grade||'')}</label>`:''}
-    <label class="f"><span>실력조</span>${sel('ed_cls',['',...CLS],f.cls||'')}</label>${edExtra(e,f)}
-    <button class="btn gold" type="button" data-a="editSave" data-id="${e.id}">저장</button><span class="small mute">부별·학년·실력조${e.sport==='gyeokpa'&&e.athleteIds.length===1?'·세부 종목':''}${e.athleteIds.length>1?'·팀원·팀 이름':''}을 고칠 수 있습니다 · 다시 접수하지 않아도 되고 참가비·입금 상태는 그대로입니다</span></div></td></tr>`;}
+    <label class="f"><span>실력조</span>${sel('ed_cls',['',...CLS],f.cls||'')}</label>${edExtra(e,f,!!act)}
+    <button class="btn gold" type="button" data-a="${act||'editSave'}" data-id="${e.id}">${act?'고치고 맞는 부문으로 옮기기':'저장'}</button><span class="small mute">부별·학년·실력조${e.sport==='gyeokpa'&&e.athleteIds.length===1?'·세부 종목':''}${e.athleteIds.length>1?'·팀원·팀 이름':''}을 고칠 수 있습니다 · 다시 접수하지 않아도 되고 참가비·입금 상태는 그대로입니다</span></div></td></tr>`;}
 /* v1.6.8 고치기 넓힘: 격파 세부 종목 · 단체(팀) 팀원과 팀 이름 — 다시 접수하지 않고 그 자리에서 */
 const edTeamMin=e=>e.sport==='gyeokpa'?5:/체조/.test((e.f||{}).type||'')?7:/경연|종합/.test((e.f||{}).type||'')?9:2;
-function edExtra(e,f){let h='';
+function edExtra(e,f,noTeam){let h='';
   if(e.sport==='gyeokpa'&&e.athleteIds.length===1&&f.ev!=='기술격파 단체전')h+=`<label class="f"><span>세부 종목</span>${sel('ed_ev',GP_EV.filter(x=>x.k!=='team').map(x=>x.n),f.ev||'')}</label>`;
-  if(e.athleteIds.length>1){const L=D().athletes.filter(a=>a.coachId===e.coachId).sort((a,b)=>(e.athleteIds.includes(b.id)-e.athleteIds.includes(a.id))||String(a.name).localeCompare(String(b.name),'ko'));
+  if(e.athleteIds.length>1&&!noTeam){const L=D().athletes.filter(a=>a.coachId===e.coachId).sort((a,b)=>(e.athleteIds.includes(b.id)-e.athleteIds.includes(a.id))||String(a.name).localeCompare(String(b.name),'ko'));
     h+=`<label class="f"><span>팀 이름</span><input type="text" id="ed_team" value="${esc(f.team||'')}" style="min-width:160px"></label>
     <div class="stack" style="gap:4px;flex-basis:100%"><span class="small"><b>팀원</b> (지금 ${e.athleteIds.length}명 · ${edTeamMin(e)}명 이상)</span><div class="row" style="gap:4px 12px;flex-wrap:wrap;max-height:180px;overflow:auto">${L.map(a=>`<label class="check"><input type="checkbox" class="edm" value="${a.id}" ${e.athleteIds.includes(a.id)?'checked':''}><span>${esc(a.name)}</span></label>`).join('')}</div></div>`;}
   return h;}
@@ -1760,7 +1763,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.3'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.4'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1916,8 +1919,9 @@ function hdBracket(us){const pt=u=>u?{n:u.name,t:u.org,m:u.mem||''}:null;if(!us.
   return rounds;}
 function hdData(G){const divs=[],map={};
   G.forEach((g,gi)=>{g.order.forEach((u,i)=>{map[u.id]=[gi,i+1];});const ev=hdEvGroup(g.evName),many=g.parts.length>1;
-    if(hdIsTour(g))g.parts.forEach((p,pi)=>divs.push({gi,pi,name:g.name+(many?` ${pi+1}조`:''),ev,court:'',n:p.length,kind:'t',stage:'토너먼트',rounds:hdBracket(p)}));
-    else g.parts.forEach((p,pi)=>divs.push({gi,pi,name:g.name+(many?` ${pi+1}조`:''),ev,court:'',n:p.length,kind:'o',stage:p.length>=16?'예선':'결선',groups:[p.map(u=>({n:u.name,t:u.org,m:u.mem||''}))]}));});
+    const ed=g.edAt?{ed:g.edAt}:{};
+    if(hdIsTour(g))g.parts.forEach((p,pi)=>divs.push({gi,pi,name:g.name+(many?` ${pi+1}조`:''),ev,court:'',n:p.length,kind:'t',stage:'토너먼트',rounds:hdBracket(p),...ed}));
+    else g.parts.forEach((p,pi)=>divs.push({gi,pi,name:g.name+(many?` ${pi+1}조`:''),ev,court:'',n:p.length,kind:'o',stage:p.length>=16?'예선':'결선',groups:[p.map(u=>({n:u.name,t:u.org,m:u.mem||''}))],...ed}));});
   return {home:true,v:5,gn:G.map(g=>g.name),at:new Date().toISOString(),comm:HD.comm,fmt:HD.fmt,n:Object.keys(map).length,divs,map};}
 const hdPub=(c,sp)=>{const X=(M.drawData||{})[c.id];return X&&X.rows?X.rows.find(r=>r.sport===sp)||null:null;};
 const hdSports=c=>c.sports.filter(s=>s==='poomsae'||s==='gyeokpa');
@@ -1957,12 +1961,12 @@ function hdCount(c){const R=HD.res[c.id];return hdSports(c).map(sp=>{const E=D()
     if(R&&R[sp])ids=R[sp].flatMap(g=>g.parts.flat().map(u=>u.id));else{const P=hdPub(c,sp);if(!P||!P.data||!P.data.map)return null;ids=Object.keys(P.data.map);}
     const set=new Set(ids),dup=ids.length-set.size,miss=E.filter(e=>!set.has(e.id)).length,gone=[...set].filter(id=>!E.some(e=>e.id===id)).length,ok=!dup&&!miss&&!gone;
     return `<span class="chip ${ok?'ok':'warn'}" style="${ok?'':'border-color:var(--warn);color:var(--warn)'}">${SPORTS[sp].n} 접수 ${E.length}건 · 대진 ${set.size}건 ${ok?'✓ 맞음':`· 빠짐 ${miss} · 접수에 없음 ${gone} · 두 번 ${dup}`}</span>`;}).filter(Boolean).join(' ');}
-function hdDivCard(d){const N=`${d.n}${/체조|경연|단체/.test(d.name)?'팀':'명'}`,mk=d.sp!=null&&d.gi!=null?`${d.sp}|${d.gi}`:'',sel=mk&&HD.sel.has(mk);
+function hdDivCard(d){const EDC=d.ed||(()=>{const R=HD.res[UI.adminComp],g=R&&d.sp!=null&&R[d.sp]&&R[d.sp][d.gi];return g&&g.edited?'now':'';})(),EDH=EDC?`<span class="chip fxed">${EDC==='now'?'고침 · 저장 전':'수정됨'}</span> `:'';const N=`${d.n}${/체조|경연|단체/.test(d.name)?'팀':'명'}`,mk=d.sp!=null&&d.gi!=null?`${d.sp}|${d.gi}`:'',sel=mk&&HD.sel.has(mk);
   const mg=mk?`<label class="hd-mg ${sel?'on':''}" title="둘로 잘못 나뉜 부문을 골라 하나로 합칩니다"><input type="checkbox" data-a="hdSel" data-k="${mk}" ${sel?'checked':''}> 합치기</label>`:'';
   const ed=hdEditList(d);
-  if(d.kind==='t')return `<div class="card hd-g hd-wide ${sel?'hd-sel':''}"><div class="row between"><b>${esc(d.name)}</b><span class="small mute">${N} · 토너먼트 ${mg}</span></div>${drawDivHtml(d,'',null)}${hdMix(d)}${ed?`<div class="small mute" style="margin-top:6px">대진 순서 (위에서부터 1번 · 눌러서 고치기)</div>${ed}`:''}</div>`;
-  if(ed)return `<div class="card hd-g ${sel?'hd-sel':''}"><div class="row between"><b>${esc(d.name)}</b><span class="small mute">${N} · 컷오프 ${esc(d.stage||'')} ${mg}</span></div>${ed}${hdMix(d)}</div>`;
-  return `<div class="card hd-g ${sel?'hd-sel':''}"><div class="row between"><b>${esc(d.name)}</b><span class="small mute">${N} · 컷오프 ${esc(d.stage||'')}${d.groups.length>1?` · ${d.groups.length}개 조`:''} ${mg}</span></div>
+  if(d.kind==='t')return `<div class="card hd-g hd-wide ${sel?'hd-sel':''}"><div class="row between"><b>${EDH}${esc(d.name)}</b><span class="small mute">${N} · 토너먼트 ${mg}</span></div>${drawDivHtml(d,'',null)}${hdMix(d)}${ed?`<div class="small mute" style="margin-top:6px">대진 순서 (위에서부터 1번 · 눌러서 고치기)</div>${ed}`:''}</div>`;
+  if(ed)return `<div class="card hd-g ${sel?'hd-sel':''}"><div class="row between"><b>${EDH}${esc(d.name)}</b><span class="small mute">${N} · 컷오프 ${esc(d.stage||'')} ${mg}</span></div>${ed}${hdMix(d)}</div>`;
+  return `<div class="card hd-g ${sel?'hd-sel':''}"><div class="row between"><b>${EDH}${esc(d.name)}</b><span class="small mute">${N} · 컷오프 ${esc(d.stage||'')}${d.groups.length>1?` · ${d.groups.length}개 조`:''} ${mg}</span></div>
   ${d.groups.map((g,gi)=>`${d.groups.length>1?`<div class="hd-jo">${gi+1}조</div>`:''}<ol>${g.map(p=>`<li><b>${esc(p.n)}</b> <small>${esc(p.t||'')}</small></li>`).join('')}</ol>`).join('')}${hdMix(d)}</div>`;}
 /* 관리자가 선수 부별을 바로 고침 (조기 입학 등 · 마감 뒤에도) — 대진은 생년월일이 아니라 접수된 부별로 나뉩니다 */
 /* v1.4.94 접수 점검 — 생년월일·학년 3단계(확인 필요 → 지도자 확인함 → 관리자 확인 완료) · 같은 선수 종목마다 학년 다름 · 부별 글자 */
@@ -2031,15 +2035,211 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
       ${divs.length?`<span class="small mute">부문 ${divs.length}개 · ${divs.reduce((t,d)=>t+d.n,0)}건${R?` · ${dup?`같은 도장 겹침 ${dup}곳 (토너먼트는 첫 경기 맞대결 · 컷오프는 ${HD.comm?'같은 조':'연달아 출전'} · 한 도장 인원이 많아 다 떨어뜨리지 못함)`:'같은 도장 겹침 ✓ 없음 (토너먼트 첫 경기 맞대결도 없음)'}`:''}</span>`:''}</section>
     ${DR?`<div class="notice" style="border-color:var(--gold3)"><b>💾 이 컴퓨터에 저장된 추첨이 있습니다</b> <span class="small mute">${esc(fmtAt(new Date(DR.at).toISOString()))} · 아직 홈페이지에 올리지 않은 추첨일 수 있습니다</span><div class="row" style="gap:8px;margin-top:6px"><button class="btn gold sm" type="button" data-a="hdDraftLoad">저장된 추첨 불러오기</button><button class="btn sm ghost" type="button" data-a="hdDraftDel">지우기</button></div></div>`:''}
     ${hdRepHtml()}
+    ${fxSaveBar(c)}
     ${R&&(HD.pick||[]).length?`<div class="notice" style="position:sticky;top:8px;z-index:6;border-color:#C9A45A"><b>✋ 고른 ${HD.pick.length}개: ${HD.pick.map(p=>{const f=hdFind(R[p.sp]||[],p.id);return f?esc(f.u.name):'';}).join(', ')}</b>
       <div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap">${HD.pick.length===2?'<button class="btn gold" type="button" data-a="hdSwap">⇄ 두 자리 바꾸기</button>':''}<button class="btn gold" type="button" data-a="hdNewJo">🧩 고른 선수로 새 조 만들기</button><button class="btn ghost" type="button" data-a="hdPickX">고르기 풀기</button>
       <span class="small mute">다른 조(부문) 카드 위의 「⬇ 여기로 옮기기」를 누르면 그 조로 옮깁니다. 다른 부문으로 옮기면 그 선수의 부문이 바뀝니다. 고친 뒤 「홈페이지에 올리기」를 눌러야 반영됩니다.</span></div></div>`:''}
     ${R&&HD.sel.size?`<div class="notice" style="position:sticky;top:8px;z-index:5"><b>🔗 부문 합치기 · ${new Set([...HD.sel].map(k=>k.split('|')[1]+'|'+k.split('|')[0])).size}개 선택</b><div class="row" style="gap:8px;margin-top:6px"><button class="btn gold" type="button" data-a="hdMerge">선택한 부문을 하나로 합치기</button><button class="btn ghost" type="button" data-a="hdSelX">선택 풀기</button><span class="small mute">맨 위(먼저 나온) 부문 이름으로 합치고, 그 부문만 다시 추첨합니다. 같은 종목(품새끼리·격파끼리)만 합칠 수 있습니다.</span></div></div>`:''}
     ${hdCheckPanel(c)}
-    ${hdFixPanel(c)}
+    ${fxReqPanel(c)}
+    ${fxPanel(c)}
     ${divs.length?hdMedalCard(divs):''}
     ${divs.length?evs.map(e=>`<h3 class="hd-ev">${e} <span class="small mute">${divs.filter(d=>d.ev===e).length}개 부문</span></h3><div class="hd-grid">${divs.filter(d=>d.ev===e).map(hdDivCard).join('')}</div>`).join(''):'<div class="empty">아직 추첨하지 않았습니다.</div>'}
   </div>`;}
+/* ---------- v1.7.4 대진 고치기 ----------
+   공개한 대진표는 그대로 두고 선수 한 명(팀 하나)만: 옮기기 · 빠진 선수 넣기 · 빼기 · 학년(부) 고치기 · 팀원 교체 · 새 접수 넣기
+   · 바뀐 부문만 달라짐 (컷오프는 맨 뒤에 붙임 · 토너먼트는 부전승 자리에 넣어 다른 경기 자리를 그대로 지킴)
+   · 「고친 대진 저장」 → 홈페이지 대진표·대진 책자 PDF에 「수정됨」 · 고친 기록 · 그 지도자에게 알림
+   · 지도자 「수정 요청」 (schema17 draw_reqs) → 관리자 화면에 모여 반영·거절 */
+const FX={};
+function fxLog(c){if(!FX[c.id]){try{FX[c.id]=JSON.parse(localStorage.getItem('ks_fxlog_'+c.id)||'[]')||[];}catch(e){FX[c.id]=[];}}return FX[c.id];}
+function fxLogSave(c){try{localStorage.setItem('ks_fxlog_'+c.id,JSON.stringify(FX[c.id]||[]));}catch(e){}}
+function fxLogAdd(c,x){fxLog(c).push({at:new Date().toISOString(),...x});fxLogSave(c);}
+function fxLogClr(c){FX[c.id]=[];try{localStorage.removeItem('ks_fxlog_'+c.id);}catch(e){}}
+function fxLogKeepDb(c){FX[c.id]=fxLog(c).filter(x=>x.db);fxLogSave(c);} /* 추첨 버리기: 자리만 바꾼 기록은 버리고, 접수를 바꾼 기록(학년·빼기·팀원)은 알림으로 남김 */
+const fxHasPub=c=>hdSports(c).some(sp=>{const P=hdPub(c,sp);return P&&P.data&&P.data.home&&P.data.map;});
+function fxR(c){if(!HD.res[c.id]&&fxHasPub(c))hdLoadPub(c);return HD.res[c.id]||null;}
+const fxUnitN=g=>HD_TEAM((g&&g.ev)||'')?'팀':'명';
+/* 지금 부 나누기 설정으로 본 그 선수의 원래 부문 이름 */
+function fxCanon(c,sp){const m=new Map();try{hdGroups(hdUnits(c,sp)).forEach(g=>g.units.forEach(u=>m.set(u.id,g.name)));}catch(e){}return m;}
+function fxWhere(c,id){const R=HD.res[c.id];if(R){for(const sp of Object.keys(R)){const f=hdFind(R[sp],id);if(f)return {sp,...f,g:R[sp][f.gi]};}return null;}
+  for(const sp of hdSports(c)){const P=hdPub(c,sp);if(!P||!P.data||!P.data.map)continue;const m=P.data.map[id];if(m)return {sp,pub:true,gi:m[0],pos:m[1],name:(P.data.gn||[])[m[0]]||''};}return null;}
+function fxWhereTxt(c,id){const w=fxWhere(c,id);if(!w)return '';if(w.pub)return `${w.name} ${w.pos}번`;const g=w.g;return `${g.name}${g.parts.length>1?` ${w.pi+1}조`:''} ${w.k+1}번`;}
+const fxPosTxt=(g,pi,u)=>{const p=g.parts[pi]||[],k=p.findIndex(x=>x.id===u.id);return `${g.name}${g.parts.length>1?` ${pi+1}조`:''}${k>=0?` ${k+1}번`:''}`;};
+/* 토너먼트 1회전 자리 (경기 앱 buildRound1과 같은 짝짓기) */
+const fxSlots=us=>{const mi=hdR1Pairs(us.length),m=new Map();us.forEach((u,i)=>m.set(u.id,mi[i]));return m;};
+const fxSize=n=>{let s=1;while(s<n)s*=2;return s;};
+function fxTourAdd(p,u){const n=p.length,size=fxSize(n);
+  if(n>=1&&size>n){const byes=size-n,B=p.slice(0,byes),F=p.slice(byes),old=fxSlots(p);
+    for(let j=byes-1;j>=0;j--)for(let k=0;k<=F.length;k+=2){const o=[...B.filter((_,i)=>i!==j),...F.slice(0,k),B[j],u,...F.slice(k)],s=fxSlots(o);
+      if(p.every(x=>s.get(x.id)===old.get(x.id)))return {order:o,keep:true};}}
+  return {order:[...p,u],keep:n<1};}
+function fxTourDel(p,id){const i=p.findIndex(x=>x.id===id),rest=p.filter(x=>x.id!==id),n=p.length,size=fxSize(n);
+  if(i>=0&&rest.length>1&&fxSize(rest.length)===size){const byes=size-n;if(i>=byes){const F=p.slice(byes),k=i-byes,mate=F[k%2?k-1:k+1];
+    if(mate){const B=p.slice(0,byes),F2=F.filter(x=>x.id!==id&&x.id!==mate.id),old=fxSlots(p);
+      for(let j=0;j<=B.length;j++){const o=[...B.slice(0,j),mate,...B.slice(j),...F2],s=fxSlots(o);if(rest.every(x=>s.get(x.id)===old.get(x.id)))return {order:o,keep:true};}}}}
+  return {order:rest,keep:rest.length<2};}
+/* 대진에서 한 명(팀) 꺼내기 · 넣기 */
+function fxTake(G,id){const f=hdFind(G,id);if(!f)return null;const g=G[f.gi],from=fxPosTxt(g,f.pi,f.u);let keep=true;
+  if(hdIsTour(g)){const r=fxTourDel(g.parts[f.pi],id);g.parts[f.pi]=r.order;keep=r.keep;}else g.parts[f.pi].splice(f.k,1);
+  g.edited=true;g.order=g.parts.flat();g.units=g.order;return {u:f.u,from,keep,g};}
+function fxPut(G,u,gi,pi){const g=G[gi];if(!g)return null;if(pi==null||!g.parts[pi]){pi=g.parts.length-1;if(HD.comm&&g.parts.length>1){let b=0;g.parts.forEach((p,i)=>{if(p.length<g.parts[b].length)b=i;});pi=b;}}
+  if(pi<0){g.parts=[[]];pi=0;}let keep=true;
+  if(hdIsTour(g)){const r=fxTourAdd(g.parts[pi],u);g.parts[pi]=r.order;keep=r.keep;}else g.parts[pi].push(u);
+  g.edited=true;g.order=g.parts.flat();g.units=g.order;return {to:fxPosTxt(g,pi,u),keep,g};}
+function fxGroupFor(c,sp,G,u,CAN){CAN=CAN||fxCanon(c,sp);const cn=CAN.get(u.id)||'';if(!cn)return -1;
+  let gi=G.findIndex(g=>drN(g.name)===drN(cn));if(gi<0)gi=G.findIndex(g=>g.order.some(x=>x.id!==u.id&&CAN.get(x.id)===cn));return gi;}
+function fxPlace(c,sp,G,u,CAN){CAN=CAN||fxCanon(c,sp);let gi=fxGroupFor(c,sp,G,u,CAN);
+  if(gi<0){const name=CAN.get(u.id)||hdGroups([u])[0].name;let at=-1;G.forEach((g,i)=>{if(g.evName===u.evName)at=i;});if(at<0)at=G.length-1;
+    G.splice(at+1,0,{key:'fx|'+u.id,sp,name,ev:u.ev,evName:u.evName,div:u.div,parts:[[]],order:[],units:[],edited:true});gi=at+1;}
+  const r=fxPut(G,u,gi,null);return r?r.to+(r.keep?'':' (토너먼트 짝이 새로 맞춰짐)'):'';}
+/* 접수를 고친 뒤: 대진 속 선수 정보(이름·팀원·부별)를 새로 · 취소된 접수는 뺌 */
+function fxRefresh(c){const R=HD.res[c.id];if(!R)return;for(const sp of Object.keys(R)){const U=new Map(hdUnits(c,sp).map(u=>[u.id,u]));
+  R[sp].forEach(g=>{g.parts=g.parts.map(p=>p.map(u=>U.get(u.id)||null).filter(Boolean));});R[sp]=hdTidy(R[sp]);}}
+const fxEnt=id=>D().entries.find(x=>x.id===id);
+const fxWho=e=>{const l=entryLabel(e),a=D().athletes.find(x=>x.id===e.athleteIds[0])||{};return `${l.who}${a.org||coachOf(e.coachId).org?' ('+(a.org||coachOf(e.coachId).org)+')':''}`;};
+/* 학년·부 고치기 → 접수를 고치고 맞는 부문으로 옮김 */
+async function fxRegrade(c,e,nf,why){if(!fxR(c))throw new Error('홈페이지에 올린 대진이 없습니다');const oldWhat=entryLabel(e).what;
+  const f={...(e.f||{}),...nf,ageAdm:true};await q(sb.from('entries').update({f}).eq('id',e.id));await reload();fxRefresh(c);
+  const e2=fxEnt(e.id)||{...e,f},sp=e.sport,R=HD.res[c.id],G=R[sp]||(R[sp]=[]),CAN=fxCanon(c,sp),cur=hdFind(G,e.id),cn=CAN.get(e.id)||'',newWhat=entryLabel(e2).what;
+  let mv='';
+  const same=cur&&(drN(G[cur.gi].name)===drN(cn)||G[cur.gi].order.some(x=>x.id!==e.id&&CAN.get(x.id)===cn));
+  if(!same){const u=hdUnits(c,sp).find(x=>x.id===e.id);if(u){const t=cur?fxTake(G,e.id):null;const to=fxPlace(c,sp,G,u,CAN);mv=` · ${t?t.from:'대진에 없음'} → ${to}`;}}
+  else G[cur.gi].edited=true;
+  R[sp]=hdTidy(G);
+  fxLogAdd(c,{sp,eid:e.id,db:1,t:`${fxWho(e2)} · ${why||'학년·부 고침'}: ${oldWhat} → ${newWhat}${mv||' · 부문은 그대로'}`});
+  return mv;}
+/* ---------- 관리자 화면 ---------- */
+function fxTools(c,e,R){const T=UI.fxTool;if(!T||T.id!==e.id)return '';const sp=e.sport;
+  if(T.k==='mv'){const G=(R&&R[sp])||[],cur=hdFind(G,e.id),u=fxUnitN(G[0]);
+    return `<tr class="edrow"><td colspan="6"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>옮길 곳</b><select id="fxTo" style="max-width:420px"><option value="auto">자동 — 지금 접수 부문(부별·학년)에 맞는 곳</option>${G.map((g,gi)=>g.parts.map((p,pi)=>cur&&cur.gi===gi&&cur.pi===pi?'':`<option value="${gi}|${pi}">${esc(g.name)}${g.parts.length>1?` ${pi+1}조`:''} (${p.length}${u})</option>`).join('')).join('')}</select>
+      <button class="btn gold" type="button" data-a="fxMoveGo" data-id="${e.id}">여기로 옮기기</button><span class="small mute">컷오프는 맨 뒤 순서에, 토너먼트는 부전승 자리에 들어갑니다. 원래 부문과 새 부문만 바뀝니다. 학년이 틀린 것이면 「학년·부 고치기」가 접수까지 함께 고칩니다.</span></div></td></tr>`;}
+  if(T.k==='gr')return editRow(e,true,'fxGradeSave');
+  if(T.k==='tm'){const team=new Set(e.athleteIds),L=D().athletes.filter(a=>a.coachId===e.coachId&&!team.has(a.id)).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'));
+    const A=e.athleteIds.map(id=>D().athletes.find(a=>a.id===id)||{id,name:'(지워진 선수)'});
+    return `<tr class="edrow"><td colspan="6"><div class="stack" style="gap:8px">
+      <div><b class="small">① 빠질 선수 (다친 선수)</b><div class="row" style="gap:4px 14px;flex-wrap:wrap">${A.map(a=>`<label class="check"><input type="checkbox" class="fxOut" value="${a.id}"><span>${esc(a.name)}${a.birth?` <small class="mute">${esc(a.birth)}</small>`:''}</span></label>`).join('')}</div></div>
+      <div><b class="small">② 들어갈 선수 — 그 도장에 등록된 선수</b>${L.length?`<div class="row" style="gap:4px 14px;flex-wrap:wrap;max-height:150px;overflow:auto">${L.map(a=>`<label class="check"><input type="checkbox" class="fxIn" value="${a.id}"><span>${esc(a.name)}${a.birth?` <small class="mute">${esc(a.birth)}</small>`:''}</span></label>`).join('')}</div>`:'<div class="small mute">이 도장에 다른 등록 선수가 없습니다</div>'}</div>
+      <div><b class="small">또는 등록 안 된 새 선수 — 넣으면 그 도장 선수로 바로 등록됩니다</b><div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end"><label class="f"><span>이름</span><input type="text" id="fxNN" style="width:120px"></label><label class="f"><span>성별</span>${sel('fxNG',['남','여'],'남')}</label><label class="f"><span>생년월일</span><input type="date" id="fxNB"></label></div></div>
+      <div class="row" style="gap:8px;align-items:center"><button class="btn gold" type="button" data-a="fxTeamGo" data-id="${e.id}">팀원 교체</button><span class="small mute">팀 이름·출전 순서는 그대로이고 팀원만 바뀝니다 · 기록에 「부상 교체」로 남고, 다친 선수의 다른 종목 접수는 그대로입니다</span></div></div></td></tr>`;}
+  return '';}
+function fxRowBtns(e,arm){const team=e.athleteIds.length>1;
+  return `<div class="row" style="gap:4px;flex-wrap:wrap"><button class="btn sm" type="button" data-a="fxTool" data-k="mv" data-id="${e.id}">옮기기</button><button class="btn sm" type="button" data-a="fxTool" data-k="gr" data-id="${e.id}">학년·부 고치기</button>${team?`<button class="btn sm" type="button" data-a="fxTool" data-k="tm" data-id="${e.id}">팀원 교체</button>`:''}<button class="btn sm danger" type="button" data-a="fxDrop" data-id="${e.id}">${arm?'한 번 더 누르면 뺍니다 (접수 취소)':'빼기'}</button></div>`;}
+function fxNewForm(c){const N=UI.fxNew||{},co=D().users.filter(u=>u.role==='coach').sort((a,b)=>String(a.org||'').localeCompare(String(b.org||''),'ko')),cid=N.coach||'';
+  const L=cid?D().athletes.filter(a=>a.coachId===cid).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko')):[];
+  const ev=[...(offers(c,'poomsae')?[['ps:공인','공인 품새 (개인)'],['ps:자유','자유 품새 (개인)']]:[]),...(c.sports.includes('gyeokpa')?gpEvs(c).filter(x=>x.k!=='team').map(x=>['gp:'+x.n,'격파 · '+x.n]):[])];
+  return `<div class="card stack" style="gap:8px;border-color:var(--gold3)"><b>➕ 접수에 없는 선수 새로 넣기 <span class="small mute" style="font-weight:500">지도자가 접수를 빠뜨린 선수 · 관리자가 대신 접수하고 맞는 부문에 넣습니다</span></b>
+    <div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
+      <label class="f"><span>도장 (지도자)</span><select id="fxNC" data-fxnew="coach"><option value="">도장을 고르세요</option>${co.map(u=>`<option value="${u.id}" ${u.id===cid?'selected':''}>${esc(u.org||'')} · ${esc(u.name||'')}</option>`).join('')}</select></label>
+      ${cid?`<label class="f"><span>선수</span><select id="fxNA" data-fxnew="ath"><option value="">— 새 선수 등록 —</option>${L.map(a=>`<option value="${a.id}" ${a.id===N.ath?'selected':''}>${esc(a.name)}${a.birth?' · '+esc(a.birth):''}</option>`).join('')}</select></label>`:''}
+      ${cid&&!N.ath?`<label class="f"><span>이름</span><input type="text" id="fxNN2" style="width:110px"></label><label class="f"><span>성별</span>${sel('fxNG2',['남','여'],'남')}</label><label class="f"><span>생년월일</span><input type="date" id="fxNB2"></label>`:''}
+      ${cid?`<label class="f"><span>종목</span>${sel('fxNT',ev.map(([v,l])=>({v,l})),ev[0]?ev[0][0]:'')}</label><label class="f"><span>실력조</span>${sel('fxNK',['',...CLS],'')}</label><button class="btn gold" type="button" data-a="fxNewGo">접수하고 대진에 넣기</button>`:''}
+      <button class="btn ghost" type="button" data-a="fxNewX">닫기</button></div>
+    <span class="small mute">부별·학년은 생년월일로 채웁니다. 다르면 넣은 뒤 「학년·부 고치기」로 고치세요. 참가비는 접수 내역에 「입금 전」으로 들어갑니다. 팀 종목(태권체조·팀 경연)은 지도자 접수 화면에서 넣어 주세요.</span></div>`;}
+function fxReqPanel(c){if(!M.reqOk)return '';const L=(M.reqs||[]).filter(r=>r.compId===c.id),open=L.filter(r=>r.status==='open');if(!L.length)return '';
+  const KN={grade:'학년이 틀림',div:'부가 틀림',miss:'선수가 빠짐',team:'팀원 교체',etc:'기타'};
+  return `<details class="card" ${open.length?'open':''}><summary><b>📮 지도자 수정 요청</b> <span class="small mute">${open.length?`<b style="color:var(--warn)">기다리는 요청 ${open.length}건</b> · `:''}전체 ${L.length}건</span></summary>
+    <div class="tablewrap" style="margin-top:8px"><table class="nonum"><tr><th>받은 때</th><th>지도자</th><th>선수 · 요청</th><th></th></tr>${L.map(r=>{const u=coachOf(r.coachId),e=r.entryId?fxEnt(r.entryId):null,w=r.want||{};
+      return `<tr><td class="small">${esc(fmtAt(r.at))}</td><td class="small"><b>${esc(u.org||'')}</b> ${esc(u.name||'')}${u.phone?`<br><a href="tel:${esc(u.phone)}">${esc(u.phone)}</a>`:''}</td>
+        <td><span class="chip">${KN[r.kind]||r.kind}</span> <b>${e?esc(fxWho(e)):'(선수 고르지 않음)'}</b>${e?`<div class="small mute">${esc(EVN(e))} · ${esc(entryLabel(e).what)} · 대진: ${esc(fxWhereTxt(c,e.id)||'없음')}</div>`:''}${w.div||w.grade?`<div class="small">바꿀 부문: <b>${esc([w.div,w.grade].filter(Boolean).join(' '))}</b></div>`:''}<div class="small">${esc(r.body||'')}</div>${r.status!=='open'?`<div class="small"><span class="chip ${r.status==='done'?'ok':''}">${r.status==='done'?'반영함':'거절함'}</span> ${esc(r.answer||'')}</div>`:''}</td>
+        <td>${r.status==='open'?`<div class="stack" style="gap:4px;min-width:150px"><input type="text" id="fxRA_${r.id}" placeholder="지도자에게 남길 말 (선택)"><div class="row" style="gap:4px"><button class="btn sm gold" type="button" data-a="fxReqOk" data-id="${r.id}">${(r.kind==='grade'||r.kind==='div')&&e&&(w.div||w.grade)?'반영 (자동으로 옮김)':'반영'}</button><button class="btn sm ghost" type="button" data-a="fxReqNo" data-id="${r.id}">거절</button>${e?`<button class="btn sm ghost" type="button" data-a="fxReqGo" data-id="${r.id}">선수 찾기</button>`:''}</div></div>`:''}</td></tr>`;}).join('')}</table></div>
+    <span class="small mute">학년·부 요청은 「반영」을 누르면 접수를 고치고 맞는 부문으로 바로 옮깁니다. 다른 요청은 아래 「대진 고치기」에서 고친 뒤 「반영」을 누르세요. 결과는 그 지도자 화면에 알림으로 갑니다.</span></details>`;}
+function fxPanel(c){if(!fxHasPub(c))return hdFixPanel(c);
+  const R=HD.res[c.id],L=fxLog(c),q=String(UI.fxQ||'').trim(),qn=drN(q);
+  const E=D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'&&(e.sport==='poomsae'||e.sport==='gyeokpa'));
+  const hit=qn?E.filter(e=>{const l=entryLabel(e),A=e.athleteIds.map(id=>(D().athletes.find(a=>a.id===id)||{}));return drN(l.who+' '+((e.f||{}).team||'')+' '+A.map(a=>a.name+' '+(a.org||'')).join(' ')+' '+coachOf(e.coachId).org).includes(qn);}).slice(0,40):[];
+  const miss=R?E.filter(e=>!Object.keys(R).some(sp=>hdFind(R[sp],e.id))):[];
+  const logs=[];hdSports(c).forEach(sp=>{const P=hdPub(c,sp);((P&&P.data&&P.data.log)||[]).forEach(x=>logs.push(x));});logs.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  const row=e=>`<tr><td><b>${esc(entryLabel(e).who)}</b><div class="small mute">${esc((D().athletes.find(a=>a.id===e.athleteIds[0])||{}).org||coachOf(e.coachId).org||'')}${e.athleteIds.length>1?` · 팀원 ${e.athleteIds.length}명: ${esc(e.athleteIds.map(id=>(D().athletes.find(a=>a.id===id)||{}).name||'').join(', '))}`:''}</div></td><td class="small">${esc(EVN(e))}</td><td class="small">${esc(entryLabel(e).what)}</td><td class="small"><b>${esc(fxWhereTxt(c,e.id)||'대진에 없음')}</b></td><td>${fxRowBtns(e,UI.fxArm===e.id)}</td></tr>${fxTools(c,e,R)}`;
+  return `<section class="card stack fx" id="fxPanel" style="border-color:var(--gold3)">
+    <div class="row between" style="flex-wrap:wrap;gap:8px"><h3 style="margin:0">✏️ 대진 고치기 <span class="small mute" style="font-weight:500">공개한 대진표는 그대로 두고 잘못된 선수만 고칩니다 · 다시 추첨하지 않습니다</span></h3>${R?'':'<span class="small mute">선수를 찾으면 올린 대진을 불러와 고칠 준비를 합니다</span>'}</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><input type="search" id="fxQ" placeholder="선수 · 팀 · 도장 이름" value="${esc(q)}" style="max-width:300px" autocomplete="off"><button class="btn gold" type="button" data-a="fxFind">찾기</button>${q?'<button class="btn ghost" type="button" data-a="fxClr">지우기</button>':''}<button class="btn" type="button" data-a="fxNewOpen">➕ 접수에 없는 선수 새로 넣기</button></div>
+    ${UI.fxNew?fxNewForm(c):''}
+    ${q?(hit.length?`<div class="tablewrap"><table class="nonum fxt"><tr><th>선수 · 팀</th><th>종목</th><th>접수 부문</th><th>지금 대진 자리</th><th></th></tr>${hit.map(row).join('')}</table></div>`:'<div class="empty">찾는 선수가 없습니다 (취소된 접수는 나오지 않습니다).</div>'):'<span class="small mute">학년을 잘못 넣은 선수 → 「학년·부 고치기」(접수와 대진이 함께 바뀜) · 다른 부문으로만 옮길 때 → 「옮기기」 · 잘못 들어간 선수 → 「빼기」 · 다친 팀원 → 「팀원 교체」 · 접수를 빠뜨린 선수 → 「➕ 새로 넣기」</span>'}
+    ${miss.length?`<div class="notice" style="border-color:var(--warn)"><b>대진에 없는 접수 ${miss.length}건</b><div class="tablewrap"><table class="nonum fxt">${miss.map(e=>`<tr><td><b>${esc(fxWho(e))}</b></td><td class="small">${esc(EVN(e))}</td><td class="small">${esc(entryLabel(e).what)}</td><td><button class="btn sm gold" type="button" data-a="fxPut" data-id="${e.id}">맞는 부문에 넣기</button></td></tr>`).join('')}</table></div></div>`:''}
+    ${L.length?`<div class="notice" style="border-color:#C9A45A"><b>📝 아직 저장하지 않은 고친 내용 ${L.length}건</b><ol class="small" style="margin:6px 0 0;padding-left:20px">${L.map(x=>`<li>${esc(x.t)}</li>`).join('')}</ol><span class="small mute">학년·빼기·팀원 교체는 접수에 바로 들어갔습니다. 「💾 고친 대진 저장」을 눌러야 홈페이지 대진표·대진표 파일에 반영되고 지도자에게 알림이 갑니다.</span></div>`:''}
+    ${logs.length?`<details><summary class="small"><b>📜 고친 기록 ${logs.length}건</b> (홈페이지에 저장된 것)</summary><ol class="small" style="margin:6px 0 0;padding-left:20px;max-height:260px;overflow:auto">${logs.map(x=>`<li><span class="mute">${esc(fmtAt(x.at))}</span> ${esc(x.t)}</li>`).join('')}</ol></details>`:''}
+  </section>`;}
+function fxSaveBar(c){const R=HD.res[c.id];if(!R||!(HD.rec[c.id]&&HD.rec[c.id].edit))return '';const L=fxLog(c),n=Object.values(R).reduce((t,G)=>t+G.filter(g=>g.edited).length,0);if(!L.length&&!n)return '';
+  return `<div class="notice fx-save" style="position:sticky;top:8px;z-index:7;border-color:var(--gold3)"><div class="row" style="gap:10px;flex-wrap:wrap;align-items:center"><b>✏️ 고친 내용 ${L.length}건 · 바뀐 부문 ${n}곳</b><button class="btn gold" type="button" data-a="fxSave">${HD.arm==='fxsave'?'한 번 더 누르면 홈페이지에 올립니다':'💾 고친 대진 저장 (홈페이지·대진표 파일·지도자 알림)'}</button><button class="btn ghost sm" type="button" data-a="hdCancel">고친 자리 버리기</button><span class="small mute">다른 부문의 순서는 그대로입니다 · 바뀐 부문에 「수정됨」 표시</span></div></div>`;}
+/* ---------- 관리자 동작 ---------- */
+function fxAct(a,b,S){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;const id=b.dataset.id,e=id?fxEnt(id):null;
+  if(a==='fxFind'){UI.fxQ=(document.getElementById('fxQ')||{}).value||'';UI.fxTool=null;UI.edit=null;if(UI.fxQ.trim())fxR(c);render();return;}
+  if(a==='fxClr'){UI.fxQ='';UI.fxTool=null;UI.edit=null;render();return;}
+  if(a==='fxNewOpen'){UI.fxNew=UI.fxNew?null:{};render();return;}
+  if(a==='fxNewX'){UI.fxNew=null;render();return;}
+  if(a==='fxTool'){const k=b.dataset.k,same=UI.fxTool&&UI.fxTool.id===id&&UI.fxTool.k===k;UI.fxTool=same?null:{id,k};UI.edit=!same&&k==='gr'?id:null;UI.edF=null;if(!same)fxR(c);render();return;}
+  if(a==='fxSave'){if(HD.arm!=='fxsave'){HD.arm='fxsave';render();setTimeout(()=>{if(HD.arm==='fxsave'){HD.arm=null;render();}},5000);return;}run(()=>hdPublish(c));return;}
+  if(a==='fxReqGo'){const r=(M.reqs||[]).find(x=>x.id===id),e2=r&&fxEnt(r.entryId);if(e2){UI.fxQ=entryLabel(e2).who;fxR(c);render();setTimeout(()=>{const el=document.getElementById('fxPanel');if(el)el.scrollIntoView({behavior:'smooth'});},60);}return;}
+  if(a==='fxReqOk'||a==='fxReqNo'){const r=(M.reqs||[]).find(x=>x.id===id);if(!r)return;const ans=((document.getElementById('fxRA_'+id)||{}).value||'').trim(),e2=r.entryId?fxEnt(r.entryId):null,w=r.want||{};
+    run(async()=>{let msg='';if(a==='fxReqOk'&&e2&&(r.kind==='grade'||r.kind==='div')&&(w.div||w.grade)){const nf={};if(w.div)nf.div=w.div;if(w.grade!=null)nf.grade=w.grade;msg=await fxRegrade(c,e2,nf,'지도자 요청으로 학년·부 고침');}
+      await q(sb.from('draw_reqs').update({status:a==='fxReqOk'?'done':'no',answer:ans,done_at:new Date().toISOString()}).eq('id',id));
+      if(e2)fxLogAdd(c,{sp:e2.sport,eid:e2.id,db:1,t:`${fxWho(e2)} · 수정 요청을 ${a==='fxReqOk'?'반영했습니다':'반영하지 않았습니다'}${ans?' · 본부: '+ans:''}`});
+      if(a==='fxReqNo'&&e2){const f=e2.f||{};try{await q(sb.from('entries').update({f:{...f,note:[...(f.note||[]),{at:new Date().toISOString(),t:`${fxWho(e2)} · 수정 요청을 반영하지 않았습니다${ans?' · 본부: '+ans:''}`}].slice(-30)}}).eq('id',e2.id));}catch(x){}const L=fxLog(c);L.pop();fxLogSave(c);}
+      await reload();fxRefresh(c);render();toast(a==='fxReqOk'?`요청을 반영했습니다${msg?' · 옮김'+msg:''} · 「고친 대진 저장」을 누르면 홈페이지와 지도자에게 갑니다`:'요청을 거절했습니다 · 지도자에게 알림이 갔습니다',7000);});return;}
+  if(a==='fxNewGo'){const N=UI.fxNew||{},cid=N.coach,v=k=>((document.getElementById(k)||{}).value||'').trim();if(!cid)return toast('도장을 골라 주세요');const ev=v('fxNT');if(!ev)return toast('종목을 골라 주세요');
+    const aid=v('fxNA'),nn=v('fxNN2');if(!aid&&!nn)return toast('선수를 고르거나 새 선수 이름을 넣어 주세요');
+    run(async()=>{let ath=aid?D().athletes.find(x=>x.id===aid):null;const co=coachOf(cid);
+      if(!ath){const r=await q(sb.from('athletes').insert({coach_id:cid,name:nn,gender:v('fxNG2')||'남',birth:v('fxNB2')||null,org:co.org||''}).select());ath=mapAth((Array.isArray(r)?r[0]:r)||{});if(!ath.id)throw new Error('선수를 등록하지 못했습니다');}
+      const [k,x]=ev.split(':'),sp=k==='gp'?'gyeokpa':'poomsae',f={...(sp==='gyeokpa'?defaults('gyeokpa',ath):defaults('poomsae',ath)),...(sp==='gyeokpa'?{ev:x}:{type:x}),...(v('fxNK')?{cls:v('fxNK')}:{}),ageAdm:true,byAdm:true};
+      {const k2=dupKey({compId:c.id,sport:sp,athleteIds:[ath.id],f}),other=D().entries.find(y=>y.compId===c.id&&y.status!=='cancel'&&dupKey(y)===k2);if(other)throw new Error('이 선수는 이 종목에 이미 접수되어 있습니다 · 「찾기」로 찾아 옮기기를 써 주세요');}
+      const ins=await q(sb.from('entries').insert({comp_id:c.id,coach_id:cid,sport:sp,athlete_ids:[ath.id],f,fee:feeOf(c,sp,f),status:'wait'}).select());const eid=((Array.isArray(ins)?ins[0]:ins)||{}).id;
+      await reload();fxR(c);fxRefresh(c);const R=HD.res[c.id],u=hdUnits(c,sp).find(z=>z.id===eid);let to='';
+      if(R&&u){R[sp]=R[sp]||[];to=fxPlace(c,sp,R[sp],u);R[sp]=hdTidy(R[sp]);fxLogAdd(c,{sp,eid,db:1,t:`${ath.name}${co.org?' ('+co.org+')':''} · 접수에 없던 선수를 새로 접수해 「${to}」에 넣었습니다`});}
+      UI.fxNew=null;UI.fxQ=ath.name;render();toast(`${ath.name} 선수를 접수하고 ${to||'대진'}에 넣었습니다`,6000);});return;}
+  if(!e)return;const sp=e.sport;
+  if(a==='fxMoveGo'){const R=fxR(c);if(!R||!R[sp])return;const G=R[sp],v=(document.getElementById('fxTo')||{}).value||'auto';const t=fxTake(G,e.id);if(!t)return toast('대진에서 이 선수를 찾지 못했습니다');let to;
+    if(v==='auto'){to=fxPlace(c,sp,G,t.u);}else{const [gi,pi]=v.split('|').map(Number);const r=fxPut(G,t.u,gi,pi);to=r?r.to+(r.keep?'':' (토너먼트 짝이 새로 맞춰짐)'):'';}
+    R[sp]=hdTidy(G);fxLogAdd(c,{sp,eid:e.id,t:`${fxWho(e)} · 옮김: ${t.from} → ${to}`});UI.fxTool=null;render();toast(`옮겼습니다: ${t.from} → ${to}`,6000);return;}
+  if(a==='fxPut'){const R=fxR(c);if(!R)return;R[sp]=R[sp]||[];const u=hdUnits(c,sp).find(z=>z.id===e.id);if(!u)return;const to=fxPlace(c,sp,R[sp],u);R[sp]=hdTidy(R[sp]);fxLogAdd(c,{sp,eid:e.id,t:`${fxWho(e)} · 빠진 선수를 「${to}」에 넣었습니다`});render();toast(`「${to}」에 넣었습니다`);return;}
+  if(a==='fxDrop'){if(UI.fxArm!==id){UI.fxArm=id;render();setTimeout(()=>{if(UI.fxArm===id){UI.fxArm=null;render();}},5000);return;}UI.fxArm=null;
+    run(async()=>{const R=fxR(c);const t=R&&R[sp]?fxTake(R[sp],e.id):null;if(R&&R[sp])R[sp]=hdTidy(R[sp]);await q(sb.from('entries').update({status:'cancel'}).eq('id',e.id));
+      fxLogAdd(c,{sp,eid:e.id,db:1,t:`${fxWho(e)} · 뺌: ${t?t.from:'대진에 없음'}에서 빼고 접수를 취소했습니다${t&&!t.keep?' (토너먼트 짝이 새로 맞춰짐)':''}`});await reload();fxRefresh(c);UI.fxTool=null;render();toast('대진에서 빼고 접수를 취소했습니다 · 참가비 환불은 따로 처리해 주세요',6000);});return;}
+  if(a==='fxGradeSave'){const v=k=>(document.getElementById('ed_'+k)||{}).value;const nf={};['div','grade','cls'].forEach(k=>{const x=v(k);if(x!=null)nf[k]=x;});if(v('ev'))nf.ev=v('ev');
+    {const k=dupKey({...e,f:{...e.f,...nf}}),other=D().entries.find(y=>y.id!==e.id&&y.compId===e.compId&&y.status!=='cancel'&&dupKey(y)===k);if(other)return toast('같은 선수가 같은 종목에 이미 접수되어 있습니다');}
+    run(async()=>{const mv=await fxRegrade(c,e,nf);UI.fxTool=null;UI.edit=null;UI.edF=null;render();toast(mv?`접수를 고치고 옮겼습니다${mv}`:'접수를 고쳤습니다 · 부문은 그대로입니다',7000);});return;}
+  if(a==='fxTeamGo'){const outs=[...document.querySelectorAll('.fxOut:checked')].map(i=>i.value),ins=[...document.querySelectorAll('.fxIn:checked')].map(i=>i.value),v=k=>((document.getElementById(k)||{}).value||'').trim(),nn=v('fxNN');
+    if(!outs.length)return toast('빠질 선수(다친 선수)를 골라 주세요');if(!ins.length&&!nn)return toast('들어갈 선수를 고르거나 새 선수 이름을 넣어 주세요');
+    run(async()=>{const inIds=[...ins];const co=coachOf(e.coachId),org0=(D().athletes.find(a=>a.id===e.athleteIds[0])||{}).org||co.org||'';
+      if(nn){const r=await q(sb.from('athletes').insert({coach_id:e.coachId,name:nn,gender:v('fxNG')||'남',birth:v('fxNB')||null,org:org0}).select());const na=(Array.isArray(r)?r[0]:r)||{};if(!na.id)throw new Error('새 선수를 등록하지 못했습니다');inIds.push(na.id);}
+      const q2=[...inIds],ids=e.athleteIds.map(x=>outs.includes(x)?q2.shift():x).filter(Boolean).concat(q2);
+      const nm=x=>(D().athletes.find(a=>a.id===x)||{}).name||'';await reload();const nm2=x=>(D().athletes.find(a=>a.id===x)||{}).name||nn;
+      const outN=outs.map(nm).join(', '),inN=inIds.map(nm2).join(', '),f={...(e.f||{}),swap:[...((e.f||{}).swap||[]),{at:new Date().toISOString(),out:outs.map(nm),in:inIds.map(nm2),why:'부상 교체'}]};
+      await q(sb.from('entries').update({athlete_ids:ids,f}).eq('id',e.id));await reload();fxR(c);fxRefresh(c);const R=HD.res[c.id],w=R&&R[sp]?hdFind(R[sp],e.id):null;if(w)R[sp][w.gi].edited=true;
+      fxLogAdd(c,{sp,eid:e.id,db:1,t:`${entryLabel(fxEnt(e.id)||e).who} · 팀원 교체 (부상 교체): ${outN} → ${inN}${ids.length<edTeamMin(e)?` · ⚠ 팀원 ${ids.length}명 (${edTeamMin(e)}명 이상이어야 함)`:''}`});
+      UI.fxTool=null;render();toast(`팀원을 바꿨습니다: ${outN} → ${inN} · 「고친 대진 저장」을 누르면 홈페이지·지도자에게 갑니다`,7000);});return;}}
+document.addEventListener('change',ev=>{const t=ev.target;if(!t||!t.dataset||!t.dataset.fxnew)return;const N=UI.fxNew||{};if(t.dataset.fxnew==='coach')UI.fxNew={coach:t.value};else UI.fxNew={...N,ath:t.value};render();});
+document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target&&ev.target.id==='fxQ'){ev.preventDefault();const b=document.querySelector('[data-a="fxFind"]');if(b)b.click();}});
+/* ---------- 지도자 화면: 수정 요청 · 대진 바뀜 알림 ---------- */
+const fxNoteSeen=u=>{try{return localStorage.getItem('ks_note_seen_'+u.id)||'';}catch(e){return '';}};
+function fxNotes(u,cid){const out=[];D().entries.filter(e=>e.coachId===u.id&&(!cid||e.compId===cid)).forEach(e=>((e.f||{}).note||[]).forEach(n=>out.push({...n,e})));return out.sort((a,b)=>String(b.at).localeCompare(String(a.at)));}
+function fxCoachAlerts(u){const seen=fxNoteSeen(u),A=[];const by=new Map();fxNotes(u).filter(n=>String(n.at)>seen).forEach(n=>{const k=n.e.compId;if(!by.has(k))by.set(k,[]);by.get(k).push(n);});
+  for(const [cid,L] of by){const c=D().comps.find(x=>x.id===cid);if(!c)continue;A.push({lv:'hot',t:`「${c.name}」 대진이 고쳐졌습니다 (${L.length}건)`,s:L.slice(0,4).map(n=>n.t).join(' / ')+(L.length>4?' …':''),a:`<a class="btn sm gold" href="#draw-${cid}">대진표 보기</a><button class="btn sm ghost" type="button" data-a="noteSeen">확인했습니다</button>`});}
+  return A;}
+function fxCoachDraw(c){const u=me();if(!u||u.role!=='coach')return '';const mine=D().entries.filter(e=>e.compId===c.id&&e.coachId===u.id&&e.status!=='cancel'&&(e.sport==='poomsae'||e.sport==='gyeokpa'));
+  const notes=fxNotes(u,c.id),R=UI.fxRq||{},kind=R.kind||'grade',e=mine.find(x=>x.id===R.eid)||null,div=R.div!=null?R.div:(e&&e.f.div)||'',divs=e&&e.sport==='gyeokpa'?GP_LV:PS_DIV,gl=e&&e.sport!=='gyeokpa'?gradeList(div):null;
+  const my=(M.reqs||[]).filter(r=>r.compId===c.id&&r.coachId===u.id),ST={open:['','확인 중'],done:['ok','반영됨'],no:['','반영 안 함']};
+  return `${notes.length?`<div class="notice" style="border-color:var(--warn)"><b>🔔 우리 선수 대진 바뀜 ${notes.length}건</b><ol class="small" style="margin:6px 0 0;padding-left:20px">${notes.slice(0,30).map(n=>`<li><span class="mute">${esc(fmtAt(n.at))}</span> ${esc(n.t)}</li>`).join('')}</ol></div>`:''}
+  ${M.reqOk&&mine.length?`<details class="card" ${UI.fxRq?'open':''}><summary><b>✋ 대진 수정 요청</b> <span class="small mute">학년을 잘못 넣었거나 선수가 빠졌으면 대회 본부에 바로 알려 주세요${my.length?` · 보낸 요청 ${my.length}건`:''}</span></summary>
+    <div class="stack" style="gap:8px;margin-top:10px">
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <label class="f"><span>무엇이 틀렸나요</span><select id="fxRqK" data-fxrq="kind">${[['grade','학년이 틀림'],['div','부가 틀림'],['miss','선수가 대진에 빠짐'],['team','팀원 교체 (부상 등)'],['etc','기타']].map(([v,l])=>`<option value="${v}" ${v===kind?'selected':''}>${l}</option>`).join('')}</select></label>
+        <label class="f"><span>선수 · 팀</span><select id="fxRqE" data-fxrq="eid"><option value="">${kind==='miss'?'(접수에 없는 선수 · 아래에 적기)':'선수를 고르세요'}</option>${mine.map(x=>`<option value="${x.id}" ${x.id===R.eid?'selected':''}>${esc(entryLabel(x).who)} · ${esc(EVN(x))} · ${esc(entryLabel(x).what)}</option>`).join('')}</select></label>
+        ${(kind==='grade'||kind==='div')&&e?`<label class="f"><span>맞는 부별</span>${sel('fxRqDiv',divs,div,'data-fxrq="div"')}</label>${gl?`<label class="f"><span>맞는 ${esc(gradeLbl(div))}</span>${sel('fxRqGr',gl,R.grade!=null?R.grade:e.f.grade||'')}</label>`:''}`:''}
+      </div>
+      <textarea id="fxRqB" rows="2" placeholder="${kind==='miss'?'빠진 선수 이름 · 생년월일 · 종목 · 부별을 적어 주세요':kind==='team'?'빠질 선수와 들어갈 선수(이름 · 생년월일)를 적어 주세요':'대회 본부에 전할 말 (선택)'}" style="width:100%"></textarea>
+      <div class="row" style="gap:8px"><button class="btn gold" type="button" data-a="fxRqSend" data-c="${c.id}">요청 보내기</button><span class="small mute">대회 본부가 확인하고 반영하면 이 화면과 첫 화면 알림에 결과가 뜹니다.</span></div>
+      ${my.length?`<div class="tablewrap"><table class="nonum"><tr><th>보낸 때</th><th>요청</th><th>결과</th></tr>${my.map(r=>{const x=r.entryId?D().entries.find(y=>y.id===r.entryId):null,w=r.want||{};return `<tr><td class="small">${esc(fmtAt(r.at))}</td><td class="small"><b>${x?esc(entryLabel(x).who):''}</b> ${esc(r.body||'')}${w.div||w.grade?` · 바꿀 부문 ${esc([w.div,w.grade].filter(Boolean).join(' '))}`:''}</td><td><span class="chip ${ST[r.status]?ST[r.status][0]:''}">${ST[r.status]?ST[r.status][1]:esc(r.status)}</span>${r.answer?`<div class="small">${esc(r.answer)}</div>`:''}</td></tr>`;}).join('')}</table></div>`:''}
+    </div></details>`:''}`;}
+document.addEventListener('change',ev=>{const t=ev.target;if(!t||!t.dataset||!t.dataset.fxrq)return;const k=t.dataset.fxrq,R={...(UI.fxRq||{})};
+  if(k==='kind'){R.kind=t.value;}else if(k==='eid'){R.eid=t.value;R.div=null;R.grade=null;}else if(k==='div'){R.div=t.value;R.grade='';}UI.fxRq=R;render();});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-a="fxRqSend"],[data-a="noteSeen"]');if(!b)return;const u=me();if(!u)return;
+  if(b.dataset.a==='noteSeen'){try{localStorage.setItem('ks_note_seen_'+u.id,new Date().toISOString());}catch(x){}render();return;}
+  const cid=b.dataset.c,R=UI.fxRq||{},kind=(document.getElementById('fxRqK')||{}).value||R.kind||'grade',eid=(document.getElementById('fxRqE')||{}).value||'',body=((document.getElementById('fxRqB')||{}).value||'').trim();
+  if(kind!=='miss'&&!eid)return toast('선수(팀)를 골라 주세요');if((kind==='miss'||kind==='etc'||kind==='team')&&!body)return toast('내용을 적어 주세요');
+  const want={};if(kind==='grade'||kind==='div'){const d=(document.getElementById('fxRqDiv')||{}).value,g=(document.getElementById('fxRqGr')||{}).value;if(d)want.div=d;if(g!=null)want.grade=g;}
+  run(async()=>{await q(sb.from('draw_reqs').insert({comp_id:cid,coach_id:u.id,entry_id:eid||null,kind,body,want}));UI.fxRq=null;await reload();toast('수정 요청을 보냈습니다 · 대회 본부가 확인하면 알림이 옵니다',6000);});});
+
 /* 둘로 잘못 나뉜 부문을 관리자가 골라 하나로 — 맨 앞 부문 이름으로 합치고 그 부문만 다시 추첨 */
 function hdPick(sp,id){HD.pick=HD.pick||[];if(HD.pick.length&&HD.pick[0].sp!==sp)HD.pick=[];const i=HD.pick.findIndex(x=>x.id===id);if(i>=0)HD.pick.splice(i,1);else HD.pick.push({sp,id});}
 function hdFind(G,id){for(let gi=0;gi<G.length;gi++){const P=G[gi].parts;for(let pi=0;pi<P.length;pi++){const k=P[pi].findIndex(u=>u.id===id);if(k>=0)return {gi,pi,k,u:P[pi][k]};}}return null;}
@@ -2058,8 +2258,9 @@ function hdLoadPub(c){const R={};let rec=null;
     Object.entries(X.map).forEach(([id,m])=>{const u=U.get(id);if(u&&G[m[0]]){G[m[0]].list.push({u,pos:m[1]});U.delete(id);}});
     let out=G.map((g,gi)=>{g.list.sort((a,b)=>a.pos-b.pos);const us=g.list.map(x=>x.u);delete g.list;if(!us.length)return null;const ns=(X.divs||[]).filter(d=>d.gi===gi).map(d=>d.n);let i=0;
       const parts=ns.map(n=>us.slice(i,i+=n)).filter(p=>p.length);if(i<us.length){if(parts.length)parts[parts.length-1].push(...us.slice(i));else parts.push(us.slice(i));}
-      const f=us[0];return {...g,ev:f.ev,evName:f.evName,div:f.div,parts,order:parts.flat(),units:parts.flat()};}).filter(Boolean);
-    const rest=[...U.values()];if(rest.length)out=out.concat(hdGroups(rest).map(hdDrawGroup));R[sp]=out;}
+      const f=us[0],dd=(X.divs||[]).find(d=>d.gi===gi&&d.ed);return {...g,ev:f.ev,evName:f.evName,div:f.div,parts,order:parts.flat(),units:parts.flat(),...(dd?{edAt:dd.ed}:{})};}).filter(Boolean);
+    /* v1.7.4 대진에 없던 접수(추첨 뒤 들어온 선수)는 맞는 부문 맨 뒤에 넣음 (토너먼트는 부전승 자리) · 맞는 부문이 없으면 새 부문 */
+    const rest=[...U.values()];rest.forEach(u=>{const to=fxPlace(c,sp,out,u);fxLogAdd(c,{sp,eid:u.id,t:`${u.name}${u.org?' ('+u.org+')':''} · 대진에 없던 접수를 「${to}」에 넣었습니다`});});R[sp]=hdTidy(out);}
   if(!Object.keys(R).length)return toast('홈페이지에 올린 대진이 없습니다');
   HD.res[c.id]=R;HD.rec[c.id]={...(rec||{id:'—',at:new Date().toISOString(),fair:HD.fair}),edit:new Date().toISOString()};HD.pick=[];HD.arm=null;}
 function hdMerge(c){const R=HD.res[c.id];if(!R)return;const ks=[...new Set([...HD.sel])].map(k=>{const [sp,gi]=k.split('|');return {sp,gi:+gi};});
@@ -2092,7 +2293,7 @@ async function hdDoDraw(c){const R={};let n=0,k=0;
    · 추첨·고치기를 하면 이 컴퓨터에 저절로 저장 → 「홈페이지에 올리기」 전에 꺼도 「저장된 추첨 불러오기」로 그대로
    · 대진 책자 PDF 안에 그 대진(부문·출전 순서)을 숨겨 넣음 → 「대진표 파일로 되살리기」에 그 PDF를 넣으면 똑같이 되살림
    · 되살리기 파일(.json)도 받음 (선수 id가 없으면 부문·이름·소속으로 맞춤) · 맞지 않는 선수는 목록으로 알려 줌 */
-const hdSnapOf=(c,R,rec)=>{const sp={};Object.entries(R).forEach(([k,G])=>{sp[k]=G.map(g=>({name:g.name,parts:g.parts.map(p=>p.map(u=>[u.id,u.name,u.org||'']))}));});
+const hdSnapOf=(c,R,rec)=>{const sp={};Object.entries(R).forEach(([k,G])=>{sp[k]=G.map(g=>({name:g.name,parts:g.parts.map(p=>p.map(u=>[u.id,u.name,u.org||''])),...(g.edited?{ed:1}:{}),...(g.edAt?{edAt:g.edAt}:{})}));});
   return {v:1,comp:c.id,cname:c.name,at:Date.now(),rec:rec||null,fair:HD.fair,comm:HD.comm,fmt:HD.fmt,sp};};
 function hdSnapPub(c){const sp={};let rec=null;for(const k of hdSports(c)){const P=hdPub(c,k);if(!P||!P.data||!P.data.map)continue;const X=P.data,U=new Map(hdUnits(c,k).map(u=>[u.id,u]));rec=rec||X.rec||null;
     const by=(X.gn||[]).map(()=>[]);Object.entries(X.map).forEach(([id,m])=>{if(by[m[0]])by[m[0]].push([m[1],id]);});
@@ -2117,7 +2318,7 @@ function hdRestore(c,snap){const R={},rep={ok:0,miss:[],extra:[],diff:[]};
       const parts=g.parts.map(p=>p.map(t=>{const u=take(t,evN);if(u){used.add(u.id);rep.ok++;}else rep.miss.push(`${g.name} · ${t[1]}${t[2]?' ('+t[2]+')':''}`);return u;}).filter(Boolean)).filter(p=>p.length);
       if(!parts.length)return null;const f=parts[0][0],cg=CAN.get(f.id),same=cg&&drN(cg.name)===drN(g.name)&&parts.flat().every(u=>CAN.get(u.id)===cg);
       parts.flat().forEach(u=>{const k=CAN.get(u.id);if(k&&drN(k.name)!==drN(g.name))rep.diff.push(`${u.name}${u.org?' ('+u.org+')':''} · 대진표: ${g.name} → 지금 접수: ${k.name}`);});
-      return {key:same?cg.key:'rs|'+sp+'|'+gi,sp,name:same?cg.name:g.name,ev:f.ev,evName:f.evName,div:f.div,parts,order:parts.flat(),units:parts.flat()};}).filter(Boolean);
+      return {key:same?cg.key:'rs|'+sp+'|'+gi,sp,name:same?cg.name:g.name,ev:f.ev,evName:f.evName,div:f.div,parts,order:parts.flat(),units:parts.flat(),...(g.ed?{edited:true}:{}),...(g.edAt?{edAt:g.edAt}:{})};}).filter(Boolean);
     const rest=U.filter(u=>!used.has(u.id));rest.forEach(u=>rep.extra.push(`${u.evName} · ${u.name}${u.org?' ('+u.org+')':''}`));
     R[sp]=rest.length?G.concat(hdGroups(rest).map(hdDrawGroup)):G;}
   HD.res[c.id]=R;HD.rec[c.id]={...(snap.rec||{id:'—',at:new Date(snap.at||Date.now()).toISOString(),fair:HD.fair}),restored:new Date().toISOString()};HD.pick=[];HD.sel.clear();HD.arm=null;HD.rep=rep;return rep;}
@@ -2133,8 +2334,19 @@ async function hdRestoreFile(c,file){let snap=null;const buf=new Uint8Array(awai
 function hdRepHtml(){const r=HD.rep;if(r&&!r.diff)r.diff=[];const dv=r&&r.diff.length?`<div class="small"><b>대진표와 지금 접수 내용(부별·실력조·성별)이 다른 선수 ${r.diff.length}명</b> · 대진표 그대로 두었습니다: ${r.diff.slice(0,30).map(esc).join(' / ')}</div>`:'';if(!r||(!r.miss.length&&!r.extra.length&&!r.diff.length))return r?`<div class="notice"><b>✅ 대진을 파일과 똑같이 되살렸습니다 (${r.ok}명)</b> · 확인 뒤 「홈페이지에 올리기」를 누르세요</div>`:'';
   return `<div class="notice" style="border-color:var(--warn)"><b>⚠ 되살린 대진에서 확인할 것</b>${r.miss.length?`<div class="small"><b>파일에는 있는데 지금 접수에서 못 찾은 선수 ${r.miss.length}명</b> (취소·이름 변경): ${r.miss.slice(0,30).map(esc).join(' / ')}${r.miss.length>30?' …':''}</div>`:''}${r.extra.length?`<div class="small"><b>파일에 없던 새 접수 ${r.extra.length}건</b> (맨 뒤 새 부문으로 추첨됨 · 손으로 옮길 수 있음): ${r.extra.slice(0,30).map(esc).join(' / ')}${r.extra.length>30?' …':''}</div>`:''}${dv}<button class="btn sm ghost" type="button" data-a="hdRepX">닫기</button></div>`;}
 async function hdPublish(c){const R=HD.res[c.id];if(!R)return;
-  for(const sp of Object.keys(R)){const {error}=await sb.rpc('publish_draws',{p_comp:c.id,p_sport:sp,p_data:{...hdData(R[sp]),rec:HD.rec[c.id]||null}});if(error)throw error;}
-  delete HD.res[c.id];HD.arm=null;HD.rep=null;hdDraftDel(c);M.drawData[c.id]=null;await reload();await loadDraw(c.id);render();toast('홈페이지에 대진표를 올렸습니다 · 지도자가 바로 볼 수 있습니다');}
+  /* v1.7.4 올린 대진을 고친 것이면: 고친 부문에 「수정됨」 · 고친 기록을 이어 붙임 · 지도자 알림 */
+  const now=new Date().toISOString(),ed=!!(HD.rec[c.id]&&HD.rec[c.id].edit),L=ed?fxLog(c):[],SPS=Object.keys(R);let nEd=0;
+  const sig=d=>JSON.stringify(d.kind==='t'?(d.rounds[0]||{m:[]}).m.map(m=>[m.b,m.r]):d.groups);
+  for(const sp of SPS){R[sp].forEach(g=>{g.edited=false;});
+    const old=hdPub(c,sp),olog=ed&&old&&old.data&&old.data.home&&Array.isArray(old.data.log)?old.data.log:[],add=L.filter(x=>(SPS.includes(x.sp)?x.sp:SPS[0])===sp).map(x=>({at:x.at,t:x.t}));
+    const data=hdData(R[sp]);
+    /* 「수정됨」: 올렸던 대진과 사람·순서가 달라진 부문만 (조 하나하나) · 전에 고친 표시는 그대로 */
+    if(ed){const O=new Map(((old&&old.data&&old.data.divs)||[]).map(d=>[d.name,d]));data.divs.forEach(d=>{delete d.ed;const o=O.get(d.name);if(o&&sig(o)===sig(d)){if(o.ed)d.ed=o.ed;}else{d.ed=now;nEd++;}});}
+    const {error}=await sb.rpc('publish_draws',{p_comp:c.id,p_sport:sp,p_data:{...data,rec:HD.rec[c.id]||null,...(ed?{log:[...olog,...add].slice(-400)}:{})}});if(error)throw error;}
+  let nN=0;if(L.length){const by=new Map();L.filter(x=>x.eid).forEach(x=>{if(!by.has(x.eid))by.set(x.eid,[]);by.get(x.eid).push({at:now,t:x.t});});
+    for(const [id,ns] of by){const e=D().entries.find(x=>x.id===id);if(!e)continue;try{await q(sb.from('entries').update({f:{...(e.f||{}),note:[...((e.f||{}).note||[]),...ns].slice(-30)}}).eq('id',id));nN++;}catch(x){}}}
+  fxLogClr(c);UI.fxTool=null;
+  delete HD.res[c.id];HD.arm=null;HD.rep=null;hdDraftDel(c);M.drawData[c.id]=null;await reload();await loadDraw(c.id);render();toast(ed?`고친 대진을 홈페이지에 올렸습니다 · 고친 부문 ${nEd}곳에 「수정됨」 표시${nN?` · 지도자 알림 ${nN}건`:''} · 현장으로는 명단 엑셀을 다시 내려받아 본부에 넣어 주세요`:'홈페이지에 대진표를 올렸습니다 · 지도자가 바로 볼 수 있습니다',ed?9000:2600);}
 /* 대진 책자 PDF (A4 세로형·가로형) — 표지(목차·범례) + 종목별 부문 블록(토너먼트 대진표 + 경기 목록 / 컷오프 출전 목록)
    · 한 부문 블록은 절대 두 쪽(또는 두 단)에 걸쳐 자르지 않음 · 종목 제목은 첫 부문과 함께 다님 */
 const HD_EVEN={'공인 품새':'Recognized Poomsae','자유 품새':'Freestyle Poomsae','겨루기':'Kyorugi','격파':'Breaking','태권체조':'Taekwondo Aerobics','팀 경연':'Team Competition'};
@@ -2159,7 +2371,7 @@ const HD_CSS=`.bk{position:relative;overflow:hidden;box-sizing:border-box;backgr
 .bk .dh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 11px;background:linear-gradient(180deg,#F7F8FB,#EEF1F6);border-bottom:1px solid #DDE2EC}
 .bk .dh b{font:800 12px/1.3 "Noto Sans KR",sans-serif;color:#0B1530}.bk .dh span{display:flex;gap:4px;flex-shrink:0}
 .bk .chip{font-size:8.5px;font-weight:800;border-radius:10px;padding:2px 7px;background:#fff;border:1px solid #D8DDE8;color:#4A5268;white-space:nowrap}
-.bk .chip.t{background:#0B1530;border-color:#0B1530;color:#E2C27F}.bk .chip.o{background:#FBF6EA;border-color:#E6D3A6;color:#7C5B26}
+.bk .chip.ed{background:#FDECEC;border-color:#E8A0A0;color:#B42318}.bk .chip.t{background:#0B1530;border-color:#0B1530;color:#E2C27F}.bk .chip.o{background:#FBF6EA;border-color:#E6D3A6;color:#7C5B26}
 .bk .br{padding:8px 12px 2px;color:#141B2D}
 .bk table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
 .bk th{background:#fff!important;color:#7A8196!important;font:700 8.5px/1.2 "Noto Sans KR",sans-serif;text-align:left;padding:5px 6px;border:0;border-bottom:1.5px solid #0B1530;letter-spacing:.04em;text-transform:none}
@@ -2202,7 +2414,7 @@ function hdBkRows(d,ctr){const R=[];
   else (d.groups||[]).forEach((g,gi)=>g.forEach((p,pi)=>R.push({no:++ctr.n,seat:pi+1,div:d.name+((d.groups||[]).length>1?` ${gi+1}조`:''),stage:d.stage==='예선'?'예선':d.stage==='본선'?'본선':'결선',p,mt:!pi&&gi>0})));
   return R;}
 function hdBkBlock(d,rows,land){const team=/체조|경연|단체|팀/.test(d.name+(d.ev||''));
-  const head=`<div class="dh"><b>${esc(d.name)}</b><span><span class="chip">${d.n}${team?'팀':'명'}</span><span class="chip ${d.kind==='t'?'t':'o'}">${d.kind==='t'?'토너먼트':'컷오프 · '+esc(rows[0]?rows[0].stage:'결선')}</span></span></div>`;
+  const head=`<div class="dh"><b>${esc(d.name)}</b><span>${d.ed?'<span class="chip ed">수정됨</span>':''}<span class="chip">${d.n}${team?'팀':'명'}</span><span class="chip ${d.kind==='t'?'t':'o'}">${d.kind==='t'?'토너먼트':'컷오프 · '+esc(rows[0]?rows[0].stage:'결선')}</span></span></div>`;
   if(d.kind==='t')return `<div class="dv">${head}<div class="br">${hdBrSvg(d,{fitW:land?390:560,h:land?24:26,fs:land?11.5:12.5,orgX:land?104:128})}</div></div>`;
   const tr=rows.map(r=>`<tr class="${r.mt?'mt':''}"><td class="c"><span class="st n">${r.seat}</span></td><td class="dvn">${esc(r.div)}</td><td class="c">${esc(r.stage)}</td><td>${esc(r.p&&r.p.t||'')}</td><td class="nm">${r.p?esc(r.p.n):'—'}</td></tr>${r.p&&r.p.m?`<tr class="mem"><td></td><td colspan="4"><span>팀원 ${String(r.p.m).split(/[,，·]/).filter(s=>s.trim()).length}명</span> ${esc(String(r.p.m).split(/[,，·]/).map(s=>s.trim()).filter(Boolean).join(' · '))}</td></tr>`:''}`).join('');
   return `<div class="dv">${head}<table><colgroup><col style="width:${land?52:62}px"><col><col style="width:${land?44:54}px"><col style="width:${land?27:26}%"><col style="width:${land?25:24}%"></colgroup>
@@ -3336,6 +3548,7 @@ async function run(fn){if(BUSY)return;BUSY=true;document.body.style.cursor='prog
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,S=D();
   if(a==='contactX'&&b.classList.contains('ovl')&&e.target.closest('[data-stop]'))return;
+  if(/^fx/.test(a)&&a!=='fxRqSend'){fxAct(a,b,S);return;}
   if(a==='logout')run(async()=>{await sb.auth.signOut();UI.cart=[];go('home');toast('로그아웃했습니다');});
   else if(a==='athEdit'){UI.editAth=b.dataset.id;UI.err='';render();window.scrollTo(0,0);}
   else if(a==='athCancel'){UI.editAth=null;render();}
@@ -3430,7 +3643,7 @@ document.addEventListener('click',e=>{
     if(!confirm(`「${c.name}」의 대진표를 모두 지웁니다.\n\n· 홈페이지에 올린 대진표 (품새·격파·겨루기 모든 종목)\n· 아직 올리지 않은 추첨 결과\n\n지도자 화면에서도 바로 사라지고 되돌릴 수 없습니다. 접수 명단은 그대로입니다.\n정말 지울까요?`)){HD.arm=null;render();return;}
     run(async()=>{await q(sb.from('draws').delete().eq('comp_id',c.id));hdDraftDel(c);HD.rep=null;delete HD.res[c.id];delete HD.rec[c.id];HD.pick=[];HD.sel.clear();HD.arm=null;if(M.drawData)M.drawData[c.id]=null;await reload();
       const left=drawsOf(c.id).length;toast(left?`⚠ ${left}개 종목 대진표가 남았습니다 · 새로 고침한 뒤 다시 눌러 주세요`:'대진표를 모두 지웠습니다 · 이제 「모두 한 번에 추첨」으로 새로 만드세요');});}
-  else if(a==='hdCancel'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c){delete HD.res[c.id];HD.arm=null;HD.pick=[];render();}}
+  else if(a==='hdCancel'){const c=S.comps.find(x=>x.id===UI.adminComp);if(c){delete HD.res[c.id];HD.arm=null;HD.pick=[];fxLogKeepDb(c);render();}}
   else if(a==='hdPub'){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;if(HD.arm!=='pub'){HD.arm='pub';render();setTimeout(()=>{if(HD.arm==='pub'){HD.arm=null;render();}},5000);return;}run(()=>hdPublish(c));}
   else if(a==='hdPdf'){const c=D().comps.find(x=>x.id===(b.dataset.c||UI.adminComp));if(c)run(()=>hdPdf(c,b.dataset.o));}
   else if(a==='ecCopyAll'){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;const E=S.entries.filter(e=>e.compId===c.id&&e.status!=='cancel');const L=(S.users||[]).filter(u=>!isOps(u)&&!E.some(e=>e.coachId===u.id)&&(S.athletes.some(x=>x.coachId===u.id)||S.entries.some(e=>e.compId===c.id&&e.coachId===u.id)));copyText(L.map(u=>`${u.org||''} ${u.name||''} ${u.phone||''}\n${ecMsg(c,u)}`).join('\n\n'),`${L.length}곳 안내문을 복사했습니다`);}
