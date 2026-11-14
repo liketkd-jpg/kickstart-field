@@ -40,7 +40,7 @@ function modelGp(){const st=g('ST')(),cur=g('curOf')(),S=g('S'),s=SET();
     o.liveCount=k==='height'?{l:'최고 높이',v:fmtN(rec.best||0),u:'cm'}:(k==='count'||k==='power')?{l:'격파',v:fmtN(rec.broken||0),u:'장'}:k==='powerc'?{l:'격파',v:(Number(rec.fist)||0)+(Number(rec.knife)||0)+(Number(rec.back)||0)+(Number(rec.elbow)||0),u:'장'}:null;return o;}
   const el=Date.now()-(st.revealedAt||Date.now()),CB=g('CB_SCORE_MS')||7000,canRank=!!(d&&!r.dq);o.el=el;
   if(el<CB||!canRank){if(canRank)setTimeout(g('schedule'),CB-el+30);o.scr='score';
-    const P100=g('p100'),PM=g('p100max');o.final=r.dq?'실격':JU(k)?fmt3(P100?P100(r):r.final):RT(r);if(PM&&PM(r))o.final100=true;o.parts=[];if(JU(k))o.parts.push({l:r.judges.length===1?'1심 점수':'심판 평균',v:fmt3(r.score)+(PM&&PM(r)?' / '+PM(r)+' → 100점 환산':'')});if(r.dedTotal)o.parts.push({l:'감점',v:'−'+fmtN(r.dedTotal),neg:true});
+    const P100=g('p100'),PM=g('p100max');o.final=r.dq?'실격':JU(k)?fmt3(P100?P100(r):r.final):RT(r);if(PM&&PM(r))o.final100=true;o.parts=[];if(JU(k))o.parts.push({l:r.judges.length===1?'1심 점수':'심판 평균',v:fmt3(r.score*(PM&&PM(r)?100/PM(r):1))});if(r.dedTotal)o.parts.push({l:'감점',v:'−'+(PM&&PM(r)?Math.round(r.dedTotal*100/PM(r)*100)/100:fmtN(r.dedTotal)),neg:true});
     if(r.zero)o.note='격파 0장 · 순위 제외';return o;}
   const stagesOf=g('stagesOf'),curStage=g('curStage'),stIds=g('stIds'),rankList=g('rankList'),planOf=g('planOf'),athlete=g('athlete');
   const stg=stagesOf(d).find(x=>x.key===cur.stage)||curStage(d),ids=stg.groups&&cur.group!=null?stg.groups[cur.group]||[]:stIds(stg);
@@ -113,7 +113,7 @@ function arExtra(m){try{m.top=[];m.js=null;const cur=g('curOf')(),S=g('S');if(!c
   else{const st=g('stagesOf')(d).find(x=>x.key===cur.stage)||g('curStage')(d),ids=st.groups&&cur.group!=null?st.groups[cur.group]||[]:g('stIds')(st),RT=g('resultText');
     const rows=g('rankList')(d,st.key,ids).filter(x=>x.ok);m.top=rows.slice(0,3).map(x=>{const a=g('athlete')(x.id)||{};return {rank:x.rank,name:a.name||'',team:a.team||'',score:RT(x.r),me:x.id===cur.athleteId};});m.total=rows.length;
     const r=S.results[cur.perfId],JU=g('JUDGED');if(r&&r.judges&&JU&&JU(cur.kind)&&m.scr==='score'){const cols=g('itemCols')(cur),fN=g('fmtN')||(v=>v);
-      m.js=r.judges.map((j,i)=>({n:j.judge,t:fN(j.total),sub:cols.map(c=>`${E(c.l)} ${fN(c.v(j.items||{}))}`).join(' · '),drop:r.judges.length>=5&&(i===r.hi||i===r.lo),why:i===r.hi?'최고점 제외':i===r.lo?'최저점 제외':''}));}}
+      const PFf=g('pf'),k1=PFf?PFf(r):1,sc=v=>k1!==1?String(Math.round(v*k1*100)/100):fN(v);m.js=r.judges.map((j,i)=>({n:j.judge,t:sc(j.total),sub:cols.map(c=>`${E(c.l)} ${sc(c.v(j.items||{}))}`).join(' · '),drop:r.judges.length>=5&&(i===r.hi||i===r.lo),why:i===r.hi?'최고점 제외':i===r.lo?'최저점 제외':''}));}}
 }catch(e){console.error('[KS_ARENA]',e);}}
 const arStage=m=>m.label||'';
 function arJudges(js){if(!js||!js.length)return '';return `<div class="ar-js" style="--n:${js.length}">${js.map(j=>j.t!=null?`<div class="ar-j ${j.drop?'drop':''}"><span class="ar-jn">${j.n}</span><b>${E(j.t)}</b><small>${j.drop&&j.why?E(j.why):j.sub}</small></div>`

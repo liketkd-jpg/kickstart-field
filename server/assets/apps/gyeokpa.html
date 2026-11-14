@@ -1814,6 +1814,9 @@ function entryReady(cur){const js=new Set(curScores().filter(s=>s.perfId===cur.p
 /* v1.7.10 기술격파(체공·수직축·수평축)는 기술 수 × 10점 만점 → 100점 만점으로 환산해 보여 줌 (순위는 그대로 · 종합격파·단체전은 원래 100점 만점)
    기록격파(cm·장)·위력격파(장)는 기록이라 그대로 */
 function p100max(r){return r&&r.kind==='tech'&&(r.techs||[]).length?r.techs.length*10:0;}
+/* 심판 점수·감점도 같은 100점 기준으로 (채점판은 그대로) */
+function pf(r){const m=p100max(r);return m?100/m:1;}
+const fP=v=>{const n=Math.round(Number(v||0)*100)/100;return String(n);};
 function p100(r,v){const m=p100max(r);v=v==null?(r&&r.final):v;return m&&v!=null?v/m*100:v;}
 function resultText(r){
   if(!r)return '—';if(r.dq)return '실격';
@@ -2288,7 +2291,7 @@ function runPanel(st,cur){
     const units=timeUnits(k,t,limitOf(cur)),tsug=units&&(Number(ded.time)||0)!==units&&!t.running?`<button class="btn sm hint" data-act="dedSet" data-k="time" data-v="${units}">측정 시간 기준 시간 감점 ${units}회 넣기</button>`:'';
     const rows=(DED[k]||[]).map(x=>x.opts?`<div class="cnt"><span class="cl">${x.label}<small>최대 −3</small></span>${seg('dedSet',[[0,'없음'],[1,'미세 −1'],[2,'보통 −2'],[3,'큼 −3']],Number(ded[x.k])||0,'data-k="'+x.k+'"')}</div>`
       :cnt('dedInc',x.k,ded[x.k],x.label,`−${x.v} × ${x.unit}`)).join('');
-    let prev='';if(cs.length){const pr=computeJudged(cur,cs,ded,st.dq);prev=`<div class="prev"><span>심판 평균 <b>${fmt3(pr.score)}</b></span><span>감점 <b>−${fmtN(pr.dedTotal)}</b></span><span class="big">${ready?'최종':'현재'} <b>${pr.dq?'실격':fmt3(pr.final)}</b></span></div>`;}
+    let prev='';if(cs.length){const pr=computeJudged(cur,cs,ded,st.dq);prev=`<div class="prev"><span>심판 평균 <b>${fmt3(pr.score*pf(pr))}</b></span><span>감점 <b>−${fP(pr.dedTotal*pf(pr))}</b></span><span class="big">${ready?'최종':'현재'} <b>${pr.dq?'실격':fmt3(p100(pr))}</b>${p100max(pr)?' <small>(100점 기준)</small>':''}</span></div>`;}
     body=`${judgeChips(cur)}<div class="dedbox"><div class="row between"><b>감점 (운영석)</b>${tsug}</div>${rows}${dqBox}</div>${prev}`;
     btn=ready?`<button class="btn primary big" data-act="reveal">점수 공개</button>`:`<button class="btn big" data-act="armed" data-do="revealForce" ${cs.length?'':'disabled'}>미제출 ${miss}명 — 그래도 공개</button>`;
     btn+=`<button class="btn" data-act="armed" data-do="rescore">재채점 (점수 지우기)</button>`;
@@ -2318,10 +2321,10 @@ function runPanel(st,cur){
 function resultCard(r,cur){
   const k=r.kind;let det='';
   if(JUDGED(k)){
-    det=`<div class="gjrow">${r.judges.map((j,i)=>`<span class="gjt ${i===r.hi||i===r.lo?'drop':''}"><small>${j.judge}심</small>${fmtN(j.total)}</span>`).join('')}</div>`;
-    if(k==='tech')det+=`<div class="gparts">${r.techs.map((x,i)=>`<span>${esc(x)} <b>${fmt3(r.techScores[i])}</b></span>`).join('')}</div>`;
+    det=`<div class="gjrow">${r.judges.map((j,i)=>`<span class="gjt ${i===r.hi||i===r.lo?'drop':''}"><small>${j.judge}심</small>${p100max(r)?fP(j.total*pf(r)):fmtN(j.total)}</span>`).join('')}</div>`;
+    if(k==='tech')det+=`<div class="gparts">${r.techs.map((x,i)=>`<span>${esc(x)} <b>${fmt3(r.techScores[i]*pf(r))}</b></span>`).join('')}</div>`;
     else det+=`<div class="gparts">${(k==='comp'?COMP_ITEMS:TEAM_ITEMS).map(it=>`<span>${it.label} <b>${fmt3(r.parts[it.k])}</b></span>`).join('')}</div>`;
-    det+=`<div class="prev"><span>심판 평균 <b>${fmt3(r.score)}</b></span><span>감점 <b>−${fmtN(r.dedTotal)}</b></span><span class="big">최종 <b>${r.dq?'실격':fmt3(p100(r))}</b>${p100max(r)?' <small>(100점 환산 · 원점수 '+fmt3(r.final)+'/'+p100max(r)+')</small>':''}</span></div>`;
+    det+=`<div class="prev"><span>심판 평균 <b>${fmt3(r.score*pf(r))}</b></span><span>감점 <b>−${fP(r.dedTotal*pf(r))}</b></span><span class="big">최종 <b>${r.dq?'실격':fmt3(p100(r))}</b>${p100max(r)?' <small>(100점 기준 · 채점판 점수 '+fmt3(r.final)+'/'+p100max(r)+')</small>':''}</span></div>`;
   }else{
     const v=r.rec||{};
     const parts=k==='height'?[['최고 높이',fmtN(v.best||0)+'cm'],['시간 초과',(v.over||0)+'회']]:k==='count'?[['격파',v.broken||0],['경계선',v.line||0]]
@@ -2333,7 +2336,7 @@ function resultCard(r,cur){
 
 /* ===================== 결과 ===================== */
 function resCols(d){const k=kindOf(d);
-  if(k==='tech'){const n=Math.max(techsOf(d,'pre').length,techsOf(d,'final').length);return [...Array.from({length:n},(_,i)=>[`기술 ${i+1}`,r=>r.techScores?fmt3(r.techScores[i]):'']),['평균',r=>fmt3(r.score)+(p100max(r)?'/'+p100max(r):'')],['감점',r=>r.dedTotal?'−'+fmtN(r.dedTotal):'']];}
+  if(k==='tech'){const n=Math.max(techsOf(d,'pre').length,techsOf(d,'final').length);return [...Array.from({length:n},(_,i)=>[`기술 ${i+1}`,r=>r.techScores?fmt3(r.techScores[i]*pf(r)):'']),['평균',r=>fmt3(r.score*pf(r))],['감점',r=>r.dedTotal?'−'+fmtN(r.dedTotal):'']];}
   if(k==='comp')return [...COMP_ITEMS.map(it=>[it.label,r=>fmt3(r.parts&&r.parts[it.k])]),['감점',r=>r.dedTotal?'−'+fmtN(r.dedTotal):'']];
   if(k==='team')return [...TEAM_ITEMS.map(it=>[it.label,r=>fmt3(r.parts&&r.parts[it.k])]),['감점',r=>r.dedTotal?'−'+fmtN(r.dedTotal):'']];
   if(k==='height')return [['최고 높이',r=>fmtN(r.rec.best||0)],['시간 초과',r=>r.rec.over||'']];
@@ -2563,9 +2566,9 @@ function vDisplay(){
     if(canRank)setTimeout(schedule,CB_SCORE_MS-el+30);
     let body='';
     if(JUDGED(k)){
-      const cards=r.judges.map((j,i)=>`<div class="cbj ok shown"><div class="cbjn">${j.judge}심</div>${cols.map(c=>`<div class="cbji"><span>${esc(c.l)}</span><b>${fmtN(c.v(j.items||{}))}</b></div>`).join('')}<div class="cbjt ${i===r.hi||i===r.lo?'drop':''}"><span class="${i===r.hi||i===r.lo?'cbx':''}">${fmtN(j.total)}</span></div></div>`).join('');
+      const cards=r.judges.map((j,i)=>`<div class="cbj ok shown"><div class="cbjn">${j.judge}심</div>${cols.map(c=>`<div class="cbji"><span>${esc(c.l)}</span><b>${p100max(r)?fP(c.v(j.items||{})*pf(r)):fmtN(c.v(j.items||{}))}</b></div>`).join('')}<div class="cbjt ${i===r.hi||i===r.lo?'drop':''}"><span class="${i===r.hi||i===r.lo?'cbx':''}">${p100max(r)?fP(j.total*pf(r)):fmtN(j.total)}</span></div></div>`).join('');
       body=`<div class="cbjs" style="--j:${r.judges.length}">${cards}</div>
-        <div class="cbres"><span>${r.judges.length===1?'1심 점수':'심판 평균'} <b>${fmt3(r.score)}</b>${p100max(r)?` <small>/ ${p100max(r)}</small>`:''}</span>${r.dedTotal?`<span class="neg">감점 <b>−${fmtN(r.dedTotal)}</b></span>`:''}<span class="cbfinal">${r.dq?'실격':fmt3(p100(r))}</span>${p100max(r)?'<span class="small">100점 환산</span>':''}</div>
+        <div class="cbres"><span>${r.judges.length===1?'1심 점수':'심판 평균'} <b>${fmt3(r.score*pf(r))}</b></span>${r.dedTotal?`<span class="neg">감점 <b>−${fP(r.dedTotal*pf(r))}</b></span>`:''}<span class="cbfinal">${r.dq?'실격':fmt3(p100(r))}</span>${p100max(r)?'<span class="small">100점 기준</span>':''}</div>
         <div class="cbstat">${r.judges.length>=5?'심판 합계 중 최고·최저(취소선)를 빼고 평균합니다':''}</div>`;
     }else body=`<div class="cbres"><span class="cbfinal">${resultText(r)}</span>${r.dedTotal?`<span class="neg">감점 <b>−${fmtN(r.dedTotal)}</b></span>`:''}${r.zero?'<span class="neg">격파 0장 · 순위 제외</span>':''}</div>`;
     return `<div class="board cb gpb">${head}${who}${body}</div>`;
@@ -3091,7 +3094,7 @@ function exportResults(){
   if(!window.XLSX)return toast('엑셀 도구를 불러오지 못했습니다');
   const rows=[['부문','종목','단계','조','순위','이름','소속','지도자','세부 점수','감점','최종','비고']];
   S.divs.forEach(d=>{const cols=resCols(d);stagesOf(d).forEach(st=>{const groups=st.groups||[stIds(st)];groups.forEach((ids,gi)=>rankList(d,st.key,ids).forEach(x=>{const a=athlete(x.id)||{},r=x.r;
-    rows.push([d.name,evLabel(d),STAGE_NAME[st.key],st.groups&&st.groups.length>1?(gi+1)+'조':'',x.rank??'',a.name||'',a.team||'',a.coach||'',r?cols.map(c=>`${c[0]} ${c[1](r)}`).join(' / '):'',r&&r.dedTotal?-r.dedTotal:'',r?(r.dq?'실격':(p100max(r)?Math.round(p100(r)*1000)/1000:r.final)):'',r&&r.dq?r.dqWhy||'':r&&r.zero?'격파 0장':'']);}));});});
+    rows.push([d.name,evLabel(d),STAGE_NAME[st.key],st.groups&&st.groups.length>1?(gi+1)+'조':'',x.rank??'',a.name||'',a.team||'',a.coach||'',r?cols.map(c=>`${c[0]} ${c[1](r)}`).join(' / '):'',r&&r.dedTotal?-(Math.round(r.dedTotal*pf(r)*100)/100):'',r?(r.dq?'실격':(p100max(r)?Math.round(p100(r)*1000)/1000:r.final)):'',r&&r.dq?r.dqWhy||'':r&&r.zero?'격파 0장':'']);}));});});
   const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:30},{wch:16},{wch:6},{wch:5},{wch:5},{wch:12},{wch:16},{wch:10},{wch:50},{wch:7},{wch:9},{wch:16}];
   const detail=[['부문','단계','이름','심판','심판 합계','세부 점수','최고·최저 제외']];
   Object.values(S.results).forEach(r=>{if(!r.judges)return;r.judges.forEach((j,i)=>detail.push([r.divName,r.label||'',r.name,j.judge+'심',j.total,Object.entries(j.items||{}).map(([k,v])=>`${k}:${v}`).join(' '),i===r.hi||i===r.lo?'제외':'']));});
