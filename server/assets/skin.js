@@ -68,15 +68,15 @@ function score(m,th){const parts=(m.parts||[]).map(p=>`<span class="sk-part ${p.
 /* v1.7.9 생활체육(4명 1조): 순위 대신 금·은·동·동 */
 const SK_COMM=()=>{try{const f=(0,eval)('COMM');return typeof f==='function'&&!!f();}catch(e){return false;}};
 const SK_MED={1:'금',2:'은',3:'동',4:'동'};const skRk=r=>SK_COMM()&&r<=4?SK_MED[r]:r;const skMc=r=>SK_COMM()&&r<=4?' md m'+Math.min(3,r):'';
-function rank(m,th){const R=m.rows||[],t3=R.filter(r=>r.rank<=3).slice(0,3),rest=R.filter(r=>!t3.includes(r)),me=R.find(r=>r.me);
-  const pod=[t3.find(r=>r.rank===2)||t3[1],t3.find(r=>r.rank===1)||t3[0],t3.find(r=>r.rank===3)||t3[2]].filter(Boolean);
-  const card=(r,i)=>`<div class="sk-pod p${r.rank} ${r.me?'me':''}" style="--i:${i}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<div class="sk-medal">${skRk(r.rank)}</div><div class="sk-pn" style="font-size:${U(fit(r.name||r.team,r.rank===1?78:60,5))}">${E(r.name||r.team)}</div><div class="sk-pt">${E(r.team||'')}</div><div class="sk-ps">${E(r.score)}</div></div>`;
-  let show=rest.slice(0,5);if(me&&!t3.includes(me)&&!show.includes(me)){const k=rest.indexOf(me);show=rest.slice(Math.max(0,k-3),k+2);if(show.length<5)show=rest.slice(Math.max(0,rest.length-5));}
-  let list='';show.forEach((r,i,a)=>{const prev=a[i-1]||(i===0?t3[t3.length-1]:null);if(i>0&&prev.rank<r.rank-1&&!(m.pre&&prev.rank<=m.quota&&r.rank>m.quota))list+=`<div class="sk-gap">⋯</div>`;if(m.pre&&m.quota>3&&prev&&prev.rank<=m.quota&&r.rank>m.quota)list+=`<div class="sk-cut"><span>${E(m.cut)}</span></div>`;
-    list+=`<div class="sk-row ${r.me?'me':''} ${m.pre&&r.inq?'in':''}${skMc(r.rank)}" style="--i:${i}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<i>${skRk(r.rank)}</i><span><b>${E(r.name||r.team)}</b><small>${E(r.team||'')}</small></span><em>${E(r.score)}</em></div>`;});
-  const meTxt=me?`<div class="sk-me">${E(me.name||me.team)} · 현재 <b>${me.rank}위</b> <small>${R.length}${m.unit||'명'} 중</small></div>`:'';
+/* v1.7.17 순위: 위에서 아래로 한 줄씩 (금 → 은 → 동 → 동 …) 크게 — 시상대처럼 좌우로 엇갈리지 않게 */
+function rank(m,th){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,8);if(me&&!show.includes(me)){const k=R.indexOf(me);show=R.slice(0,5).concat(R.slice(Math.max(5,k-1),k+2));}
+  const rh=Math.max(64,Math.min(124,Math.floor((690-(show.length-1)*12)/Math.max(1,show.length))));
+  let list='';show.forEach((r,i,a)=>{const prev=a[i-1];if(prev&&prev.rank<r.rank-1&&!(m.pre&&prev.rank<=m.quota&&r.rank>m.quota))list+=`<div class="sk-gap">⋯</div>`;
+    if(m.pre&&m.quota&&prev&&prev.rank<=m.quota&&r.rank>m.quota)list+=`<div class="sk-cut1"><span>${E(m.cut)}</span></div>`;
+    list+=`<div class="sk-r1 p${Math.min(r.rank,5)} ${r.me?'me':''} ${m.pre&&r.inq?'in':''}${skMc(r.rank)}" style="--i:${i};--rh:${rh}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<span class="sk-medal">${skRk(r.rank)}</span><span class="sk-r1n"><b>${E(r.name||r.team)}</b><small>${E(r.name?r.team||'':'')}</small></span><em>${E(r.score)}</em></div>`;});
+  const meTxt=me?`<div class="sk-me1">${E(me.name||me.team)} · 현재 <b>${skRk(me.rank)}${SK_COMM()&&me.rank<=4?'':'위'}</b> <small>${R.length}${m.unit||'명'} 중</small></div>`:'';
   return `${top(m,th)}<div class="sk-rkh"><span>${th==='fire'?'RESULTS':'STANDINGS'}</span><b>${E(m.div||'')}${m.label?` · ${E(m.label)}`:''}</b></div>
-    <div class="sk-pods">${pod.map(card).join('')}</div>${meTxt}${list?`<div class="sk-list">${list}</div>`:''}${m.pre&&m.quota&&m.quota<=3?`<div class="sk-qnote">${E(m.cut)}</div>`:''}`;}
+    <div class="sk-one">${list}</div>${meTxt}`;}
 function foot(m){return m.next&&m.next.who?`<div class="sk-next"><span>NEXT</span>${E(m.next.who)}${m.next.team?' · '+E(m.next.team):''}</div>`:'';}
 const SCR={idle,live,score,rank};
 const SEEN=new Map();function since(k){if(!SEEN.has(k)){SEEN.set(k,Date.now());if(SEEN.size>80)SEEN.delete(SEEN.keys().next().value);}return Date.now()-SEEN.get(k);}
@@ -128,11 +128,12 @@ function aLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
   return `${arTop(m,arStage(m))}<div class="ar-mid"><div class="ar-band">${aWho(m)}${right}</div>${arJudges(js)}</div>${arBot('현재 순위','Standings',arStand(m.top),m.next)}`;}
 function aScore(m){const parts=(m.parts||[]).map(p=>`<span class="ar-p ${p.neg?'neg':''}"><small>${E(p.l)}</small><b>${E(p.v)}</b></span>`).join('');
   return `${arTop(m,arStage(m))}<div class="ar-mid"><div class="ar-band">${aWho(m)}<div class="ar-sc"><span class="ar-en">Score</span><div class="cbres ar-res">${parts}<span class="cbfinal ar-final">${E(m.final)}</span></div>${m.note?`<div class="ar-sub neg">${E(m.note)}</div>`:''}</div></div>${arJudges(m.js)}</div>${arBot('현재 순위','Standings',arStand(m.top),m.next)}`;}
-function aRank(m){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,10);if(me&&!show.includes(me)){const k=R.indexOf(me);show=R.slice(0,7).concat(R.slice(Math.max(7,k-1),k+2));}
-  const half=Math.ceil(show.length/2),rowH=show.length>8?92:118;
-  const row=(r,i)=>`<div class="ar-rr ${rowH<100?'sm':''} ${r.rank===1?'g1':''} ${r.me?'me':''} ${m.pre&&!r.inq?'out':''}${skMc(r.rank)}" style="--i:${i};height:${U(rowH)}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<span class="ar-rk">${skRk(r.rank)}</span><span class="ar-rn"><b>${E(r.name||r.team)}${r.me?'<em>지금</em>':''}</b><small>${E(r.name?r.team:'')}</small></span><span class="ar-rs">${E(r.score)}</span></div>`;
+/* v1.7.17 순위는 위에서 아래로 한 줄씩 (금 → 은 → 동 → 동) 크게 — 좌우 두 줄로 엇갈리지 않게 */
+function aRank(m){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,8);if(me&&!show.includes(me)){const k=R.indexOf(me);show=R.slice(0,5).concat(R.slice(Math.max(5,k-1),k+2));}
+  const rowH=Math.max(64,Math.min(138,Math.floor((640-(show.length-1)*12)/Math.max(1,show.length))));
+  const row=(r,i)=>`<div class="ar-rr one ${r.rank===1?'g1':''} ${r.me?'me':''} ${m.pre&&!r.inq?'out':''}${skMc(r.rank)}" style="--i:${i};height:${U(rowH)};--rh:${rowH}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<span class="ar-rk">${skRk(r.rank)}</span><span class="ar-rn"><b>${E(r.name||r.team)}${r.me?'<em>지금</em>':''}</b><small>${E(r.name?r.team:'')}</small></span><span class="ar-rs">${E(r.score)}</span></div>`;
   const cut=m.pre&&m.quota&&R.length>m.quota?`<div class="ar-cut"><span>${E(m.cut||'')}</span><span class="ar-en">Qualified</span></div>`:'';
-  return `${arTop(m,String(m.label||'').replace(/\s*\d+\s*번$/,'')+' 순위','STANDINGS')}<div class="ar-mid"><div class="ar-rank" style="grid-template-rows:repeat(${half},auto)">${show.map(row).join('')}</div>${cut}</div>
+  return `${arTop(m,String(m.label||'').replace(/\s*\d+\s*번$/,'')+' 순위','STANDINGS')}<div class="ar-mid"><div class="ar-rank one">${show.map(row).join('')}</div>${cut}</div>
     ${arBot('진행','Progress',`<div class="ar-cell ar-wide"><span class="ar-rn"><b>${me?`${E(me.name||me.team)} · 현재 ${me.rank}위`:'순위'}</b><small>${R.length}${E(m.unit||'명')} 경기 마침${m.pre&&m.quota?` · 상위 ${m.quota}${E(m.unit||'명')} 진출`:''}</small></span></div>`,m.next)}`;}
 /* ---------- 품새 토너먼트 (청·홍) ---------- */
 function arTourModel(){const T=window.KS_THEME;if(!T||!T.model)return null;let m;try{m=T.model();}catch(e){return null;}if(!m||!/^(duel|duelres|bracket|champ)$/.test(m.scr))return null;
@@ -576,6 +577,24 @@ body.disp .board.sk-arena .side.win .vfinal.ar-sbig{-webkit-text-fill-color:#E2C
 .sk-duel .dz-pods{display:flex;gap:${U(30)};margin-top:${U(50)}}.sk-duel .dz-pods>div{display:flex;align-items:center;gap:${U(14)};background:#14141B;border:${U(2)} solid #3A3326;border-radius:${U(18)};padding:${U(14)} ${U(26)};animation:dzPop .5s both calc(var(--t) + 1s)}
 .sk-duel .dz-pods i{font-style:normal;width:${U(60)};height:${U(60)};border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:${U(28)};color:#111}.sk-duel .dz-pods i.s{background:linear-gradient(180deg,#F1F1F1,#A9A9A9)}.sk-duel .dz-pods i.b{background:linear-gradient(180deg,#E6A877,#9A5A2A)}
 .sk-duel .dz-pods b{font-size:${U(38)};font-weight:900}.sk-duel .dz-pods small{font-size:${U(24)};opacity:.75}
+/* v1.7.17 순위 한 줄씩 */
+.sk-one{position:absolute;left:${U(260)};right:${U(260)};top:${U(250)};display:flex;flex-direction:column;gap:${U(12)}}
+.sk-r1{position:relative;display:flex;align-items:center;gap:${U(26)};height:calc(var(--rh)*var(--u));padding:0 ${U(30)};border-radius:${U(18)};background:rgba(255,255,255,.06);animation:skR1 .5s both calc(var(--t) + var(--i)*.12s)}
+.sk-r1 .sk-medal{flex:none;width:calc(var(--rh)*.78*var(--u));height:calc(var(--rh)*.78*var(--u));border-radius:50%;display:grid;place-items:center;font:900 calc(var(--rh)*.36*var(--u)) "Noto Sans KR",sans-serif;color:#1a1405;background:rgba(255,255,255,.18)}
+.sk-r1.p1 .sk-medal{background:radial-gradient(circle at 35% 30%,#FFF6D2,#E2B54A 55%,#9C7120)}.sk-r1.p2 .sk-medal{background:radial-gradient(circle at 35% 30%,#FFFFFF,#C2C8D2 55%,#7C8594)}
+.sk-r1.p3 .sk-medal,.sk-r1.md.m3 .sk-medal{background:radial-gradient(circle at 35% 30%,#FFE2C4,#C9864A 55%,#7E4A20)}.sk-r1.p4:not(.md) .sk-medal,.sk-r1.p5 .sk-medal{color:#fff}
+.sk-r1 .sk-r1n{flex:1;min-width:0;display:flex;align-items:baseline;gap:${U(18)};white-space:nowrap;overflow:hidden}.sk-r1 .sk-r1n b{font-size:calc(var(--rh)*.46*var(--u));font-weight:900;overflow:hidden;text-overflow:ellipsis}.sk-r1 .sk-r1n small{font-size:calc(var(--rh)*.22*var(--u));opacity:.75}
+.sk-r1 em{font-style:normal;font:900 calc(var(--rh)*.5*var(--u)) Archivo,"Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums}
+.sk-r1.p1{background:linear-gradient(90deg,rgba(226,181,74,.35),rgba(255,255,255,.05))}.sk-r1.me{outline:${U(4)} solid #E2C27F}
+.sk-cut1{border-top:3px dashed currentColor;position:relative;margin:${U(6)} 0;opacity:.8}.sk-cut1 span{position:absolute;right:0;top:${U(-30)};font-size:${U(20)};font-weight:800}
+.sk-me1{position:absolute;left:0;right:0;bottom:${U(60)};text-align:center;font-size:${U(32)};font-weight:800}.sk-me1 b{color:#E2C27F}.sk-me1 small{font-size:${U(22)};opacity:.75}
+@keyframes skR1{from{opacity:0;transform:translateY(${U(20)})}to{opacity:1;transform:none}}
+.board.sk-arena .ar-rank.one{grid-auto-flow:row;grid-template-columns:1fr;gap:${U(12)};width:${U(1500)};max-width:100%;margin:0 auto}
+.board.sk-arena .ar-rr.one{grid-template-columns:calc(var(--rh)*1.25*var(--u)) 1fr auto}
+.board.sk-arena .ar-rr.one .ar-rk{font-size:calc(var(--rh)*.6*var(--u))}
+.board.sk-arena .ar-rr.one .ar-rn b{font-size:calc(var(--rh)*.44*var(--u))}
+.board.sk-arena .ar-rr.one .ar-rn small{font-size:calc(var(--rh)*.2*var(--u))}
+.board.sk-arena .ar-rr.one .ar-rs{font-size:calc(var(--rh)*.56*var(--u))}
 @media (prefers-reduced-motion:reduce){.board.sk *,.board.ky.ar *{animation:none!important}}
 `;
 const st=document.createElement('style');st.id='ks-skin-css';st.textContent=css;(document.head||document.documentElement).appendChild(st);

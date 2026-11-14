@@ -172,5 +172,6 @@ const css=document.createElement('style');css.textContent=`.kssim{position:fixed
   background:var(--surface,#fff);color:var(--ink,#111);border:2px dashed #7A3FC8;border-radius:14px;padding:10px 14px;box-shadow:0 14px 40px rgba(0,0,0,.35);font-size:14px}
 .kssim b{display:block;font-size:15px}.kssim span{font-size:12.5px;color:var(--muted,#777);font-weight:700}.kssimb{display:flex;gap:5px;flex-wrap:wrap}`;
 (document.head||document.documentElement).appendChild(css);
-window.KS_SIM={tick,progress,get state(){return {SIM,DONE,COUNT};}};
+/* v1.7.17 「가상 경기가 지금 도는 중」: 켜져 있어도 실제 대회 모드이거나 12시간 넘게 지난 것은 아님 (예전에 켜 둔 가상 경기 때문에 실제 경기 조 자동 넘어가기가 멈추던 문제) */
+window.KS_SIM={tick,progress,get state(){return {SIM,DONE,COUNT};},get running(){return !!(SIM&&SIM.on&&!DONE&&!LIVE()&&Date.now()-(SIM.at||0)<12*3600e3);}};
 })();

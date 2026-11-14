@@ -1328,6 +1328,18 @@ body.gfit .gjtop{display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .jsum{display:flex;flex-direction:column;gap:8px;padding:6px}.js-r{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;border:2px solid var(--line,#ccc);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .js-r b{flex:1;font-size:17px}.js-r em{font-style:normal;font-weight:900;font-size:20px}.js-r .js-e{font-size:12px;opacity:.6}.js-r.miss{border-color:#E5484D}
 .jv-all .gjo .opt{min-height:38px;font-size:15px;padding:4px 2px}.jv-all .jcard{padding:8px}
+.mboard{flex:none;border-radius:16px;overflow:hidden;border:2px solid #C9A262;background:radial-gradient(120% 120% at 50% 0%,#1B1B24,#07080C);color:#F6F1E6;margin:8px 0;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.mboard .mbh{display:flex;align-items:center;gap:10px;padding:8px 14px;background:linear-gradient(180deg,#16161D,#0D0D12);border-bottom:2px solid rgba(201,162,98,.55);font-size:13px}
+.mboard .mbl{font-weight:900;color:#E9CF8F;letter-spacing:.04em}.mboard .mbd{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#CFC6B4}.mboard .mbe{font-weight:800;color:#E9CF8F}
+.mboard .mbm{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;min-height:120px}
+.mboard .mbw{display:flex;flex-direction:column;min-width:0}.mboard .mbn{font-size:clamp(30px,3.4vw,52px);font-weight:900;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mboard .mbt{font-size:17px;color:#CFC6B4;margin-top:4px}
+.mboard .mbs{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.mboard .mbsc{font:900 clamp(44px,5.4vw,84px) Archivo,"Noto Sans KR",sans-serif;line-height:1;color:#F2D27A;text-shadow:0 0 24px rgba(242,210,122,.35);font-variant-numeric:tabular-nums}
+.mboard .mbs small{font-size:12px;color:#B9B2A2}.mboard .mbk{font-size:18px;color:#F6F1E6}.mboard .mbk b{font-size:26px;color:#F2D27A}
+.mboard .mbtm{font:900 clamp(36px,4vw,60px) Archivo,sans-serif;font-variant-numeric:tabular-nums;line-height:1}
+.mboard .mbj{display:flex;gap:6px}.mboard .mbj i{font-style:normal;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:14px;border:2px solid rgba(255,255,255,.3);color:rgba(255,255,255,.5)}.mboard .mbj i.ok{background:#fff;color:#111;border-color:#fff}
+
+.cbr .cbrk.md,.cbrk.md{font-family:"Noto Sans KR",sans-serif;font-weight:900;display:grid;place-items:center;border-radius:50%;width:1.9em;height:1.9em;margin:auto;color:#1a1405;font-size:1.05em}.cbrk.m1{background:radial-gradient(circle at 35% 30%,#FFF6D2,#E2B54A 55%,#9C7120)}.cbrk.m2{background:radial-gradient(circle at 35% 30%,#fff,#C2C8D2 55%,#7C8594)}.cbrk.m3{background:radial-gradient(circle at 35% 30%,#FFE2C4,#C9864A 55%,#7E4A20)}
 </style>
 
 <header class="bar">
@@ -2255,6 +2267,14 @@ function aBoard(){
     <button class="btn ${BMAX?'':'primary'}" data-act="bFull">${BMAX?'⤡ 기본 화면':'⤢ 전체 화면'}</button></div>`;
   return `${bhead}${ui.copyFallback?`<input type="text" id="copyFallback" value="${ui.copyFallback}" readonly data-fresh style="width:100%;font-size:13px;margin-bottom:8px" aria-label="복사할 링크">`:''}<div class="brd gbrd">${left}${center}${right}</div>`;
 }
+/* v1.7.17 운영석 안 작은 전광판: 관중 전광판처럼 경기 중(이름·시간·심판 도착) → 점수 공개(이름·큰 점수·지금 순위) */
+function miniBoard(cur,st,r,d){if(!cur)return '';const rev=st.status==='revealed'&&r,N=cur.judgeCount||0,JU=JUDGED(cur.kind),t=st.timer||{};
+  const got=new Set(curScores().filter(x=>x.perfId===cur.perfId).map(x=>x.judge));
+  let rk='';if(rev&&d){try{const sk=curStage(d),blk=sk.groups?sk.groups.find(g=>g.includes(cur.athleteId))||stIds(sk):stIds(sk),rows=rankList(d,sk.key,blk),me=rows.find(x=>x.id===cur.athleteId);if(me&&me.rank)rk=`<div class="mbk">현재 <b>${me.rank}위</b> <small>/ ${rows.length}명</small></div>`;}catch(e){}}
+  const sc=rev?(r.dq?'실격':resultText(r)):'';
+  return `<div class="mboard ${rev?'rev':''}"><div class="mbh"><span class="mbl">📺 전광판</span><span class="mbd">${esc(cur.divName||'')} · ${esc(cur.label||'')}</span><span class="mbe">${esc(EV[cur.ev]?.label||'')}</span></div>
+    <div class="mbm"><div class="mbw"><b class="mbn">${esc(cur.name)}</b><span class="mbt">${esc(cur.team||'')}${cur.members?' · '+esc(cur.members):''}</span></div>
+    ${rev?`<div class="mbs"><span class="mbsc">${esc(sc)}</span>${p100max(r)?'<small>100점 환산</small>':''}${rk}</div>`:`<div class="mbs"><span class="mbtm" data-timer>${cdText(t)}</span>${JU&&N?`<div class="mbj">${Array.from({length:N},(_,i)=>`<i class="${got.has(i+1)?'ok':''}">${i+1}</i>`).join('')}</div>`:''}</div>`}</div></div>`;}
 /* 순위표 (현재 단계 · 조별) */
 function rankPanel(d,big,gOnly){
   const st=curStage(d),p=planOf(d);
@@ -2289,7 +2309,7 @@ function runPanel(st,cur){
     <button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 (착지)</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>${prepB}</div>`;
   if(revealed&&r){
     const nx=d?callsOf(d).find(c=>!callDone(c)&&c.callId!==cur.callId):null;
-    return `<div class="panel">${head}${resultCard(r,cur)}
+    return `<div class="panel">${head}${miniBoard(cur,st,r,d)}${resultCard(r,cur)}
       <div class="row">${nx?`<button class="btn primary big" data-act="call" data-id="${nx.callId}">다음 선수 호출: ${esc(aName(nx.athleteId))} →</button>`:(()=>{const i2=flowInfo();return i2&&i2.c?`<button class="btn primary big" data-act="call" data-id="${i2.c.callId}">다음 경기 ${esc(i2.title)} 첫 선수 호출 →</button>`:'<span class="chip ok">이 단계의 경기를 모두 마쳤습니다</span>';})()}
       <button class="btn" data-act="armed" data-do="reopen">${JUDGED(k)?'다시 채점':'기록 고치기'}</button></div></div>`;
   }
@@ -2326,7 +2346,7 @@ function runPanel(st,cur){
     btn=`<button class="btn primary big" data-act="confirmRec">기록 확정</button>`;
   }
   const mus=k==='team'&&window.LMUS?(LMUS.setEntries(teamEntries),LMUS.runCtl(cur.athleteId)):'';
-  return `<div class="panel run">${head}${timerB}${mus}${body}<div class="row">${btn}</div></div>`;
+  return `<div class="panel run">${head}${timerB}${mus}${body}<div class="row">${btn}</div>${miniBoard(cur,st,null,d)}</div>`;
 }
 function resultCard(r,cur){
   const k=r.kind;let det='';
@@ -2556,7 +2576,7 @@ function cbRank(d,cur,revAt){
   const from=new Map();rows.filter(r=>r.id!==meId).forEach((r,i)=>from.set(r.id,i));if(me)from.set(meId,rows.length);
   const p=planOf(d),isPre=st.key==='pre',quota=isPre?p.adv:3,dl=(revAt||Date.now())+CB_SCORE_MS+500-Date.now();
   const list=rows.map((r,i)=>{const a=athlete(r.id)||{},f=from.get(r.id)??i;
-    return `<div class="cbr ${r.id===meId?'me':''} ${r.rank<=quota?'in':''}" style="--from:${f-i};--dl:${dl}ms"><span class="cbrk">${r.rank}</span><span class="cbnm"><b>${esc(a.name||'')}</b><small>${esc(a.team||'')}</small></span><span class="cbsc">${resultText(r.r)}</span></div>${isPre&&i===quota-1&&rows.length>quota?`<div class="cbcut" style="--dl:${dl}ms"><span>결선 진출선 (상위 ${quota}명)</span></div>`:''}`;}).join('');
+    return `<div class="cbr ${r.id===meId?'me':''} ${r.rank<=quota?'in':''}" style="--from:${f-i};--dl:${dl}ms"><span class="cbrk ${COMM()&&r.rank<=4?"md m"+Math.min(3,r.rank):""}">${COMM()&&r.rank<=4?["","금","은","동","동"][r.rank]:r.rank}</span><span class="cbnm"><b>${esc(a.name||'')}</b><small>${esc(a.team||'')}</small></span><span class="cbsc">${resultText(r.r)}</span></div>${isPre&&i===quota-1&&rows.length>quota?`<div class="cbcut" style="--dl:${dl}ms"><span>결선 진출선 (상위 ${quota}명)</span></div>`:''}`;}).join('');
   const r0=S.results[cur.perfId];
   const meTxt=me?`<div class="cbnow"><span class="cbnn">${esc(cur.name)}</span><span class="cbns">${resultText(me.r)}</span><span class="cbnr">현재 <b>${me.rank}위</b></span><span class="cbnt">${rows.length}명 중</span></div>`
     :r0?`<div class="cbnow"><span class="cbnn">${esc(cur.name)}</span><span class="cbns">${resultText(r0)}</span><span class="cbnt">${r0.zero?'순위 제외':''}</span></div>`:'';
@@ -2676,7 +2696,7 @@ function flowInfo(){const st=ST(),cur=curOf();if(!cur||st.status!=='revealed'||!
   if(rest)return {d,n:d,c:rest,key,title:flowTitle(d,rest),cnt:flowUnit(d,rest).length};
   if(!flowEnded(d))return null;const n=flowNextDiv(d);if(!n)return {end:true,d};const c=callsOf(n).find(x=>!callDone(x));return {d,n,c,key,title:flowTitle(n,c),cnt:flowUnit(n,c).length};}
 let FLOW_STOP='';
-function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;const sm=window.KS_SIM&&KS_SIM.state&&KS_SIM.state.SIM;if(sm&&sm.on){if(KSFLOW.key)KSFLOW.hide();return;} /* 가상 경기가 돌 때는 가상 경기가 호출 */const inf=flowInfo();
+function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;if(window.KS_SIM&&KS_SIM.running){if(KSFLOW.key)KSFLOW.hide();return;} /* 가상 경기가 돌 때는 가상 경기가 호출 */const inf=flowInfo();
   if(!inf||inf.end||SET().autoDiv==='manual'||FLOW_STOP===inf.key){if(KSFLOW.key&&(!inf||KSFLOW.key!==(inf&&inf.key)))KSFLOW.hide();return;}
   KSFLOW.show({key:inf.key,title:inf.title,sub:`${inf.cnt}명 · 첫 선수 ${aName(inf.c.athleteId)}`,sec:5,
     go:()=>{const n=divById(inf.n.id);if(!n)return;const c2=callsOf(n).find(x=>!callDone(x));if(!c2)return;ui.div=n.id;callIt(c2.callId);},stop:()=>{FLOW_STOP=inf.key;render();}});}

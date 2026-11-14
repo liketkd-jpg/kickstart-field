@@ -1103,6 +1103,7 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
   .jo .opt,.jcol.fs .jo .opt{font-size:clamp(24px,3vh,40px)!important}
   .jo .opt.on,.jcol.fs .jo .opt.on{font-size:clamp(26px,3.3vh,44px)!important}
 }
+.cbr .cbrk.md,.cbrk.md{font-family:"Noto Sans KR",sans-serif;font-weight:900;display:grid;place-items:center;border-radius:50%;width:1.9em;height:1.9em;margin:auto;color:#1a1405;font-size:1.05em}.cbrk.m1{background:radial-gradient(circle at 35% 30%,#FFF6D2,#E2B54A 55%,#9C7120)}.cbrk.m2{background:radial-gradient(circle at 35% 30%,#fff,#C2C8D2 55%,#7C8594)}.cbrk.m3{background:radial-gradient(circle at 35% 30%,#FFE2C4,#C9864A 55%,#7E4A20)}
 </style>
 
 <header class="bar">
@@ -2655,7 +2656,7 @@ function cbRanking(d,st,cur,revAt){
   const t0=(revAt||Date.now())+CB_SCORE_MS+500,dl=t0-Date.now();
   const unit=d.event&&d.event!=='ind'?'팀':'명',big=rows.length>12;
   const list=rows.map((x,i)=>{const a=athlete(x.id)||{},f=from.get(x.id)??i;
-    return `<div class="cbr ${x.id===meId?'me':''} ${x.rank<=quota?'in':''}" style="--from:${f-i};--dl:${dl}ms"><span class="cbrk">${x.rank}</span><span class="cbnm"><b>${esc(a.name||'')}</b><small>${esc(a.team||'')}</small></span><span class="cbsc">${fmt3(x.agg.final)}</span></div>${isPre&&i===quota-1&&rows.length>quota?`<div class="cbcut" style="--dl:${dl}ms"><span>${STAGES[p.next]||'결선'} 진출선 (상위 ${quota}${unit})</span></div>`:''}`;}).join('');
+    return `<div class="cbr ${x.id===meId?'me':''} ${x.rank<=quota?'in':''}" style="--from:${f-i};--dl:${dl}ms"><span class="cbrk ${COMM()&&x.rank<=4?"md m"+Math.min(3,x.rank):""}">${COMM()&&x.rank<=4?["","금","은","동","동"][x.rank]:x.rank}</span><span class="cbnm"><b>${esc(a.name||'')}</b><small>${esc(a.team||'')}</small></span><span class="cbsc">${fmt3(x.agg.final)}</span></div>${isPre&&i===quota-1&&rows.length>quota?`<div class="cbcut" style="--dl:${dl}ms"><span>${STAGES[p.next]||'결선'} 진출선 (상위 ${quota}${unit})</span></div>`:''}`;}).join('');
   const meTxt=me?`<div class="cbnow"><span class="cbnn">${esc((athlete(meId)||{}).name||'')}</span><span class="cbns">${fmt3(me.agg.final)}</span><span class="cbnr">현재 <b>${me.rank}위</b></span><span class="cbnt">${rows.length}${unit} 중</span></div>`:'';
   return `${meTxt}<div class="cbrank ${big?'many':''}" style="--n:${Math.max(rows.length,6)}">${list}</div>`;
 }
@@ -2824,7 +2825,7 @@ function flowNextDiv(d){const L=flowOrder(),i=L.findIndex(x=>x.id===d.id);return
 function flowInfo(){const st=ST(),cur=curOf();if(!cur||st.status!=='revealed')return null;const d=S.divs.find(x=>x.id===cur.divId);if(!d||!flowEnded(d))return null;
   const n=flowNextDiv(d);if(!n)return {end:true,d};return {d,n,c:callsOf(n).find(x=>!callDone(x)),key:cur.callId+'#'+(st.epoch||0)};}
 let FLOW_STOP='';
-function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;const sm=window.KS_SIM&&KS_SIM.state&&KS_SIM.state.SIM;if(sm&&sm.on){if(KSFLOW.key)KSFLOW.hide();return;} /* 가상 경기가 돌 때는 가상 경기가 호출 */const inf=flowInfo();
+function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;if(window.KS_SIM&&KS_SIM.running){if(KSFLOW.key)KSFLOW.hide();return;} /* 가상 경기가 돌 때는 가상 경기가 호출 */const inf=flowInfo();
   if(!inf||inf.end||SET().autoDiv==='manual'||FLOW_STOP===inf.key){if(KSFLOW.key&&(!inf||KSFLOW.key!==(inf&&inf.key)))KSFLOW.hide();return;}
   const n=inf.n,cs=callsOf(n);KSFLOW.show({key:inf.key,title:n.name.replace(/^\d{1,3}\s+/,''),sub:`${cs.length}경기 · 첫 경기 ${inf.c.entries.map(e=>aName(e.athleteId)).join(' vs ')}`,sec:5,
     go:()=>{const c2=callsOf(n).find(x=>!callDone(x));if(!c2)return;ui.div=n.id;callIt(c2.callId);},stop:()=>{FLOW_STOP=inf.key;render();}});}

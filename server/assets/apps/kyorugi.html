@@ -1233,7 +1233,7 @@ function flowInfo(){const L=live();if(!L||L.phase!=='end'||!L.result)return null
   const cur=courtSeq().find(m=>m.id===L.matchId)||{};if(nx.divId===cur.divId&&nx.rn===cur.rn)return null;
   return {nx,key:L.matchId+'#'+(L.endedAt||0),title:`${nx.divName} · ${nx.rn}`};}
 let FLOW_STOP='';
-function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;const sm=window.KS_SIM&&KS_SIM.state&&KS_SIM.state.SIM;if(sm&&sm.on){if(KSFLOW.key)KSFLOW.hide();return;}
+function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;if(window.KS_SIM&&KS_SIM.running){if(KSFLOW.key)KSFLOW.hide();return;}
   const inf=flowInfo();if(!inf||inf.end||SET().autoDiv==='manual'||FLOW_STOP===inf.key){if(KSFLOW.key&&(!inf||KSFLOW.key!==(inf&&inf.key)))KSFLOW.hide();return;}
   KSFLOW.show({key:inf.key,title:inf.title,sub:`첫 경기 청 ${aName(inf.nx.blue)} vs 홍 ${aName(inf.nx.red)}`,sec:5,
     go:()=>{const L=live();const n=L?flowNext(L):null;if(n){ui.div=n.divId;callMatch(n.id);}},stop:()=>{FLOW_STOP=inf.key;render();}});}
