@@ -494,6 +494,25 @@ footer .wrap{padding-block:18px}
 .dsg-fm{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dsg-fm>span:first-child{min-width:70px;font-size:13px}
 .dsg-items{display:flex;flex-wrap:wrap;gap:4px 12px}.dsg-items .check{font-size:13px}
 #fComp:has(#dE_poomsae:not(:checked)) .dsr[data-evn="공인 품새"],#fComp:has(#dE_poomsae:not(:checked)) .dsr[data-evn="자유 품새"],#fComp:has(#dE_gyeokpa:not(:checked)) .dsr[data-evn="격파"],#fComp:has(#dE_gym:not(:checked)) .dsr[data-evn="태권체조"],#fComp:has(#dE_team100:not(:checked)) .dsr[data-evn="팀 경연"]{display:none}
+.dsg-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:8px 0}
+.dsg-card{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto auto;column-gap:12px;row-gap:2px;align-items:center;text-align:left;padding:14px 16px;border-radius:16px;border:2px solid var(--line2);background:rgba(226,194,127,.05);color:inherit;font:inherit;cursor:pointer;transition:border-color .15s,transform .15s}
+.dsg-card:hover{border-color:var(--gold);transform:translateY(-1px)}.dsg-card .ic{grid-row:1/4;font-size:30px}.dsg-card b{font-size:17px}.dsg-card .sm{font-size:13px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dsg-card .go{font-size:12px;font-weight:800;color:var(--gold)}
+.dsg-card.need{border-color:#D9822B}.dsg-card.need .sm{color:#E8A15A}
+.dsg-sec{display:none}.dsg-bd{display:none}
+body.dsg-modal .dsg-bd{display:block;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.62)}
+.dsg-sec.open{display:flex;flex-direction:column;position:fixed;z-index:1001;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1000px,calc(100vw - 20px));max-height:calc(100dvh - 28px);background:var(--bg2,#14161c);border:2px solid var(--gold);border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.6);overflow:hidden}
+.dsg-mh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line2)}.dsg-mh .ic{font-size:24px}.dsg-mh h4{margin:0;font-size:19px}.dsg-mh>.btn{margin-left:auto}
+.dsg-mc{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.dsg-mf{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--line2)}
+.gr-body{display:flex;flex-direction:column;gap:10px}.gr-row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line2)}.gr-row>b{padding-top:6px}.gr-v{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+@media (max-width:640px){.gr-row{grid-template-columns:1fr}.gr-row>b{padding-top:0}}
+.gr-note{padding:2px 0}.gr-mm input{width:64px}.gr-eh{display:flex;align-items:center;gap:12px;margin-bottom:6px}.gr-eh b{font-size:19px}
+.gr-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:6px}
+.gr-tile{display:flex;flex-direction:column;gap:4px;text-align:left;padding:14px;border-radius:16px;border:2px solid var(--line2);background:rgba(226,194,127,.05);color:inherit;font:inherit;cursor:pointer}.gr-tile:hover{border-color:var(--gold)}
+.gr-tile .ic{font-size:30px}.gr-tile b{font-size:17px}.gr-tile .sm{font-size:12.5px;color:var(--mute);line-height:1.4}.gr-tile .go{font-size:12px;font-weight:800;color:var(--gold)}
+.gr-pfw{overflow-x:auto;width:100%}.gr-pft{border-collapse:collapse;font-size:14px}.gr-pft th{font-size:12px;color:var(--mute);text-align:left;padding:4px 6px}.gr-pft td{padding:3px 4px}.gr-pft select{min-width:96px}
+.fl-pick{display:flex;gap:10px;flex-wrap:wrap}.fl-op{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;border:2px solid var(--line2);background:transparent;color:inherit;font:inherit;cursor:pointer;max-width:360px}
+.fl-op.on{border-color:var(--gold);background:rgba(226,194,127,.12)}.fl-op b{width:100%;font-size:16px}.fl-op small{width:100%;color:var(--mute)}.fl-bx{display:inline-grid;grid-template-columns:repeat(4,10px);gap:3px}.fl-bx i{width:10px;height:10px;border-radius:3px;background:var(--gold)}.fl-ar{opacity:.6}.fl-md{font-size:20px}
 .dsg-save{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;padding:12px 14px;margin:8px -14px -14px;border-top:1px solid var(--gold3,#8a6f3a);background:var(--bg2,#14161c);box-shadow:0 -10px 30px rgba(0,0,0,.35);border-radius:0 0 14px 14px}
 </style>
 </head>
@@ -1763,7 +1782,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.6'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.7'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2858,24 +2877,123 @@ function dsgRuleClick(b){const e=b.dataset.e,cc={id:(document.getElementById('fC
   UI.dsgR=UI.dsgR||{};const base=UI.dsgR[e]||{...(hdRuleAll(cc)[e]||{})};const set=(k,v)=>{base[k]=v;};set(b.dataset.k,b.dataset.v);if(b.dataset.k2)set(b.dataset.k2,b.dataset.v2);
   if(b.dataset.k==='midM'||b.dataset.k==='midH'){const t=b.dataset.k==='midM'?'midH':'midM',cur=hdRuleN({...hdRuleDef(e,cc),...base})[t];if(b.dataset.v==='all')base[t]='all';else if(cur==='all')base[t]=b.dataset.v;}
   UI.dsgR[e]=base;const box=document.querySelector(`.dsr[data-evn="${CSS.escape(e)}"]`);if(box){const tmp=document.createElement('div');tmp.innerHTML=dsgRules({...cc,id:cc.id});const nb=tmp.querySelector(`.dsr[data-evn="${CSS.escape(e)}"]`);if(nb)box.replaceWith(nb);}}
+/* ---------- v1.7.16 ⑥ 경기 규칙 — 본부 「종목별 경기 규칙」과 같은 내용 (design.game) · 「본부로 보내기」 때 본부로 함께 감 ---------- */
+const GR_DEF={events:{recognized:true,freestyle:true,gym:true,team100:true,gyeokpa:true,kyorugi:false},common:{std:'kta',sep:true,apply:'hq',commN:4},
+  poomsae:{types:{recognized:{format:'cutoff',poomsae:1,judges:5,cut:'rule',adv:3,pdraw:'call'},freestyle:{format:'cutoff',judges:5,cut:'rule',adv:3,min:90,max:100},
+    gym:{format:'cutoff',judges:5,cut:'rule',adv:3,min:110,max:120},team100:{format:'cutoff',judges:5,cut:'rule',adv:3,min:0,max:300}}},
+  gyeokpa:{judges:5,preMin:16,grpSize:10,finalN:8,flow:'two'},kyorugi:{refs:3,system:'bo3',roundSec:120,restSec:60}};
+const GR_EV=[['recognized','🥋','공인 품새','poomsae'],['freestyle','🎵','자유 품새','poomsae'],['gym','🤸','태권체조','gym'],['team100','👥','팀 대항 종합경연','team100'],['gyeokpa','🪵','격파','gyeokpa'],['kyorugi','🥊','겨루기','kyorugi']];
+const GR_CUT={rule:'규정 자동 (예선·본선·결선)',two:'예선 → 결선',final:'결선만'};
+const GR_PF=[...Array.from({length:8},(_,i)=>`태극 ${i+1}장`),'고려','금강','태백','평원','십진','지태','천권','한수','일여'];
+const GR_GRP=['유치부','초등 1학년','초등 2학년','초등 3학년','초등 4학년','초등 5학년','초등 6학년','초등 저학년','초등 고학년','초등부','중등 1학년','중등 2학년','중등 3학년','중등부','고등부','일반부','실버부'];
+function grMerge(a,b){if(!b||typeof b!=='object'||Array.isArray(b))return b===undefined?a:b;const o={...a};Object.keys(b).forEach(k=>{o[k]=a&&typeof a[k]==='object'&&!Array.isArray(a[k])?grMerge(a[k],b[k]):b[k];});return o;}
+const grOf=c=>grMerge(JSON.parse(JSON.stringify(GR_DEF)),((dsgOf(c)||{}).game)||{});
+/* 지금 화면(①·② 칸)에서 읽은 종목·대회 종류·경기 방식 — 경기 규칙은 이것을 그대로 따름 */
+function grLive(){const ck=k=>!!(document.getElementById('dE_'+k)||{}).checked,rv=n=>(document.querySelector(`input[name=${n}]:checked`)||{}).value;
+  return {ev:{recognized:ck('poomsae'),freestyle:ck('poomsae'),gym:ck('gym'),team100:ck('team100'),gyeokpa:ck('gyeokpa'),kyorugi:ck('kyorugi')},std:rv('cType')==='kta'?'kta':'comm',
+    fmt:{recognized:(rv('dM_ps')||'t')==='t'?'tournament':'cutoff',freestyle:(rv('dM_fs')||'o')==='t'?'tournament':'cutoff'}};}
+/* 본부로 보낼 최종 규칙: 저장한 경기 규칙 + 대회 설계의 종목·대회 종류·경기 방식 */
+function grFull(c){const G=grOf(c),d=dsgOf(c)||{},fm={'공인 품새':'t','자유 품새':'o',...(d.fmt||{})};
+  GR_EV.forEach(([k,,,ek])=>{G.events[k]=dsgEvOn(c,ek);});G.common.std=ctypeOf(c)==='kta'?'kta':'comm';
+  G.poomsae.types.recognized.format=fm['공인 품새']==='t'?'tournament':'cutoff';G.poomsae.types.freestyle.format=fm['자유 품새']==='t'?'tournament':'cutoff';
+  G.gyeokpa.preMin=(G.gyeokpa.flow||'two')==='one'?999:Math.max(2,(Number(G.gyeokpa.finalN)||8)+1);delete G.at;return G;}
+function grPath(o,p,v){const ks=p.split('.');let x=o;ks.slice(0,-1).forEach(k=>{x[k]=x[k]||{};x=x[k];});x[ks[ks.length-1]]=v;}
+const grMmss=v=>{v=Number(v)||0;return `${Math.floor(v/60)}분${v%60?' '+(v%60)+'초':''}`;};
+function grSum(k,R,L){const t=R.poomsae.types[k]||{};
+  if(k==='gyeokpa'){const G=R.gyeokpa;return (G.flow||'two')==='one'?`${G.judges}심 · 한 번에 끝 (점수 순위)`:`${G.judges}심 · 예선(조당 ${G.grpSize}명) → 결선 ${G.finalN}명`;}
+  if(k==='kyorugi'){const K=R.kyorugi;return `${K.refs}부심 · ${K.system==='sum'?'점수 합산':'3전 다승제'} · ${K.roundSec}초`;}
+  const f=L.fmt[k]||t.format||'cutoff',fm=f==='tournament'?'토너먼트':'컷오프';
+  return `${fm}${fm==='컷오프'?' · '+(t.cut==='two'?`예선→결선 ${t.adv}명`:GR_CUT[t.cut||'rule'].split(' ')[0]):''} · ${t.judges}심${k==='recognized'?` · 품새 ${L.std==='comm'&&/-/.test(String(t.pstage||''))?String(t.pstage).replace('-','개→'):t.pstage||t.poomsae||1}개`+((t.pfix||[]).length?' · 지정표':''):''}${t.max?` · ${t.min?grMmss(t.min)+'~':''}${grMmss(t.max)}`:''}`;}
+function grPfRows(t){if(UI.grPf)return UI.grPf;const m=new Map();(t.pfix||[]).forEach(r=>{if(!r||!r.g)return;if(!m.has(r.g))m.set(r.g,{g:r.g,pre:['',''],fin:''});const o=m.get(r.g);if(/결/.test(String(r.r||'')))o.fin=(r.p||[])[0]||'';else o.pre=[(r.p||[])[0]||'',(r.p||[])[1]||''];});return [...m.values()];}
+function grPfFix(rows){const out=[];rows.forEach(o=>{if(!o.g)return;const pre=o.pre.filter(Boolean);if(pre.length)out.push({g:o.g,r:'예선',p:pre});if(o.fin)out.push({g:o.g,r:'결선',p:[o.fin]});});return out;}
+function grHtml(){const R=UI.gr||grMerge(JSON.parse(JSON.stringify(GR_DEF)),{}),L=grLive(),C=R.common,E=L.ev;
+  const seg=(k,opts,v)=>`<div class="seg">${opts.map(([x,l])=>`<button type="button" class="${String(v)===String(x)?'on':''}" data-a="grSet" data-k="${k}" data-v="${x}">${l}</button>`).join('')}</div>`;
+  const row=(lab,html,note)=>`<div class="gr-row"><b>${lab}</b><div class="gr-v">${html}${note?`<span class="small mute">${note}</span>`:''}</div></div>`;
+  const mmss=(k,v)=>{v=Number(v)||0;return `<span class="gr-mm" data-grt="${k}"><input type="number" min="0" max="20" data-grtm value="${Math.floor(v/60)}"> 분 <input type="number" min="0" max="59" step="5" data-grts value="${v%60}"> 초</span>`;};
+  const num=(k,v)=>`<input type="number" min="1" max="999" data-grk="${k}" value="${esc(String(v))}" style="width:90px">`;
+  const jv=(k,v)=>row('심판 채점판 화면',seg(k,[['auto','자동'],['one','한 종목씩'],['all','한 화면에 모두']],v||'auto'),'자동: 휴대폰은 한 종목씩, 태블릿은 한 화면에 모두 · 격파 채점판에 적용');
+  const J=(P,v)=>row('심판 수',seg(P+'.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],v));
+  if(UI.grSel){const [k,ic,nm]=GR_EV.find(x=>x[0]===UI.grSel)||GR_EV[0],P='poomsae.types.'+k,t=R.poomsae.types[k]||{},fm=L.fmt[k];
+    const steps=()=>row('진행 단계',seg(P+'.cut',Object.entries(GR_CUT),t.cut||'rule'))+((t.cut||'rule')==='two'?row('결선 진출 인원',seg(P+'.adv',[1,2,3,4,5,6,8,10].map(x=>[x,x+'명']),t.adv||3)):'')
+      +`<div class="small mute gr-note">${L.std==='comm'?`생활체육 대회: ${C.commN||4}명 1조로 나누어 조별로 진행합니다 (조 인원이 적으면 바로 결선).`:(t.cut||'rule')==='rule'?'규정 자동: 22명 이상 예선(상위 50%) → 본선 8명 → 결선, 12~21명 본선 → 결선, 11명 이하 결선만.':t.cut==='two'?`예선 점수 순위대로 위에서 ${t.adv||3}명이 결선에 오릅니다.`:'예선 없이 결선 한 번으로 순위를 정합니다.'}</div>`;
+    const fmChip=fm?row('경기 방식',`<span class="chip">${fm==='tournament'?'토너먼트 (청·홍)':'컷오프 (점수 순위)'}</span>`,'② 종목 칸에서 고른 대로'):'';
+    let f='';
+    if(k==='recognized'){const rows=grPfRows(t),sel=(i,fd,v,list,ph)=>`<select data-grpf="${i}|${fd}"><option value="">${ph}</option>${list.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`;
+      f=fmChip+(fm!=='tournament'?steps():'')+(L.std==='comm'?row('품새 수',seg(P+'.pstage',[[1,'모두 1개'],[2,'모두 2개'],['2-1','예선 2개 · 결선 1개'],['1-2','예선 1개 · 결선 2개']],t.pstage||t.poomsae||1),`${C.commN||4}명 1조의 첫 경기(예선)와 결선의 품새 수`):row('품새 수',seg(P+'.poomsae',[[1,'품새 1개'],[2,'품새 2개']],t.poomsae||1)))
+        +J(P,t.judges)+row('지정 품새 추첨',seg(P+'.pdraw',[['call','매 경기 현장 추첨'],['pre','경기 당일 일괄 추첨']],t.pdraw||'call'))
+        +row('지정 품새표',`<div class="small mute">학년(부)마다 예선 품새와 결선 품새를 고르면 추첨하지 않고 그대로 씁니다 · 비워 두면 「지정 품새 추첨」대로</div>
+          ${rows.length?`<div class="gr-pfw"><table class="gr-pft"><tr><th>학년 · 부</th><th>예선 ①</th><th>예선 ②</th><th>결선</th><th></th></tr>${rows.map((o,i)=>`<tr><td>${sel(i,'g',o.g,[...new Set([...GR_GRP,o.g].filter(Boolean))],'학년 고르기')}</td><td>${sel(i,'p0',o.pre[0],GR_PF,'—')}</td><td>${sel(i,'p1',o.pre[1],GR_PF,'—')}</td><td>${sel(i,'fin',o.fin,GR_PF,'—')}</td><td><button type="button" class="btn sm ghost" data-a="grPfDel" data-i="${i}">빼기</button></td></tr>`).join('')}</table></div>`:''}
+          <button type="button" class="btn sm" data-a="grPfAdd">＋ 학년 줄 더하기</button>`)+jv(P+'.jView',t.jView);}
+    else if(k==='freestyle')f=fmChip+(fm!=='tournament'?steps():'')+J(P,t.judges)+row('연기 시간',`${mmss(P+'.min',t.min)} ~ ${mmss(P+'.max',t.max)}`,'넘거나 모자라면 한마당 규정대로 10초마다 감점')+jv(P+'.jView',t.jView);
+    else if(k==='gym'||k==='team100')f=row('채점 양식',seg(P+'.sheet',[['hm','한마당'],['wt','대회 규정 (세계태권도문화예술협회)']],t.sheet||'hm'))+row('경기 방식','<span class="chip">컷오프 · 경연 1회 (고정)</span>')+steps()+J(P,t.judges)
+      +row('연기 시간',`${mmss(P+'.min',t.min)} ~ ${mmss(P+'.max',t.max)}`,(t.sheet||'hm')==='wt'?(k==='gym'?'대회 규정: 1분 40초~2분 · 2분을 넘으면 한 번에 −5':'대회 규정: 4분 이내 · 넘으면 한 번에 −5'):k==='gym'?'한마당 규정: 1분 50초~2분 · 벗어난 10초마다 −0.3':'벗어난 10초마다 −3.0 · 최소를 0분 0초로 두면 최대만 봅니다');
+    else if(k==='gyeokpa'){const G=R.gyeokpa,flow=G.flow||'two',box=n=>`<span class="fl-bx">${'<i></i>'.repeat(n)}</span>`;
+      f=J('gyeokpa',G.judges)+row('진행 방식',`<div class="fl-pick"><button type="button" class="fl-op ${flow==='one'?'on':''}" data-a="grSet" data-k="gyeokpa.flow" data-v="one">${box(4)}<span class="fl-ar">→</span><span class="fl-md">🏅</span><b>한 번에 끝</b><small>모두 한 번 · 점수 순위로 메달</small></button>
+        <button type="button" class="fl-op ${flow==='two'?'on':''}" data-a="grSet" data-k="gyeokpa.flow" data-v="two">${box(8)}<span class="fl-ar">→</span>${box(4)}<span class="fl-ar">→</span><span class="fl-md">🏅</span><b>예선 → 결선</b><small>예선 점수 위쪽만 결선</small></button></div>`)
+        +(flow==='two'?row('예선 조 인원',seg('gyeokpa.grpSize',[4,6,8,10,12,16].map(x=>[x,x+'명']),G.grpSize),'한 조 최대 인원 · 많으면 조를 나눕니다')+row('결선 인원',seg('gyeokpa.finalN',[2,3,4,6,8].map(x=>[x,x+'명']),G.finalN),'결선 인원보다 적은 부문은 예선 없이 바로 결선'):'')
+        +(L.std==='comm'?`<div class="small mute gr-note">생활체육 대회: ${C.commN||4}명 1조로 나누어 조별로 진행합니다.</div>`:'')+jv('gyeokpa.jView',G.jView)+'<div class="small mute gr-note">격파 점수는 100점으로 환산해 보여 줍니다.</div>';}
+    else if(k==='kyorugi'){const K=R.kyorugi;f=row('부심 수',seg('kyorugi.refs',[[1,'1부심'],[2,'2부심'],[3,'3부심']],K.refs))+row('경기 방식',seg('kyorugi.system',[['bo3','3전 다승제'],['sum','3회전 점수 합산']],K.system))+row('회전 시간',`${num('kyorugi.roundSec',K.roundSec)} 초 · 휴식 ${num('kyorugi.restSec',K.restSec)} 초`);}
+    return `<div class="gr-eh"><button type="button" class="btn sm" data-a="grBack">← 종목 목록</button><b>${ic} ${nm}</b></div><div class="gr-body">${f}</div>`;}
+  const on=GR_EV.filter(([k])=>E[k]);
+  return `<div class="gr-body">${row('설정 방법',seg('common.apply',[['hq','🏢 본부 설정으로 일괄'],['court','🖥 코트별 설정']],C.apply||'hq'),(C.apply||'hq')==='court'?'코트 노트북에서 각자 정합니다':'본부로 보내면 모든 코트가 똑같이 따르고, 코트에서는 바꿀 수 없게 잠깁니다')}
+    ${row('대회 기준',`<span class="chip">${L.std==='comm'?'생활체육 (조별)':'협회 국내 부별'}</span>`,'① 기본 정보의 「대회 종류」를 따릅니다')}
+    ${L.std==='comm'?row('한 조 인원',seg('common.commN',[[4,'4명'],[6,'6명'],[8,'8명']],C.commN||4),'부별 인원을 이 인원씩 고르게 나눕니다 · 메달은 조마다'):''}
+    ${row('같은 도장 떨어뜨리기',seg('common.sep',[['true','켜기'],['false','끄기']],C.sep!==false),'조 편성·출전 순서·대진표 추첨')}</div>
+    <div class="gr-tiles">${on.map(([k,ic,nm])=>`<button type="button" class="gr-tile" data-a="grOpen" data-k="${k}"><span class="ic">${ic}</span><b>${nm}</b><span class="sm">${esc(grSum(k,R,L))}</span><span class="go">설정 열기 →</span></button>`).join('')||'<div class="empty">② 종목 칸에서 받을 종목을 먼저 체크해 주세요</div>'}</div>`;}
+function grRender(){const b=document.getElementById('grBox');if(b)b.innerHTML=grHtml();dsgSumm();}
+function grReadInputs(){const D=UI.gr;if(!D)return;document.querySelectorAll('#grBox [data-grk]').forEach(i=>{const n=Number(i.value);if(n>0)grPath(D,i.dataset.grk,n);});
+  document.querySelectorAll('#grBox [data-grt]').forEach(w=>{const m=Number(w.querySelector('[data-grtm]').value)||0,sx=Number(w.querySelector('[data-grts]').value)||0;grPath(D,w.dataset.grt,m*60+sx);});}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+  if(a==='grSet'){grReadInputs();const v=b.dataset.v;grPath(UI.gr,b.dataset.k,v==='true'?true:v==='false'?false:/^\d+$/.test(v)?Number(v):v);
+    const m=/^poomsae\.types\.(gym|team100)\.sheet$/.exec(b.dataset.k);if(m&&v==='wt'){const P='poomsae.types.'+m[1];if(m[1]==='gym'){grPath(UI.gr,P+'.min',100);grPath(UI.gr,P+'.max',120);}else{grPath(UI.gr,P+'.min',0);grPath(UI.gr,P+'.max',240);}}
+    grRender();}
+  else if(a==='grOpen'){grReadInputs();UI.grSel=b.dataset.k;UI.grPf=null;grRender();const box=document.getElementById('grBox');if(box)box.closest('.dsg-mc').scrollTop=0;}
+  else if(a==='grBack'){grReadInputs();UI.grSel=null;UI.grPf=null;grRender();}
+  else if(a==='grPfAdd'||a==='grPfDel'){grReadInputs();const t=UI.gr.poomsae.types.recognized,rows=grPfRows(t);if(a==='grPfAdd')rows.push({g:'',pre:['',''],fin:''});else rows.splice(Number(b.dataset.i),1);UI.grPf=rows;t.pfix=grPfFix(rows);grRender();}
+  else if(a==='dsgOpen')dsgOpen(b.dataset.s);
+  else if(a==='dsgClose'){grReadInputs();dsgOpen(null);}});
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest)return;
+  const pf=t.closest('[data-grpf]');if(pf&&UI.gr){const [i,fd]=pf.dataset.grpf.split('|'),tt=UI.gr.poomsae.types.recognized,rows=grPfRows(tt),o=rows[Number(i)];if(!o)return;
+    if(fd==='g')o.g=pf.value;else if(fd==='fin')o.fin=pf.value;else o.pre[fd==='p0'?0:1]=pf.value;UI.grPf=rows;tt.pfix=grPfFix(rows);grRender();return;}
+  if(t.closest('#grBox')&&(t.matches('[data-grk]')||t.closest('[data-grt]'))){grReadInputs();dsgSumm();return;}
+  if(t.closest('#fComp')){if(/^(cType|dM_ps|dM_fs)$/.test(t.name||'')||/^dE_/.test(t.id||''))grRender();else dsgSumm();}});
+/* 대회 설계 카드: 누르면 그 칸이 창으로 크게 열리고, 닫으면 카드 목록으로 */
+function dsgOpen(n){UI.dsgSec=n||null;document.querySelectorAll('#fComp .dsg-sec').forEach(s=>s.classList.toggle('open',s.dataset.sec===String(n)));document.body.classList.toggle('dsg-modal',!!n);
+  if(n){const s=document.querySelector(`#fComp .dsg-sec[data-sec="${n}"] .dsg-mc`);if(s)s.scrollTop=0;}dsgSumm();}
+document.addEventListener('invalid',e=>{const s=e.target&&e.target.closest&&e.target.closest('#fComp .dsg-sec');if(s&&!s.classList.contains('open')){dsgOpen(s.dataset.sec);setTimeout(()=>{try{e.target.reportValidity();}catch(x){}},60);}},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('dsg-modal')){grReadInputs();dsgOpen(null);}});
+function dsgSumm(){const f=document.getElementById('fComp');if(!f)return;const v=id=>((document.getElementById(id)||{}).value||'').trim(),ck=id=>!!(document.getElementById(id)||{}).checked,set=(n,t,ok)=>{const el=f.querySelector(`.dsg-card[data-s="${n}"]`);if(!el)return;el.querySelector('.sm').textContent=t;el.classList.toggle('need',!ok);};
+  const ty=(document.querySelector('input[name=cType]:checked')||{}).value;
+  set(1,v('cName')?`${v('cName')} · ${v('cDate')||'날짜 미정'} · ${ty==='kta'?'승인 대회':'생활체육 대회'}`:'대회 이름·장소·날짜를 넣어 주세요',!!(v('cName')&&v('cPlace')&&v('cDate')&&v('cDead')));
+  const evs=EV5.filter(([k])=>ck('dE_'+k)).map(x=>x[1]);set(2,evs.length?evs.join(' · '):'받을 종목을 체크해 주세요',evs.length>0);
+  set(3,`실력조 ${ck('cO_cls')?'A·B조로 나눔':'안 나눔'}${ck('cO_teamW')?' · 팀 경연 여자 1명 이상':''}`,true);
+  set(4,`${evs.filter(x=>x!=='겨루기').length}개 종목 · 부·남녀·실력조 나누는 방법`,true);
+  set(5,v('cAcct')?`입금 ${v('cAcct').slice(0,22)}`:'입금 계좌·안내·요강',!!v('cAcct'));
+  const L=grLive(),R=UI.gr,n=GR_EV.filter(([k])=>L.ev[k]).length;set(6,R?`${(R.common.apply||'hq')==='court'?'코트별 설정':'본부 일괄'} · ${L.std==='comm'?`${R.common.commN||4}명 1조 · `:''}${n}개 종목`:'종목별 경기 규칙',true);}
 function compForm(c){const E=!!c;const c0=c;c=c||{sports:Object.keys(SPORTS),fee:{poomsae:30000,kyorugi:40000,gyeokpa:30000,hero:30000}};const f=k=>esc(c[k]||'');
   if(UI.dsgRFor!==(E?c.id:'new')){UI.dsgRFor=E?c.id:'new';UI.dsgR=null;}
+  if(UI.grFor!==(E?c.id:'new')){UI.grFor=E?c.id:'new';UI.gr=grOf(E?c:null);UI.grSel=null;UI.grPf=null;UI.dsgSec=null;}setTimeout(()=>{grRender();if(UI.dsgSec)dsgOpen(UI.dsgSec);else document.body.classList.remove('dsg-modal');},30);
+  const SEC=[[1,'📝','① 기본 정보','대회 종류 · 이름 · 장소 · 날짜'],[2,'🥋','② 종목','접수비 · 시상 인원 · 경기 방식'],[3,'🅰️','③ 실력조 · 팀 조건',''],[4,'🗂','④ 부 나누기','대진표 부·남녀·실력조'],[5,'💳','⑤ 입금 · 안내 · 요강',''],[6,'📋','⑥ 경기 규칙','본부·코트로 그대로 감']];
+  const secO=(n,extra)=>{const x=SEC.find(q=>q[0]===n);return `<div class="dsg-sec" data-sec="${n}"><div class="dsg-mh"><span class="ic">${x[1]}</span><h4>${x[2]}</h4>${extra||''}<button class="btn sm" type="button" data-a="dsgClose">닫기 ✕</button></div><div class="dsg-mc">`;};
+  const secC=`</div><div class="dsg-mf"><button class="btn gold" type="button" data-a="dsgClose">확인</button><span class="small mute">확인을 누르고, 다 정했으면 맨 아래 「저장」</span></div></div>`;
   return `<form class="form dsg" id="fComp" data-id="${E?c.id:''}"><div class="row between"><h3>${E?'대회 설계 고치기':'새 대회 설계'}</h3>${E?'':'<button class="btn sm ghost" type="button" data-a="newCompClose">닫기</button>'}</div>
-  ${stageBar(c0)}<span class="small mute">여기서 정한 대로 지도자 접수 화면·엑셀 접수 양식·대진표 부 나누기·현장 노트북·시상 인원이 모두 따라갑니다. 위에서 아래로 내려가며 정하고 맨 아래 「저장」을 누르세요.</span>
-  <h4 class="dsg-h4">① 기본 정보</h4>
+  ${stageBar(c0)}<span class="small mute">여기서 정한 대로 지도자 접수 화면·엑셀 접수 양식·대진표 부 나누기·현장 노트북·시상 인원·경기 규칙이 모두 따라갑니다. 카드를 눌러 하나씩 정하고 맨 아래 「저장」을 누르세요.</span>
+  <div class="dsg-cards">${SEC.map(([n,ic,t,sub])=>`<button type="button" class="dsg-card" data-a="dsgOpen" data-s="${n}"><span class="ic">${ic}</span><b>${t}</b><span class="sm">${sub}</span><span class="go">열기 →</span></button>`).join('')}</div>
+  <div class="dsg-bd" data-a="dsgClose"></div>
+  ${secO(1)}
   <div class="row" style="gap:10px;align-items:center;flex-wrap:wrap"><b>대회 종류 <i class="req">*</i></b><div class="seg">${['comm','kta'].map(k=>`<label class="check" style="margin-right:14px"><input type="radio" name="cType" value="${k}" ${ctypeOf(c)===k?'checked':''}><span><b>${CTYPE_N[k]}</b></span></label>`).join('')}</div>
     <span class="small mute">생활체육: 유치·실버부 통합 · 4명 1조 · A조·B조 / 승인 대회: 학년별 · 유품자부·유급자부 — 지도자 엑셀 양식과 대진 부 나누기가 여기에 맞춰집니다</span></div>
   <div class="grid2"><label class="f"><span>대회 이름 <i>*</i></span><input type="text" id="cName" required value="${f('name')}"></label><label class="f"><span>장소 <i>*</i></span><input type="text" id="cPlace" required value="${f('place')}"></label><label class="f"><span>주최</span><input type="text" id="cHost" value="${f('host')}" placeholder="예: 세계태권도문화예술협회"></label>
     <label class="f"><span>대회일 <i>*</i></span><input type="date" id="cDate" required value="${f('date')}"></label><label class="f"><span>접수 마감일 <i>*</i></span><input type="date" id="cDead" required value="${f('deadline')}"></label></div>
   ${M.musicOk?`<div class="grid2"><label class="f"><span>음원 제출 마감일 (자유 품새 · 태권체조 · 팀 경연)</span><input type="date" id="cMusDue" value="${esc(c.musicDue||'')}"></label><span class="small mute" style="align-self:end;padding-bottom:10px">비워 두면 대회 7일 전까지 받습니다. 대회가 끝나고 7일 뒤 음원은 자동으로 지워집니다.</span></div>`:''}
-  <h4 class="dsg-h4">② 종목 · 접수비 · 시상 인원 · 경기 방식 <span class="small mute">받을 종목만 체크하세요</span></h4>
+  ${secC}${secO(2,'<span class="small mute">받을 종목만 체크하세요</span>')}
   ${dsgSec(E?c:null)}
-  <h4 class="dsg-h4">③ 실력조 · 팀 조건</h4>
+  ${secC}${secO(3)}
   <label class="check"><input type="checkbox" id="cO_cls" ${(c.fee||{}).cls!==false?'checked':''}><span><b>실력별 A조 · B조로 나누어 받기</b> <span class="small mute">품새·겨루기·격파 (태권체조·팀 경연 제외). 켜면 지도자가 접수할 때 꼭 고르고, 경기 앱 부문 이름 끝에 A조·B조가 붙습니다</span></span></label>
   <label class="check"><input type="checkbox" id="cO_teamW" ${(c.fee||{}).teamW===true?'checked':''}><span><b>팀대항 종합경연 · 여자 선수 1명 이상 꼭 넣기</b> <span class="small mute">대회 요강에 성별 제한이 있을 때만 켜세요. 끄면 남자만·여자만 팀도 접수됩니다</span></span></label>
-  <h4 class="dsg-h4">④ 부 나누기 (대진표) <span class="small mute">체크한 종목만 보입니다 · 대진 추첨 화면에서도 바꿀 수 있습니다</span></h4>
+  ${secC}${secO(4,'<span class="small mute">체크한 종목만 보입니다 · 대진 추첨 화면에서도 바꿀 수 있습니다</span>')}
   ${dsgRules(E?c:null)}
-  <h4 class="dsg-h4">⑤ 입금 · 안내 · 요강</h4>
+  ${secC}${secO(5)}
   <div class="grid2"><label class="f"><span>입금 계좌</span><input type="text" id="cAcct" placeholder="은행 계좌번호 (예금주)" value="${E&&/관리자 화면에서|적어 주세요/.test(c.account)?'':f('account')}"></label>
     <label class="f"><span>문의 연락처 (지도자에게 보임)</span><input type="text" id="cContact" placeholder="대회 본부 010-0000-0000" value="${f('contact')}"></label></div>
   <label class="f"><span>안내 문구 (대회 안내에 늘 보임)</span><textarea id="cNote" rows="2">${f('note')}</textarea></label>
@@ -2884,6 +3002,9 @@ function compForm(c){const E=!!c;const c0=c;c=c||{sports:Object.keys(SPORTS),fee
     ${c.docUrl?`<span class="small">지금 요강: <a href="${esc(safeUrl(c.docUrl))}" target="_blank" rel="noopener">${esc(c.docName||'요강 보기')}</a> <label class="check" style="display:inline-flex;margin-left:10px"><input type="checkbox" id="cDocDel"><span>요강 빼기</span></label></span>`:''}
     <div class="grid2"><label class="f"><span>파일 올리기 (PDF·한글·그림, 20MB까지)</span><input type="file" id="cDoc" accept=".pdf,.hwp,.hwpx,.doc,.docx,.jpg,.jpeg,.png"></label>
       <label class="f"><span>또는 링크 (구글 드라이브·네이버 등)</span><input type="text" id="cDocUrl" placeholder="https://" value="${c.docUrl&&!/supabase\.co\/storage/.test(c.docUrl)?esc(c.docUrl):''}"></label></div></div>
+  ${secC}${secO(6,'<span class="small mute">본부 「종목별 경기 규칙」과 같습니다 · 「🏢 본부로 보내기」 때 함께 갑니다</span>')}
+  <div id="grBox">${grHtml()}</div>
+  ${secC}
   <div class="dsg-save">${UI.err?`<span class="err">${esc(UI.err)}</span>`:''}<span class="small mute">${E?'고친 설계는 저장해야 반영됩니다':'저장하면 「대회 일정」에 바로 보입니다'}</span><button class="btn gold" type="submit">${E?'💾 설계 저장':'💾 대회 만들기'}</button></div></form>`;}
 
 /* ---------- 결과 · 상장 ---------- */
@@ -3543,11 +3664,12 @@ async function hqSheets(c){try{M.drawData[c.id]=null;await loadDraw(c.id);}catch
 /* v1.7.6 🏢 본부로 보내기: 본부 노트북에서 홈페이지를 열고 누르면, 같은 노트북의 본부 프로그램(대회 운영표)이 열리며 명단이 바로 들어감 (현장 프로그램 1.7.4 이상) */
 async function hqSend(c){const base=fieldBase().replace(/\/+$/,'');let org='';try{org=new URL(base).origin;}catch(e){return toast('현장 프로그램 주소가 이상합니다 · 「접수 현황」 탭의 「현장 프로그램 주소」를 확인해 주세요');}
   const w=window.open(base+'/hq/#admin','ks_hq');if(!w)return toast('새 창이 막혔습니다 · 주소창 오른쪽의 팝업 허용을 눌러 주세요');
-  const {sheets,info,noDraw}=await hqSheets(c);if(!sheets.length)return toast('보낼 접수가 없습니다');
-  const id='h'+Date.now().toString(36),msg={type:'ks-hq-roster',id,name:c.name,sheets};let got=false,done=false,tries=0;
+  const {sheets,info,noDraw}=await hqSheets(c);if(!sheets.length)toast('아직 보낼 접수가 없어 📋 경기 규칙만 보냅니다');
+  const id='h'+Date.now().toString(36),msg={type:'ks-hq-roster',id,name:c.name,sheets,rules:grFull(c)};let got=false,done=false,tries=0;
   toast(`본부 프로그램을 열고 명단(${info.join(' · ')})을 보내는 중입니다…`,8000);
   const on=ev=>{const d=ev.data;if(!d||d.type!=='ks-hq-roster-ack'||d.id!==id)return;got=true;if(d.state==='got')return;done=true;window.removeEventListener('message',on);
-    if(d.state==='ok')toast(`본부 대회 운영표에 명단 ${d.n}줄이 들어갔습니다${d.home?' · 🎲 홈페이지 추첨 순서 그대로':' · ⚠ 추첨 번호 없는 줄이 있습니다'} · 본부 창에서 「📡 코트로 보내기」를 눌러 주세요${noDraw.length?' · ⚠ 추첨 안 된 접수: '+noDraw.join(' · '):''}`,12000);
+    if(d.state==='ok'&&d.only)toast(d.rules?'📋 경기 규칙을 본부에 저장했습니다 · 본부가 모든 코트 노트북에 보냅니다 (명단은 접수가 들어오면 다시 보내 주세요)':'본부가 경기 규칙을 저장하지 못했습니다',10000);
+    else if(d.state==='ok')toast(`본부 대회 운영표에 명단 ${d.n}줄이 들어갔습니다${d.rules?' · 📋 경기 규칙도 본부에 저장됨':''}${d.home?' · 🎲 홈페이지 추첨 순서 그대로':' · ⚠ 추첨 번호 없는 줄이 있습니다'} · 본부 창에서 「📡 코트로 보내기」를 눌러 주세요${noDraw.length?' · ⚠ 추첨 안 된 접수: '+noDraw.join(' · '):''}`,12000);
     else if(d.state==='no')toast('본부 창에서 「취소」를 눌러 명단을 바꾸지 않았습니다');else toast('본부가 명단을 읽지 못했습니다: '+(d.err||''),10000);};
   window.addEventListener('message',on);
   const tick=()=>{if(got||done)return;if(++tries>40){window.removeEventListener('message',on);toast(`본부 프로그램이 대답하지 않습니다 · ① 이 노트북에서 현장 프로그램(검은 창)이 켜져 있는지 ② 현장 프로그램이 1.7.4 이상인지 ③ 「현장 프로그램 주소」(${base})가 맞는지 확인해 주세요 · 안 되면 「🏢 본부용 명단 엑셀」로 넣어 주세요`,15000);return;}
@@ -3827,7 +3949,8 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
     const items=GP_EV.filter((x,i)=>(document.getElementById('dG_'+i)||{}).checked).map(x=>x.n);if(on('gyeokpa')&&!items.length){formErr(f,'격파 세부 종목을 하나 이상 골라 주세요');return;}
     const ruleBase=hdRuleAll({id:editId||'new',fee:(D().comps.find(x=>x.id===editId)||{}).fee||{}}),rules={...ruleBase};Object.entries(UI.dsgR||{}).forEach(([e,o])=>rules[e]={...(rules[e]||{}),...o});
     const design={v:1,at:new Date().toISOString(),ev:Object.fromEntries(EV5.map(([k])=>[k,{on:on(k),fee:fv(k),award:rv('dA_'+k)===3?3:4,...(k==='gyeokpa'?{items}:{})}])),
-      fmt:{'공인 품새':(document.querySelector('input[name=dM_ps]:checked')||{}).value||'t','자유 품새':(document.querySelector('input[name=dM_fs]:checked')||{}).value||'o'},rules};
+      fmt:{'공인 품새':(document.querySelector('input[name=dM_ps]:checked')||{}).value||'t','자유 품새':(document.querySelector('input[name=dM_fs]:checked')||{}).value||'o'},rules,
+      game:(grReadInputs(),JSON.parse(JSON.stringify(UI.gr||GR_DEF)))};
     if(v('cDead')>v('cDate')){formErr(f,'접수 마감일은 대회일보다 앞이어야 합니다');return;}
     const old=editId?D().comps.find(x=>x.id===editId):null,link=v('cDocUrl').trim(),file=(document.getElementById('cDoc')||{}).files,del=document.getElementById('cDocDel');
     if(link&&!/^https?:\/\//i.test(link)){formErr(f,'요강 링크는 https:// 로 시작하는 주소로 넣어 주세요');return;}

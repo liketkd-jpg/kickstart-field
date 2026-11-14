@@ -578,7 +578,7 @@ function vRules(){let mbody='';const R=RDRAFT||rulesNow(),list=courtList().filte
   if(RSEL){const [k,ic,nm]=REV.find(x=>x[0]===RSEL)||REV[0];const P='poomsae.types.'+k,t=R.poomsae.types[k]||{};
     const stepRows=()=>`<div class="rrow"><b>진행 단계</b>${seg(P+'.cut',Object.entries(CUTL),t.cut||'rule')}</div>
       ${(t.cut||'rule')==='two'?`<div class="rrow"><b>결선 진출 인원</b>${seg(P+'.adv',[1,2,3,4,5,6,8,10].map(x=>[x,x+'명']),t.adv||3)}</div>`:''}
-      <div class="small muted">${C.std==='comm'?'생활체육 기준에서는 ${C.commN||4}명 1조로 나누어 조별로 진행합니다 (조 인원이 적으면 바로 결선).':(t.cut||'rule')==='rule'?'규정 자동: 22명 이상 예선(상위 50%) → 본선 8명 → 결선, 12~21명 본선 → 결선, 11명 이하 결선만.':(t.cut==='two'?`예선 점수 순위대로 위에서 ${t.adv||3}명이 결선에 오릅니다. 그보다 적은 부문은 바로 결선.`:'예선 없이 결선 한 번으로 순위를 정합니다.')}</div>`;
+      <div class="small muted">${C.std==='comm'?`생활체육 기준에서는 ${C.commN||4}명 1조로 나누어 조별로 진행합니다 (조 인원이 적으면 바로 결선).`:(t.cut||'rule')==='rule'?'규정 자동: 22명 이상 예선(상위 50%) → 본선 8명 → 결선, 12~21명 본선 → 결선, 11명 이하 결선만.':(t.cut==='two'?`예선 점수 순위대로 위에서 ${t.adv||3}명이 결선에 오릅니다. 그보다 적은 부문은 바로 결선.`:'예선 없이 결선 한 번으로 순위를 정합니다.')}</div>`;
     let f='';
     if(k==='recognized')f=`<div class="rrow"><b>경기 방식</b>${seg(P+'.format',[['cutoff','컷오프'],['tournament','토너먼트']],t.format)}</div>${t.format!=='tournament'?stepRows():''}
       ${C.std==='comm'?`<div class="rrow"><b>품새 수</b>${seg(P+'.pstage',[[1,'모두 1개'],[2,'모두 2개'],['2-1','예선 2개 · 결선 1개'],['1-2','예선 1개 · 결선 2개']],t.pstage||t.poomsae||1)}</div><div class="small muted">생활체육 기준: ${C.commN||4}명 1조의 첫 경기(예선)와 결선의 품새 수를 따로 정할 수 있습니다.</div>`:`<div class="rrow"><b>품새 수</b>${seg(P+'.poomsae',[[1,'품새 1개'],[2,'품새 2개']],t.poomsae||1)}</div>`}
@@ -2710,8 +2710,11 @@ window.addEventListener('message',async ev=>{const d=ev.data;if(!d||d.type!=='ks
   if(HSEEN.has(d.id)){reply({state:'got'});return;}HSEEN.add(d.id);reply({state:'got'});
   try{const rows=[];d.sheets.forEach(sh=>{const A=sh.rows||[],H=A[0]||[];A.slice(1).forEach(r=>{const o={__sheet:String(sh.name||'')};H.forEach((h,i)=>{o[h]=r[i]==null?'':r[i];});rows.push(o);});});
     const n=rows.length;await new Promise(r=>setTimeout(r,300));
-    if(P.roster.length&&!confirm(`홈페이지에서 「${d.name||'대회'}」 명단 ${n}건이 왔습니다.\n\n지금 대회 운영표 명단(${P.roster.length}줄)을 이 명단으로 바꿀까요?\n(바꾼 뒤 「📡 코트로 보내기」를 눌러야 코트에 갑니다)`)){reply({state:'no'});toast('홈페이지 명단을 넣지 않았습니다');return;}
-    open();const r=await importObjs(rows,`홈페이지 · ${d.name||'대회'}`);reply({state:'ok',...r});}
+    /* v1.7.16 홈페이지 대회 설계 「⑥ 경기 규칙」도 함께 → 본부 「종목별 경기 규칙」에 저장 (모든 코트로 감) */
+    let rulesOk=false;if(d.rules&&typeof d.rules==='object'){try{const rr=await fetch('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...d.rules,at:Date.now()})});rulesOk=rr.ok;if(rulesOk)toast('홈페이지에서 정한 종목별 경기 규칙을 받았습니다 · 모든 코트 노트북에 보냅니다',6000);}catch(e){}}
+    if(!n){reply({state:'ok',only:true,rules:rulesOk,n:0});return;}   /* 접수 없이 경기 규칙만 */
+    if(P.roster.length&&!confirm(`홈페이지에서 「${d.name||'대회'}」 명단 ${n}건이 왔습니다.\n\n지금 대회 운영표 명단(${P.roster.length}줄)을 이 명단으로 바꿀까요?\n(바꾼 뒤 「📡 코트로 보내기」를 눌러야 코트에 갑니다)`)){reply({state:'no',rules:rulesOk});toast('홈페이지 명단을 넣지 않았습니다'+(rulesOk?' · 경기 규칙은 받았습니다':''));return;}
+    open();const r=await importObjs(rows,`홈페이지 · ${d.name||'대회'}`);reply({state:'ok',rules:rulesOk,...r});}
   catch(x){reply({state:'err',err:x.message||String(x)});toast(x.message||'홈페이지 명단을 읽지 못했습니다');}});
 window.KSPLAN={open,close,tileState,sched:()=>P.roster.length&&P.lanes.some(l=>l.length)?daySched():null,get state(){return clone(P);},get simOn(){return !!SEND.simOn;}};
 
