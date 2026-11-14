@@ -3052,10 +3052,11 @@ const armedT=new WeakMap();
 const COMM=()=>!!SET().comm;
 const COMMBU=()=>SET().ageScheme==='comm';
 const COMM_RE=/ · (\d+)조$/;
-function commSizes(n,rem){rem=rem||SET().commRem||'small';if(n<=4)return n?[n]:[];const q=Math.floor(n/4),r=n%4,s=Array(q).fill(4);
+function commSizes(n,rem){rem=rem||SET().commRem||'small';const G=Math.max(2,Number(SET().commN)||4); /* v1.7.12 본부에서 정한 한 조 인원 (4·6·8명) */
+  if(n<=G)return n?[n]:[];const q=Math.floor(n/G),r=n%G,s=Array(q).fill(G);
   /* v1.4.97 고르게: 조 수는 4명 기준(올림), 인원은 최대한 고르게 — 5명 3·2 · 6명 3·3 · 7명 4·3 · 9명 3·3·3 · 10명 4·3·3 */
-  if(rem==='merge'){if(r===1)s[q-1]=5;else if(r)s.push(r);return s;}
-  const k=Math.ceil(n/4),b=Math.floor(n/k),x=n%k;return Array.from({length:k},(_,i)=>b+(i<x?1:0));}
+  if(rem==='merge'){if(r===1)s[q-1]=G+1;else if(r)s.push(r);return s;}
+  const k=Math.ceil(n/G),b=Math.floor(n/k),x=n%k;return Array.from({length:k},(_,i)=>b+(i<x?1:0));}
 const commTeam=id=>{const a=S.roster.find(x=>x.id===id);return a?String(a.team||'').trim():'';};
 /* ===== 같은 도장 떨어뜨리기 (v1.4.45) — 설정 하나로 조 편성·출전 순서·대진표 추첨에 모두 적용 =====
    켜면: ① 같은 도장(팀)은 여러 조로 고르게 나누고 ② 컷오프는 같은 도장이 연달아 나오지 않게

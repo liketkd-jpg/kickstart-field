@@ -1322,6 +1322,12 @@ body.gfit .gjtop{display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .gbrd .bcur{gap:12px}
 .gbrd .rkwrap{display:flex;flex-direction:column;gap:8px}
 .gbrd .bitem .bmain b .sc{font-family:var(--f-num)}
+.jstep{display:flex;gap:6px;padding:6px 8px;overflow-x:auto}.js-t{flex:1;min-width:64px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 4px;border-radius:12px;border:2px solid var(--line,#ccc);background:transparent;color:inherit;font:inherit;cursor:pointer}
+.js-t b{font-size:18px}.js-t small{font-size:11px;opacity:.75;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.js-t.on{border-color:var(--gold,#C9A262);background:rgba(201,162,98,.18)}.js-t.ok b{color:var(--green,#1F9D55)}
+.jv-one .jcard{font-size:1.08em}.jv-one .gjo .opt{min-height:56px;font-size:20px}
+.jsum{display:flex;flex-direction:column;gap:8px;padding:6px}.js-r{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;border:2px solid var(--line,#ccc);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.js-r b{flex:1;font-size:17px}.js-r em{font-style:normal;font-weight:900;font-size:20px}.js-r .js-e{font-size:12px;opacity:.6}.js-r.miss{border-color:#E5484D}
+.jv-all .gjo .opt{min-height:38px;font-size:15px;padding:4px 2px}.jv-all .jcard{padding:8px}
 </style>
 
 <header class="bar">
@@ -2208,6 +2214,10 @@ function aRun(){
    왼쪽: 부문·진행 순서 / 가운데: 현재 선수·타이머·채점 / 오른쪽: 심판 기기·알림·순위·최근 결과 · 위: 심판 링크·시계·전체 화면 */
 let BMAX=lsGet('gp_bmax')==='1';
 let JMAX=lsGet('gp_jmax')==='1';
+const JSTEP={k:'',i:0};
+function jViewNow(){const v=SET().jView||'auto';if(v==='one'||v==='all')return v;return Math.min(innerWidth,innerHeight)<600||innerWidth<820?'one':'all';}
+function jAutoStep(cur){if(jViewNow()!=='one')return;const d=draftFor(cur),its=sheetItems(cur),n=cur.kind==='tech'?(cur.techs||[]).length:its.length;if(n<2)return;const per=Math.ceil(its.length/n),i=JSTEP.i;
+  if(i<n&&its.slice(i*per,i*per+per).every(it=>d.items[it.k]!=null)){const at=JSTEP.k;setTimeout(()=>{if(JSTEP.k===at&&JSTEP.i===i){JSTEP.i=i+1;render();}},350);}}
 function fsBtn(label){return `<button class="jfs" data-act="jFull" aria-label="${JMAX?'전체 화면 끝내기':'전체 화면'}">${JMAX?'⤡':'⤢'}${label?`<span>${JMAX?'작게 보기':'전체 화면'}</span>`:''}</button>`;}
 document.addEventListener('fullscreenchange',()=>{try{render();}catch(e){}});
 function aBoard(){
@@ -2473,7 +2483,16 @@ function vJudge(){
   const top2=`<div class="jhead"><span class="chip live">${myJudge}심</span><span class="jmeta">${esc(cur.divName)} · ${esc(cur.label)}</span><span class="timer gjt" data-timer>${cdText(st.timer)}</span>${SOLO_ON?'<button class="btn sm solohb" data-act="soloHideBtn">운영석 보기</button>':''}</div>
     <div class="gjwho jwho"><div class="jname"><b>${esc(cur.name)}</b> <span class="small muted">${esc(cur.team||'')}</span></div>
       <div class="jtot">${fsBtn()}<span class="jx chip live">${myJudge}심</span><span class="jx timer" data-timer>${cdText(st.timer)}</span>${pv.map(p=>`<span>${esc(p[0])} <b>${p[1]}</b></span>`).join('')}<span class="big">합계 <b>${cur.kind==='tech'?fmt1(tot):fmtN(tot)}</b></span></div></div>`;
-  return `<div class="gjsheet k-${cur.kind}"><div class="gjtop">${banner}${top2}</div><div class="gjbody" style="--nc:${cur.kind==='tech'?cur.techs.length:1}">${sheet}</div>
+  /* v1.7.12 심판 채점판 화면 방식 (본부 「종목별 경기 규칙」에서 종목마다): 자동(휴대폰=한 종목씩 · 태블릿=한 화면에 모두) · 한 종목씩 · 한 화면에 모두
+     한 종목씩: 한 기술(항목)만 크게 → 다 고르면 저절로 다음 → 마지막에 모아 보고 「점수 보내기». 스크롤하지 않아도 됩니다 */
+  const cards=sheet.split('<div class="jcard">').slice(1).map(x=>'<div class="jcard">'+x),nC=cards.length,jv=jViewNow();
+  if(jv==='one'&&nC>1){if(JSTEP.k!==cur.perfId+'#'+myJudge){JSTEP.k=cur.perfId+'#'+myJudge;JSTEP.i=0;}const i=Math.min(JSTEP.i,nC),its=sheetItems(cur),per=Math.ceil(its.length/nC);
+    const doneOf=c=>its.slice(c*per,c*per+per).every(it=>d.items[it.k]!=null),lab=c=>cur.kind==='tech'?(cur.techs[c]||''):((cur.kind==='comp'?COMP_ITEMS:TEAM_ITEMS)[c]||{}).label||'';
+    const tabs=`<div class="jstep">${cards.map((_,c)=>`<button class="js-t ${c===i?'on':''} ${doneOf(c)?'ok':''}" data-act="jStep" data-i="${c}"><b>${c+1}</b><small>${esc(lab(c))}</small></button>`).join('')}<button class="js-t ${i===nC?'on':''} ${miss?'':'ok'}" data-act="jStep" data-i="${nC}"><b>✓</b><small>확인</small></button></div>`;
+    const body=i<nC?cards[i]:`<div class="jsum">${cards.map((_,c)=>{const v=its.slice(c*per,c*per+per).map(it=>d.items[it.k]);return `<button class="js-r ${doneOf(c)?'':'miss'}" data-act="jStep" data-i="${c}"><span class="tno">${c+1}</span><b>${esc(lab(c))}</b><em>${v.map(x=>x==null?'—':fmtN(x)).join(' · ')}</em><span class="js-e">고치기</span></button>`;}).join('')}</div>`;
+    return `<div class="gjsheet k-${cur.kind} jv-one"><div class="gjtop">${banner}${top2}</div>${tabs}<div class="gjbody" style="--nc:1">${body}</div>
+    <div class="gjfoot">${i<nC?`<button class="btn big" data-act="jStep" data-i="${Math.max(0,i-1)}" ${i?'':'disabled'}>← 앞</button><button class="btn primary big" data-act="jStep" data-i="${i+1}">${i===nC-1?'모아 보기 ✓':'다음 →'}</button>`:`<button class="btn primary big" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개`:'점수 보내기'}</button>`}</div></div>`;}
+  return `<div class="gjsheet k-${cur.kind} ${jv==='all'?'jv-all':''}"><div class="gjtop">${banner}${top2}</div><div class="gjbody" style="--nc:${cur.kind==='tech'?cur.techs.length:1}">${sheet}</div>
     <div class="gjfoot"><button class="btn primary big" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개`:'점수 보내기'}</button></div></div>`;
 }
 /* 심판 화면 위 카드·보낸 점수에 보여 줄 항목별 합 (품새 「정확도 4.0 · 표현력 6.0」과 같은 방식) */
@@ -2729,10 +2748,11 @@ const COMM=()=>!!SET().comm;
 /* v1.4.59 생활체육 대회: 유치부·실버부는 나이·띠 통합 */
 function gpLevel(a){const l=String(a.level||'');if(!COMM())return a.level;if(/유치|유아/.test(l))return '유치 통합부';if(/실버/.test(l))return '실버 통합부';return a.level;}
 const COMM_RE=/ · (\d+)조$/;
-function commSizes(n,rem){rem=rem||SET().commRem||'small';if(n<=4)return n?[n]:[];const q=Math.floor(n/4),r=n%4,s=Array(q).fill(4);
+function commSizes(n,rem){rem=rem||SET().commRem||'small';const G=Math.max(2,Number(SET().commN)||4); /* v1.7.12 본부에서 정한 한 조 인원 (4·6·8명) */
+  if(n<=G)return n?[n]:[];const q=Math.floor(n/G),r=n%G,s=Array(q).fill(G);
   /* v1.4.97 고르게: 조 수는 4명 기준(올림), 인원은 최대한 고르게 — 5명 3·2 · 6명 3·3 · 7명 4·3 · 9명 3·3·3 · 10명 4·3·3 */
-  if(rem==='merge'){if(r===1)s[q-1]=5;else if(r)s.push(r);return s;}
-  const k=Math.ceil(n/4),b=Math.floor(n/k),x=n%k;return Array.from({length:k},(_,i)=>b+(i<x?1:0));}
+  if(rem==='merge'){if(r===1)s[q-1]=G+1;else if(r)s.push(r);return s;}
+  const k=Math.ceil(n/G),b=Math.floor(n/k),x=n%k;return Array.from({length:k},(_,i)=>b+(i<x?1:0));}
 const commTeam=id=>{const a=S.roster.find(x=>x.id===id);return a?String(a.team||'').trim():'';};
 /* ===== 같은 도장 떨어뜨리기 (v1.4.45) — 설정 하나로 조 편성·출전 순서·대진표 추첨에 모두 적용 =====
    켜면: ① 같은 도장(팀)은 여러 조로 고르게 나누고 ② 컷오프는 같은 도장이 연달아 나오지 않게
@@ -2988,9 +3008,10 @@ const ACT={
   dgTh:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),g=b.dataset.g;d.dg={...(d.dg||{}),[g]:{...((d.dg||{})[g]||{}),th:Number(b.dataset.v)}};diffApply(cur,d);},
   setMusicAuto:b=>setS({musicAuto:b.dataset.v==='true'}),
   wOk:async b=>{const id=b.dataset.id,a=athlete(id);if(!a)return;const on=!a.weighed;await saveRoster(S.roster.map(x=>x.id===id?{...x,weighed:on,weighedAt:on?Date.now():null}:x));if(on)addLog('계체 확인',a.name,`${a.weight}kg · ${weightClass(a.gender,a.weight)}`);},
-  pickItem:b=>{const cur=curOf();if(!cur)return;draftFor(cur).items[b.dataset.k]=Number(b.dataset.v);saveDrafts();render();},
+  pickItem:b=>{const cur=curOf();if(!cur)return;draftFor(cur).items[b.dataset.k]=Number(b.dataset.v);saveDrafts();render();jAutoStep(cur);},
+  jStep:b=>{JSTEP.i=Math.max(0,Number(b.dataset.i)||0);render();},
   pickTens:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),k=b.dataset.k,max=Number(b.dataset.max),ones=(d.items[k]||0)%10;d.items[k]=Math.min(max,Number(b.dataset.v)*10+ones);saveDrafts();render();},
-  pickOnes:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),k=b.dataset.k,max=Number(b.dataset.max),tens=Math.floor((d.items[k]||0)/10);d.items[k]=Math.min(max,tens*10+Number(b.dataset.v));saveDrafts();render();},
+  pickOnes:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),k=b.dataset.k,max=Number(b.dataset.max),tens=Math.floor((d.items[k]||0)/10);d.items[k]=Math.min(max,tens*10+Number(b.dataset.v));saveDrafts();render();jAutoStep(cur);},
   editScore:()=>{const cur=curOf();if(!cur)return;const id=`${cur.perfId}__j${myJudge}`,m=OUTBOX[id]||curScores().find(x=>x._id===id);
     if(m&&m.items){const d=draftFor(cur);d.items={...d.items,...m.items};if(m.dg)d.dg=m.dg;}saveDrafts();ui.editing=true;render();},
   submitScore:async()=>{

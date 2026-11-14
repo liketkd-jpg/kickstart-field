@@ -31,8 +31,11 @@
     try{const j=await (await fetch('/api/rules',{cache:'no-store'})).json();if(!j||!j.at||!j.rules)return;
       const R=typeof j.rules==='string'?JSON.parse(j.rules):j.rules;if(!R)return;
       const set=S.settings,C=R.common||{},ev=R.events||null;
+      /* v1.7.12 「코트별 설정」으로 두면 본부 규칙을 보내지 않고 코트에서 직접 정함 (잠금도 풂) */
+      if(C.apply==='court'){if(set.hqRulesAt){const ns={...set,hqRulesAt:null};await g('saveSettings')(ns);S.settings=ns;say('📋 본부가 「코트별 설정」으로 바꿨습니다 · 이 코트에서 경기 규칙을 직접 정할 수 있습니다');}return;}
       if((set.hqRulesAt||0)<j.at&&lastAt!==j.at){lastAt=j.at;const p={hqRulesAt:j.at};
         if(typeof C.sep==='boolean')p.sepDojang=C.sep;
+        if(C.std==='comm'&&Number(C.commN)>=2)p.commN=Number(C.commN); /* 생활체육 한 조 인원 */
         if(APPK==='poomsae'){const P=R.poomsae||{},T=P.types||{};
           p.typeJudges={};p.typeFormat={};p.typePoom={};p.typeCut={};p.typeAdv={};
           PT.forEach(t=>{const v=T[t]||{};if(v.judges)p.typeJudges[t]=num(v.judges,5);if(v.format)p.typeFormat[t]=TEAM[t]?'cutoff':v.format;
@@ -46,13 +49,16 @@
           p.typeSheet={gym:gy.sheet==='wt'?'wt':'hm',team100:tm.sheet==='wt'?'wt':'hm'}; /* v1.4.73 채점 양식: 한마당 / 대회 규정 */
           /* 생활체육 기준: 공인 품새 「예선 2개·결선 1개」 등 단계마다 품새 수 */
           const m=/^([12])-([12])$/.exec(String(rc.pstage||''));p.typePoomStage=C.std==='comm'&&m?{recognized:{pre:+m[1],final:+m[2]}}:{};
+          if(Array.isArray(rc.pfix))p.pfix=rc.pfix.filter(r=>r&&r.g&&Array.isArray(r.p)&&r.p.filter(Boolean).length); /* 지정 품새표 (본부) */
+          p.typeJView={};PT.forEach(t=>{const v=(T[t]||{}).jView;if(v)p.typeJView[t]=v;});
           if(C.std==='comm'&&m)p.typePoom.recognized=+m[1];else if(C.std==='comm'&&/^[12]$/.test(String(rc.pstage||'')))p.typePoom.recognized=+rc.pstage;}
-        else if(APPK==='gyeokpa'){const G=R.gyeokpa||{};['judges','preMin','grpSize','finalN'].forEach(k=>{if(G[k]!=null&&G[k]!=='')p[k]=num(G[k],set[k]);});}
+        else if(APPK==='gyeokpa'){const G=R.gyeokpa||{};['judges','preMin','grpSize','finalN'].forEach(k=>{if(G[k]!=null&&G[k]!=='')p[k]=num(G[k],set[k]);});if(G.jView)p.jView=G.jView;}
         else if(APPK==='kyorugi'){const K=R.kyorugi||{};['refs','roundSec','restSec'].forEach(k=>{if(K[k]!=null&&K[k]!=='')p[k]=num(K[k],set[k]);});if(K.system)p.system=K.system;}
         const ns={...set,...p};await g('saveSettings')(ns);S.settings=ns;
         /* 대회 기준: 생활체육(4명 1조)·협회·세계연맹 — 바뀌면 부문을 다시 편성 (앱의 「생활체육 대회」 버튼과 같은 동작) */
         if(C.std&&APPK!=='kyorugi'){const wantComm=C.std==='comm',cs=g('commSet');
           if(!!ns.comm!==wantComm&&typeof cs==='function')await cs({comm:wantComm});
+          else if(wantComm&&p.commN&&Number(set.commN||4)!==p.commN&&typeof cs==='function')await cs({commN:p.commN}); /* 조 인원이 바뀌면 다시 편성 (점수 들어간 조는 그대로) */
           if(APPK==='poomsae'&&C.std!=='comm'&&(S.settings.ageScheme||'kta')!==C.std){const s2={...S.settings,ageScheme:C.std};await g('saveSettings')(s2);S.settings=s2;try{if((S.roster||[]).length)await g('regenerateDivs')();}catch(e){}}}
         say('📋 본부에서 정한 종목 설정을 받았습니다 · 아직 시작 전인 부문부터 적용됩니다');}
       if(APPK==='poomsae')await fixDivs(S);
