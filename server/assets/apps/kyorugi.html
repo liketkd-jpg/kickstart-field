@@ -1063,6 +1063,7 @@ let BMAX=lsGet('ky_bmax')==='1',JMAX=lsGet('ky_jmax')==='1';
 let pending=false;
 function schedule(){if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;render();});}
 function render(){
+  try{maybeFlow();}catch(e){}
   const app=$('#app');
   const keep={};app.querySelectorAll('input[id],textarea[id]').forEach(el=>{if(el.type!=='file')keep[el.id]=el.value;});
   const fid=document.activeElement&&document.activeElement.id;
@@ -1223,6 +1224,22 @@ function vBracket(d){return bkSVG(d);}
 /* ---------- 경기 진행 (운영석 한 화면) ---------- */
 const PHASE={idle:'대기',ready:'준비',fight:'경기 중',break:'갈려 (중단)',rest:'회전 휴식',decide:'우세 판정 필요',end:'경기 종료'};
 function roundLabel(r){return r===4?'골든라운드':`${r}회전`;}
+
+/* ===== v1.7.8 조(체급) 자동 넘어가기 · 지금 체급 한눈에 (품새·격파와 같은 방식) =====
+   경기가 끝났을 때 코트 순서의 다음 경기가 다른 체급(또는 다음 라운드)이면 5초 동안 「다음 경기 ○○체급 ○강」을 띄우고 자동 호출합니다.
+   같은 체급 안의 다음 경기는 지금처럼 「다음 경기 호출」을 누릅니다. 「조 넘어가기 수동」이면 띄우지 않습니다. */
+function flowNext(L){const q=courtSeq(),i=q.findIndex(m=>m.id===L.matchId);return q.slice(i+1).find(m=>!m.res&&m.ready)||q.find(m=>!m.res&&m.ready)||null;}
+function flowInfo(){const L=live();if(!L||L.phase!=='end'||!L.result)return null;const nx=flowNext(L);if(!nx)return {end:true};
+  const cur=courtSeq().find(m=>m.id===L.matchId)||{};if(nx.divId===cur.divId&&nx.rn===cur.rn)return null;
+  return {nx,key:L.matchId+'#'+(L.endedAt||0),title:`${nx.divName} · ${nx.rn}`};}
+let FLOW_STOP='';
+function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;const sm=window.KS_SIM&&KS_SIM.state&&KS_SIM.state.SIM;if(sm&&sm.on){if(KSFLOW.key)KSFLOW.hide();return;}
+  const inf=flowInfo();if(!inf||inf.end||SET().autoDiv==='manual'||FLOW_STOP===inf.key){if(KSFLOW.key&&(!inf||KSFLOW.key!==(inf&&inf.key)))KSFLOW.hide();return;}
+  KSFLOW.show({key:inf.key,title:inf.title,sub:`첫 경기 청 ${aName(inf.nx.blue)} vs 홍 ${aName(inf.nx.red)}`,sec:5,
+    go:()=>{const L=live();const n=L?flowNext(L):null;if(n){ui.div=n.divId;callMatch(n.id);}},stop:()=>{FLOW_STOP=inf.key;render();}});}
+function flowStrip(L){if(!window.KSFLOW)return '';const d=S.divs.find(x=>x.id===(L?L.divId:ui.div));if(!d)return '';const all=allMatchesOf(d);if(!all.length)return '';
+  const items=all.map(m=>({no:m.no||'',names:[{t:m.blue?aName(m.blue):'(대기)',side:'blue'},{t:m.red?aName(m.red):'(대기)',side:'red'}],sc:m.res?`${m.res.side==='blue'?'청':'홍'} 승 ${m.res.score?m.res.score.blue+':'+m.res.score.red:''}`:'',state:L&&L.matchId===m.id?'cur':m.res?'done':''}));
+  const inf=flowInfo();return KSFLOW.strip({title:d.name,stage:'토너먼트',done:all.filter(m=>m.res).length,total:all.length,items,auto:SET().autoDiv!=='manual',next:inf&&inf.title?inf.title:''});}
 function aRun(){
   if(!S.divs.length)return `<div class="empty">먼저 선수를 등록하고 체급별 대진을 편성하세요.</div>`;
   const st=ST(),L=live();
@@ -1238,7 +1255,7 @@ function aRun(){
       return `<div class="bitem ${isCur?'cur':''} ${m.res?'done':''}"><div class="bmain"><span class="small muted">${esc(m.label)}${m.res?' · '+esc(m.res.how):''}</span>
         <b class="blue">청 ${esc(aName(m.blue))}${m.res?` ${m.res.score.blue}`:''}</b><b class="red">홍 ${esc(aName(m.red))}${m.res?` ${m.res.score.red}`:''}</b></div>
         ${isCur?'<span class="chip live">진행</span>':`<button class="btn sm" data-act="${L&&L.phase!=='end'?'armed':'callMatch'}" data-do="callMatch" data-id="${m.id}">${m.res?'다시':'호출'}</button>`}</div>`;}).join(''):'<div class="empty">진행할 경기가 없습니다.</div>'}</div></div></div></div>`;
-  const center=L?runCenter(L):`<div class="col"><div class="panel bp grow"><div class="empty" style="margin:auto">「경기 순서」에서 "호출"을 누르세요.</div></div></div>`;
+  const center=(L?runCenter(L):`<div class="col"><div class="panel bp grow"><div class="empty" style="margin:auto">「경기 순서」에서 "호출"을 누르세요.</div></div></div>`).replace('<div class="col">','<div class="col">'+flowStrip(L));
   const N=set.refs;
   const jrows=Array.from({length:N},(_,i)=>{const j=i+1,seat=S.seats[j],on=ROOM&&seat?deviceOnline(seat.device):null;
     return `<div class="jrow"><b>${j}부심</b><span class="row" style="gap:5px">${!seat?'<span class="dot"></span><span class="small muted">비어 있음</span>':on===null?'<span class="dot local"></span><span class="small">입장</span>':on?'<span class="dot on"></span><span class="small">접속 중</span>':'<span class="dot off"></span><span class="small" style="color:var(--red)">끊김</span>'}${judgeQueued(j)?`<span class="kq">보관 ${judgeQueued(j)}건</span>`:''}</span>${seat?`<button class="btn sm" data-act="armed" data-do="releaseSeat" data-n="${j}">비우기</button>`:''}</div>`;}).join('');
@@ -1907,6 +1924,7 @@ const ACT={
   pdfDiv:b=>{const d=S.divs.find(x=>x.id===b.dataset.id);if(d){toast('PDF 만드는 중…');makeBracketPdf([d],`${SET().name||'겨루기대회'}_대진표_${d.name}.pdf`);}},
   pdfAll:()=>{if(!S.divs.length)return toast('체급이 없습니다');toast('PDF 만드는 중…');makeBracketPdf(S.divs,`${SET().name||'겨루기대회'}_전체대진표.pdf`);},
   callMatch:b=>callMatch(b.dataset.id),
+  toggleAutoDiv:async()=>{S.settings={...SET(),autoDiv:SET().autoDiv==='manual'?'auto':'manual'};await saveSettings(S.settings);FLOW_STOP='';render();},
   seqAll:b=>{ui.seqAll=b.dataset.v==='1';schedule();},
   nextMatch:()=>{const L=live();if(!L)return;const q=courtSeq(),i=q.findIndex(m=>m.id===L.matchId);
     const nx=q.slice(i+1).find(m=>!m.res&&m.ready)||q.find(m=>!m.res&&m.ready);
