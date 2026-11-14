@@ -2248,9 +2248,7 @@ function bind(r){
     if(el.dataset.p==='file'){const f=el.files&&el.files[0];el.value='';if(!f)return;
       try{if(typeof XLSX==='undefined')throw new Error('엑셀 도구를 불러오지 못했습니다');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});let rows=[];
         wb.SheetNames.forEach(n=>{rows=rows.concat(XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:''}).map(o=>({...o,__sheet:n})));});
-        let std='';try{const j=await (await fetch('/api/rules',{cache:'no-store'})).json();const R=j&&j.rules?(typeof j.rules==='string'?JSON.parse(j.rules):j.rules):null;std=(R&&R.common&&R.common.std)||'';}catch(e){}
-        const ro=rowsFromSheet(rows,{std});if(!ro.length)throw new Error('「종목」 칸이 있는 줄을 찾지 못했습니다 (종목·부별·조·성별·이름·도장 칸이 필요합니다)');
-        commit(()=>{P.roster=ro;P.src=f.name.replace(/\.\w+$/,'')+` (${ro.length}줄)`;rebuild();plan(recommendEv());});toast(`명단 ${ro.length}줄을 불러와 자동으로 배정했습니다${ro.every(r=>r.drawNo>0)?' · 🎲 홈페이지 추첨 순서 그대로':ro.some(r=>r.drawNo>0)?' · ⚠ 추첨 번호가 없는 줄이 있어 홈페이지 추첨 잠금은 하지 않습니다':''}`);}
+        await importObjs(rows,f.name.replace(/\.\w+$/,''));}
       catch(x){toast(x.message||'명단을 읽지 못했습니다');}return;}
     if(el.dataset.p==='afile'){const f=el.files&&el.files[0];el.value='';if(f)importAssoc(f);return;}
     if(el.dataset.p==='gev'){SEND.gev=el.value;return;}
@@ -2581,6 +2579,23 @@ function close(){OPEN=false;root().hidden=true;document.documentElement.classLis
 function tileState(){if(!P.roster.length)return ['명단 없음 · 열어서 짜기',''];const TL=timeline().filter(x=>x.items.length);if(!TL.length)return [`${P.courts}코트`,''];
   const late=Math.max(...TL.map(x=>x.end));return [`${P.courts}코트 · 예상 종료 ${hm(late)}`,late>toMin(P.target)?'warn':'ok'];}
 function refreshTile(){const t=document.querySelector('.hqs-tile[data-k="plan"] .hqs-st');if(t){const [s]=tileState();t.textContent=s;}}
+/* 명단 넣기 (엑셀 파일 · 홈페이지 「🏢 본부로 보내기」 공통) */
+async function importObjs(rows,src){
+  let std='';try{const j=await (await fetch('/api/rules',{cache:'no-store'})).json();const R=j&&j.rules?(typeof j.rules==='string'?JSON.parse(j.rules):j.rules):null;std=(R&&R.common&&R.common.std)||'';}catch(e){}
+  const ro=rowsFromSheet(rows,{std});if(!ro.length)throw new Error('「종목」 칸이 있는 줄을 찾지 못했습니다 (종목·부별·조·성별·이름·도장 칸이 필요합니다)');
+  commit(()=>{P.roster=ro;P.src=src+` (${ro.length}줄)`;rebuild();plan(recommendEv());});
+  toast(`명단 ${ro.length}줄을 불러와 자동으로 배정했습니다${ro.every(r=>r.drawNo>0)?' · 🎲 홈페이지 추첨 순서 그대로':ro.some(r=>r.drawNo>0)?' · ⚠ 추첨 번호가 없는 줄이 있어 홈페이지 추첨 잠금은 하지 않습니다':''}`);
+  return {n:ro.length,home:ro.every(r=>r.drawNo>0)};}
+/* v1.7.4 홈페이지 「🏢 본부로 보내기」: 같은 노트북에서 홈페이지가 이 창을 열고 명단을 건넴 (postMessage) → 운영표 명단을 바꿈 */
+const HSEEN=new Set();
+window.addEventListener('message',async ev=>{const d=ev.data;if(!d||d.type!=='ks-hq-roster'||!Array.isArray(d.sheets)||!d.id)return;
+  const reply=x=>{try{ev.source&&ev.source.postMessage({type:'ks-hq-roster-ack',id:d.id,...x},ev.origin||'*');}catch(e){}};
+  if(HSEEN.has(d.id)){reply({state:'got'});return;}HSEEN.add(d.id);reply({state:'got'});
+  try{const rows=[];d.sheets.forEach(sh=>{const A=sh.rows||[],H=A[0]||[];A.slice(1).forEach(r=>{const o={__sheet:String(sh.name||'')};H.forEach((h,i)=>{o[h]=r[i]==null?'':r[i];});rows.push(o);});});
+    const n=rows.length;await new Promise(r=>setTimeout(r,300));
+    if(P.roster.length&&!confirm(`홈페이지에서 「${d.name||'대회'}」 명단 ${n}건이 왔습니다.\n\n지금 대회 운영표 명단(${P.roster.length}줄)을 이 명단으로 바꿀까요?\n(바꾼 뒤 「📡 코트로 보내기」를 눌러야 코트에 갑니다)`)){reply({state:'no'});toast('홈페이지 명단을 넣지 않았습니다');return;}
+    open();const r=await importObjs(rows,`홈페이지 · ${d.name||'대회'}`);reply({state:'ok',...r});}
+  catch(x){reply({state:'err',err:x.message||String(x)});toast(x.message||'홈페이지 명단을 읽지 못했습니다');}});
 window.KSPLAN={open,close,tileState,sched:()=>P.roster.length&&P.lanes.some(l=>l.length)?daySched():null,get state(){return clone(P);},get simOn(){return !!SEND.simOn;}};
 
 (async function(){
