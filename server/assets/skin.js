@@ -12,11 +12,12 @@ const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','
 const SET=()=>{try{return g('SET')()||{};}catch(e){return {};}};
 const SKINS=[['','기존 디자인'],['royal','👑 왕실 (남색·금색)'],['fire','🔥 불꽃 (검정·주황)'],['arena','🏟 경기장 (세계 대회)']];
 const SKINS2=[['','기존 디자인'],['arena','🏟 경기장 (세계 대회)']];
+const SKINS_T=[['','기존 디자인'],['arena','🏟 경기장 (세계 대회)'],['duel','⚔️ 청·홍 대결 (금색 띠)']];
 const ROWS=APP==='poomsae'?[['recognized','공인 품새'],['freestyle','자유 품새'],['gym','태권체조'],['team100','팀 경연'],['tour','토너먼트 (청·홍)']]:APP==='kyorugi'?[['kyorugi','겨루기']]:[['gyeokpa','격파']];
 const by=()=>SET().skinBy||{};
 function skinFor(cur){const B=by();if(APP==='gyeokpa')return B.gyeokpa||'';if(APP==='kyorugi')return B.kyorugi==='arena'?'arena':'';
   if(!cur){const v=ROWS.filter(r=>r[0]!=='tour').map(r=>B[r[0]]).filter(Boolean);return v[0]||'';}
-  if((cur.entries||[]).length===2)return B.tour==='arena'?'arena':'';   /* 토너먼트(청·홍)는 「경기장」만 · 아니면 기존 화면 */
+  if((cur.entries||[]).length===2)return B.tour==='arena'||B.tour==='duel'?B.tour:'';   /* 토너먼트(청·홍)는 「경기장」만 · 아니면 기존 화면 */
   return B[cur.type||'recognized']||'';}
 const fit=(s,base,max)=>{const n=String(s||'').length;return n<=max?base:Math.max(base*0.45,base*max/n);};
 const U=n=>`calc(${n}*var(--u))`;
@@ -79,8 +80,9 @@ function rank(m,th){const R=m.rows||[],t3=R.filter(r=>r.rank<=3).slice(0,3),rest
 function foot(m){return m.next&&m.next.who?`<div class="sk-next"><span>NEXT</span>${E(m.next.who)}${m.next.team?' · '+E(m.next.team):''}</div>`:'';}
 const SCR={idle,live,score,rank};
 const SEEN=new Map();function since(k){if(!SEEN.has(k)){SEEN.set(k,Date.now());if(SEEN.size>80)SEEN.delete(SEEN.keys().next().value);}return Date.now()-SEEN.get(k);}
-function draw(th,m){const fn=(th==='arena'?ASCR:SCR)[m.scr];if(!fn)return null;let body='';if(m.el==null)m.el=since(th+'|'+m.scr+'|'+(m.key||''));try{body=fn(m,th);}catch(e){console.error('[KS_SKIN]',e);return null;}
-  const solo=th!=='arena'||!/^(duel|bracket|champ)$/.test(m.scr);   /* 효과 모듈: 점수 공개·순위만 */
+function draw(th,m){const fn=(th==='arena'?ASCR:th==='duel'?DSCR:SCR)[m.scr];if(!fn)return null;let body='';if(m.el==null)m.el=since(th+'|'+m.scr+'|'+(m.key||''));try{body=fn(m,th);}catch(e){console.error('[KS_SKIN]',e);return null;}
+  const solo=th==='duel'?false:th!=='arena'||!/^(duel|bracket|champ)$/.test(m.scr);   /* ⚔️ 청·홍 대결은 자기 소리·빛 */
+  if(th==='duel')dzSound(m);   /* 효과 모듈: 점수 공개·순위만 */
   return `<div class="board ${solo?'ksb-solo':''} sk sk-${th} sk-${m.scr} ${m.scr==='rank'?'rankv':''}" ${th==='arena'?`style="--cc:${arCol(m.court)}"`:''}><div class="sk-bg"></div><div class="sk-s" style="--t:-${Math.max(0,m.el||0)}ms">${body}</div></div>`;}
 
 /* ===================== 🏟 경기장 디자인 (v1.7.0) =====================
@@ -160,6 +162,61 @@ function aChamp(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
     <div class="ar-pods"><div class="ar-cell"><span class="ar-rk s">2</span><span class="ar-rn"><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></span></div>${(m.thirds||[]).map(t=>`<div class="ar-cell"><span class="ar-rk b">3</span><span class="ar-rn"><b>${E(t.name)}</b><small>${E(t.team||'')}</small></span></div>`).join('')}</div></div>
     ${arBot('시상','Medals',`<div class="ar-cell ar-wide"><span class="ar-rn"><b>${E(m.div||'')}</b><small>시상대 준비</small></span></div>`,m.next)}`;}
 const ASCR={idle:aIdle,live:aLive,score:aScore,rank:aRank,duel:aDuel,duelres:aDuelres,bracket:aBracket,champ:aChamp};
+
+/* ===================== ⚔️ 청·홍 대결 (v1.7.15 품새 토너먼트 새 전광판) =====================
+   - 경기 중: 왼쪽 청 · 오른쪽 홍, 가운데 금색 띠에 「몇 강 · 지정 품새 · 시간」
+   - 점수 공개: 심판 카드가 한꺼번에 뒤집히고 → 최고·최저(정확성·표현성 따로) 줄 긋기 → 최종 점수
+     → 이긴 쪽이 화면 2/3로 커지며 금색 「승」 · 반짝이 · 소리 (동점이면 「재경기」)
+   - 경기 사이: 대진표 — 이긴 선수가 다음 칸으로 넘어감 · 결승이 끝나면 우승 화면 */
+const DZ_WIN=3200;
+const dzRound=m=>{const t=String(m.round||m.label||'');const r=/(준결승|결승|\d+\s*강)/.exec(t);return r?r[1].replace(/\s/g,''):t.split('·')[0].trim();};
+const dzRoundEn=t=>/준결/.test(t)?'SEMI-FINAL':/결승/.test(t)?'FINAL':/(\d+)강/.test(t)?'ROUND OF '+(/(\d+)강/.exec(t)[1]):'';
+function dzTop(m){const v=arEv(m.div);return `<div class="dz-top"><div class="dz-court">${m.court?`<b>${E(m.court)}</b><span>COURT</span>`:''}</div>
+  <div class="dz-ev"><h2 style="font-size:${U(fit(m.div||m.comp,52,26))}">${E(m.div||m.comp||'')}</h2><span>${E(v.en||'POOMSAE TOURNAMENT')}</span></div><div class="dz-comp">${E(m.comp||'')}</div></div>`;}
+function dzBand(m,res){const rd=dzRound(m),pl=m.pl||[];
+  return `<div class="dz-band"><div class="dz-rd"><span>${E(dzRoundEn(rd))}</span><b style="font-size:${U(fit(rd,96,3))}">${E(rd||'대결')}</b></div>
+    ${pl.length?`<div class="dz-pl"><small>지정 품새</small>${pl.map(p=>`<div class="dz-pi ${p.on&&pl.length>1?'on':''}">${pl.length>1?`<i>${E(p.lab)}</i>`:''}<b style="font-size:${U(fit(p.nm,40,5))}">${E(p.nm)}</b></div>`).join('')}</div>`:''}
+    ${res?`<div class="dz-vs">판정</div>`:`<div class="dz-tm timer" data-timer>${E(m.timer||'')}</div>`}</div>`;}
+const f1=v=>v==null?'—':(+v).toFixed(1);
+function dzSide(s,m,res){const b=s.side==='blue',w=res&&s.win,l=res&&s.lose,tie=res&&m.win==='tie';
+  const cards=res?(s.js||[]).map((j,i)=>`<div class="dz-card" style="--i:${i}"><div class="dz-cin"><div class="dz-back"><span>${b?'청':'홍'}</span></div>
+      <div class="dz-face"><small>${j.n}심</small><div class="dz-v ${j.dA?'drop':''}"><i>정확</i><b>${f1(j.a)}</b></div><div class="dz-v ${j.dB?'drop':''}"><i>표현</i><b>${f1(j.b)}</b></div></div></div></div>`).join('')
+    :(s.live||[]).map(j=>`<span class="dz-jd ${j.ok?'ok':''}">${j.n}</span>`).join('');
+  const r=s.res;
+  return `<div class="dz-side ${b?'blue':'red'} ${w?'win':''} ${l?'lose':''}">
+    <div class="dz-hd"><b>${b?'청':'홍'}</b><span>${b?'BLUE':'RED'}</span></div>
+    <div class="dz-who"><div class="dz-nm" style="font-size:${U(fit(s.name,res?110:150,4))}">${E(s.name)}</div><div class="dz-tmn">${E(s.team)}</div></div>
+    ${res?`<div class="dz-cards">${cards}</div>
+      <div class="dz-fin"><b>${r?(+r.final).toFixed(2):'—'}</b><small>${r?(r.parts?`1품새 ${(+r.parts[0]).toFixed(2)} · 2품새 ${(+r.parts[1]).toFixed(2)}`:`정확성 ${(+r.a).toFixed(2)} · 표현성 ${(+r.b).toFixed(2)}`)+(r.ded?` · 감점 −${(+r.ded).toFixed(1)}`:''):''}</small></div>
+      ${w?`<div class="dz-win"><b>승</b><span>WINNER</span></div><div class="dz-spk">${Array.from({length:26},(_,k)=>`<i style="--x:${(k*37)%100}%;--y:${(k*61)%92}%;--k:${k}"></i>`).join('')}</div>`:''}
+      ${tie?'<div class="dz-tie">동점</div>':''}`
+    :`<div class="dz-jds">${cards}</div>`}</div>`;}
+function dDuel(m){const [b,r]=m.sides;return `${dzTop(m)}<div class="dz-stage">${dzSide(b,m,false)}${dzBand(m,false)}${dzSide(r,m,false)}</div>${dzNext(m)}`;}
+function dRes(m){const [b,r]=m.sides;return `${dzTop(m)}<div class="dz-stage res ${m.win==='blue'||m.win==='red'?'decided w-'+m.win:''}">${dzSide(b,m,true)}${dzBand(m,true)}${dzSide(r,m,true)}</div>
+  ${m.win==='tie'||!m.win?`<div class="dz-note">${E(m.note||'')}</div>`:m.why?`<div class="dz-note dzw">${E(m.why)}</div>`:''}${dzNext(m)}`;}
+const dzNext=m=>m.next&&m.next.who?`<div class="dz-next"><span>NEXT</span>${E(m.next.who)}${m.next.label?` · <small>${E(m.next.label)}</small>`:''}</div>`:'';
+function dBracket(m){const rs=m.rounds||[],R=rs.length;if(!R)return dzTop(m);const x=rs.flat().find(q=>q.cur),cr=x?x.r-1:0;
+  const from=rs[0].length>8?Math.max(0,Math.min(cr,R-3)):0,cols=rs.slice(from),ws=x&&x.win?x[x.win]:null,nx=x?(rs[x.r]||[])[Math.floor(x.i/2)]:null;
+  const slot=(q,sd,ri)=>{const p=q[sd],sc=sd==='blue'?q.bS:q.rS,adv=nx&&q===nx&&ws&&p&&p.name===ws.name;
+    return `<div class="dz-bs ${sd} ${q.win===sd?'w':q.win?'l':''} ${adv?'adv':''}"><i></i><b>${p?E(p.name):'—'}</b><small>${sc!=null?(+sc).toFixed(2):p?E(p.team||''):''}</small></div>`;};
+  const col=(ms,k)=>{const ri=from+k;return `<div class="dz-bc"><div class="dz-bch">${E(g('roundName')?g('roundName')(ri+1,R):'')}</div><div class="dz-bcl">${ms.map(q=>`<div class="dz-bm ${q.cur?'now':''} ${nx===q?'nx':''}">${slot(q,'blue',ri)}${slot(q,'red',ri)}</div>`).join('')}</div></div>`;};
+  return `${dzTop(m)}<div class="dz-bkhero">${ws?`<span class="dz-dot ${x.win}"></span><b>${E(ws.name)}</b><span>${x.r===R-1?'결승 진출':'다음 경기 진출'}</span>`:`<b>${E(m.round||'')} 경기 마침</b>`}</div>
+    <div class="dz-bk" style="--c:${cols.length};--sh:${U(Math.max(24,Math.min(52,(720/Math.max(1,cols[0].length)-14)/2)))};--fs:${U(Math.max(17,Math.min(28,(720/Math.max(1,cols[0].length)-14)/2*0.56)))}">${cols.map(col).join('')}</div>${dzNext(m)}`;}
+function dChamp(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
+  return `${dzTop(m)}<div class="dz-champ"><div class="dz-spk all">${Array.from({length:40},(_,k)=>`<i style="--x:${(k*37)%100}%;--y:${(k*53)%96}%;--k:${k}"></i>`).join('')}</div>
+    <span class="dz-cl">CHAMPION · 우승</span><div class="dz-cn" style="font-size:${U(fit(m.champ.name,200,4))}">${E(m.champ.name)}</div><div class="dz-ct">${E(m.champ.team||'')}${p?` · 결승 ${(+p.me).toFixed(2)} : ${(+p.op).toFixed(2)}`:''}</div>
+    <div class="dz-pods"><div><i class="s">은</i><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></div>${(m.thirds||[]).map(t=>`<div><i class="b">동</i><b>${E(t.name)}</b><small>${E(t.team||'')}</small></div>`).join('')}</div></div>${dzNext(m)}`;}
+const DSCR={duel:dDuel,duelres:dRes,bracket:dBracket,champ:dChamp};
+/* 「승」 소리: 점수 공개 뒤 DZ_WIN ms · 우승 화면 · 같은 경기에 한 번만 */
+const DZ_PLAYED=new Set();
+function dzAudio(){let a=null;try{a=g('audioCtx');if(!a){const u=g('unlockAudio');if(u)u();a=g('audioCtx');}}catch(e){}return a;}
+function dzFan(big){const a=dzAudio();if(!a)return;try{if(a.state==='suspended')a.resume();const t0=a.currentTime+.02,N=big?[523,659,784,1047,1319]:[523,659,784,1047];
+  N.forEach((f,i)=>{const o=a.createOscillator(),gn=a.createGain();o.type='triangle';o.frequency.value=f;const t=t0+i*.11;gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(.2,t+.02);gn.gain.exponentialRampToValueAtTime(.001,t+(i===N.length-1?1.4:.5));o.connect(gn).connect(a.destination);o.start(t);o.stop(t+1.5);});
+  for(let k=0;k<10;k++){const o=a.createOscillator(),gn=a.createGain(),t=t0+.45+k*.07;o.type='sine';o.frequency.value=2000+((k*397)%1400);gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(.05,t+.01);gn.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(gn).connect(a.destination);o.start(t);o.stop(t+.3);}}catch(e){}}
+function dzSound(m){const k=m.key||'';if(DZ_PLAYED.has(k))return;
+  if(m.scr==='duelres'&&(m.win==='blue'||m.win==='red')){const el=m.el||0;if(el>DZ_WIN+1500){DZ_PLAYED.add(k);return;}DZ_PLAYED.add(k);setTimeout(()=>dzFan(false),Math.max(0,DZ_WIN+100-el));}
+  else if(m.scr==='champ'){DZ_PLAYED.add(k);if((m.el2||0)<1500)setTimeout(()=>dzFan(true),300);}
+  if(DZ_PLAYED.size>60)DZ_PLAYED.delete(DZ_PLAYED.values().next().value);}
 /* ---------- 겨루기 ---------- */
 function arKy(orig){const L=g('live')&&g('live')();if(!L)return null;const st=g('ST')(),set=g('SET')(),EN=g('eng')(),sc=g('shownScore')(L,EN),gj=g('shownGj')(L,EN),res=L.result,ph=L.phase,bo3=set.system==='bo3';
   const mmss=g('mmss'),remain=g('remain'),rl=g('roundLabel')||(r=>r+'회전');
@@ -185,7 +242,7 @@ function install(){const cur=window.vDisplay;if(typeof cur!=='function')return f
   if(!cur.__ksb)return false;if(APP==='poomsae'&&!cur.__kst)return false;   /* 금빛 전광판·테마를 감싼 다음에 */
   const w=function(){try{let c=null;try{c=g('curOf')();}catch(e){}const th=skinFor(c);
       if(th==='arena'&&APP==='kyorugi'){const h=arKy(cur);if(h)return h;}
-      else if(th==='arena'&&c&&(c.entries||[]).length===2){const m=arTourModel();if(m){const h=draw(th,m);if(h)return h;}}
+      else if((th==='arena'||th==='duel')&&c&&(c.entries||[]).length===2){const m=arTourModel();if(m){const h=draw(th,m);if(h)return h;}}
       else if(th){const m=APP==='poomsae'?modelPm():modelGp();if(m){if(th==='arena')arExtra(m);const h=draw(th,m);if(h)return h;}}}catch(e){console.error('[KS_SKIN]',e);}
     return cur.apply(this,arguments);};
   w.__sk=true;w.__ksb=true;w.__kst=true;window.vDisplay=w;try{g('render')();}catch(e){}return true;}
@@ -193,7 +250,7 @@ function install(){const cur=window.vDisplay;if(typeof cur!=='function')return f
 function panel(){const B=by();return `<div class="panel sk-setp"><h2>${APP==='kyorugi'?'겨루기 전광판 디자인':'전광판 디자인 (종목별)'}</h2>
   ${APP==='kyorugi'?'':`<span class="small muted">컷오프 종목의 관중용 전광판 모양을 종목마다 고릅니다. 점수 화면은 이름·점수만 가운데 크게, 그다음 순위 화면에 1·2·3위를 가운데 크게 보여 줍니다. 「기존 디자인」은 지금까지의 전광판(위 「전광판 디자인」)을 그대로 씁니다.${APP==='poomsae'?' 토너먼트(청·홍)는 「기존」이면 위 「전광판 디자인」을 따릅니다.':''}</span>`}
   <span class="small muted">🏟 경기장: 세계 대회 경기장 화면처럼 짙은 남색 바탕에 이름·점수를 크게, 왼쪽 코트 색 띠, 아래에 현재 순위·다음 선수를 보여 줍니다. 효과음·점수 효과는 그대로입니다.</span>
-  ${ROWS.map(([k,l])=>`<div class="field"><span class="label">${l}</span><div class="seg">${(k==='tour'||k==='kyorugi'?SKINS2:SKINS).map(([v,t])=>`<button class="${(B[k]||'')===v?'on':''}" data-skset="${k}" data-v="${v}">${t}</button>`).join('')}</div></div>`).join('')}</div>`;}
+  ${ROWS.map(([k,l])=>`<div class="field"><span class="label">${l}</span><div class="seg">${(k==='tour'?SKINS_T:k==='kyorugi'?SKINS2:SKINS).map(([v,t])=>`<button class="${(B[k]||'')===v?'on':''}" data-skset="${k}" data-v="${v}">${t}</button>`).join('')}</div></div>`).join('')}</div>`;}
 function installSet(){const o=window.aSettings;if(typeof o!=='function')return false;if(o.__sk)return true;
   const w=function(){const h=o.apply(this,arguments);try{return panel()+h;}catch(e){return h;}};w.__sk=true;
   for(const k of ['__ksfx','__kst'])if(o[k])w[k]=true;window.aSettings=w;return true;}
@@ -437,6 +494,88 @@ body.disp .board.sk-arena .side.win .vfinal.ar-sbig{-webkit-text-fill-color:#E2C
 .board.ky.ar .ar-rlog span.b{border-color:#1F6BFF;box-shadow:inset ${U(4)} 0 0 #1F6BFF}.board.ky.ar .ar-rlog span.r{border-color:#F0353F;box-shadow:inset ${U(4)} 0 0 #F0353F}
 .board.ky.ar .ksb-top,.board.ky.ar .ksb-bot,.board.ky.ar .ksb-wm{display:none}
 @keyframes arin{from{opacity:0;transform:translateY(${U(14)})}to{opacity:1;transform:none}}
+/* ⚔️ 청·홍 대결 (v1.7.15) */
+.board.sk-duel{background:#07080C}
+.sk-duel .sk-bg{background:radial-gradient(120% 80% at 50% 0%,#1A1A22,#06070A)}
+.sk-duel .dz-top{position:absolute;left:0;right:0;top:0;height:${U(118)};display:grid;grid-template-columns:${U(220)} 1fr ${U(420)};align-items:center;padding:0 ${U(40)};background:linear-gradient(180deg,#14141B,#0B0B10);border-bottom:${U(4)} solid #C9A262}
+.sk-duel .dz-court{display:flex;align-items:baseline;gap:${U(10)}}.sk-duel .dz-court b{font:900 ${U(70)} Archivo,"Noto Sans KR",sans-serif;color:#F2D27A;line-height:1}.sk-duel .dz-court span{font:800 ${U(18)} Archivo,sans-serif;letter-spacing:.2em;color:#9C8A66}
+.sk-duel .dz-ev{text-align:center;min-width:0}.sk-duel .dz-ev h2{margin:0;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}.sk-duel .dz-ev span{display:block;font:700 ${U(18)} Archivo,sans-serif;letter-spacing:.24em;color:#C9A262;margin-top:${U(4)}}
+.sk-duel .dz-comp{text-align:right;font-size:${U(22)};color:#B9B2A2;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sk-duel .dz-stage{position:absolute;left:0;right:0;top:${U(122)};bottom:${U(70)};display:flex}
+.sk-duel .dz-side{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;padding:${U(30)} ${U(30)} ${U(24)};overflow:hidden;transition:none}
+.sk-duel .dz-side.blue{background:linear-gradient(160deg,#1C5BD8 0%,#0D2F86 45%,#061436 100%)}
+.sk-duel .dz-side.red{background:linear-gradient(200deg,#E0323F 0%,#8E1220 45%,#3A050C 100%)}
+.sk-duel .dz-side::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 ${U(2)},transparent ${U(2)} ${U(26)});pointer-events:none}
+.sk-duel .dz-hd{display:flex;align-items:baseline;gap:${U(14)};z-index:1}.sk-duel .dz-hd b{font:900 ${U(78)} "Black Han Sans","Noto Sans KR",sans-serif;line-height:1}.sk-duel .dz-hd span{font:800 ${U(26)} Archivo,sans-serif;letter-spacing:.3em;opacity:.8}
+.sk-duel .dz-who{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:1;min-height:0;text-align:center}
+.sk-duel .dz-nm{font-weight:900;line-height:1.05;white-space:nowrap;text-shadow:0 ${U(6)} ${U(24)} rgba(0,0,0,.45)}.sk-duel .dz-tmn{font-size:${U(40)};font-weight:700;opacity:.88;margin-top:${U(10)}}
+.sk-duel .dz-jds{display:flex;gap:${U(14)};z-index:1;margin-bottom:${U(20)}}.sk-duel .dz-jd{width:${U(70)};height:${U(70)};border-radius:50%;display:grid;place-items:center;font:900 ${U(30)} Archivo,sans-serif;border:${U(4)} solid rgba(255,255,255,.35);color:rgba(255,255,255,.55)}
+.sk-duel .dz-jd.ok{background:#fff;color:#111;border-color:#fff;box-shadow:0 0 ${U(20)} rgba(255,255,255,.6)}
+.sk-duel .dz-band{flex:0 0 ${U(300)};z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:${U(30)};padding:${U(20)} ${U(14)};color:#1C1405;
+  background:linear-gradient(180deg,#F6DE97 0%,#D7AE5C 40%,#B8862E 70%,#E9C877 100%);box-shadow:0 0 ${U(50)} rgba(242,210,122,.45),inset 0 0 0 ${U(3)} rgba(255,255,255,.35)}
+.sk-duel .dz-rd{text-align:center}.sk-duel .dz-rd span{display:block;font:800 ${U(18)} Archivo,sans-serif;letter-spacing:.22em;opacity:.75}.sk-duel .dz-rd b{display:block;font-family:"Black Han Sans","Noto Sans KR",sans-serif;line-height:1.05}
+.sk-duel .dz-pl{display:flex;flex-direction:column;gap:${U(10)};align-items:stretch;width:100%}.sk-duel .dz-pl>small{text-align:center;font-weight:900;font-size:${U(22)};letter-spacing:.1em;opacity:.8}
+.sk-duel .dz-pi{background:rgba(28,20,5,.12);border-radius:${U(14)};padding:${U(10)} ${U(8)};text-align:center;border:${U(3)} solid transparent}.sk-duel .dz-pi i{display:block;font-style:normal;font-weight:800;font-size:${U(18)};opacity:.75}.sk-duel .dz-pi b{display:block;font-weight:900;line-height:1.15}
+.sk-duel .dz-pi.on{background:#1C1405;color:#F6DE97;border-color:#1C1405}
+.sk-duel .dz-tm{font:900 ${U(76)} Archivo,sans-serif;font-variant-numeric:tabular-nums;font-stretch:80%}.sk-duel .dz-vs{font:900 ${U(46)} "Black Han Sans","Noto Sans KR",sans-serif}
+.sk-duel .dz-next{position:absolute;left:0;right:0;bottom:0;height:${U(70)};display:flex;align-items:center;justify-content:center;gap:${U(16)};background:#0B0B10;border-top:${U(3)} solid #3A3326;font-size:${U(30)};font-weight:800}
+.sk-duel .dz-next span{font:900 ${U(20)} Archivo,sans-serif;letter-spacing:.3em;color:#C9A262;border:${U(2)} solid #C9A262;padding:${U(3)} ${U(12)};border-radius:${U(8)}}.sk-duel .dz-next small{font-size:${U(24)};color:#B9B2A2}
+.sk-duel .dz-note{position:absolute;left:50%;bottom:${U(86)};transform:translateX(-50%);background:#1C1405;color:#F6DE97;font-size:${U(30)};font-weight:900;padding:${U(8)} ${U(28)};border-radius:${U(40)};border:${U(3)} solid #C9A262;z-index:5;white-space:nowrap;opacity:0;animation:dzIn .5s ease both calc(var(--t) + 3.4s)}
+/* 점수 공개: 카드 → 줄 긋기 → 최종 → 승 */
+.sk-duel .dz-cards{display:flex;gap:${U(12)};z-index:1;perspective:${U(1400)};margin:${U(6)} 0 ${U(10)}}
+.sk-duel .dz-card{width:${U(132)};height:${U(196)}}
+.sk-duel .dz-cin{position:relative;width:100%;height:100%;transform-style:preserve-3d;transform:rotateY(180deg);animation:dzFlip .7s cubic-bezier(.3,1.4,.5,1) forwards calc(var(--t) + .6s)}
+.sk-duel .dz-back,.sk-duel .dz-face{position:absolute;inset:0;border-radius:${U(16)};backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.sk-duel .dz-back{transform:rotateY(180deg);display:grid;place-items:center;background:repeating-linear-gradient(45deg,#C9A262 0 ${U(10)},#A9823F ${U(10)} ${U(20)});border:${U(4)} solid #F2D27A}.sk-duel .dz-back span{font:900 ${U(60)} "Black Han Sans",sans-serif;color:#1C1405}
+.sk-duel .dz-face{background:#FBF7EE;color:#14110A;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:${U(8)} ${U(4)};box-shadow:0 ${U(10)} ${U(26)} rgba(0,0,0,.4)}
+.sk-duel .dz-face>small{font:900 ${U(20)} "Noto Sans KR";color:#7A6A48}
+.sk-duel .dz-v{position:relative;display:flex;flex-direction:column;align-items:center;line-height:1}.sk-duel .dz-v i{font-style:normal;font-size:${U(16)};font-weight:800;color:#8A7C60}.sk-duel .dz-v b{font:900 ${U(50)} Archivo,sans-serif;font-variant-numeric:tabular-nums}
+.sk-duel .dz-v.drop::after{content:"";position:absolute;left:-${U(10)};right:-${U(10)};top:58%;height:${U(6)};background:#E5282F;border-radius:${U(3)};transform:scaleX(0) rotate(-12deg);transform-origin:left;animation:dzStrike .35s ease-out forwards calc(var(--t) + 1.7s)}
+.sk-duel .dz-v.drop b{animation:dzDim .3s forwards calc(var(--t) + 1.9s)}
+.sk-duel .dz-fin{z-index:1;text-align:center;opacity:0;animation:dzPop .55s cubic-bezier(.3,1.6,.5,1) both calc(var(--t) + 2.3s)}.sk-duel .dz-fin b{display:block;font:900 ${U(140)} Archivo,sans-serif;font-stretch:85%;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 ${U(30)} rgba(255,255,255,.35)}.sk-duel .dz-fin small{font-size:${U(26)};font-weight:700;opacity:.85}
+.sk-duel .dz-stage.decided .dz-side.win{animation:dzGrow .9s cubic-bezier(.5,0,.2,1) forwards calc(var(--t) + 3.2s)}
+.sk-duel .dz-stage.decided .dz-side.lose{animation:dzLose .9s ease forwards calc(var(--t) + 3.2s)}
+.sk-duel .dz-side.win .dz-fin b{animation:dzGold .6s forwards calc(var(--t) + 3.4s)}
+.sk-duel .dz-win{position:absolute;right:${U(30)};top:${U(24)};z-index:4;text-align:center;opacity:0;animation:dzStamp .6s cubic-bezier(.2,1.6,.4,1) forwards calc(var(--t) + 3.5s)}
+.sk-duel .dz-side.blue.win .dz-win{right:auto;left:${U(30)}}
+.sk-duel .dz-win b{display:block;font:900 ${U(190)} "Black Han Sans","Noto Sans KR",sans-serif;line-height:1;background:linear-gradient(180deg,#FFF3C4,#F2D27A 40%,#B8862E 75%,#FFE7A3);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 ${U(6)} ${U(10)} rgba(0,0,0,.55)) drop-shadow(0 0 ${U(30)} rgba(242,210,122,.7))}
+.sk-duel .dz-win span{font:900 ${U(28)} Archivo,sans-serif;letter-spacing:.35em;color:#F6DE97}
+.sk-duel .dz-spk{position:absolute;inset:0;z-index:2;pointer-events:none}.sk-duel .dz-spk i{position:absolute;left:var(--x);top:var(--y);width:${U(26)};height:${U(26)};opacity:0;
+  background:radial-gradient(circle,#FFF 0 12%,#FFE7A3 20%,transparent 62%);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);
+  animation:dzTw 1.6s ease-in-out infinite calc(var(--t) + 3.5s + var(--k)*.13s)}
+.sk-duel .dz-tie{position:absolute;inset:auto 0 ${U(30)} 0;text-align:center;font:900 ${U(60)} "Black Han Sans",sans-serif;color:#F6DE97;opacity:0;animation:dzIn .5s forwards calc(var(--t) + 3.2s)}
+@keyframes dzFlip{to{transform:rotateY(0)}}@keyframes dzStrike{to{transform:scaleX(1) rotate(-12deg)}}@keyframes dzDim{to{opacity:.35}}
+@keyframes dzPop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}@keyframes dzIn{from{opacity:0;transform:translate(-50%,${U(16)})}to{opacity:1;transform:translate(-50%,0)}}
+.sk-duel .dz-tie{animation-name:dzFade}@keyframes dzFade{to{opacity:1}}
+@keyframes dzGrow{to{flex-grow:2}}@keyframes dzShrink{to{transform:scale(.7)}}
+.sk-duel .dz-stage.decided .dz-side.lose .dz-cards{animation:dzShrink .9s ease forwards calc(var(--t) + 3.2s)}@keyframes dzLose{to{flex-grow:.9;filter:saturate(.35) brightness(.55)}}
+@keyframes dzGold{to{color:#FFE7A3;text-shadow:0 0 ${U(40)} rgba(242,210,122,.9)}}
+@keyframes dzStamp{from{opacity:0;transform:scale(2.6) rotate(-14deg)}to{opacity:1;transform:scale(1) rotate(-6deg)}}
+@keyframes dzTw{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1.2) rotate(45deg)}}
+/* 대진표 */
+.sk-duel .dz-bkhero{position:absolute;left:0;right:0;top:${U(140)};display:flex;justify-content:center;align-items:center;gap:${U(18)};font-size:${U(54)};font-weight:900;animation:dzPop .6s both var(--t)}
+.sk-duel .dz-bkhero>span:last-child{font-size:${U(32)};color:#1C1405;background:linear-gradient(180deg,#F6DE97,#B8862E);padding:${U(6)} ${U(22)};border-radius:${U(40)}}
+.sk-duel .dz-dot{width:${U(34)};height:${U(34)};border-radius:50%}.sk-duel .dz-dot.blue{background:#2F6BFF}.sk-duel .dz-dot.red{background:#E5323F}
+.sk-duel .dz-bk{position:absolute;left:${U(60)};right:${U(60)};top:${U(240)};bottom:${U(100)};display:grid;grid-template-columns:repeat(var(--c),1fr);gap:${U(40)}}
+.sk-duel .dz-bc{display:flex;flex-direction:column;min-height:0}.sk-duel .dz-bch{text-align:center;font-weight:900;font-size:${U(30)};color:#F2D27A;margin-bottom:${U(10)};border-bottom:${U(3)} solid #3A3326;padding-bottom:${U(6)}}
+.sk-duel .dz-bcl{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:${U(6)};min-height:0}
+.sk-duel .dz-bm{border-radius:${U(14)};overflow:hidden;border:${U(3)} solid #2A2A33;background:#111118}
+.sk-duel .dz-bm.now{border-color:#F2D27A;box-shadow:0 0 ${U(24)} rgba(242,210,122,.45)}.sk-duel .dz-bm.nx{border-color:#C9A262}
+.sk-duel .dz-bs{display:flex;align-items:center;gap:${U(12)};padding:0 ${U(14)};font-size:var(--fs);height:var(--sh)}.sk-duel .dz-bs+.dz-bs{border-top:${U(2)} solid #24242C}
+.sk-duel .dz-bs>i{flex:none;width:${U(14)};align-self:stretch;border-radius:${U(4)}}.sk-duel .dz-bs.blue>i{background:#2F6BFF}.sk-duel .dz-bs.red>i{background:#E5323F}
+.sk-duel .dz-bs b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:900}.sk-duel .dz-bs small{font-size:calc(var(--fs)*.78);opacity:.75;font-variant-numeric:tabular-nums}
+.sk-duel .dz-bs.w{background:linear-gradient(90deg,rgba(242,210,122,.28),transparent)}.sk-duel .dz-bs.w b{color:#FFE7A3}.sk-duel .dz-bs.l{opacity:.4}.sk-duel .dz-bs.l b{text-decoration:line-through}
+.sk-duel .dz-bs.adv{animation:dzAdv 1.1s cubic-bezier(.3,1.3,.5,1) both calc(var(--t) + .9s)}
+@keyframes dzAdv{0%{opacity:0;transform:translateX(-${U(260)})}60%{opacity:1;background:rgba(242,210,122,.6)}100%{opacity:1;transform:none;background:linear-gradient(90deg,rgba(242,210,122,.35),transparent)}}
+/* 우승 */
+.sk-duel .dz-champ{position:absolute;left:0;right:0;top:${U(118)};bottom:${U(70)};display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(60% 70% at 50% 45%,rgba(242,210,122,.28),transparent 70%)}
+.sk-duel .dz-champ .dz-spk i{animation-delay:calc(var(--t) + var(--k)*.11s)}
+.sk-duel .dz-cl{font:900 ${U(34)} Archivo,"Noto Sans KR",sans-serif;letter-spacing:.3em;color:#F2D27A;animation:dzPop .6s both var(--t)}
+.sk-duel .dz-cn{font-weight:900;line-height:1.1;background:linear-gradient(180deg,#FFF3C4,#F2D27A 45%,#B8862E);-webkit-background-clip:text;background-clip:text;color:transparent;animation:dzPop .8s cubic-bezier(.3,1.5,.5,1) both calc(var(--t) + .3s)}
+.sk-duel .dz-ct{font-size:${U(40)};font-weight:700;opacity:.9;margin-top:${U(8)}}
+.sk-duel .dz-pods{display:flex;gap:${U(30)};margin-top:${U(50)}}.sk-duel .dz-pods>div{display:flex;align-items:center;gap:${U(14)};background:#14141B;border:${U(2)} solid #3A3326;border-radius:${U(18)};padding:${U(14)} ${U(26)};animation:dzPop .5s both calc(var(--t) + 1s)}
+.sk-duel .dz-pods i{font-style:normal;width:${U(60)};height:${U(60)};border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:${U(28)};color:#111}.sk-duel .dz-pods i.s{background:linear-gradient(180deg,#F1F1F1,#A9A9A9)}.sk-duel .dz-pods i.b{background:linear-gradient(180deg,#E6A877,#9A5A2A)}
+.sk-duel .dz-pods b{font-size:${U(38)};font-weight:900}.sk-duel .dz-pods small{font-size:${U(24)};opacity:.75}
 @media (prefers-reduced-motion:reduce){.board.sk *,.board.ky.ar *{animation:none!important}}
 `;
 const st=document.createElement('style');st.id='ks-skin-css';st.textContent=css;(document.head||document.documentElement).appendChild(st);
