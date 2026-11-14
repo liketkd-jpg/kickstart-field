@@ -2932,7 +2932,7 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
     const warn=(hqs.length>1?`<div class="mdw">⚠ 본부 노트북이 ${hqs.length}대 켜져 있습니다 (${hqs.map(esc).join(' · ')}). 두 본부가 서로 모드를 바꾸면 코트가 왔다 갔다 합니다 · 한 대는 첫 화면에서 「코트」로 바꾸거나 꺼 주세요.</div>`:'')+(bad.length?`<div class="mdw">⏳ ${bad.map(c=>esc(c.court)).join('·')}코트가 아직 본부와 모드가 다릅니다 · 몇 초 안에 저절로 맞춰집니다 (계속 다르면 그 노트북을 새 버전으로 업데이트)</div>`:'');
     const h=`<div class="mdk"><span class="mdnow">지금은 <b>${live?'🏁 실제 대회':'🧪 시험 모드'}</b></span><small>${live?'실제 대회 기록입니다 · 초기화·명단 지우기·가상 경기 단추가 잠겨 있고, 자동 업데이트를 하지 않습니다':'연습 기록입니다 · 모든 화면에 「시험 중」이 표시됩니다 · 대회를 시작할 때 오른쪽 「실제 대회로 바꾸기」를 누르세요'}</small>${chips}${warn}</div>
       <div class="mdsw"><button class="upd ${M.update?'':'off'}" data-md="upd" title="프로그램을 켤 때 새 버전을 받을지">${M.update?'🔄 자동 업데이트 켜짐':'⏸ 자동 업데이트 멈춤'}</button>
-      ${live?`<button class="wipe" data-md="prewipe" title="가상 경기로 생긴 점수·결과·메달 집계를 모든 코트에서 지웁니다 · 명단은 그대로 · 실제 경기 점수가 있는 코트는 지우지 않습니다">${PREARM?'한 번 더 누르면 지웁니다':'🏅 경기 전 기록 지우기'}</button><button class="back" data-md="test">🧪 시험 모드로 바꾸기 →</button>`:'<button class="go" data-md="live">🏁 실제 대회로 바꾸기 →</button><button class="wipe" data-md="wipe" title="모든 코트의 명단·대진·점수·결과와 운영표를 한 번에 지웁니다 (먼저 백업)">🧹 전체 초기화</button>'}</div>`;
+      ${live?`<button class="wipe" data-md="prewipe" title="가상 경기로 생긴 점수·결과·메달 집계를 모든 코트에서 지웁니다 · 명단은 그대로 · 실제 경기 점수가 있는 코트는 지우지 않습니다">${PREARM?'한 번 더 누르면 지웁니다':'🏅 경기 전 기록 지우기'}</button><button class="wipe" data-md="clr" title="모든 코트의 점수·결과를 실제 점수까지 모두 지웁니다 · 명단·대진은 그대로 (먼저 백업)">🗑 모든 경기 기록 지우기</button><button class="back" data-md="test">🧪 시험 모드로 바꾸기 →</button>`:'<button class="go" data-md="live">🏁 실제 대회로 바꾸기 →</button><button class="wipe" data-md="clr" title="모든 코트의 점수·결과만 지웁니다 · 명단·대진은 그대로 (먼저 백업)">🗑 경기 기록만 지우기</button><button class="wipe" data-md="wipe" title="모든 코트의 명단·대진·점수·결과와 운영표를 한 번에 지웁니다 (먼저 백업)">🧹 전체 초기화</button>'}</div>`;
     if(!el){el=document.createElement('div');el.id='mdbar';host.parentNode.insertBefore(el,host);}
     el.className='mdbar '+(live?'live':'test');if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h;}}
   function warnList(){const C=window.KS_HQCHECK?KS_HQCHECK():{rows:[],hq:{}},W=[];
@@ -2960,13 +2960,21 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
         <div class="mdwarn"><b>⚠ 되돌리려면</b> 백업 폴더의 파일로 「백업과 복구」를 해야 합니다. 꺼져 있는 코트 노트북은 지워지지 않으니, 모든 코트가 연결된 상태에서 하세요.</div>
         ${RES?`<div class="mdres">${RES}</div>`:''}
         <div class="row"><button class="ghost" data-md="x">닫기</button><button class="primary" style="background:${WIPEARM?'#B3261E':'#7A2A24'}" data-md="gowipe">${WIPEARM?'⚠ 한 번 더 누르면 지웁니다':'전체 초기화 (백업 후 지우기)'}</button></div></div>`;}
-    else if(OPEN==='wiped'){ov.innerHTML=`<div class="mdpn"><h2>🧹 전체 초기화를 마쳤습니다</h2><div class="mdres">${RES}</div><div class="row"><button class="primary" data-md="reload">확인 (화면 새로 고침)</button></div></div>`;}
+    else if(OPEN==='clr'){ov.innerHTML=`<div class="mdpn"><h2>🗑 모든 경기 기록 지우기</h2>
+        <ol><li>본부와 연결된 모든 코트 노트북이 지금 데이터를 <b>「대회결과 → 백업 → 경기기록지우기_시각」</b> 폴더에 먼저 백업합니다.</li>
+          <li><b>모든 코트</b>의 품새·격파·겨루기 <b>점수 · 결과 · 지정 품새 추첨 · 진행 상태 · 예선→결선 진행</b>을 지웁니다. <b>실제 경기 점수도 지웁니다.</b></li>
+          <li><b>본부</b>의 호출 기록 · 시상 기록 · 대기실 연락 · 출석을 지우고, 메달 집계가 0이 됩니다.</li>
+          <li>그대로 두는 것: <b>명단 · 대진(부문) · 종목별 경기 규칙</b> · 대회 설정 · 허가 코드 · 음악 · 실제/시험 모드.</li></ol>
+        <div class="mdwarn"><b>⚠ 대회가 시작된 뒤에는 누르지 마세요.</b> 되돌리려면 백업 폴더의 파일로 「백업과 복구」를 해야 합니다. 꺼져 있는 코트 노트북은 지워지지 않으니, 모든 코트가 연결된 상태에서 하세요.</div>
+        ${RES?`<div class="mdres">${RES}</div>`:''}
+        <div class="row"><button class="ghost" data-md="x">닫기</button><button class="primary" style="background:${WIPEARM?'#B3261E':'#7A2A24'}" data-md="goclr">${WIPEARM?'⚠ 한 번 더 누르면 지웁니다':'모든 경기 기록 지우기 (백업 후)'}</button></div></div>`;}
+    else if(OPEN==='wiped'){ov.innerHTML=`<div class="mdpn"><h2>🧹 지우기를 마쳤습니다</h2><div class="mdres">${RES}</div><div class="row"><button class="primary" data-md="reload">확인 (화면 새로 고침)</button></div></div>`;}
     else if(OPEN==='done'){ov.innerHTML=`<div class="mdpn"><h2>${M&&M.mode==='live'?'🏁 실제 대회 모드입니다':'🧪 시험 모드입니다'}</h2><div class="mdres">${RES}</div><div class="row"><button class="primary" data-md="x">확인</button></div></div>`;}}
   async function post(b){const r=await fetch('/api/mode',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok)throw new Error(j.error||'바꾸지 못했습니다');return j;}
   const courtsTxt=j=>{const c=Object.entries(j.courts||{});return c.length?c.sort().map(([k,v])=>`${k}코트 ${v}`).join(' · '):'연결된 코트 없음';};
   document.addEventListener('click',async e=>{const b=e.target.closest('[data-md]');if(!b)return;const a=b.dataset.md;
     if(a==='x'){OPEN=null;RES='';modal();return;}
-    if(a==='live'||a==='test'||a==='wipe'){OPEN=a;RES='';WIPEARM=false;modal();return;}
+    if(a==='live'||a==='test'||a==='wipe'||a==='clr'){OPEN=a;RES='';WIPEARM=false;modal();return;}
     if(a==='reload'){location.reload();return;}
     /* v1.7.5 실제 대회 모드에서 경기 전 기록 지우기: 가상 경기 점수·결과·메달만 · 명단 그대로 · 실제 점수가 있는 코트는 코트가 거절 */
     if(a==='prewipe'){if(!PREARM){PREARM=true;bar();clearTimeout(PRET);PRET=setTimeout(()=>{PREARM=false;bar();},6000);return;}
@@ -2976,6 +2984,13 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
         const cs=Object.entries(j.courts||{}).sort(),ok=cs.filter(x=>x[1]==='ok').length;
         toastMd(cs.length?`경기 전 기록 지우기: ${cs.map(([k,v])=>`${k}코트 ${v==='ok'?'✓':v==='끊김'?'✕ 끊김 (연결한 뒤 다시)':'✕ '+v}`).join(' · ')}${ok?' · 메달 집계가 곧 0으로 바뀝니다':''}`:'연결된 코트가 없습니다 · 코트 노트북을 본부에 연결한 뒤 다시 눌러 주세요');}
       catch(x){toastMd(x.message);}return;}
+    if(a==='goclr'){if(!WIPEARM){WIPEARM=true;modal();clearTimeout(WIPET);WIPET=setTimeout(()=>{WIPEARM=false;if(OPEN==='clr')modal();},6000);return;}
+      WIPEARM=false;b.disabled=true;b.textContent='백업하고 지우는 중…';
+      try{const r=await fetch('/api/hq/clearscores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:'경기 기록 지우기'})});const j=await r.json();if(!r.ok)throw new Error(j.error||'지우지 못했습니다');
+        try{window.KS_HQRESET&&KS_HQRESET();}catch(x){}
+        const cs=Object.entries(j.courts||{}).sort();
+        RES=`본부 백업: ${esc(j.backup||'-')}<br>코트: ${cs.length?cs.map(([k,v])=>`${esc(k)}코트 ${v==='ok'?'✓ 백업 후 지움':'✕ '+esc(v)}`).join(' · '):'연결된 코트 없음 (본부만 지웠습니다)'}<br>명단과 대진은 그대로입니다. 코트 운영석·전광판 화면은 저절로 처음 상태로 바뀝니다.`;OPEN='wiped';modal();}
+      catch(x){b.disabled=false;b.textContent='다시 시도';RES=esc(x.message);modal();}return;}
     if(a==='gowipe'){if(!WIPEARM){WIPEARM=true;modal();clearTimeout(WIPET);WIPET=setTimeout(()=>{WIPEARM=false;if(OPEN==='wipe')modal();},6000);return;}
       WIPEARM=false;b.disabled=true;b.textContent='백업하고 지우는 중…';
       try{const r=await fetch('/api/hq/wipe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:'전체 초기화'})});const j=await r.json();if(!r.ok)throw new Error(j.error||'지우지 못했습니다');
