@@ -334,6 +334,9 @@ body.nxm{background:#0B0D12}body.nxm header,body.nxm .tabs,body.nxm #hqtabs{disp
 .kn-names{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 12px;margin-top:8px}.kn-names span{font-size:20px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kn-names i{font-style:normal;display:inline-block;min-width:28px;color:#C9A262;font-size:15px}.kn-names small{margin-left:6px;font-size:13px;color:#A99F8C;font-weight:600}
 .kn.solo .kn-now b,.kn.solo .kn-next b{font-size:52px}.kn.solo .kn-who{font-size:46px}.kn.solo .kn-names{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.kn.solo .kn-names span{font-size:36px}.kn.solo .kn-names small{font-size:20px}.kn.solo .kn-soon{font-size:26px}
 .kn-mu{opacity:.4}
+.fl-pick{display:flex;gap:10px;flex-wrap:wrap}.fl-op{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;border-radius:14px;border:2px solid var(--line,#444);background:transparent;color:inherit;cursor:pointer;font:inherit;max-width:420px}
+.fl-op.on{border-color:var(--gold,#D4AF37);background:rgba(212,175,55,.12)}.fl-op b{font-size:16px}.fl-op small{width:100%;opacity:.7;font-size:12.5px;text-align:left}
+.fl-bx{display:inline-grid;grid-auto-flow:column;grid-template-rows:repeat(2,9px);gap:3px}.fl-bx i{width:9px;height:9px;border-radius:2px;background:currentColor;opacity:.75}.fl-ar{opacity:.6}.fl-md{font-size:18px}
 </style><link rel="stylesheet" href="/vendor/ks-lux.css"><link rel="stylesheet" href="/vendor/fonts/themes.css"><link rel="stylesheet" href="/vendor/hq-themes.css">
 
 <svg id="hqdefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ksGoldH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs></svg><header class="bar"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="ksword">KICKSTART<b>UP</b></span><span class="brand">대회 본부</span></header>
@@ -535,7 +538,7 @@ function rulesNow(){const r=RULES.r||{},o=rMerge(JSON.parse(JSON.stringify(RULED
 let RDRAFT=null,RSEL=null;
 const CUTL={rule:'규정 자동 (예선·본선·결선)',two:'예선 → 결선',final:'결선만'};
 function rSum(k,R){const T=R.poomsae.types,t=T[k];
-  if(k==='gyeokpa'){const G=R.gyeokpa;return `${G.judges}심 · ${G.preMin}명 이상 예선 · 조당 ${G.grpSize}명 · 결선 ${G.finalN}명`;}
+  if(k==='gyeokpa'){const G=R.gyeokpa,one=(G.flow||(Number(G.preMin)>=99?'one':'two'))==='one';return one?`${G.judges}심 · 한 번에 끝 (점수 순위)`:`${G.judges}심 · 예선(조당 ${G.grpSize}명) → 결선 ${G.finalN}명`;}
   if(k==='kyorugi'){const K=R.kyorugi;return `${K.refs}부심 · ${K.system==='sum'?'점수 합산':'3전 다승제'} · ${K.roundSec}초`;}
   const fm=(t.format||'cutoff')==='tournament'?'토너먼트':'컷오프';
   return `${fm}${fm==='컷오프'?' · '+(t.cut==='two'?`예선→결선 ${t.adv}명`:CUTL[t.cut||'rule'].split(' ')[0]):''} · ${t.judges}심${k==='recognized'?` · 품새 ${t.poomsae||1}개`:''}${t.max?` · ${t.min?mmssT(t.min)+'~':''}${mmssT(t.max)}`:''}${k==='recognized'&&t.pstage&&/-/.test(String(t.pstage))&&R.common.std==='comm'?' · 예선 '+String(t.pstage).replace('-','개 · 결선 ')+'개':''}`;}
@@ -565,10 +568,12 @@ function vRules(){const R=RDRAFT||rulesNow(),list=courtList().filter(c=>c.online
       <div class="rrow"><b>경기 방식</b><span class="chip ok">컷오프 · 경연 1회 (고정)</span></div>${stepRows()}
       <div class="rrow"><b>심판 수</b>${seg(P+'.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],t.judges)}</div>
       <div class="rrow"><b>연기 시간</b>${mmss(P+'.min',t.min)} ~ ${mmss(P+'.max',t.max)} <span class="small muted">${(t.sheet||'hm')==='wt'?(k==='gym'?'대회 규정: 1분 40초~2분 · 2분을 넘으면 한 번에 −5 (짧은 것은 감점 없음)':'대회 규정: 4분 이내 · 넘으면 한 번에 −5'):k==='gym'?'한마당 규정: 1분 50초~2분 · 벗어난 10초마다 −0.3':'벗어난 10초마다 −3.0 (한마당 종합경연) · 최소를 0분 0초로 두면 최대만 봅니다'}</span></div>`;
-    else if(k==='gyeokpa'){const G=R.gyeokpa;f=`<div class="rrow"><b>심판 수</b>${seg('gyeokpa.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],G.judges)}</div>
-      <div class="rrow"><b>예선을 치르는 인원</b>${numIn('gyeokpa.preMin',G.preMin)} 명 이상 <span class="small muted">그보다 적으면 예선 없이 결선만</span></div>
-      <div class="rrow"><b>예선 조당 최대 인원</b>${numIn('gyeokpa.grpSize',G.grpSize)} 명</div>
-      <div class="rrow"><b>결선 인원</b>${numIn('gyeokpa.finalN',G.finalN)} 명 <span class="small muted">조 수로 나눠 조별 진출 인원을 정합니다</span></div>
+    else if(k==='gyeokpa'){const G=R.gyeokpa,flow=G.flow||(Number(G.preMin)>=99?'one':'two'),box=n=>`<span class="fl-bx">${'<i></i>'.repeat(n)}</span>`;
+      f=`<div class="rrow"><b>심판 수</b>${seg('gyeokpa.judges',[[1,'1심'],[3,'3심'],[5,'5심'],[7,'7심']],G.judges)}</div>
+      <div class="rrow"><b>진행 방식</b><div class="fl-pick"><button class="fl-op ${flow==='one'?'on':''}" data-a="rSet" data-k="gyeokpa.flow" data-v="one">${box(4)}<span class="fl-ar">→</span><span class="fl-md">🏅</span><b>한 번에 끝</b><small>모두 한 번 · 점수 순위로 메달</small></button>
+        <button class="fl-op ${flow==='two'?'on':''}" data-a="rSet" data-k="gyeokpa.flow" data-v="two">${box(8)}<span class="fl-ar">→</span>${box(4)}<span class="fl-ar">→</span><span class="fl-md">🏅</span><b>예선 → 결선</b><small>예선 점수 위쪽만 결선</small></button></div></div>
+      ${flow==='two'?`<div class="rrow"><b>예선 조 인원</b>${seg('gyeokpa.grpSize',[4,6,8,10,12,16].map(x=>[x,x+'명']),G.grpSize)}<span class="small muted">한 조 최대 인원 · 많으면 조를 나눕니다</span></div>
+      <div class="rrow"><b>결선 인원</b>${seg('gyeokpa.finalN',[2,3,4,6,8].map(x=>[x,x+'명']),G.finalN)}<span class="small muted">조가 여럿이면 조마다 고르게 올라갑니다 · 결선 인원보다 적은 부문은 예선 없이 바로 결선</span></div>`:''}
       <div class="small muted">${C.std==='comm'?'생활체육 기준에서는 4명 1조로 나누어 조별로 진행합니다.':''}</div>`;}
     else if(k==='kyorugi'){const K=R.kyorugi;f=`<div class="rrow"><b>부심 수</b>${seg('kyorugi.refs',[[1,'1부심'],[2,'2부심'],[3,'3부심']],K.refs)}</div>
       <div class="rrow"><b>경기 방식</b>${seg('kyorugi.system',[['bo3','3전 다승제'],['sum','3회전 점수 합산']],K.system)}</div>
@@ -585,6 +590,8 @@ function rPath(o,p,v){const ks=p.split('.');let x=o;ks.slice(0,-1).forEach(k=>{x
 const rDraft=()=>{RDRAFT=RDRAFT||JSON.parse(JSON.stringify(rulesNow()));return RDRAFT;};
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
   if(a==='rSet'){const v=b.dataset.v,D=rDraft();rPath(D,b.dataset.k,v==='true'?true:v==='false'?false:/^\d+$/.test(v)?Number(v):v);
+    /* v1.7.10 격파 진행 방식 → 예선을 치르는 인원으로 바꿔 코트에 보냄 (한 번에 끝 = 예선 없음 · 예선→결선 = 결선 인원보다 많으면 예선) */
+    if(/^gyeokpa\.(flow|finalN)$/.test(b.dataset.k)){const G=D.gyeokpa;G.preMin=(G.flow||'two')==='one'?999:Math.max(2,(Number(G.finalN)||8)+1);}
     /* 대회 규정 양식을 고르면 규정 시간으로 (태권체조 1분 40초~2분 · 팀 경연 4분 이내) */
     const m=/^poomsae\.types\.(gym|team100)\.sheet$/.exec(b.dataset.k);if(m&&v==='wt'){const P='poomsae.types.'+m[1];if(m[1]==='gym'){rPath(D,P+'.min',100);rPath(D,P+'.max',120);}else{rPath(D,P+'.min',0);rPath(D,P+'.max',240);}}
     render();}
