@@ -313,6 +313,27 @@ details summary{cursor:pointer}
   body.prtst #prt .prtp{display:block;width:210mm;height:297mm;object-fit:contain;page-break-after:always;break-after:page}
   body.prtst #prt .prtp:last-child{page-break-after:auto;break-after:auto}}
 .vbox{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;background:var(--sunk,transparent)}
+.a-cres .a-crl{display:flex;flex-direction:column;gap:12px;overflow:hidden;padding-top:6px}
+.a-cr{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.18);animation:aCr .6s ease both}
+@keyframes aCr{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.a-crc{flex:none;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font:900 28px/1 "Noto Sans KR",sans-serif;color:#0B0F1A;background:var(--cc,#D4AF37)}
+.a-crb{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.a-crb>small{font-size:15px;color:#CFC6B4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.a-crp{display:flex;align-items:baseline;gap:8px;min-width:0;background:none!important}.a-crm{flex:none;font-weight:900;font-size:14px;width:32px;text-align:center;border-radius:7px;padding:2px 0;color:#1A1306}
+.acm1 .a-crm{background:linear-gradient(180deg,#FFE9A8,#D4AF37)}.acm2 .a-crm{background:linear-gradient(180deg,#F4F6FA,#AEB6C2)}.acm3 .a-crm{background:linear-gradient(180deg,#F2C79B,#B87333)}.acm4 .a-crm{background:rgba(255,255,255,.18);color:#fff}
+.a-crn{font-size:21px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.a-crt{font-size:13px;color:#A99F8C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.nxm{background:#0B0D12}body.nxm header,body.nxm .tabs,body.nxm #hqtabs{display:none!important}body.nxm #app{max-width:none;padding:0}
+.kn{min-height:100vh;color:#F6F1E6;background:radial-gradient(1200px 600px at 10% -10%,rgba(212,175,55,.12),transparent),#0B0D12;padding:18px 22px;display:flex;flex-direction:column;gap:14px;font-family:"Noto Sans KR",sans-serif}
+.kn-top{display:flex;align-items:baseline;gap:14px}.kn-top>b{font-size:30px;font-weight:900}.kn-top>span{color:#C9A262;font-weight:800;letter-spacing:.14em;font-size:14px}.kn-top [data-clock]{margin-left:auto;font-size:22px;font-weight:800}
+.kn-g{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.kn-c{border-radius:20px;border:2px solid color-mix(in srgb,var(--cc,#D4AF37) 60%,transparent);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.kn-h{display:flex;align-items:center;gap:10px}.kn-ct{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:var(--cc,#D4AF37);color:#0B0D12;font-size:42px;font-weight:900}.kn-h>span{font-size:22px;font-weight:800;color:#CFC6B4}.kn-off{margin-left:auto;color:#FF8A8A;font-style:normal;font-weight:800}
+.kn-k{display:block;font-size:13px;font-weight:900;letter-spacing:.12em;color:#C9A262;margin-bottom:4px}
+.kn-now b,.kn-next b{display:block;font-size:26px;font-weight:900;line-height:1.25}.kn-who{font-size:24px;font-weight:800;margin-top:4px}.kn-who .blue{color:#7DA6FF}.kn-who .red{color:#FF8080}.kn-who i{font-style:normal;opacity:.5;margin:0 8px;font-size:16px}
+.kn-soon{margin-top:6px;font-size:16px;color:#D9CFBC}
+.kn-next{border-top:1px dashed rgba(212,175,55,.35);padding-top:10px;flex:1}
+.kn-names{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 12px;margin-top:8px}.kn-names span{font-size:20px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kn-names i{font-style:normal;display:inline-block;min-width:28px;color:#C9A262;font-size:15px}.kn-names small{margin-left:6px;font-size:13px;color:#A99F8C;font-weight:600}
+.kn.solo .kn-now b,.kn.solo .kn-next b{font-size:52px}.kn.solo .kn-who{font-size:46px}.kn.solo .kn-names{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.kn.solo .kn-names span{font-size:36px}.kn.solo .kn-names small{font-size:20px}.kn.solo .kn-soon{font-size:26px}
+.kn-mu{opacity:.4}
 </style><link rel="stylesheet" href="/vendor/ks-lux.css"><link rel="stylesheet" href="/vendor/fonts/themes.css"><link rel="stylesheet" href="/vendor/hq-themes.css">
 
 <svg id="hqdefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ksGoldH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs></svg><header class="bar"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="ksword">KICKSTART<b>UP</b></span><span class="brand">대회 본부</span></header>
@@ -334,7 +355,7 @@ let toastT=null;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=f
 const KS_INFRAME=(()=>{try{return window.self!==window.top;}catch(e){return true;}})();
 if(KS_INFRAME){document.documentElement.classList.add('inframe');try{Object.defineProperty(window,'speechSynthesis',{value:undefined,configurable:true});}catch(e){}try{window.AudioContext=undefined;window.webkitAudioContext=undefined;}catch(e){}
   try{HTMLMediaElement.prototype.play=function(){const a=this;setTimeout(()=>{try{a.dispatchEvent(new Event('ended'));}catch(e){}},30);return Promise.resolve();};}catch(e){}}
-const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results','print','award'].includes(h)||/^room-r[1-6]$/.test(h)?h:'admin';};
+const route=()=>{const h=location.hash.replace('#','');return ['board','admin','results','print','award','next'].includes(h)||/^room-r[1-6]$/.test(h)||/^next-[A-Za-z0-9]{1,3}$/.test(h)?h:'admin';};
 const S={courts:{},cfg:{},announce:null,log:[],ready:false,moves:{},mvArm:null};window.KS_HQS=()=>S;
 let DB=null,DL=null;
 const CFGDEF={autoCall:true,voice:true,notice:{text:'',mode:'off'},manual:[],points:[3,2,1]};
@@ -701,6 +722,7 @@ function vAdmin(){
     ${cf.monIdle==='flap'?`<div class="row" style="flex-wrap:wrap"><b>공항 안내판</b><span class="small muted">장면 시간</span><div class="seg">${[6,10,15,20].map(v=>`<button class="${(cf.flapSec||10)===v?'on':''}" data-a="flapSec" data-v="${v}">${v}초</button>`).join('')}</div>
       <span class="small muted">따라락 소리</span><div class="seg"><button class="${cf.flapSound?'':'on'}" data-a="flapSnd" data-v="0">끔</button><button class="${cf.flapSound?'on':''}" data-a="flapSnd" data-v="1">켬</button></div>
       <span class="small muted">대회 로고 → 코트별 지금 경기 → 도장 메달 순위가 글자판처럼 넘어갑니다. 호출 방송과 입상자 발표는 바로 끼어듭니다</span></div>`:''}
+    <div class="row"><b>코트별 결과</b><div class="seg"><button class="${cf.monRes===false?'':'on'}" data-a="hqMonRes" data-v="1">보이기</button><button class="${cf.monRes===false?'on':''}" data-a="hqMonRes" data-v="0">끄기</button></div><span class="small muted">본부 전광판 오른쪽에 「도장 순위」와 「코트별 최근 결과(금·은·동·동)」가 12초마다 번갈아 나옵니다 · 🏟 경기장 화면</span></div>
     <span class="small muted">선수 대기실 TV나 큰 모니터에 띄우세요. 새 창을 TV 쪽으로 옮긴 뒤 「전체 화면」을 누르면 됩니다. 소리를 내려면 그 화면을 한 번 눌러 주세요.</span></div>`;
 }
 
@@ -722,7 +744,7 @@ function vResults(){
   return `<div class="panel"><div class="row between"><h2>팀 종합 순위 <span class="small muted">· 모든 코트 합계 (금 ${CFG().points[0]} · 은 ${CFG().points[1]} · 동 ${CFG().points[2]}점)</span></h2><span class="row"><button class="btn primary" data-a="xlsx">엑셀로 저장</button><button class="btn" data-a="print">인쇄</button></span></div>
     ${tally.length?`<div style="overflow-x:auto"><table><tr><th class="num" style="text-align:left">순위</th><th>팀(소속)</th><th class="num">금</th><th class="num">은</th><th class="num">동</th><th class="num">점수</th></tr>${tally.map(t=>`<tr><td class="num" style="width:1%">${t.rank<=3?med(t.rank):t.rank}</td><td><b>${esc(t.team)}</b></td><td class="num">${t.g}</td><td class="num">${t.s}</td><td class="num">${t.b}</td><td class="num">${t.pts}</td></tr>`).join('')}</table></div>`:'<div class="empty">아직 입상 결과가 없습니다.</div>'}</div>
   <div class="panel"><div class="row between"><h2>부문별 입상자</h2><span class="small muted">${rs.length}개 부문 · 확정 ${done}개</span></div>
-    ${rs.length?`<div style="overflow-x:auto"><table><tr><th>코트</th><th>부문</th><th>상태</th><th>1위</th><th>2위</th><th>3위</th></tr>${rs.map(d=>{const by=r=>d.podium.filter(p=>p.rank===r).map(p=>`<div><b>${esc(p.name)}</b> <span class="small muted">${esc(p.team)}</span></div>`).join('')||'<span class="muted">—</span>';
+    ${rs.length?`<div style="overflow-x:auto"><table><tr><th>코트</th><th>부문</th><th>상태</th><th>🥇 금</th><th>🥈 은</th><th>🥉 동</th></tr>${rs.map(d=>{const by=r=>d.podium.filter(p=>p.rank===r).map(p=>`<div><b>${esc(p.name)}</b> <span class="small muted">${esc(p.team)}</span></div>`).join('')||'<span class="muted">—</span>';
       return `<tr><td style="white-space:nowrap"><b>${esc(d.court)}</b> <span class="small muted">${esc(d.app)}</span></td><td>${esc(d.div)}</td><td>${d.done?'<span class="chip ok">확정</span>':'<span class="chip warn">진행 중</span>'}</td><td>${by(1)}</td><td>${by(2)}</td><td>${by(3)}</td></tr>`;}).join('')}</table></div>`:'<div class="empty">코트에서 경기 결과가 나오면 여기에 모입니다.</div>'}</div>`;
 }
 function exportXlsx(){
@@ -812,7 +834,7 @@ const FLAP=(()=>{
       rows=wrap(a?a.text:'',14,4).map(t=>[{w:14,t,cls:'big',ctr:1}]);big='call';}
     else if(name==='award'){const d=award;head=`<div class="fp-h award"><b>🏅 입상자</b><span>${esc(d.court)}코트 · ${esc(d.app)}</span></div>`;
       rows=[[{w:18,t:cut(String(d.div).replace(/^\d{1,3}\s+/,''),18),cls:'mid'}]];
-      [1,2,3].forEach(r=>d.podium.filter(p=>p.rank===r).slice(0,2).forEach(p=>rows.push([{w:2,t:r+'위',cls:'cc r'+r},{w:5,t:cut(p.name,5)},{w:10,t:cut(p.team,10)}])));big='award';}
+      [1,2,3].forEach(r=>d.podium.filter(p=>p.rank===r).slice(0,2).forEach(p=>rows.push([{w:2,t:MEDN[r],cls:'cc r'+r},{w:5,t:cut(p.name,5)},{w:10,t:cut(p.team,10)}])));big='award';}
     return {head,rows,big};}
   /* 소리: 짧은 딸깍 */
   let clickAt=0;function click(){if(!M||!M.sound)return;const t0=performance.now();if(t0-clickAt<28)return;clickAt=t0;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
@@ -886,6 +908,21 @@ const MA_CC=['#2F7DF6','#2FBF71','#FF8A1F','#9B59FF','#FF4F8B','#18C1D6','#E2C27
 const maCol=c=>{c=String(c||'').trim().toUpperCase();let i=0;if(/^[A-Z]/.test(c))i=c.charCodeAt(0)-65;else if(/^\d+/.test(c))i=parseInt(c,10)-1;return MA_CC[((i%8)+8)%8];};
 const MA_EN={'공인 품새':'RECOGNIZED POOMSAE','자유 품새':'FREESTYLE POOMSAE','태권체조':'TAEKWON AEROBICS','팀 경연':'TEAM PERFORMANCE','격파':'BREAKING','겨루기':'KYORUGI'};
 const MA_SEEN={};
+/* v1.7.9 코트별 최근 결과: 코트마다 마지막으로 끝난 부문 (금·은·동·동 — 생활체육 3위 둘, 4위까지 시상이면 4위) */
+const MEDN={1:'금',2:'은',3:'동',4:'4위'};const MR_SEEN={};
+function courtLatest(){const by=new Map();allResults().forEach(d=>{if(!d.done||!(d.podium||[]).length)return;const k=d.court+'|'+d.app+'|'+d.div;if(!MR_SEEN[k])MR_SEEN[k]=NOW();
+    const o=by.get(d.court);if(!o||MR_SEEN[k]>=o.at)by.set(d.court,{...d,at:MR_SEEN[k]});});
+  return [...by.values()].sort((a,b)=>String(a.court).localeCompare(String(b.court))).map(d=>({court:d.court,div:d.div,ppl:[...d.podium.map(p=>({...p,m:Math.min(3,p.rank)})),...(d.fourth||[]).map(p=>({...p,m:4}))].sort((a,b)=>a.rank-b.rank).slice(0,5)}));}
+/* v1.7.9 코트별 다음 경기 전체 화면 (#next 모든 코트 · #next-A 한 코트) — 대기실·코트 옆 TV용 큰 글씨 */
+function vNext(one){const L=courtList().filter(c=>!one||String(c.court).toUpperCase()===one.toUpperCase()),solo=!!one&&L.length===1,strip=x=>String(x||'').replace(/^\d{1,3}\s+/,'');
+  const card=c=>{const b=c.app&&c.app.board,now=b&&b.now,cur=b&&(b.curDiv||(now&&now.div))||'',up=(b&&b.upcoming)||[],nx=up.find(x=>x.name!==cur)||null,soon=((b&&b.next)||[]).filter(x=>x.div===cur).slice(0,solo?6:3);
+    const names=nx?nx.names:[];
+    return `<div class="kn-c" style="--cc:${maCol(c.court)}"><div class="kn-h"><b class="kn-ct">${esc(c.court)}</b><span>코트</span>${!c.online?'<em class="kn-off">연결 끊김</em>':''}</div>
+      <div class="kn-now"><span class="kn-k">지금 · NOW</span><b>${esc(strip(cur)||'대기')}</b>${now?`<div class="kn-who">${(now.names||[]).map(p=>`<span class="${p.side||''}">${esc(p.name)}</span>`).join('<i>vs</i>')}</div>`:''}
+        ${soon.length?`<div class="kn-soon">이어서 ▸ ${soon.map(x=>esc((x.names||[]).map(p=>p.name).join(' vs '))).join(' · ')}</div>`:''}</div>
+      <div class="kn-next"><span class="kn-k">다음 경기 · NEXT</span>${nx?`<b>${esc(strip(nx.name))}</b><div class="kn-names">${names.map((p,i)=>`<span><i>${i+1}</i>${esc(p.name)}<small>${esc(p.team||'')}</small></span>`).join('')}</div>`:'<b class="kn-mu">—</b>'}</div></div>`;};
+  return `<div class="kn ${solo?'solo':''}"><div class="kn-top"><b>${solo?esc(L[0].court)+'코트 ':''}다음 경기 안내</b><span>NEXT ON COURT</span><span data-clock class="small"></span><button class="btn sm" data-a="nxFs">⤢ 전체 화면</button></div>
+    <div class="kn-g" style="--n:${Math.max(1,L.length)}">${L.length?L.map(card).join(''):'<div class="empty">코트 노트북을 찾는 중입니다…</div>'}</div></div>`;}
 function monA(list,cf,n,comp){
   const d=new Date(),date=`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()} (${'일월화수목금토'[d.getDay()]})`;
   const T=teamTally(allResults()).sort((a,b)=>b.g-a.g||b.s-a.s||b.b-a.b||a.team.localeCompare(b.team,'ko')).slice(0,6);
@@ -917,7 +954,8 @@ function monA(list,cf,n,comp){
       <span class="a-live"><i></i>LIVE</span><span class="a-clock" data-clock></span>
       <span class="ctl">${themePick('hqpick mon')}<button data-a="fs">전체 화면</button><a href="#admin"><button>본부 운영</button></a></span></div>
     <div class="a-main"><div class="a-rows" style="--n:${Math.max(1,list.length)};--k:${Math.min(1,5.4/Math.max(1,list.length)).toFixed(3)}">${rows}</div>
-      <aside class="a-rk"><div class="a-rkh"><b>도장 순위</b><span class="a-en">Dojang Ranking</span></div><div class="a-rks"><i class="g"></i>금 <i class="s"></i>은 <i class="b"></i>동 순</div><ol>${rk}</ol></aside></div>
+      ${(()=>{const CR=cf.monRes===false?[]:courtLatest();return CR.length&&Math.floor(NOW()/12000)%2?`<aside class="a-rk a-cres"><div class="a-rkh"><b>코트별 최근 결과</b><span class="a-en">Latest Results</span></div><div class="a-crl">${CR.map(x=>`<div class="a-cr" style="--cc:${maCol(x.court)}"><b class="a-crc">${esc(x.court)}</b><div class="a-crb"><small>${esc(String(x.div).replace(/^\d{1,3}\s+/,''))}</small>${x.ppl.map(p=>`<div class="a-crp acm${p.m}"><span class="a-crm">${MEDN[p.m]||p.rank+'위'}</span><span class="a-crn" data-notr>${esc(p.name)}</span><span class="a-crt" data-notr>${esc(p.team||'')}</span></div>`).join('')}</div></div>`).join('')}</div></aside>`
+        :`<aside class="a-rk"><div class="a-rkh"><b>도장 순위</b><span class="a-en">Dojang Ranking</span></div><div class="a-rks"><i class="g"></i>금 <i class="s"></i>은 <i class="b"></i>동 순</div><ol>${rk}</ol></aside>`;})()}</div>
     ${tk}</div></div>`;}
 function maScale(){const w=document.querySelector('.a-wrap>.a-s');if(!w)return;const k=Math.min(innerWidth/1920,innerHeight/1080);w.style.transform=`translate(-50%,-50%) scale(${k})`;}
 addEventListener('resize',maScale);
@@ -1231,14 +1269,14 @@ function render(){
   if(r==='board'){vMon();return;}
   $('#ovl').innerHTML='';
   const keep={};document.querySelectorAll('#app input[id],#app textarea[id],#app select[id]').forEach(el=>keep[el.id]=el.value);const fid=document.activeElement&&document.activeElement.id;
-  document.body.classList.toggle('prtst',r==='print');document.body.classList.toggle('rmode',r.startsWith('room-')||r==='award');
-  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r.startsWith('room-')?vRoom(r.slice(5)):r==='award'?vAward():r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
+  document.body.classList.toggle('prtst',r==='print');document.body.classList.toggle('rmode',r.startsWith('room-')||r==='award'||r.startsWith('next'));document.body.classList.toggle('nxm',r.startsWith('next'));
+  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r.startsWith('room-')?vRoom(r.slice(5)):r.startsWith('next')?vNext(r.slice(5)):r==='award'?vAward():r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
   for(const [k,v] of Object.entries(keep)){const el=document.getElementById(k);if(el)el.value=v;}
   if(fid){const el=document.getElementById(fid);if(el)el.focus();}
   if(r==='admin')$('#ovl').innerHTML=roomOverlay();
 }
 window.addEventListener('hashchange',render);
-setInterval(()=>{const r=route();if(r==='board'||r==='admin'||r==='award'||r.startsWith('room-'))schedule();},3000);   /* "○초 전" 갱신 */
+setInterval(()=>{const r=route();if(r==='board'||r==='admin'||r==='award'||r.startsWith('room-')||r.startsWith('next'))schedule();},3000);   /* "○초 전" 갱신 */
 
 /* ---------- 버튼 ---------- */
 async function hqctl(op,addr){try{await fetch('/api/hqctl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op,addr})});}catch(e){}}
@@ -1250,6 +1288,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest|hqOpenEdge|annPhDelR)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
   if(a==='hqCompSave'){saveCfg({compName:(($('#hqCompName')||{}).value||'').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,3).join('\n')});toast('대회명을 저장했습니다 · 본부 모니터에 바로 나옵니다');return;}
   if(a==='hqMonIdle'){saveCfg({monIdle:b.dataset.v||''});return;}
+  if(a==='nxQR'){const base=(window.KS_FIELD&&KS_FIELD.base)||location.href.split('#')[0];if(window.KSQR)KSQR.open({title:'코트별 다음 경기 화면 (TV·태블릿)',items:[{label:'🖥 모든 코트',sub:'대기실 TV',url:base+'#next'},...courtList().map(c=>({label:`🖥 ${c.court}코트`,sub:'코트 옆 TV',url:base+'#next-'+c.court}))]});return;}
+  if(a==='nxFs'){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen();}catch(x){}return;}
+  if(a==='hqMonRes'){saveCfg({monRes:b.dataset.v==='1'});return;}
   if(a==='flapSec'){saveCfg({flapSec:Number(b.dataset.v)||10});return;}
   if(a==='flapSnd'){saveCfg({flapSound:b.dataset.v==='1'});return;}
   if(a==='mvCancel'){try{const r=await fetch('/api/hq/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:b.dataset.id})});const j=await r.json().catch(()=>({}));toast(r.ok?'옮기기를 취소했습니다 · 부문은 원래 코트에 그대로 있습니다':(j.error||'취소하지 못했습니다'));}catch(err){toast('본부 프로그램에 연결하지 못했습니다');}schedule();return;}
@@ -1435,7 +1476,7 @@ function vRoomPanel(){
         <div class="row"><button class="btn primary" data-a="hqRmSave">대기실 설정 저장</button></div>
         <span class="small muted">맡을 앱 + 부문 이름 낱말로 대기실 화면에 보일 부문을 고릅니다. 예) 팀 대항 대기실: 모든 앱 · 「체조,경연,단체」 / 품새 대기실: 품새 앱 · 「-체조,-경연」</span></div>
       <div class="rmc"><span class="small muted">🔊 방송 목소리는 본부 첫 화면 「📣 호출·방송」 칸에서 고릅니다.</span></div>`;}
-  return `<div class="panel"><div class="row between"><h2>🚪 대기실 연결</h2><span class="row"><button class="btn sm ${cf.roomAuto?'on':''}" data-a="roomAuto" title="대기실의 「부문 호출」을 바로 전광판으로 보낼지">📣 호출 ${cf.roomAuto?RT.auto:RT.manual}</button><button class="btn sm primary" data-a="hqRmQR">📱 대기실 QR</button></span></div>
+  return `<div class="panel"><div class="row between"><h2>🚪 대기실 연결</h2><span class="row"><button class="btn sm ${cf.roomAuto?'on':''}" data-a="roomAuto" title="대기실의 「부문 호출」을 바로 전광판으로 보낼지">📣 호출 ${cf.roomAuto?RT.auto:RT.manual}</button><button class="btn sm primary" data-a="hqRmQR">📱 대기실 QR</button><button class="btn sm" data-a="nxQR" title="코트별 다음 경기(부문·조·선수)를 큰 글씨로 — 대기실·코트 옆 TV">🖥 다음 경기 화면</button></span></div>
     <span class="small muted">${cf.roomAuto?`<b>${RT.auto}</b>: 대기실이 「부문 호출」을 누르면 바로 본부 모니터·음성으로 나갑니다.`:`<b>${RT.manual}</b>: 대기실 호출은 「📥 받은 요청」에서 「전광판 보내기」를 눌러야 나갑니다.`} 대기실 휴대폰도 대회장 와이파이에 연결해 주세요.</span>
     ${body}</div>`;
 }
@@ -2160,7 +2201,7 @@ function timelineHtml(TL,O,tgt,lateEnd,earlyEnd){TLLAST=[O,tgt,lateEnd,earlyEnd]
   return `<div class="pl-tl"><div class="pl-tlr ax"><span class="pl-tlh"></span><div class="pl-tlt">${ticks.map(v=>`<i style="left:${X(v)}" class="${v%60?'':'h'}">${hm(v)}</i>`).join('')}</div></div>
     ${TL.map((x,i)=>{const isLate=x.items.length&&TL.filter(y=>y.items.length).length>1&&(x.end>tgt||(x.end===lateEnd&&lateEnd-earlyEnd>=30));
       const g=PG[i],lv=g?(g.late>25?'bad':g.late>10?'warn':'ok'):'';
-      return `<div class="pl-tlr ${isLate?'late':''} ${g?'pg-'+lv:''}"><span class="pl-tlh"><b>${i+1}코트</b><small>${x.items.length?`~${hm(x.end)} · ${x.people}명`:'비어 있음'}</small>${g?`<small class="pl-pgt">진행 ${g.done}/${g.total}${g.f>=1?' · 끝':g.late>10?` · ${g.late}분 늦음`:g.late<-10?` · ${-g.late}분 빠름`:' · 계획대로'}</small>`:''}</span><div class="pl-tlt">
+      return `<div class="pl-tlr ${isLate?'late':''} ${g?'pg-'+lv:''}"><span class="pl-tlh"><b>${L8[i]||i+1}코트</b><small>${x.items.length?`~${hm(x.end)} · ${x.people}명`:'비어 있음'}</small>${g?`<small class="pl-pgt">진행 ${g.done}/${g.total}${g.f>=1?' · 끝':g.late>10?` · ${g.late}분 늦음`:g.late<-10?` · ${-g.late}분 빠름`:' · 계획대로'}</small>`:''}</span><div class="pl-tlt">
         ${ticks.map(v=>`<em style="left:${X(v)}" class="${v%60?'':'h'}"></em>`).join('')}
         ${B.map(b=>`<u style="left:${X(b.s)};width:${W(b.e-b.s)}" title="${b.l} ${hm(b.s)}~${hm(b.e)}"><span>${b.ic}</span></u>`).join('')}
         ${x.items.map((it,k)=>`<a class="pl-blk ${O.by[it.g.id]?'ovl':''} ${g?(k<g.ci?'pg-done':k===g.ci?'pg-cur':''):''}" style="left:${X(it.s)};width:${W(Math.max(1,it.e-it.s))};--c:${evColor(it.g.ev)};${g&&k===g.ci?`--p:${(g.part*100).toFixed(1)}%`:''}" title="${hm(it.s)}~${hm(it.e)} · ${esc(it.g.ev)} ${esc(it.g.div)} ${esc(it.g.grp)} ${esc(it.g.sex)} · ${isTeam(it.g.ev)?it.g.units+'팀':it.g.people+'명'}${O.by[it.g.id]?' · ⚠ 선수 겹침':''}">${esc(shortDiv(it.g))}</a>`).join('')}
@@ -2170,7 +2211,7 @@ function timelineHtml(TL,O,tgt,lateEnd,earlyEnd){TLLAST=[O,tgt,lateEnd,earlyEnd]
 function ovlHtml(O){return `<div class="pl-mask"><div class="pl-modal"><div class="row between"><h3>⚠ 선수 겹침 ${O.list.length}건</h3><button class="btn" data-p="ovlX">닫기 ✕</button></div>
   <span class="small muted">한 선수가 여러 종목에 나갈 때, 예상 출전 시각 차이가 「경기 시간 + 겹침 여유 ${Math.max(0,Number(P.buf)||0)}분」보다 짧으면 표시합니다 (같은 이름·도장·부별을 같은 선수로 봄). 카드를 끌어 한쪽 부문을 앞이나 뒤로 옮기면 사라집니다.</span>
   ${O.list.length?`<div style="overflow:auto"><table><tr><th>선수</th><th>먼저</th><th>나중</th><th>차이</th></tr>${O.list.slice(0,200).map(o=>{const [a,b]=o.a.t<=o.b.t?[o.a,o.b]:[o.b,o.a];
-    return `<tr><td><b>${esc(a.r.name)}</b> <span class="small muted">${esc(a.r.dojang||'')} · ${esc(a.r.div||'')}</span></td><td>${esc(a.ev)} · ${a.court+1}코트 · ${hm(a.t)}</td><td>${esc(b.ev)} · ${b.court+1}코트 · ${hm(b.t)}</td><td><span class="chip ${o.gap<Math.max(a.per,b.per)?'bad':'warn'}">${Math.round(o.gap)}분</span></td></tr>`;}).join('')}</table></div>`:'<div class="empty">겹치는 선수가 없습니다 👍</div>'}</div></div>`;}
+    return `<tr><td><b>${esc(a.r.name)}</b> <span class="small muted">${esc(a.r.dojang||'')} · ${esc(a.r.div||'')}</span></td><td>${esc(a.ev)} · ${L8[a.court]||a.court+1}코트 · ${hm(a.t)}</td><td>${esc(b.ev)} · ${L8[b.court]||b.court+1}코트 · ${hm(b.t)}</td><td><span class="chip ${o.gap<Math.max(a.per,b.per)?'bad':'warn'}">${Math.round(o.gap)}분</span></td></tr>`;}).join('')}</table></div>`:'<div class="empty">겹치는 선수가 없습니다 👍</div>'}</div></div>`;}
 
 function draw(){
   if(!OPEN)return;P.lanes=(P.lanes||[]).map(lateOrder);const r=root(),TL=timeline(),evs=events(),has=P.roster.length>0,O=has?overlaps(TL):{list:[],by:{}};
@@ -2262,7 +2303,7 @@ function bind(r){
     if(el.dataset.p==='simChk'){SEND.sim=el.checked;draw();return;}
     const f=el.dataset.f;if(!f)return;
     if(f==='courts'){const n=Number(el.value)||5;commit(()=>{P.courts=n;if(P.roster.length)plan(recommendEv());});if(P.roster.length)toast(`${n}코트로 다시 추천했습니다 (↶ 되돌리기 가능)`);}
-    else if(f==='cev'){const i=Number(el.dataset.i);const w=commit(()=>{const ce=P.courtEv.slice();ce[i]=el.value;return plan(ce);});toast(w||`${i+1}코트를 「${el.value||'자동'}」(으)로 정하고 다시 짰습니다`);}
+    else if(f==='cev'){const i=Number(el.dataset.i);const w=commit(()=>{const ce=P.courtEv.slice();ce[i]=el.value;return plan(ce);});toast(w||`${L8[i]||i+1}코트를 「${el.value||'자동'}」(으)로 정하고 다시 짰습니다`);}
     else if(f==='per'){const v=Number(el.value);if(v>0)commit(()=>{P.per={...P.per,[el.dataset.e]:v};});}
     else if(['openOn','lunchOn','awardOn','lateOn'].includes(f))commit(()=>{P[f]=el.checked;});
     else if(f==='lateAt'&&el.value)commit(()=>{P.lateAt=el.value;});
@@ -2330,9 +2371,9 @@ function sendHtml(TL){
   const st=L=>{const c=Object.values(COURTS).find(c=>c.court===L);return c?(c.online?'<span class="chip ok"><i class="dot"></i>연결됨</span>':'<span class="chip bad"><i class="dot"></i>끊김</span>'):'<span class="chip">못 찾음</span>';};
   return `<div class="pl-mask"><div class="pl-modal">
     <div class="row between"><h3>📡 코트로 보내기 · 🧪 가상 경기</h3><button class="btn" data-p="sendX">닫기 ✕</button></div>
-    <span class="small muted">운영표의 1코트 → <b>A코트</b>, 2코트 → <b>B코트</b> … 순서로 각 코트 노트북의 경기 앱에 명단을 보냅니다. 부문 이름 앞 번호(01, 02 …)가 운영표 순서입니다.</span>
+    <span class="small muted">운영표의 A코트 → <b>A코트 노트북</b>, B코트 → <b>B코트 노트북</b> … 으로 각 코트 경기 앱에 명단을 보냅니다. 부문 이름 앞 번호(01, 02 …)가 운영표 순서입니다.</span>
     <div style="overflow-x:auto"><table><tr><th>운영표</th><th>코트 노트북</th><th>보낼 명단</th><th>상태</th><th>결과</th></tr>
-      ${lanes.map(({x,i,L,apps})=>`<tr><td><b>${i+1}코트</b></td><td>${L?`<b>${L}코트</b>`:'—'}</td>
+      ${lanes.map(({x,i,L,apps})=>`<tr><td><b>${L8[i]||i+1}코트</b></td><td>${L?`<b>${L}코트</b>`:'—'}</td>
         <td>${x.items.length?Object.entries(apps).map(([a,l])=>`<span class="chip">${APPN[a]} ${l.length}부문 · ${l.reduce((s,y)=>s+y.it.g.units,0)}${l.some(y=>isTeam(y.it.g.ev))?'팀·명':'명'}</span>`).join(' '):'<span class="small muted">비어 있음</span>'}</td>
         <td>${L?st(L):'<span class="chip warn">A~H 8코트까지만</span>'}</td><td class="small">${esc(SEND.res[L]||'')}</td></tr>`).join('')}</table></div>
     <div class="opt"><label>개인 격파 세부 종목 <span class="small muted">(엑셀에 세부 종목이 없는 선수만)</span> <select data-p="gev">${GEV.map(([k,l])=>`<option value="${k}" ${SEND.gev===k?'selected':''}>${l}</option>`).join('')}</select></label>
@@ -2385,13 +2426,13 @@ function exportX(){
     ['한 경기 시간',evs.map(e=>`${e} ${isTeam(e)?'1팀':'1인'} ${perOf(e)}분`).join(' · ')],[],
     ['코트','맡은 종목','부문 수','인원','팀 수','시작','예상 종료','목표 대비']];
   TL.forEach((x,i)=>{const tm=x.items.filter(it=>isTeam(it.g.ev)).reduce((a,it)=>a+it.g.units,0);
-    S.push([`${i+1}코트`,x.evs.join(', ')||'-',x.items.length,x.people,tm||'',x.items.length?hm(x.items[0].s):'',x.items.length?hm(x.end):'',x.items.length?(x.end>toMin(P.target)?`${Math.round(x.end-toMin(P.target))}분 늦음`:'목표 안'):'']);});
+    S.push([`${L8[i]||i+1}코트`,x.evs.join(', ')||'-',x.items.length,x.people,tm||'',x.items.length?hm(x.items[0].s):'',x.items.length?hm(x.end):'',x.items.length?(x.end>toMin(P.target)?`${Math.round(x.end-toMin(P.target))}분 늦음`:'목표 안'):'']);});
   S.push([],['합계','',TL.reduce((a,x)=>a+x.items.length,0),TL.reduce((a,x)=>a+x.people,0),'','',act.length?hm(late):'','']);
   S.push([],['종목','부문 수','인원(팀)','걸리는 시간(분)']);evs.forEach(e=>{const gs=gamesOf(e);S.push([e,gs.length,isTeam(e)?`${gs.reduce((a,g)=>a+g.units,0)}팀 (${gs.reduce((a,g)=>a+g.people,0)}명)`:`${gs.reduce((a,g)=>a+g.people,0)}명`,Math.round(gs.reduce((a,g)=>a+dur(g),0))]);});
   XLSX.utils.book_append_sheet(wb,sheet(S,[10,22,9,9,8,9,11,14],[{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:1,c:0},e:{r:1,c:7}},{s:{r:4,c:1},e:{r:4,c:7}}]),'전체 요약');
   /* 2) 코트별 진행표 */
   const pos={};
-  TL.forEach((x,i)=>{const A=[[`${i+1}코트 진행표 — ${x.evs.join(', ')||'비어 있음'}`],[`예상 종료 ${x.items.length?hm(x.end):'-'} · ${x.items.length}부문 · ${x.people}명`],[],['순번','시작','종료','종목','부별','조','성별','인원','팀 수','소요(분)','비고']];
+  TL.forEach((x,i)=>{const A=[[`${L8[i]||i+1}코트 진행표 — ${x.evs.join(', ')||'비어 있음'}`],[`예상 종료 ${x.items.length?hm(x.end):'-'} · ${x.items.length}부문 · ${x.people}명`],[],['순번','시작','종료','종목','부별','조','성별','인원','팀 수','소요(분)','비고']];
     x.items.forEach((it,k)=>{x.marks.filter(m=>m.at===k).forEach(m=>A.push(['','','',m.b.l,`${hm(m.b.s)}~${hm(m.b.e)}`]));const g=it.g;
       A.push([k+1,hm(it.s),hm(it.e),g.ev,g.div,g.grp,g.sex,g.people,isTeam(g.ev)?g.units:'',Math.round(dur(g)),'']);pos[g.id]={court:i+1,no:k+1,s:it.s};});
     XLSX.utils.book_append_sheet(wb,sheet(A,[6,8,8,12,14,6,6,7,7,9,16],[{s:{r:0,c:0},e:{r:0,c:10}},{s:{r:1,c:0},e:{r:1,c:10}}]),`${i+1}코트`);});
