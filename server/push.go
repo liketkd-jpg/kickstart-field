@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -143,6 +144,25 @@ type simMsg struct {
 	Speed float64 `json:"speed"`
 	At    int64   `json:"at"`
 	Reset int64   `json:"reset,omitempty"` // v1.4.54 가상 경기 초기화 (점수·결과를 지우고 처음부터)
+	Pre   bool    `json:"pre,omitempty"`   // v1.7.5 「경기 전 기록 지우기」: 실제 대회 모드에서도 됨 · 실제 점수가 하나라도 있는 코트는 지우지 않음
+}
+
+// 실제 심판 점수(가상 경기 표시가 없는 점수)가 하나라도 있는지
+func hasRealScores() bool {
+	for k, s := range stores {
+		if s == nil || k == "hq" {
+			continue
+		}
+		s.mu.Lock()
+		for p, raw := range s.docs {
+			if strings.HasPrefix(p, "scores/") && len(raw) > 4 && !bytes.Contains(raw, []byte(`"sim":true`)) {
+				s.mu.Unlock()
+				return true
+			}
+		}
+		s.mu.Unlock()
+	}
+	return false
 }
 
 func handleHQSim(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +176,13 @@ func handleHQSim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m.At = time.Now().UnixMilli()
-	if m.Reset > 0 {
+	if m.Pre {
+		m.On = false
+		if m.Reset == 0 {
+			m.Reset = m.At
+		}
+	}
+	if m.Reset > 0 && !m.Pre {
 		go cleanCerts(true) // 본부에 모인 가상 경기 상장 파일도 지움
 		tidyStores(true)
 	}
@@ -172,12 +198,18 @@ func handleHQSim(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	hqMu.Unlock()
+	nOK := 0
 	for _, t := range list {
 		if _, err := postJSON(t.addr, "/api/inbox/sim", m, 5*time.Second); err != nil {
 			res[t.court] = err.Error()
 		} else {
 			res[t.court] = "ok"
+			nOK++
 		}
+	}
+	if m.Pre && nOK > 0 {
+		go cleanCerts(true) // 본부에 모인 가상 경기 상장 파일도 지움
+		tidyStores(true)
 	}
 	writeJSON(w, 200, map[string]any{"ok": true, "courts": res})
 }
@@ -193,6 +225,13 @@ func handleInboxSim(w http.ResponseWriter, r *http.Request) {
 	}
 	if getConfig().Mode == "live" {
 		m.On = false // v1.4.82 실제 대회 모드에서는 가상 경기를 켜지 않음
+		if m.Reset > 0 && !m.Pre {
+			m.Reset = 0 // 실제 대회 모드: 「경기 전 기록 지우기」로만 지움
+		}
+	}
+	if m.Pre && hasRealScores() {
+		writeJSON(w, 409, map[string]any{"error": "실제 경기 점수가 있어 지우지 않았습니다"})
+		return
 	}
 	for _, a := range apps {
 		if a.Key == "kyorugi" { // v1.4.71 가상 경기는 품새·격파만 (겨루기 화면에 「가상 경기」가 뜨지 않게)
