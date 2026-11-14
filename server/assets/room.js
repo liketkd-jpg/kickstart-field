@@ -1,6 +1,6 @@
 /* ===== 대기실 연결 — 코트 운영석 쪽 =====
    본부 「대기실 연결」에서 대기실 진행 요원이 누른 출석(도착·불참)과 「추가 대기 요청」을
-   본부가 이 코트로 넘겨 주면(hqatt/* · hqnote/*) 운영석 화면 왼쪽 아래에 보여 줍니다.
+   본부가 이 코트로 넘겨 주면 (v1.7.13 모두 출석으로 시작 · 불참만 표시 · 「확인 끝」 표시)(hqatt/* · hqnote/*) 운영석 화면 왼쪽 아래에 보여 줍니다.
    - 불참·추가 대기가 새로 오면 알림 소리 + 안내
    - 「확인」을 누르면 그 알림은 닫힘 */
 (function(){
@@ -30,7 +30,7 @@ function draw(){
   if(!PANEL){PANEL=document.createElement('div');PANEL.className='ksroom';PANEL.setAttribute('data-noi18n','');document.body.appendChild(PANEL);}
   const h=`<b>🚪 대기실</b>${notes.map(n=>`<div class="ksrn"><span>⏳ <b>${esc(n.div||'')}</b> ${esc(n.text||'추가 대기 요청')}<small> · ${esc(n.room||'')} ${new Date(n.at||0).toTimeString().slice(0,5)}</small></span><button class="btn sm primary" data-ksroom="${esc(n._id)}">확인</button></div>`).join('')}
     ${att.map(a=>{const L=a.list||[],inn=L.filter(p=>p.st==='in').length,out=L.filter(p=>p.st==='out');
-      return `<div class="ksra"><span><b>${esc(a.div)}</b> 도착 <b>${inn}</b>/${L.length}${out.length?` · <span class="ksro">불참 ${out.map(p=>esc(p.name)).join(', ')}</span>`:''}</span></div>`;}).join('')}`;
+      return `<div class="ksra"><span><b>${esc(a.div)}</b> 출석 <b>${inn}</b>/${L.length}${a.checked?' <span class="ksrk">✅ 대기실 확인</span>':''}${out.length?` · <span class="ksro">불참 ${out.map(p=>esc(p.name)).join(', ')}</span>`:''}</span></div>`;}).join('')}`;
   if(PANEL.dataset.h!==h){PANEL.dataset.h=h;PANEL.innerHTML=h;}
 }
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-ksroom]');if(!b)return;const st=g('store');const n=NOTE.find(x=>x._id===b.dataset.ksroom);if(!st||!n)return;
@@ -38,7 +38,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
 setInterval(draw,1500);
 const css=document.createElement('style');css.textContent=`.ksroom{position:fixed;left:16px;bottom:16px;z-index:9988;display:flex;flex-direction:column;gap:6px;max-width:min(460px,calc(100vw - 32px));
   background:var(--surface,#fff);color:var(--ink,#111);border:2px solid #2F5BD8;border-radius:14px;padding:10px 14px;box-shadow:0 14px 40px rgba(0,0,0,.35);font-size:14px}
-.ksroom .ksrn,.ksroom .ksra{display:flex;gap:8px;align-items:center;justify-content:space-between}.ksroom small{color:var(--muted,#777)}.ksro{color:#C8202A;font-weight:800}
+.ksroom .ksrn,.ksroom .ksra{display:flex;gap:8px;align-items:center;justify-content:space-between}.ksroom small{color:var(--muted,#777)}.ksro{color:#C8202A;font-weight:800}.ksrk{color:#1F7A4D;font-weight:800}
 .ksroom .ksrn{background:color-mix(in srgb,#E2A400 14%,transparent);border-radius:9px;padding:5px 8px}`;
 (document.head||document.documentElement).appendChild(css);
 window.KS_ROOM={get state(){return {ATT,NOTE};}};
