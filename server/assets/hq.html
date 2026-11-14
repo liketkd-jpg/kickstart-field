@@ -300,6 +300,7 @@ details summary{cursor:pointer}
 .rmqi>div{flex:1;display:flex;flex-direction:column;gap:2px}.rmqi>div b{font-size:17px}.rmqi small{color:var(--muted);font-weight:700}.rmqb{font-size:16px;padding:10px 18px}.rmt.wide{min-height:auto;flex-direction:row;align-items:center;gap:10px;width:100%}.rmt.wide .rmti{font-size:22px}
 .rmvh{display:flex;align-items:center;gap:10px;font-size:19px;margin:4px 0}
 .rmcnt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.rmcnt span{background:var(--sunk);border-radius:12px;padding:8px;font-weight:700;color:var(--muted)}
+.verbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;border-radius:12px;border:2px solid var(--ok);margin:4px 0}.verbar.bad{border-color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}.verbar.bad>.small{color:var(--red);font-weight:800}
 .rmcnt b{display:block;font-size:26px;color:var(--ink)}.rmcnt.two{grid-template-columns:1fr 1fr}
 .rmhint{font-size:14px;color:var(--muted);text-align:center;padding:2px 4px}
 button.rmp{width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;min-height:52px}.rmp .rmst{flex:none;font-weight:900;font-size:15px;padding:4px 10px;border-radius:999px;color:var(--ok)}.rmp.out .rmst{color:#fff;background:var(--red)}.rmp.out b{text-decoration:line-through;text-decoration-thickness:2px}
@@ -401,14 +402,25 @@ function courtList(){
     const apps=c.apps||{};let best=null;
     for(const [k,v] of Object.entries(apps)){const b=v&&v.board;if(!appOn(k))continue;if(b&&(!best||(b.at||0)>(best.board.at||0)))best={key:k,board:b,results:v.results||null};}
     const age=best&&best.board.at?NOW()-best.board.at:null;
-    return {id,addr:c.addr,via:c.via,court:c.court||'?',online:!!c.online,lastSeen:c.lastSeen||0,app:best,stale:c.online&&(!best||age>40000),apps,live:c.live&&c.live.on?c.live:null,rulesAt:c.rulesAt||0,licEnds:c.licEnds||'',mode:c.mode||'',hqs:c.hqs||[]};
+    return {id,addr:c.addr,via:c.via,court:c.court||'?',online:!!c.online,lastSeen:c.lastSeen||0,app:best,stale:c.online&&(!best||age>40000),apps,live:c.live&&c.live.on?c.live:null,rulesAt:c.rulesAt||0,licEnds:c.licEnds||'',mode:c.mode||'',hqs:c.hqs||[],ver:c.ver||''};
   }).sort((a,b)=>(a.court||'').localeCompare(b.court||'')||a.addr.localeCompare(b.addr));
 }
+/* v1.7.14 코트 노트북 프로그램 버전 — 본부와 모든 코트 중 가장 새 버전과 다르면 빨갛게 */
+const staffUrl=()=>{try{return new URL((window.KS_FIELD&&KS_FIELD.base)||location.href).origin+'/staff';}catch(e){return '/staff';}};
+const HQVER=String((window.KS_FIELD&&KS_FIELD.version)||'').replace(/^v/,'');
+function vcmp(a,b){const x=String(a||'0').replace(/^v/,'').split('.').map(Number),y=String(b||'0').replace(/^v/,'').split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d>0?1:-1;}return 0;}
+function verTop(list){return [HQVER,...list.filter(c=>c.online).map(c=>c.ver)].filter(Boolean).reduce((m,v)=>vcmp(v,m)>0?v:m,'0');}
+function verOk(c,top){return !c.online||(!!c.ver&&vcmp(c.ver,top)===0);}
+function verChip(c,top){if(!c.online)return '';const ok=verOk(c,top);return `<span class="chip ${ok?'ok':'bad'} verchip" title="${ok?'가장 새 버전입니다':'다른 노트북보다 예전 버전입니다 — 이 노트북을 업데이트해 주세요'}">💻 v${esc(c.ver||'?')}${ok?'':' · 업데이트 필요'}</span>`;}
+function verBar(list){const on=list.filter(c=>c.online);if(!on.length)return '';const top=verTop(list),bad=on.filter(c=>!verOk(c,top)),hqOld=HQVER&&vcmp(HQVER,top)<0;
+  return `<div class="verbar ${bad.length||hqOld?'bad':'ok'}"><b>💻 프로그램 버전</b><span class="chip ${hqOld?'bad':'ok'}">본부 v${esc(HQVER||'?')}</span>${[...new Map(on.map(c=>[c.court+'|'+c.ver,c])).values()].map(c=>verChip(c,top).replace('💻 ',esc(c.court)+'코트 ')).join('')}<span class="small">${bad.length||hqOld?`⚠ 버전이 다른 노트북이 있습니다 → 빨간 노트북을 v${esc(top)}로 업데이트해 주세요`:`✓ 모두 v${esc(top)}로 같습니다`}</span></div>`;}
 function dupLetters(list){const m={};list.forEach(c=>{m[c.court]=(m[c.court]||0)+1;});return Object.keys(m).filter(k=>m[k]>1);}
 function ago(t){if(!t||t<1e12)return '—';const s=Math.round((NOW()-t)/1000);return s<60?s+'초 전':Math.round(s/60)+'분 전';}
 const VIA={beacon:'자동',scan:'주소 훑기',manual:'직접 입력'};
 function alerts(list){
   const out=[];
+  {const top=verTop(list),bad=[...new Map(list.filter(c=>!verOk(c,top)).map(c=>[c.court+'|'+c.ver,c])).values()];if(bad.length)out.push(['bad',`프로그램 버전이 다른 코트 노트북이 있습니다: ${bad.map(c=>`${c.court}코트 v${c.ver||'?'}`).join(', ')} → v${top}로 업데이트해 주세요. (버전이 다르면 규칙·화면이 서로 다를 수 있습니다)`]);
+   if(HQVER&&vcmp(HQVER,top)<0)out.push(['bad',`본부 노트북이 v${HQVER}로 코트(v${top})보다 예전 버전입니다. 본부 노트북도 업데이트해 주세요.`]);}
   list.forEach(c=>{if(c.online&&c.live&&c.live.state==='retry')out.push(['bad',`${c.court}코트 유튜브 생중계가 끊겼습니다. 다시 연결하는 중입니다. 체육관 인터넷(공유기 인터넷선)을 확인해 주세요.`]);});
   list.forEach(c=>{if(!c.online)out.push(['bad',`${c.court}코트 노트북과 연결이 끊겼습니다 (${c.addr} · 마지막 연결 ${ago(c.lastSeen)}). 노트북 전원, 와이파이, 현장 모드 프로그램(검은 창)을 확인해 주세요.`]);
     else if(c.stale)out.push(['warn',`${c.court}코트: 운영석 화면이 열려 있지 않거나 멈춰 있습니다. 코트 노트북에서 운영석(경기 진행)을 열어 주세요.`]);
@@ -640,6 +652,7 @@ function ckRow(c){const today=new Date(NOW()+9*3600e3).toISOString().slice(0,10)
   const it=[['연결',c.online,c.online?'연결됨':'끊김'],['허가 코드',!!c.licEnds&&c.licEnds>=today,c.licEnds?(c.licEnds>=today?`~${c.licEnds}`:'기간 끝'):'없음 (연습 모드)'],
     ['경기 규칙',!RULES.at||c.rulesAt===RULES.at,!RULES.at?'본부 규칙 없음':c.rulesAt===RULES.at?'받음':'아직 못 받음'],['명단',divs>0,divs?`부문 ${divs} · 경기 ${ppl}`:'명단 없음'],
     ['심판',jl.length>0&&jon===jl.length,jl.length?`${jon}/${jl.length} 연결`:'정보 없음']];
+  {const top=verTop(courtList());it.splice(1,0,['프로그램 버전',verOk(c,top),c.ver?`v${c.ver}${verOk(c,top)?'':` → v${top} 필요`}`:'알 수 없음']);}
   /* v1.4.57 하드 남은 공간(3GB 이상)·심판 태블릿 배터리(20% 이상 또는 충전 중) */
   const dk=((S.courts||{})[c.id]||{}).disk||{},bt=((S.courts||{})[c.id]||{}).bat,bl=Array.isArray(bt)?bt:[],blow=bl.filter(x=>!x.charging&&x.level<0.2);
   it.push(['하드',!dk.total||dk.free>=3*1073741824,dk.total?`남은 ${(dk.free/1073741824).toFixed(1)}GB`:'정보 없음']);
@@ -714,7 +727,7 @@ function vAdmin(){
   const list=courtList(),cf=CFG(),al=alerts(list),n=noticeNow(cf),nd=cf.noticeDur==null?180:cf.noticeDur;
   const rows=list.length?list.map(c=>{const b=c.app&&c.app.board;
     return `<tr><td><b style="font-size:18px">${esc(c.court)}코트</b><div class="small muted">${esc(c.addr)} · ${VIA[c.via]||esc(c.via)}</div></td>
-      <td>${c.online?(c.stale?'<span class="chip warn"><i class="dot"></i>운영석 꺼짐</span>':'<span class="chip ok"><i class="dot"></i>연결됨</span>'):`<span class="chip bad"><i class="dot"></i>끊김 · ${ago(c.lastSeen)}</span>`}${liveChip(c)}</td>
+      <td>${c.online?(c.stale?'<span class="chip warn"><i class="dot"></i>운영석 꺼짐</span>':'<span class="chip ok"><i class="dot"></i>연결됨</span>'):`<span class="chip bad"><i class="dot"></i>끊김 · ${ago(c.lastSeen)}</span>`}${liveChip(c)}<div>${verChip(c,verTop(list))}</div></td>
       <td>${b?`<span class="chip">${esc(b.appName||'')}</span> <b>${esc(b.curDiv||'')}</b><div class="small muted">${b.now?esc(b.now.label)+' · '+esc((b.now.names||[]).map(x=>x.name).join(' · ')):'호출 대기'}${b.progress?` · 경기 ${b.progress.done}/${b.progress.total}`:''}</div>${b.nextDiv?`<div class="small">다음 부문: <b>${esc(b.nextDiv)}</b></div>`:''}${judgeChips(b,c.online&&!c.stale)}`:'<span class="muted small">진행 정보 없음</span>'}</td>
       <td style="white-space:nowrap">${b&&b.nextDiv?`<button class="btn sm primary" data-a="callNext" data-id="${esc(c.id)}">📣 다음 부문 호출</button> `:''}<button class="btn sm" data-a="forget" data-addr="${esc(c.addr)}" title="목록에서 빼기">빼기</button></td></tr>`;}).join('')
     :`<tr><td colspan="4"><div class="empty">아직 찾은 코트가 없습니다. 코트 노트북에서 현장 모드를 켜고 역할을 「코트」로 고르면 자동으로 나타납니다.<br>같은 공유기 와이파이에 연결되어 있는지 확인해 주세요.</div></td></tr>`;
@@ -742,7 +755,7 @@ function vAdmin(){
   ${vRules()}
   ${vLvPanel()}
   <div class="panel"><div class="row between"><h2>코트 연결 ${checkSummary(list,al)}</h2><span class="row"><span class="small muted">같은 와이파이의 코트 노트북을 자동으로 찾습니다</span><button class="btn sm" data-a="scan">🔎 지금 다시 찾기</button></span></div>
-    <div style="overflow-x:auto"><table><tr><th>코트</th><th>상태</th><th>지금 진행 · 심판 연결</th><th></th></tr>${rows}</table></div>${JLEGEND}
+    ${verBar(list)}<div style="overflow-x:auto"><table><tr><th>코트</th><th>상태</th><th>지금 진행 · 심판 연결</th><th></th></tr>${rows}</table></div>${JLEGEND}
     <div class="row"><span class="small muted">자동으로 안 보이면 코트 노트북 검은 창의 주소를 넣으세요</span><input type="text" id="manAddr" placeholder="예: 192.168.0.12:8080" style="width:220px"><button class="btn sm" data-a="addMan">주소로 추가</button></div></div>
   ${vMove()}
   <div class="panel"><div class="row between"><h2>💾 코트 결과 자동 모음</h2><button class="btn" data-a="openColl">📂 폴더 열기</button></div>
@@ -1252,7 +1265,7 @@ const HQ_T=[[/한눈에/,'ops','🎯','호출 · 대기 · 공지'],[/대회 운
   [/시작 전 점검/,'check','✅','시작 전 점검'],[/종목별 경기 규칙/,'rules','📐','종목별 경기 규칙'],[/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터'],[/태블릿 배터리/,'bat','🔋','태블릿 배터리']];
 function hqTileState(k){const cf=CFG(),list=courtList(),n=noticeNow(cf);
   switch(k){
-    case 'court':{const on=list.filter(c=>c.online).length,bad=list.filter(c=>!c.online||c.stale).length;return [list.length?`${on}/${list.length}곳 연결`:'아직 코트 없음',list.length&&!bad?'ok':list.length?'warn':''];}
+    case 'court':{const on=list.filter(c=>c.online).length,bad=list.filter(c=>!c.online||c.stale).length,top=verTop(list),vb=list.filter(c=>!verOk(c,top)).length;return [list.length?`${on}/${list.length}곳 연결${vb?` · ⚠ 버전 다름 ${vb}`:''}`:'아직 코트 없음',vb?'warn':list.length&&!bad?'ok':list.length?'warn':''];}
     case 'ops':{const nr=msgs().filter(m=>m.dir==='up'&&m.st==='new').length,l=opsCalls()[0];return [`${n.mode!=='off'&&n.text?(n.urgent?'⚠ 급한 공지 · ':'공지 중 · '):''}${l?'호출 '+hhmm(l.at):'호출 없음'}${nr?` · 대기실 요청 ${nr}`:''}`,nr||(n.urgent&&n.mode!=='off')?'warn':(l||n.mode!=='off')?'ok':''];}
     case 'call':return [`자동 호출 ${cf.autoCall?'켜짐':'꺼짐'}${S.log[0]?' · 최근 '+new Date(S.log[0].at).toTimeString().slice(0,5):''}`,''];
     case 'notice':return [n.mode==='full'?'전체 화면 표시 중':n.mode==='banner'&&n.text?'아래 띠 표시 중':'표시 안 함',n.mode&&n.mode!=='off'&&n.text?'ok':''];
@@ -1323,6 +1336,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   if(/^(rm|hqRm|hqPh)|^(roomAuto|hqVoiceTest|hqOpenEdge|annPhDelR)$/.test(a)){try{await roomClick(a,b);}catch(err){toast('보내지 못했습니다: '+(err.message||err));}return;}
   if(a==='hqCompSave'){saveCfg({compName:(($('#hqCompName')||{}).value||'').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,3).join('\n')});toast('대회명을 저장했습니다 · 본부 모니터에 바로 나옵니다');return;}
   if(a==='hqMonIdle'){saveCfg({monIdle:b.dataset.v||''});return;}
+  if(a==='staffQR'){if(window.KSQR)KSQR.open({title:'진행요원 안내 (휴대폰)',items:[['','📘 진행요원 안내 · 처음 화면'],['room','🚪 대기실 진행요원'],['award','🏅 시상식 진행요원'],['court','💻 코트 기록석'],['judge','⚖️ 심판'],['tv','📺 전광판·TV 담당']].map(([k,l])=>({label:l,sub:'공유기 와이파이 연결 후 찍기',url:staffUrl()+(k?'#'+k:'')}))});return;}
   if(a==='nxQR'){const base=(window.KS_FIELD&&KS_FIELD.base)||location.href.split('#')[0];if(window.KSQR)KSQR.open({title:'코트별 다음 경기 화면 (TV·태블릿)',items:[{label:'🖥 모든 코트',sub:'대기실 TV',url:base+'#next'},...courtList().map(c=>({label:`🖥 ${c.court}코트`,sub:'코트 옆 TV',url:base+'#next-'+c.court}))]});return;}
   if(a==='nxFs'){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen();}catch(x){}return;}
   if(a==='hqMonRes'){saveCfg({monRes:b.dataset.v==='1'});return;}
@@ -1514,7 +1528,7 @@ function vRoomPanel(){
         <div class="row"><button class="btn primary" data-a="hqRmSave">대기실 설정 저장</button></div>
         <span class="small muted">맡을 앱 + 부문 이름 낱말로 대기실 화면에 보일 부문을 고릅니다. 예) 팀 대항 대기실: 모든 앱 · 「체조,경연,단체」 / 품새 대기실: 품새 앱 · 「-체조,-경연」</span></div>
       <div class="rmc"><span class="small muted">🔊 방송 목소리는 본부 첫 화면 「📣 호출·방송」 칸에서 고릅니다.</span></div>`;}
-  return `<div class="panel"><div class="row between"><h2>🚪 대기실 연결</h2><span class="row"><button class="btn sm ${cf.roomAuto?'on':''}" data-a="roomAuto" title="대기실의 「부문 호출」을 바로 전광판으로 보낼지">📣 호출 ${cf.roomAuto?RT.auto:RT.manual}</button><button class="btn sm primary" data-a="hqRmQR">📱 대기실·시상식 QR</button><button class="btn sm" data-a="nxQR" title="코트별 다음 경기(부문·조·선수)를 큰 글씨로 — 대기실·코트 옆 TV">🖥 다음 경기 화면</button></span></div>
+  return `<div class="panel"><div class="row between"><h2>🚪 대기실 연결</h2><span class="row"><button class="btn sm ${cf.roomAuto?'on':''}" data-a="roomAuto" title="대기실의 「부문 호출」을 바로 전광판으로 보낼지">📣 호출 ${cf.roomAuto?RT.auto:RT.manual}</button><button class="btn sm primary" data-a="hqRmQR">📱 대기실·시상식 QR</button><button class="btn sm" data-a="nxQR" title="코트별 다음 경기(부문·조·선수)를 큰 글씨로 — 대기실·코트 옆 TV">🖥 다음 경기 화면</button><button class="btn sm" data-a="staffQR" title="대기실·시상식·코트 기록석·심판·전광판 담당이 할 일을 휴대폰으로">📘 진행요원 안내 QR</button></span></div>
     <span class="small muted">${cf.roomAuto?`<b>${RT.auto}</b>: 대기실이 「부문 호출」을 누르면 바로 본부 모니터·음성으로 나갑니다.`:`<b>${RT.manual}</b>: 대기실 호출은 「📥 받은 요청」에서 「전광판 보내기」를 눌러야 나갑니다.`} 대기실 휴대폰도 대회장 와이파이에 연결해 주세요.</span>
     ${body}</div>`;
 }
@@ -1684,7 +1698,7 @@ async function roomClick(a,b){
     case 'roomAuto':await saveCfg({roomAuto:!cf.roomAuto});return true;
     case 'hqRmSave':{const R=rooms().map((x,i)=>({name:(($('#rmName_'+i)||{}).value||x.name).trim()||x.name,app:($('#rmApp_'+i)||{}).value??x.app,kw:(($('#rmKw_'+i)||{}).value??x.kw).trim()}));
       const sv=[...(cf.rooms||[])];R.forEach((x,i)=>sv[i]=x);await saveCfg({rooms:sv});toast('대기실 설정을 저장했습니다');return true;}
-    case 'hqRmQR':{if(window.KSQR){const base=(window.KS_FIELD&&KS_FIELD.base)||location.href.split('#')[0];KSQR.open({title:'대기실 휴대폰',items:[...rooms().map(x=>({label:'🚪 '+x.name,sub:'대기실 진행 요원 휴대폰으로 찍기',url:base+'#room-'+x.id})),{label:'🏅 시상식 대기실',sub:'시상 진행 요원 휴대폰으로 찍기',url:base+'#award'}]});}return true;}
+    case 'hqRmQR':{if(window.KSQR){const base=(window.KS_FIELD&&KS_FIELD.base)||location.href.split('#')[0];KSQR.open({title:'대기실 휴대폰',items:[...rooms().map(x=>({label:'🚪 '+x.name,sub:'대기실 진행 요원 휴대폰으로 찍기',url:base+'#room-'+x.id})),{label:'🏅 시상식 대기실',sub:'시상 진행 요원 휴대폰으로 찍기',url:base+'#award'},{label:'📘 진행요원 안내',sub:'자리별 할 일 · 누구나 찍어 보기',url:staffUrl()}]});}return true;}
     case 'hqOpenEdge':{try{const j=await (await fetch('/api/hq/openedge',{method:'POST'})).json();toast(j.ok?'엣지로 본부 모니터(전광판)를 열었습니다 · 이제 방송 소리는 그 창에서만 나옵니다':'이 노트북에서 엣지를 찾지 못했습니다');}catch(e){toast('본부 노트북(현장 프로그램)에서만 열 수 있습니다');}return true;}
     case 'hqVoiceTest':{const v=($('#hqVoice')||{}).value||'';if(v!==(cf.voiceName||''))await saveCfg({voiceName:v});sayTest('본부 모니터 목소리 시험입니다. B코트, 중등부 3학년 선수는 준비해 주세요.');return true;}
   }
