@@ -1908,7 +1908,7 @@ function render(){
   if(fid){const el=document.getElementById(fid);if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){el.focus();if(el.type!=='number'){try{const n=el.value.length;el.setSelectionRange(n,n);}catch(e){}}}}
   tickTimers();
   refreshAlerts(true);
-  try{maybeAutoReveal();maybeAutoAdvance();}catch(e){}
+  try{maybeAutoReveal();maybeAutoAdvance();maybeFlow();}catch(e){}
 }
 window.addEventListener('online',()=>{render();flushOutbox();});
 window.addEventListener('offline',()=>render());
@@ -2218,7 +2218,7 @@ function aBoard(){
       ${advanceBox(d)}</div>
     <div class="panel bp grow"><div class="row between"><h3>진행 순서</h3><span class="small muted">${calls.length}명(팀)</span></div>
       <div class="scroll"><div class="blist">${items||'<div class="empty small">선수가 없습니다.</div>'}</div></div></div></div>`;
-  const center=`<div class="col">${runPanel(st,cur).replace('<div class="panel','<div class="panel bp grow bcur')}</div>`;
+  const center=`<div class="col">${flowStrip(cur?divById(cur.divId)||d:d,cur)}${runPanel(st,cur).replace('<div class="panel','<div class="panel bp grow bcur')}</div>`;
   const N=cur?cur.judgeCount||SET().judges:SET().judges,cs=curScores();
   const jrows=Array.from({length:N},(_,i)=>{const j=i+1,seat=S.seats[j],online=ROOM&&seat?deviceOnline(seat.device):null,x=cur?cs.find(s=>s.perfId===cur.perfId&&s.judge===j):null,q=judgeQueued(j);
     return `<div class="jrow"><b>${j}심</b><span class="row" style="gap:5px">${!seat?'<span class="dot"></span><span class="small muted">비어 있음</span>':online===null?'<span class="dot local"></span><span class="small">입장</span>':online?'<span class="dot on"></span><span class="small">접속 중</span>':'<span class="dot" style="background:var(--red)"></span><span class="small" style="color:var(--red)">연결 끊김</span>'}</span>
@@ -2272,7 +2272,7 @@ function runPanel(st,cur){
   if(revealed&&r){
     const nx=d?callsOf(d).find(c=>!callDone(c)&&c.callId!==cur.callId):null;
     return `<div class="panel">${head}${resultCard(r,cur)}
-      <div class="row">${nx?`<button class="btn primary big" data-act="call" data-id="${nx.callId}">다음 선수 호출: ${esc(aName(nx.athleteId))} →</button>`:'<span class="chip ok">이 단계의 경기를 모두 마쳤습니다</span>'}
+      <div class="row">${nx?`<button class="btn primary big" data-act="call" data-id="${nx.callId}">다음 선수 호출: ${esc(aName(nx.athleteId))} →</button>`:(()=>{const i2=flowInfo();return i2&&i2.c?`<button class="btn primary big" data-act="call" data-id="${i2.c.callId}">다음 경기 ${esc(i2.title)} 첫 선수 호출 →</button>`:'<span class="chip ok">이 단계의 경기를 모두 마쳤습니다</span>';})()}
       <button class="btn" data-act="armed" data-do="reopen">${JUDGED(k)?'다시 채점':'기록 고치기'}</button></div></div>`;
   }
   const ded=st.ded||{},rec=st.rec||{},dqOn=!!st.dq;
@@ -2631,6 +2631,33 @@ async function advanceTo(d,ap,auto){
   toast(`${d.name} · 결선 진출 ${ap.adv.length}명이 결선에 올라갔습니다. 「결선 순서 추첨」을 눌러 주세요`);
 }
 const ADV_SEEN={};
+
+/* ===== v1.7.7 조 자동 넘어가기 · 지금 조 한눈에 =====
+   한 조(예선 조 · 결선 · 조 없는 부문)가 모두 끝나면 5초 동안 「다음 경기 ○○부 ○조」를 띄우고 그 조의 첫 선수를 자동 호출합니다.
+   같은 부문에 다음 조가 있으면 그 조로, 없으면 본부 운영표 순서(부문 이름 앞 번호)대로 다음 부문으로. 예선 뒤 결선이 남았으면 넘어가지 않습니다. */
+const flowNum=d=>{const m=/^(\d{1,3})\s/.exec(d.name||'');return m?+m[1]:9999;};
+function flowOrder(){return S.divs.map((d,i)=>({d,i})).sort((a,b)=>(flowNum(a.d)-flowNum(b.d))||(a.i-b.i)).map(x=>x.d);}
+const flowGk=c=>c.divId+'|'+c.stage+'|'+(c.group==null?'':c.group);
+function flowUnit(d,c){return callsOf(d).filter(x=>flowGk(x)===flowGk(c));}
+function flowEnded(d){const c=callsOf(d);if(!c.length||!c.every(callDone))return false;const st=curStage(d);if(st.pending)return false;
+  if(stagesOf(d).length===1&&st.key==='pre'&&advancePlan(d))return false;return !rematchNeed(d);}
+function flowNextDiv(d){const L=flowOrder(),i=L.findIndex(x=>x.id===d.id);return L.slice(i+1).find(x=>callsOf(x).some(c=>!callDone(c)))||null;}
+const flowTitle=(d,c)=>d.name.replace(/^\d{1,3}\s+/,'')+(c&&c.group!=null&&(curStage(d).groups||[]).length>1?` ${c.group+1}조`:'')+(c&&c.stage==='final'&&stagesOf(d).length>1?' 결선':'');
+function flowInfo(){const st=ST(),cur=curOf();if(!cur||st.status!=='revealed'||!S.results[cur.perfId])return null;const d=divById(cur.divId);if(!d)return null;
+  const unit=flowUnit(d,cur);if(!unit.length||!unit.every(callDone))return null;
+  const key=cur.callId+'#'+(st.epoch||0),rest=callsOf(d).find(x=>!callDone(x)&&!x.rm);
+  if(rest)return {d,n:d,c:rest,key,title:flowTitle(d,rest),cnt:flowUnit(d,rest).length};
+  if(!flowEnded(d))return null;const n=flowNextDiv(d);if(!n)return {end:true,d};const c=callsOf(n).find(x=>!callDone(x));return {d,n,c,key,title:flowTitle(n,c),cnt:flowUnit(n,c).length};}
+let FLOW_STOP='';
+function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;const sm=window.KS_SIM&&KS_SIM.state&&KS_SIM.state.SIM;if(sm&&sm.on){if(KSFLOW.key)KSFLOW.hide();return;} /* 가상 경기가 돌 때는 가상 경기가 호출 */const inf=flowInfo();
+  if(!inf||inf.end||SET().autoDiv==='manual'||FLOW_STOP===inf.key){if(KSFLOW.key&&(!inf||KSFLOW.key!==(inf&&inf.key)))KSFLOW.hide();return;}
+  KSFLOW.show({key:inf.key,title:inf.title,sub:`${inf.cnt}명 · 첫 선수 ${aName(inf.c.athleteId)}`,sec:5,
+    go:()=>{const n=divById(inf.n.id);if(!n)return;const c2=callsOf(n).find(x=>!callDone(x));if(!c2)return;ui.div=n.id;callIt(c2.callId);},stop:()=>{FLOW_STOP=inf.key;render();}});}
+function flowStrip(d,cur){if(!window.KSFLOW||!d)return '';const calls=callsOf(d);if(!calls.length)return '';
+  const ref=(cur&&cur.divId===d.id&&calls.find(c=>c.callId===cur.callId))||calls.find(c=>!callDone(c))||calls[calls.length-1],unit=flowUnit(d,ref);
+  const items=unit.map(c=>{const a=athlete(c.athleteId)||{},r=S.results[c.perfId],on=cur&&cur.callId===c.callId;return {no:(c.idx||0)+1+(c.rm?'R':''),names:[{t:a.name||'(삭제됨)'}],team:a.team||'',sc:r?resultText(r):'',state:on?'cur':r?'done':''};});
+  const inf=flowInfo();
+  return KSFLOW.strip({title:flowTitle(d,ref),stage:STAGE_NAME[ref.stage]||'',done:unit.filter(callDone).length,total:unit.length,items,auto:SET().autoDiv!=='manual',next:inf&&inf.title?inf.title:''});}
 function maybeAutoAdvance(){
   if(KIOSK||!(routeNow().startsWith('admin')||SOLO())||SET().autoAdvance===false)return;
   for(const d of S.divs){if(d.noAutoAdv)continue;const sts=stagesOf(d);if(sts.length>1||sts[0].key!=='pre')continue;
@@ -2823,6 +2850,7 @@ const ACT={
   },
   setJudges:b=>setS({judges:Number(b.dataset.v)}),
   setAutoReveal:b=>setS({autoReveal:b.dataset.v==='true'}),
+  toggleAutoDiv:()=>{setS({autoDiv:SET().autoDiv==='manual'?'auto':'manual'});FLOW_STOP='';},
   setElemMix:b=>setS({elemMix:b.dataset.v==='true'}),
   setVoice:b=>setS({voice:b.dataset.v}),
   setAdv:b=>setS({adv:b.dataset.v==='auto'?'auto':Number(b.dataset.v)}),

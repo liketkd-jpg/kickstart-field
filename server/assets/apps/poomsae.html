@@ -1848,7 +1848,7 @@ function render(){
   if(fid){const el=document.getElementById(fid);if(el&&el.tagName==='INPUT'&&el.type!=='number'){el.focus();try{const n=el.value.length;el.setSelectionRange(n,n);}catch(e){}}else if(el&&el.tagName==='INPUT')el.focus();}
   tickTimers();
   refreshAlerts(true);
-  try{maybeAutoReveal();maybeAutoNext();maybeAutoAdvance();}catch(e){}
+  try{maybeAutoReveal();maybeAutoNext();maybeAutoAdvance();maybeFlow();}catch(e){}
 }
 window.addEventListener('online',()=>{render();flushOutbox();});
 window.addEventListener('offline',()=>render());
@@ -2247,7 +2247,7 @@ function aBoard(){
   </div>`;
   /* 가운데: 현재 경기 */
   let center;
-  if(!cur)center=`<div class="col"><div class="panel bp grow"><div class="empty" style="margin:auto">왼쪽 진행 순서에서 "호출"을 누르면 현재 경기가 여기에 크게 표시됩니다.</div></div></div>`;
+  if(!cur)center=`<div class="col">${flowStrip(div,null)}<div class="panel bp grow"><div class="empty" style="margin:auto">왼쪽 진행 순서에서 "호출"을 누르면 현재 경기가 여기에 크게 표시됩니다.</div></div></div>`;
   else{
     const N=cur.judgeCount,t=st.timer||{},sh=SHEETS[cur.type],revealed=st.status==='revealed',cs=curScores();
     const flag=timeFlag(t),ready=cur.entries.every(e=>entryReady(cur,e));
@@ -2270,7 +2270,7 @@ function aBoard(){
     const jt=`<table class="jt"><tr><th></th>${Array.from({length:N},(_,i)=>`<th class="num">${i+1}심</th>`).join('')}</tr>
       ${cur.entries.map(e=>{const pv=pvOf(e);return `<tr><td><b class="${e.side||''}">${e.side?sideName(e.side):esc(e.name)}</b></td>${Array.from({length:N},(_,i)=>{const j=i+1,x=cs.find(s=>s.perfId===e.perfId&&s.judge===j),q=pv?pv.judges.find(z=>z.judge===j):null;
         return `<td class="num ${x?'in':'out'}">${x?`<span class="${q&&q.dropA?'drop':''}">${fmt1(x.a)}</span>/<span class="${q&&q.dropB?'drop':''}">${fmt1(x.b)}</span>`:'대기'}</td>`;}).join('')}</tr>`;}).join('')}</table>`;
-    center=`<div class="col"><div class="panel bp grow bcur">
+    center=`<div class="col">${flowStrip(S.divs.find(x=>x.id===cur.divId)||div,cur)}<div class="panel bp grow bcur">
       <div class="row between"><span class="label">${esc(cur.divName)} · ${esc(cur.label)} · ${sh.label} · ${N}심제</span>${revealed?'<span class="chip ok">점수 공개됨</span>':'<span class="chip live">채점 중</span>'}</div>
       ${pbarHtml(cur,revealed)}
       <div class="btimer"><span class="timer" data-timer>${cdText(ST().timer)}</span><span class="small muted">제한 ${limitText(t)}${flag==='over'?' · <b style="color:var(--red)">초과</b>':flag==='under'?' · <b style="color:var(--red)">미달</b>':''}</span>
@@ -2278,7 +2278,7 @@ function aBoard(){
         </div><div class="bcmd">${(()=>{const ra=ST().readyAt,pend=ra&&!t.running&&Date.now()<ra+READY_SEC*1000+1500;return `<button class="btn big ${pend?'armed':'primary'}" data-act="cmdReady" ${revealed||t.running||pend?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;})()}<button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 · 쉬어</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>
       <div class="bents ${cur.entries.length===2?'two':''}">${ent}</div>${window.MUS?MUS.html('run'):''}
       <div class="tablewrap">${jt}</div>
-      <div class="row bact">${revealed?`<button class="btn primary big" data-act="nextCall">${mv.two&&mv.stage===1?'2품새 호출 →':'다음 경기 호출 →'}</button>${(()=>{const inf=autoNextInfo();return inf?`<span class="chip live" style="font-size:14px" data-cd="${inf.at}">${Math.max(0,Math.ceil((inf.at-Date.now())/1000))}초 뒤 2품새 자동 호출</span><button class="btn sm" data-act="cancelAutoNext">취소</button>`:'';})()}${mv.win==='blue'||mv.win==='red'?`<button class="btn sm" data-act="sayWinner" data-k="${mv.win}">🔊 ${mv.win==='blue'?'청':'홍'} 승</button>`:''}<button class="btn danger" data-act="armed" data-do="rescore">재채점</button>${win==='tie'?`<div class="chip warn" style="font-size:14px;white-space:normal">${revealed?'':'(예상) '}완전 동점 · ${perPoom?'두 품새 평균으로 최종 판정, 평균도 같으면 ':''}제14조에 따라 재경기 (진행 순서에 자동 추가)</div>`:why?`<div class="chip ${revealed?'ok':'warn'}" style="font-size:14px;white-space:normal">${revealed?'':'(예상) '}${esc(why)} · 제14조${mv.two?' · 두 품새 평균 기준':''}</div>`:mv.two&&mv.stage===1?'<div class="chip live" style="font-size:14px">1품새 점수 공개 · 다음은 2품새</div>':''}`
+      <div class="row bact">${revealed?`<button class="btn primary big" data-act="nextCall">${mv.two&&mv.stage===1?'2품새 호출 →':(()=>{const i2=flowInfo();return i2&&i2.n?'다음 부문 첫 경기 호출 →':'다음 경기 호출 →';})()}</button>${(()=>{const inf=autoNextInfo();return inf?`<span class="chip live" style="font-size:14px" data-cd="${inf.at}">${Math.max(0,Math.ceil((inf.at-Date.now())/1000))}초 뒤 2품새 자동 호출</span><button class="btn sm" data-act="cancelAutoNext">취소</button>`:'';})()}${mv.win==='blue'||mv.win==='red'?`<button class="btn sm" data-act="sayWinner" data-k="${mv.win}">🔊 ${mv.win==='blue'?'청':'홍'} 승</button>`:''}<button class="btn danger" data-act="armed" data-do="rescore">재채점</button>${win==='tie'?`<div class="chip warn" style="font-size:14px;white-space:normal">${revealed?'':'(예상) '}완전 동점 · ${perPoom?'두 품새 평균으로 최종 판정, 평균도 같으면 ':''}제14조에 따라 재경기 (진행 순서에 자동 추가)</div>`:why?`<div class="chip ${revealed?'ok':'warn'}" style="font-size:14px;white-space:normal">${revealed?'':'(예상) '}${esc(why)} · 제14조${mv.two?' · 두 품새 평균 기준':''}</div>`:mv.two&&mv.stage===1?'<div class="chip live" style="font-size:14px">1품새 점수 공개 · 다음은 2품새</div>':''}`
         :`<button class="btn primary big" data-act="reveal" ${ready?'':'disabled'}>점수 공개</button>${cs.length?'<button class="btn danger" data-act="armed" data-do="rescore">채점 지우기</button>':''}<span class="small muted">${ready?(SET().autoReveal===false?'모든 점수가 도착했습니다.':'<b style="color:var(--green-ink)">모든 점수 도착 · 곧 자동 공개</b>'):'심판 점수를 기다리는 중입니다.'}</span>`}
         <span class="row autos" style="margin-left:auto;gap:4px">
           <button class="btn sm ${SET().autoReveal===false?'':'primary'}" data-act="toggleAutoReveal" title="모든 심판 점수가 들어오면 자동으로 공개">점수 공개 ${SET().autoReveal===false?'수동':'자동'}</button>
@@ -2811,6 +2811,29 @@ function maybeAutoAdvance(){
     setTimeout(()=>{const d2=S.divs.find(x=>x.id===d.id);if(!d2||stagesOf(d2).length+'' !==k.split('|')[1])return;const p2=advancePlan(d2);
       if(!p2.done||p2.tie||!p2.winners||!p2.winners.length){ADV_SEEN[k]=0;return;}advanceTo(d2,p2,true).catch(()=>{ADV_SEEN[k]=0;});},4000);}
 }
+
+/* ===== v1.7.7 조 자동 넘어가기 · 지금 조 한눈에 =====
+   부문 이름 앞 번호(01, 02 …) = 본부 운영표 순서. 한 부문(조)이 모두 끝나면 5초 동안 「다음 경기 ○○부 ○조」를 띄우고
+   다음 부문의 첫 경기를 자동 호출합니다. 「멈춤」이면 그 자리에서 멈추고, 「조 넘어가기 수동」이면 띄우지 않습니다.
+   예선 → 결선처럼 같은 부문에 다음 단계가 남았으면 넘어가지 않습니다. */
+const flowNum=d=>{const m=/^(\d{1,3})\s/.exec(d.name||'');return m?+m[1]:9999;};
+function flowOrder(){return S.divs.map((d,i)=>({d,i})).sort((a,b)=>(flowNum(a.d)-flowNum(b.d))||(a.i-b.i)).map(x=>x.d);}
+function flowEnded(d){const c=callsOf(d);if(!c.length||!c.every(callDone))return false;if(d.format==='tournament')return true;
+  const st=curStage(d);if(st.pending||nextStage(d,st.key))return false;return !rematchNeed(d);}
+function flowNextDiv(d){const L=flowOrder(),i=L.findIndex(x=>x.id===d.id);return L.slice(i+1).find(x=>callsOf(x).some(c=>!callDone(c)))||null;}
+function flowInfo(){const st=ST(),cur=curOf();if(!cur||st.status!=='revealed')return null;const d=S.divs.find(x=>x.id===cur.divId);if(!d||!flowEnded(d))return null;
+  const n=flowNextDiv(d);if(!n)return {end:true,d};return {d,n,c:callsOf(n).find(x=>!callDone(x)),key:cur.callId+'#'+(st.epoch||0)};}
+let FLOW_STOP='';
+function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;const sm=window.KS_SIM&&KS_SIM.state&&KS_SIM.state.SIM;if(sm&&sm.on){if(KSFLOW.key)KSFLOW.hide();return;} /* 가상 경기가 돌 때는 가상 경기가 호출 */const inf=flowInfo();
+  if(!inf||inf.end||SET().autoDiv==='manual'||FLOW_STOP===inf.key){if(KSFLOW.key&&(!inf||KSFLOW.key!==(inf&&inf.key)))KSFLOW.hide();return;}
+  const n=inf.n,cs=callsOf(n);KSFLOW.show({key:inf.key,title:n.name.replace(/^\d{1,3}\s+/,''),sub:`${cs.length}경기 · 첫 경기 ${inf.c.entries.map(e=>aName(e.athleteId)).join(' vs ')}`,sec:5,
+    go:()=>{const c2=callsOf(n).find(x=>!callDone(x));if(!c2)return;ui.div=n.id;callIt(c2.callId);},stop:()=>{FLOW_STOP=inf.key;render();}});}
+function flowStrip(div,cur){if(!window.KSFLOW||!div)return '';const calls=callsOf(div),st=div.format==='tournament'?null:curStage(div);
+  const items=calls.map((c,i)=>{const done=callDone(c),on=cur&&cur.callId===c.callId;
+    const sc=c.entries.length===1?(S.results[c.entries[0].perfId]?fmt3(S.results[c.entries[0].perfId].final):''):(()=>{const v=matchVerdict(c,e=>S.results[e.perfId]);return done&&v&&v.win?(v.win==='blue'?'청 승':'홍 승'):'';})();
+    return {no:c.no||i+1,names:c.entries.map(e=>({t:aName(e.athleteId),side:e.side||''})),team:c.entries.length===1?(athlete(c.entries[0].athleteId)||{}).team||'':'',sc,state:on?'cur':done?'done':''};});
+  const inf=flowInfo(),nx=inf&&inf.n?inf.n.name.replace(/^\d{1,3}\s+/,''):(flowEnded(div)?((flowNextDiv(div)||{}).name||'').replace(/^\d{1,3}\s+/,''):'');
+  return KSFLOW.strip({title:div.name.replace(/^\d{1,3}\s+/,''),stage:div.format==='tournament'?'토너먼트':(stagesOf(div).length>1||nextStage(div,st.key)?STAGES[st.key]:''),done:calls.filter(callDone).length,total:calls.length,items,auto:SET().autoDiv!=='manual',next:nx});}
 function maybeAutoNext(){
   if(KIOSK||!(routeNow().startsWith('admin')||SOLO()))return;
   const inf=autoNextInfo();if(!inf||NEXT_KEY===inf.key)return;NEXT_KEY=inf.key;
@@ -3274,6 +3297,7 @@ const ACT={
   dedUndo:b=>{const st=ST(),p=b.dataset.p,d={...(st.deduction||{})};d[p]=dedOf(p).slice(0,-1);saveState({...st,deduction:d});},
   reveal:async b=>{if(b)b.disabled=true;try{await doReveal();}catch(e){if(b)b.disabled=false;}},
   toggleAutoNext:()=>saveSettings({...SET(),autoNext:SET().autoNext==='manual'?'auto':'manual'}),
+  toggleAutoDiv:()=>{saveSettings({...SET(),autoDiv:SET().autoDiv==='manual'?'auto':'manual'});FLOW_STOP='';},
   toggleWinVoice:()=>saveSettings({...SET(),winVoice:SET().winVoice==='manual'?'auto':'manual'}),
   cancelAutoNext:()=>{const st=ST(),cur=curOf();if(cur){NEXT_CANCEL=cur.callId+'#'+st.epoch;clearTimeout(NEXT_T);}render();},
   sayWinner:b=>{const k=b.dataset.k;if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);saveState({...ST(),voice:vm});},
@@ -3297,7 +3321,7 @@ const ACT={
     const cur=curOf(),d=S.divs.find(x=>x.id===cur.divId);
     const list=d?callsOf(d):[],i=list.findIndex(c=>c.callId===cur.callId);
     const next=list.slice(i+1).find(c=>!callDone(c))||list.find(c=>!callDone(c));
-    if(next)callIt(next.callId);else toast('이 부문(단계)의 경기를 모두 마쳤습니다');
+    if(next)callIt(next.callId);else{const n=d&&flowEnded(d)?flowNextDiv(d):null,c2=n?callsOf(n).find(x=>!callDone(x)):null;if(c2){if(window.KSFLOW)KSFLOW.hide();ui.div=n.id;callIt(c2.callId);}else toast('이 부문(단계)의 경기를 모두 마쳤습니다');}
   },
   editRes:b=>{ui.editPerf=ui.editPerf===b.dataset.p?null:b.dataset.p;render();},
   cancelEdit:()=>{ui.editPerf=null;render();},

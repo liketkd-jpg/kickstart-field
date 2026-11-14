@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.6" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.7" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -396,6 +396,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/bat.js":
 		serveAsset(w, "assets/bat.js", "application/javascript; charset=utf-8")
 		return
+	case p == "/flow.js":
+		serveAsset(w, "assets/flow.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/next.js":
 		serveAsset(w, "assets/next.js", "application/javascript; charset=utf-8")
 		return
@@ -520,6 +523,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/rules.js"></script>`) // 본부 종목별 경기 규칙 받기
 		out.WriteString(`<script src="/courtseq.js"></script>`)
 		out.WriteString(`<script src="/next.js"></script>`)     // 한 종목이 끝나면 다음 종목 운영석으로
+		out.WriteString(`<script src="/flow.js"></script>`)     // 조 자동 넘어가기 안내 · 지금 조 한눈에
 		out.WriteString(`<script src="/bat.js"></script>`)      // 심판 태블릿 배터리 → 본부
 		out.WriteString(`<script src="/mode.js"></script>`)     // 시험 모드 표시 · 실제 대회 모드 잠금
 		out.WriteString(`<script src="/skin.js"></script>`)     // 컷오프 전광판 왕실·불꽃 디자인 (종목별)
