@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.21" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.22" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -70,6 +70,7 @@ func main() {
 	setupVoiceDir()
 	loadLic()
 	loadRules()
+	loadShow()
 	startTidy()
 	logf, _ := os.OpenFile(filepath.Join(dataDir, "기록.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 	if logf != nil {
@@ -375,6 +376,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case strings.HasPrefix(p, "/live/"):
 		handleLive(w, r)
 		return
+	case p == "/api/show":
+		handleShow(w, r)
+		return
 	case p == "/api/rules":
 		handleRules(w, r)
 		return
@@ -401,6 +405,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/bat.js":
 		serveAsset(w, "assets/bat.js", "application/javascript; charset=utf-8")
+		return
+	case p == "/show.js":
+		serveAsset(w, "assets/show.js", "application/javascript; charset=utf-8")
 		return
 	case p == "/flow.js":
 		serveAsset(w, "assets/flow.js", "application/javascript; charset=utf-8")
@@ -532,6 +539,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/courtseq.js"></script>`)
 		out.WriteString(`<script src="/next.js"></script>`)     // 한 종목이 끝나면 다음 종목 운영석으로
 		out.WriteString(`<script src="/flow.js"></script>`)     // 조 자동 넘어가기 안내 · 지금 조 한눈에
+		out.WriteString(`<script src="/show.js"></script>`)     // v1.7.22 점수 뒤 전광판 (대회 이름 · 후원사 · 코트 이름)
 		out.WriteString(`<script src="/bat.js"></script>`)      // 심판 태블릿 배터리 → 본부
 		out.WriteString(`<script src="/mode.js"></script>`)     // 시험 모드 표시 · 실제 대회 모드 잠금
 		out.WriteString(`<script src="/skin.js"></script>`)     // 컷오프 전광판 왕실·불꽃 디자인 (종목별)

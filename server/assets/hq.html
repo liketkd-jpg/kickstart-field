@@ -301,6 +301,8 @@ details summary{cursor:pointer}
 .rmvh{display:flex;align-items:center;gap:10px;font-size:19px;margin:4px 0}
 .rmcnt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.rmcnt span{background:var(--sunk);border-radius:12px;padding:8px;font-weight:700;color:var(--muted)}
 .verbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;border-radius:12px;border:2px solid var(--ok);margin:4px 0}.verbar.bad{border-color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}.verbar.bad>.small{color:var(--red);font-weight:800}
+.shst{display:flex;flex-direction:column;gap:6px;flex:1}.shs{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:12px;border:1.5px solid var(--line,#333)}.shs.off{opacity:.45}.shs .shn{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:900;background:rgba(201,162,98,.25)}.shs .shi{font-size:22px}.shs>b{flex:1;min-width:140px}
+.shsp{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}.shp{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:12px;border:1.5px solid var(--line,#333)}.shimg{height:110px;background:#fff;border-radius:8px;display:grid;place-items:center;padding:6px}.shimg img{max-width:100%;max-height:100%;object-fit:contain}
 .rmcnt b{display:block;font-size:26px;color:var(--ink)}.rmcnt.two{grid-template-columns:1fr 1fr}
 .rmhint{font-size:14px;color:var(--muted);text-align:center;padding:2px 4px}
 button.rmp{width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;min-height:52px}.rmp .rmst{flex:none;font-weight:900;font-size:15px;padding:4px 10px;border-radius:999px;color:var(--ok)}.rmp.out .rmst{color:#fff;background:var(--red)}.rmp.out b{text-decoration:line-through;text-decoration-thickness:2px}
@@ -402,7 +404,7 @@ function courtList(){
     const apps=c.apps||{};let best=null;
     for(const [k,v] of Object.entries(apps)){const b=v&&v.board;if(!appOn(k))continue;if(b&&(!best||(b.at||0)>(best.board.at||0)))best={key:k,board:b,results:v.results||null};}
     const age=best&&best.board.at?NOW()-best.board.at:null;
-    return {id,addr:c.addr,via:c.via,court:c.court||'?',online:!!c.online,lastSeen:c.lastSeen||0,app:best,stale:c.online&&(!best||age>40000),apps,live:c.live&&c.live.on?c.live:null,rulesAt:c.rulesAt||0,licEnds:c.licEnds||'',mode:c.mode||'',hqs:c.hqs||[],ver:c.ver||''};
+    return {id,addr:c.addr,via:c.via,court:c.court||'?',online:!!c.online,lastSeen:c.lastSeen||0,app:best,stale:c.online&&(!best||age>40000),apps,live:c.live&&c.live.on?c.live:null,rulesAt:c.rulesAt||0,licEnds:c.licEnds||'',mode:c.mode||'',hqs:c.hqs||[],ver:c.ver||'',showAt:c.showAt||0};
   }).sort((a,b)=>(a.court||'').localeCompare(b.court||'')||a.addr.localeCompare(b.addr));
 }
 /* v1.7.14 코트 노트북 프로그램 버전 — 본부와 모든 코트 중 가장 새 버전과 다르면 빨갛게 */
@@ -567,6 +569,45 @@ function rSum(k,R){const T=R.poomsae.types,t=T[k];
   const fm=(t.format||'cutoff')==='tournament'?'토너먼트':'컷오프';
   return `${fm}${fm==='컷오프'?' · '+(t.cut==='two'?`예선→결선 ${t.adv}명`:CUTL[t.cut||'rule'].split(' ')[0]):''} · ${t.judges}심${k==='recognized'?` · 품새 ${t.poomsae||1}개`:''}${t.max?` · ${t.min?mmssT(t.min)+'~':''}${mmssT(t.max)}`:''}${k==='recognized'&&t.pstage&&/-/.test(String(t.pstage))&&R.common.std==='comm'?' · 예선 '+String(t.pstage).replace('-','개 · 결선 ')+'개':''}`;}
 const mmssT=v=>{v=Number(v)||0;return `${Math.floor(v/60)}분${v%60?' '+(v%60)+'초':''}`;};
+/* ---------- v1.7.22 🎬 점수 뒤 전광판: 점수 공개가 끝나면 코트 전광판에 대회 이름 · 후원사 · 코트 이름 ---------- */
+const SHOW_DEF={on:false,after:12,steps:[{k:'comp',on:true,sec:5},{k:'spon',on:true,sec:5},{k:'court',on:true,sec:5}],sponsors:[],title:'',sub:'',label:'KICKSTART UP',wait:'다음 경기를 준비하고 있습니다'};
+const SHOWS={v:null,at:0},SHOWN={comp:['🏆','대회 이름'],spon:['🤝','후원사 (그림마다 한 장)'],court:['🅰️','코트 이름 (번쩍이며 크게)']};let SHOWD=null;
+async function showLoad(){try{const j=await (await fetch('/api/show',{cache:'no-store'})).json();if(j.show){SHOWS.v=typeof j.show==='string'?JSON.parse(j.show):j.show;SHOWS.at=j.at||0;}}catch(e){}}
+showLoad();
+const showNow=()=>SHOWD||{...SHOW_DEF,title:String(CFG().compName||'').trim(),...(SHOWS.v||{})};
+const showDraft=()=>(SHOWD=SHOWD||JSON.parse(JSON.stringify(showNow())));
+function vShowCfg(){const V=showNow(),list=courtList().filter(c=>c.online),st=V.steps||SHOW_DEF.steps,last=[...st].reverse().find(x=>x.on!==false);
+  const seg=(k,opts,v)=>`<div class="seg">${opts.map(([x,l])=>`<button class="${String(v)===String(x)?'on':''}" data-sh="set" data-k="${k}" data-v="${x}">${l}</button>`).join('')}</div>`;
+  const got=list.map(c=>`<span class="chip ${SHOWS.at&&c.showAt===SHOWS.at?'ok':'warn'}">${esc(c.court)}코트 ${SHOWS.at&&c.showAt===SHOWS.at?'✓ 받음':'아직'}</span>`).join('')||'<span class="small muted">연결된 코트 노트북이 없습니다</span>';
+  return `<div class="panel"><div class="row between"><h2>🎬 점수 뒤 전광판</h2><span class="row">${SHOWS.at?`<span class="chip ok">마지막 저장 ${hhmm(SHOWS.at)}</span>`:''}</span></div>
+    <div class="small muted">경기 점수 공개가 끝나면 코트 전광판(품새·격파·겨루기)에 아래 순서대로 화면을 보여 줍니다. <b>마지막 화면은 다음 경기를 부를 때까지 그대로</b> 떠 있고, 운영석에서 다음 선수·경기를 부르면 바로 경기 화면으로 넘어갑니다.</div>
+    <div class="rrow"><b>사용</b>${seg('on',[['true','켜기'],['false','끄기']],!!V.on)}</div>
+    <div class="rrow"><b>점수 공개 뒤</b>${seg('after',[[8,'8초'],[12,'12초'],[15,'15초'],[20,'20초'],[30,'30초']],V.after||12)}<span class="small muted">점수·순위를 보여 준 다음 이만큼 지나서 시작</span></div>
+    <div class="rrow" style="align-items:flex-start"><b>순서 · 시간</b><div class="shst">${st.map((x,i)=>`<div class="shs ${x.on===false?'off':''}"><span class="shn">${i+1}</span><span class="shi">${SHOWN[x.k][0]}</span><b>${SHOWN[x.k][1]}</b>
+        ${x===last?'<span class="chip ok">다음 경기까지 계속</span>':`<select data-shsec="${i}">${[3,4,5,6,8,10,15].map(n=>`<option value="${n}" ${+x.sec===n?'selected':''}>${n}초${x.k==='spon'?' (한 장)':''}</option>`).join('')}</select>`}
+        <span class="row"><button class="btn sm" data-sh="up" data-i="${i}" ${i?'':'disabled'}>▲</button><button class="btn sm" data-sh="dn" data-i="${i}" ${i<st.length-1?'':'disabled'}>▼</button><button class="btn sm ${x.on===false?'':'primary'}" data-sh="tog" data-i="${i}">${x.on===false?'빼 둠':'보여 줌'}</button></span></div>`).join('')}</div></div>
+    <div class="rrow" style="align-items:flex-start"><b>대회 이름</b><div class="stack" style="gap:6px;flex:1"><textarea data-shk="title" rows="2" placeholder="대회 이름 (줄 바꿈 가능)">${esc(V.title||'')}</textarea><input data-shk="sub" style="width:100%" placeholder="아래 작은 글 (예: 2026. 11. 28 · ○○체육관)" value="${esc(V.sub||'')}"><input data-shk="label" style="width:100%" placeholder="맨 위 작은 글" value="${esc(V.label||'')}"></div></div>
+    <div class="rrow"><b>코트 화면 글</b><input data-shk="wait" style="flex:1" value="${esc(V.wait||'')}"></div>
+    <div class="rrow" style="align-items:flex-start"><b>후원사 그림</b><div class="stack" style="gap:8px;flex:1">
+      <div class="shsp">${(V.sponsors||[]).map((x,i)=>`<div class="shp"><div class="shimg"><img src="${x.img}" alt=""></div><input data-shsp="${i}" placeholder="후원사 이름 (비워도 됨)" value="${esc(x.name||'')}"><span class="row"><button class="btn sm" data-sh="sup" data-i="${i}" ${i?'':'disabled'}>◀</button><button class="btn sm" data-sh="sdn" data-i="${i}" ${i<(V.sponsors||[]).length-1?'':'disabled'}>▶</button><button class="btn sm" data-sh="sdel" data-i="${i}">빼기</button></span></div>`).join('')||'<span class="small muted">아직 후원사 그림이 없습니다</span>'}</div>
+      <label class="btn" style="align-self:flex-start">🖼 그림 넣기 (여러 장 가능)<input type="file" accept="image/*" multiple data-shfile style="display:none"></label><span class="small muted">로고·포스터 그림(PNG·JPG) · 흰 판 위에 크게 보입니다 · 그림마다 한 장씩 차례로</span></div></div>
+    <div class="row rfoot" style="flex-wrap:wrap"><button class="btn primary" data-sh="save">💾 저장하고 모든 코트에 보내기</button>${SHOWD?'<span class="chip warn">저장하지 않은 변경 있음</span><button class="btn" data-sh="undo">되돌리기</button>':''}</div>
+    <div class="row" style="flex-wrap:wrap;gap:6px"><span class="small muted">코트 받음:</span>${got}</div></div>`;}
+function shImg(f){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const M=1400,k=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.86));};im.onerror=()=>res(null);im.src=r.result;};r.onerror=()=>res(null);r.readAsDataURL(f);});}
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-sh]');if(!b)return;const a=b.dataset.sh,i=+b.dataset.i;
+  if(a==='save'){const V={...showNow(),at:Date.now()};try{const r=await fetch('/api/show',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(V)});if(!r.ok)throw new Error('HTTP '+r.status);SHOWS.v=V;SHOWS.at=V.at;SHOWD=null;toast('점수 뒤 전광판 설정을 저장했습니다 · 모든 코트 노트북에 보냅니다',5000);}catch(x){toast('저장하지 못했습니다: '+x.message);}render();return;}
+  if(a==='undo'){SHOWD=null;render();return;}
+  const D=showDraft(),st=D.steps=D.steps||JSON.parse(JSON.stringify(SHOW_DEF.steps)),sp=D.sponsors=D.sponsors||[];
+  if(a==='set'){const v=b.dataset.v;D[b.dataset.k]=v==='true'?true:v==='false'?false:/^\d+$/.test(v)?+v:v;}
+  else if(a==='up'&&i>0)[st[i-1],st[i]]=[st[i],st[i-1]];else if(a==='dn'&&i<st.length-1)[st[i+1],st[i]]=[st[i],st[i+1]];
+  else if(a==='tog')st[i].on=st[i].on===false;
+  else if(a==='sup'&&i>0)[sp[i-1],sp[i]]=[sp[i],sp[i-1]];else if(a==='sdn'&&i<sp.length-1)[sp[i+1],sp[i]]=[sp[i],sp[i+1]];else if(a==='sdel')sp.splice(i,1);
+  render();});
+document.addEventListener('change',async e=>{const t=e.target;if(!t||!t.closest)return;
+  if(t.matches('[data-shfile]')){const D=showDraft();D.sponsors=D.sponsors||[];for(const f of [...t.files]){const img=await shImg(f);if(img)D.sponsors.push({img,name:''});}t.value='';render();return;}
+  if(t.matches('[data-shsec]')){showDraft().steps[+t.dataset.shsec].sec=+t.value;render();return;}
+  if(t.matches('[data-shk]')){showDraft()[t.dataset.shk]=t.value;render();return;}
+  if(t.matches('[data-shsp]')){showDraft().sponsors[+t.dataset.shsp].name=t.value;render();return;}});
 function vRules(){let mbody='';const R=RDRAFT||rulesNow(),list=courtList().filter(c=>c.online),E=R.events,C=R.common;
   const seg=(k,opts,v)=>`<div class="seg">${opts.map(([x,l])=>`<button class="${String(v)===String(x)?'on':''}" data-a="rSet" data-k="${k}" data-v="${x}">${l}</button>`).join('')}</div>`;
   const numIn=(k,v,w)=>`<input type="number" min="1" max="999" data-rk="${k}" value="${esc(v)}" style="width:${w||80}px">`;
@@ -773,6 +814,7 @@ function vAdmin(){
   ${vCheck()}
   <div class="panel" id="batpanel"><div class="row between"><h2>🔋 태블릿 배터리</h2></div>${window.KS_BAT?KS_BAT.inner():''}</div>
   ${vRules()}
+  ${vShowCfg()}
   ${vLvPanel()}
   <div class="panel"><div class="row between"><h2>코트 연결 ${checkSummary(list,al)}</h2><span class="row"><span class="small muted">같은 와이파이의 코트 노트북을 자동으로 찾습니다</span><button class="btn sm" data-a="scan">🔎 지금 다시 찾기</button></span></div>
     ${verBar(list)}<div style="overflow-x:auto"><table><tr><th>코트</th><th>상태</th><th>지금 진행 · 심판 연결</th><th></th></tr>${rows}</table></div>${JLEGEND}
@@ -1282,7 +1324,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
 setInterval(()=>{try{const n=document.getElementById('hqtabs');if(n)document.documentElement.style.setProperty('--hq-navh',(n.getBoundingClientRect().height+4)+'px');}catch(e){}},1000);
 let HSEL=null,HLISTY=0; /* 다시 열면 늘 타일 목록부터 (열려 있던 화면을 기억하지 않음) */
 const HQ_T=[[/한눈에/,'ops','🎯','호출 · 대기 · 공지'],[/대회 운영표/,'plan','📋','대회 운영표'],[/대기실 연결/,'room','🚪','대기실 연결'],[/지도자용 진행/,'live','📱','지도자용 진행 상황'],[/코트 연결/,'court','🖥️','코트 연결'],[/코트 진행|옮기기/,'move','🔀','코트 진행·옮기기'],[/호출/,'call','📣','호출'],[/공지/,'notice','📢','공지'],[/결과 자동 모음/,'coll','💾','결과 모음'],
-  [/시작 전 점검/,'check','✅','시작 전 점검'],[/종목별 경기 규칙/,'rules','📐','종목별 경기 규칙'],[/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터'],[/태블릿 배터리/,'bat','🔋','태블릿 배터리']];
+  [/시작 전 점검/,'check','✅','시작 전 점검'],[/종목별 경기 규칙/,'rules','📐','종목별 경기 규칙'],[/점수 뒤 전광판/,'show','🎬','점수 뒤 전광판'],[/상장 자동 출력/,'cert','🖨️','상장 자동 출력'],[/Supabase|자동 백업/,'backup','☁️','자동 백업'],[/본부 모니터/,'mon','📺','본부 모니터'],[/태블릿 배터리/,'bat','🔋','태블릿 배터리']];
 function hqTileState(k){const cf=CFG(),list=courtList(),n=noticeNow(cf);
   switch(k){
     case 'court':{const on=list.filter(c=>c.online).length,bad=list.filter(c=>!c.online||c.stale).length,top=verTop(list),vb=list.filter(c=>!verOk(c,top)).length;return [list.length?`${on}/${list.length}곳 연결${vb?` · ⚠ 버전 다름 ${vb}`:''}`:'아직 코트 없음',vb?'warn':list.length&&!bad?'ok':list.length?'warn':''];}
@@ -1293,6 +1335,7 @@ function hqTileState(k){const cf=CFG(),list=courtList(),n=noticeNow(cf);
     case 'cert':{const q=certFiles().filter(needPrint).length;return [`${cf.certAuto?'켜짐':'꺼짐'}${q?` · 대기 ${q}`:''}`,cf.certAuto?(q?'warn':'ok'):''];}
     case 'backup':{const b=S.bk||{};return [`${cf.backupAuto?'켜짐':'꺼짐'}${b.at?' · '+ago(b.at):''}${BK.err?' · 오류':''}`,BK.err?'warn':cf.backupAuto&&b.at?'ok':''];}
     case 'mon':return ['대기실 TV·태블릿',''];
+    case 'show':{const v=SHOWS.v,on=list.filter(c=>c.online),got=on.filter(c=>SHOWS.at&&c.showAt===SHOWS.at).length;return [v&&v.on?`켜짐 · 후원사 ${(v.sponsors||[]).length}개 · ${got}/${on.length} 코트 받음`:'꺼짐',v&&v.on?(got===on.length?'ok':'warn'):''];}
     case 'bat':return window.KS_BAT?KS_BAT.tile():['정보 없음',''];
     case 'check':{const R=list.map(ckRow),n=R.filter(r=>r.ok).length;return [R.length?`${n}/${R.length} 코트 준비됨`:'코트 없음',R.length&&n===R.length?'ok':R.length?'warn':''];}
     case 'rules':{const on=list.filter(c=>c.online),got=on.filter(c=>RULES.at&&c.rulesAt===RULES.at).length,ne=Object.values(rulesNow().events).filter(Boolean).length;return [RULES.at?`종목 ${ne}개 · ${got}/${on.length} 코트 받음`:'아직 정하지 않음',RULES.at?(got===on.length?'ok':'warn'):'warn'];}

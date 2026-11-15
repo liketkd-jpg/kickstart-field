@@ -162,7 +162,7 @@ func handleFeed(w http.ResponseWriter, r *http.Request) {
 			out[a.Key] = m
 		}
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "bat": batList(), "disk": diskNow(), "mode": modeName(c), "modeAt": c.ModeAt, "wipeAt": c.WipeAt, "hqs": recentHQs(), "time": time.Now().UnixMilli()})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "apps": out, "live": live.status(), "saves": autoSaves(), "lic": getLic(), "rulesAt": func() int64 { _, a := getRules(); return a }(), "showAt": func() int64 { _, a := getShow(); return a }(), "bat": batList(), "disk": diskNow(), "mode": modeName(c), "modeAt": c.ModeAt, "wipeAt": c.WipeAt, "hqs": recentHQs(), "time": time.Now().UnixMilli()})
 }
 
 // ---------------- 코트: 신호 보내기 ----------------
@@ -229,6 +229,7 @@ type courtEntry struct {
 	mode      string   // v1.4.82 코트 노트북의 시험/실제 대회 모드
 	hqs       []string // v1.4.82 이 코트를 부르는 본부 주소들 (2개 이상이면 본부가 두 대)
 	ver       string   // v1.7.14 코트 노트북 프로그램 버전
+	showAt    int64    // v1.7.22 점수 뒤 전광판 설정 받은 시각
 }
 
 var (
@@ -426,6 +427,7 @@ type feedMsg struct {
 	WipeAt  *int64                     `json:"wipeAt"` // 예전 버전 코트는 없음(nil) → 자동 초기화 안 함
 	Hqs     []string                   `json:"hqs"`
 	Version string                     `json:"version"` // v1.7.14 코트 노트북 프로그램 버전
+	ShowAt  int64                      `json:"showAt"`  // v1.7.22 점수 뒤 전광판 설정 시각
 	Live    struct {
 		On    bool   `json:"on"`
 		State string `json:"state"`
@@ -500,6 +502,10 @@ func pollCourt(addr string) {
 		if fm.Version != c.ver {
 			changed = true
 			c.ver = fm.Version
+		}
+		if fm.ShowAt != c.showAt {
+			changed = true
+			c.showAt = fm.ShowAt
 		}
 		if fm.RulesAt != c.rulesAt || le != c.licEnds {
 			changed = true
@@ -583,7 +589,7 @@ func pollCourt(addr string) {
 	if !c.lastSeen.IsZero() {
 		ls = c.lastSeen.UnixMilli()
 	}
-	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "mode": c.mode, "hqs": c.hqs, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive)), "rulesAt": c.rulesAt, "licEnds": c.licEnds, "ver": c.ver, "bat": json.RawMessage(nonEmpty(c.lastBat)), "disk": json.RawMessage(nonEmpty(c.lastDisk))}
+	doc := map[string]any{"addr": c.addr, "via": c.via, "court": c.court, "online": c.online, "mode": c.mode, "hqs": c.hqs, "lastSeen": ls, "apps": json.RawMessage(nonEmpty(c.lastFeed)), "live": json.RawMessage(nonEmpty(c.lastLive)), "rulesAt": c.rulesAt, "licEnds": c.licEnds, "ver": c.ver, "showAt": c.showAt, "bat": json.RawMessage(nonEmpty(c.lastBat)), "disk": json.RawMessage(nonEmpty(c.lastDisk))}
 	hqMu.Unlock()
 	s := stores["hq"]
 	if changed {
@@ -600,6 +606,10 @@ func pollCourt(addr string) {
 	}
 	if ok && len(fm.Lic) > 0 && string(fm.Lic) != "null" {
 		adoptCourtLic(fm.Lic)
+	}
+	// v1.7.22 점수 뒤 전광판 설정도 더 새로우면 보냄
+	if _, at := getShow(); ok && at > 0 && fm.ShowAt < at && getConfig().Role == "hq" {
+		go pushShowTo(addr)
 	}
 	// 본부의 경기 규칙이 더 새로우면 이 코트에 보냄
 	if _, at := getRules(); ok && at > 0 && fm.RulesAt < at && getConfig().Role == "hq" {
