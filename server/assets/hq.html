@@ -2253,7 +2253,9 @@ function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
     const kindRaw=col(o,/^(종목|경기|경기종목|참가종목)$/),pz=col(o,/^(공인\/자유|공인자유|품새구분)$/);
     const shEv=normEv(sh),known=e=>EVORD.includes(e);
     let ev=known(shEv)?shEv:'';
-    if(!ev&&pz)ev=normEv(/자유/.test(pz)?'자유 품새':/체조/.test(pz)?'태권체조':/경연|시범/.test(pz)?'팀 경연':'품새');
+    /* v1.7.28 홈페이지 본부용 명단은 「품새」 시트 하나에 공인·자유 품새·태권체조·팀 경연이 함께 → 「공인/자유」 칸을 먼저 봄
+       (시트 이름만 보고 팀 태권체조·팀 경연·자유 품새까지 공인 품새 단체로 들어가던 것) */
+    if(pz&&(!ev||ev==='품새'))ev=normEv(/자유/.test(pz)?'자유 품새':/체조/.test(pz)?'태권체조':/경연|시범/.test(pz)?'팀 경연':'품새');
     if(!ev)ev=normEv(kindRaw);if(!ev&&GEV.some(([k,l])=>l.replace(/\s/g,'')===kindRaw.replace(/\s/g,'')))ev='개인 격파';if(!ev||/히어로/.test(ev+sh))return;
     const gr=col(o,/^학년$/),dv=divOf(divFix(col(o,/^(부별|부문|구분|부)$/))||gr,gr,ev,std),div=dv.div;
     const mem=col(o,/^(팀원|선수명단)$/),tn=col(o,/^(팀명|팀|팀이름)$/),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
