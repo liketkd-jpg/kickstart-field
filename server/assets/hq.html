@@ -619,12 +619,14 @@ let PFTMP=null;
 function pfRowsOf(t){if(PFTMP&&RDRAFT&&t===RDRAFT.poomsae.types.recognized)return PFTMP;const m=new Map();(t.pfix||[]).forEach(r=>{if(!r||!r.g)return;if(!m.has(r.g))m.set(r.g,{g:r.g,pre:['',''],fin:''});const o=m.get(r.g),rr=String(r.r||'');if(/결/.test(rr))o.fin=(r.p||[])[0]||'';else o.pre=[(r.p||[])[0]||'',(r.p||[])[1]||''];});return [...m.values()];}
 function pfToFix(rows){const out=[];rows.forEach(o=>{if(!o.g)return;const pre=o.pre.filter(Boolean);if(pre.length)out.push({g:o.g,r:'예선',p:pre});if(o.fin)out.push({g:o.g,r:'결선',p:[o.fin]});});return out;}
 /* v1.7.19 학년·부 목록: 홈페이지 「④ 부 나누기」에서 보낸 목록(저·중·고학년 · 유급자부·유품자부 …)이 있으면 그것 */
-const pfGroupsOf=t=>Array.isArray(t.pfGroups)&&t.pfGroups.length?t.pfGroups.filter(x=>x&&x.g):PF_GRP.map(g=>({g,t:g}));
+const PF_COMMON=[['유치부','유치부'],['초등부','초등부'],['중등부','중등부'],['고등부','고등부'],['일반부','일반부'],['실버부','실버부']].map(([g,n])=>({g,t:`★ ${n} 공통 (모든 ${n.replace('부','')} 부문)`,common:1}));
+const pfGroupsOf=t=>{const L=Array.isArray(t.pfGroups)&&t.pfGroups.length?t.pfGroups.filter(x=>x&&x.g):PF_GRP.map(g=>({g,t:g})),seen=new Set();return [...PF_COMMON,...L].filter(x=>!seen.has(x.g)&&seen.add(x.g));};
 function pfEditor(t){const rows=pfRowsOf(t),sel=(i,f,v,list,ph)=>`<select data-pf="${i}|${f}"><option value="">${ph}</option>${list.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`;
   const PG=pfGroupsOf(t),gsel=(i,v)=>`<select data-pf="${i}|g"><option value="">학년·부 고르기</option>${[...PG,...(v&&!PG.some(x=>x.g===v)?[{g:v,t:v}]:[])].map(x=>`<option value="${esc(x.g)}" ${x.g===v?'selected':''}>${esc(x.t||x.g)}</option>`).join('')}</select>`;
   return `<div class="rrow" style="align-items:flex-start"><b>지정 품새표</b><div class="pfed"><div class="small muted">학년(부)마다 예선 품새와 결선 품새를 고르면 추첨하지 않고 그대로 씁니다 · 비워 두면 「지정 품새 추첨」대로</div>
     ${rows.length?`<table class="pft"><tr><th>학년 · 부</th><th>예선 ①</th><th>예선 ②</th><th>결선</th><th></th></tr>${rows.map((o,i)=>`<tr><td>${gsel(i,o.g)}</td><td>${sel(i,'p0',o.pre[0],PF_ALLH,'—')}</td><td>${sel(i,'p1',o.pre[1],PF_ALLH,'—')}</td><td>${sel(i,'fin',o.fin,PF_ALLH,'—')}</td><td><button class="btn sm" data-a="pfDel" data-i="${i}">빼기</button></td></tr>`).join('')}</table>`:''}
-    <div class="row"><button class="btn sm" data-a="pfAdd">＋ 학년 줄 더하기</button>${Array.isArray(t.pfGroups)&&t.pfGroups.length?'<button class="btn sm" data-a="pfFill">📋 부 나누기대로 줄 모두 만들기</button><span class="small muted">학년·부 목록은 홈페이지 부 나누기를 따릅니다</span>':''}</div></div></div>`;}
+    <div class="row"><button class="btn sm" data-a="pfAdd">＋ 학년 줄 더하기</button><button class="btn sm" data-a="pfFill" data-m="common">★ 부별 공통 줄 만들기 (6줄)</button>${Array.isArray(t.pfGroups)&&t.pfGroups.length?'<button class="btn sm" data-a="pfFill">📋 부 나누기대로 줄 모두 만들기</button>':''}</div>
+    <div class="small muted">공통 줄은 그 부의 모든 부문에 같은 품새 · 더 자세한 줄(저학년·유급자부 등)이 있으면 그 부문은 자세한 줄이 먼저${Array.isArray(t.pfGroups)&&t.pfGroups.length?' · 학년·부 목록은 홈페이지 부 나누기를 따릅니다':''}</div></div></div>`;}
 const jvRow=(k,v)=>{const D=RDRAFT||rulesNow();return `<div class="rrow"><b>심판 채점판 화면</b><div class="seg">${[['auto','자동'],['one','한 종목씩'],['all','한 화면에 모두']].map(([x,l])=>`<button class="${(v||'auto')===x?'on':''}" data-a="rSet" data-k="${k}" data-v="${x}">${l}</button>`).join('')}</div><span class="small muted">자동: 휴대폰은 한 종목씩, 태블릿은 한 화면에 모두 · 격파 채점판에 적용</span></div>`;};
 function rPath(o,p,v){const ks=p.split('.');let x=o;ks.slice(0,-1).forEach(k=>{x[k]=x[k]||{};x=x[k];});x[ks[ks.length-1]]=v;}
 const rDraft=()=>{RDRAFT=RDRAFT||JSON.parse(JSON.stringify(rulesNow()));return RDRAFT;};
@@ -638,7 +640,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   else if(a==='rEv'){const D=rDraft();D.events[b.dataset.k]=!D.events[b.dataset.k];render();}
   else if(a==='rOpen'){RSEL=b.dataset.k;render();}
   else if(a==='rBack'){if(e.target.closest('[data-stop]')&&!e.target.closest('button'))return;RSEL=null;render();}
-  else if(a==='pfFill'){const D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=pfRowsOf(t),PG=pfGroupsOf(t),have=new Set(rows.map(o=>o.g));PG.forEach(x=>{if(!have.has(x.g))rows.push({g:x.g,pre:['',''],fin:''});});
+  else if(a==='pfFill'){const D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=pfRowsOf(t),PA=pfGroupsOf(t),PG=b.dataset.m==='common'?PA.filter(x=>x.common):PA.filter(x=>!x.common&&!x.extra),have=new Set(rows.map(o=>o.g));PG.forEach(x=>{if(!have.has(x.g))rows.push({g:x.g,pre:['',''],fin:''});});
     const ix=new Map(PG.map((x,i)=>[x.g,i]));rows.sort((p,q)=>(ix.has(p.g)?ix.get(p.g):999)-(ix.has(q.g)?ix.get(q.g):999));t.pfix=pfToFix(rows);PFTMP=rows;render();}
   else if(a==='pfAdd'||a==='pfDel'){const D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=pfRowsOf(t);if(a==='pfAdd')rows.push({g:'',pre:['',''],fin:''});else rows.splice(Number(b.dataset.i),1);t.pfix=pfToFix(rows);PFTMP=rows;render();}
   else if(a==='rUndo'){RDRAFT=null;PFTMP=null;render();}
