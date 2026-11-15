@@ -2291,6 +2291,9 @@ function liveRows(TL){let L=[];try{L=window.KS_HQLANES?KS_HQLANES():[];}catch(e)
   const rows=Object.values(by).sort((a,b)=>a.court.localeCompare(b.court)).map(x=>{const i=L8.indexOf(x.court),pl=TL[i];const m0=new Date();m0.setHours(0,0,0,0);const em=Math.round((x.end-m0.getTime())/60000);   /* 오늘 0시부터 분 (자정 넘으면 24:00 이상) */return {...x,em,plan:pl&&pl.items.length?pl.end:null};});
   return rows;}
 function liveHtml(TL){const R=liveRows(TL);if(!R)return '';const act=R.filter(r=>r.left>0);
+  /* v1.7.26 아직 끝난 경기가 하나도 없으면 (기록을 지운 뒤 · 대회 시작 전) 「늦음」 계산을 하지 않음 */
+  let L0=[];try{L0=window.KS_HQLANES?KS_HQLANES():[];}catch(e){}
+  if(!L0.some(x=>(x.divs||[]).some(d=>d.done>0)))return `<div class="pl-live"><span class="pl-cap">📡 실제 진행</span><span class="chip ok">아직 끝난 경기가 없습니다 · 계획대로</span><span class="small muted">첫 경기가 끝나면 코트 노트북의 실제 속도로 다시 계산합니다</span></div>`;
   const late=act.length>1?act.reduce((a,b)=>b.em>a.em?b:a):null,early=act.length>1?act.reduce((a,b)=>b.em<a.em?b:a):null,gapm=late&&early?late.em-early.em:0;
   return `<div class="pl-live"><span class="pl-cap">📡 실제 진행 (대회 중 속도로 다시 계산)</span>${R.map(r=>{const df=r.plan!=null&&r.left?Math.round(r.em-r.plan):null;
       return `<span class="chip ${!r.left?'ok':df>10?'bad':df<-10?'ok':''}"><b>${esc(r.court)}코트</b> ${r.left?`예상 ${hm(r.em)}${df!=null?` <small>(계획 ${hm(r.plan)} · ${df>0?'+':''}${df}분)</small>`:''}${r.real?'':' <small>기본 속도</small>'}`:'모두 끝'}</span>`;}).join('')}
