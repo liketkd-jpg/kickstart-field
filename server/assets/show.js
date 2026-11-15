@@ -26,9 +26,13 @@
   function hide(){if(box){box.remove();box=null;}shown='';}
   function html(p){const C=CFG||{},court=String((window.KS_FIELD&&KS_FIELD.court)||'').trim();
     const logo=C.logo?`<div class="kss-logo"><img src="${esc(C.logo)}" alt=""><i></i></div>`:'';
+    /* v1.7.24 글씨 로고 모드: 대회 이름 글자 대신 협회 글씨 로고를 크게 (빛이 글자 위를 지나감 · 반짝이) */
+    const wm=(C.titleMode||(C.word?'word':'text'))==='word'&&C.word?C.word:'';
+    if(p.k==='comp'&&wm)return `<div class="kss-comp word"><div class="kss-rays"></div><div class="kss-spk">${Array.from({length:22},(_,k)=>`<i style="--x:${(k*37)%100}%;--y:${(k*53)%96}%;--k:${k}"></i>`).join('')}</div>
+      <div class="kss-wm"><img src="${esc(wm)}" alt=""><i class="kss-wsw" style="-webkit-mask-image:url('${esc(wm)}');mask-image:url('${esc(wm)}')"></i></div><div class="kss-gl"></div>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
     if(p.k==='comp')return `<div class="kss-comp"><div class="kss-rays"></div>${logo}<span class="kss-l">${esc(C.label||'KICKSTART UP')}</span><h1 class="kss-shine">${esc(C.title||'태권도 대회').replace(/\n/g,'<br>')}</h1>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
     if(p.k==='spon')return `<div class="kss-spon"><span class="kss-l">${esc(C.sponLabel||'OFFICIAL SPONSOR · 후원')}</span><div class="kss-card"><img src="${p.img}" alt=""></div>${p.name?`<b>${esc(p.name)}</b>`:''}</div>`;
-    return `<div class="kss-court"><div class="kss-flash"></div><div class="kss-ring"></div><div class="kss-ring r2"></div>${C.logo?`<div class="kss-logo sm"><img src="${esc(C.logo)}" alt=""><i></i></div>`:''}<div class="kss-big kss-shine">${esc(court||'—')}</div><span class="kss-n"><b>${esc(court)}</b> 코트 <small>COURT</small></span><p>${esc(C.wait||'다음 경기를 준비하고 있습니다')}</p></div>`;}
+    return `<div class="kss-court"><div class="kss-flash"></div><div class="kss-ring"></div><div class="kss-ring r2"></div>${wm?`<div class="kss-wmsm"><img src="${esc(wm)}" alt=""></div>`:C.logo?`<div class="kss-logo sm"><img src="${esc(C.logo)}" alt=""><i></i></div>`:''}<div class="kss-big kss-shine">${esc(court||'—')}</div><span class="kss-n"><b>${esc(court)}</b> 코트 <small>COURT</small></span><p>${esc(C.wait||'다음 경기를 준비하고 있습니다')}</p></div>`;}
   function tick(){
     if(!CFG||!CFG.on||!isDisp()){hide();return;}
     try{if(window.KS_SIM&&KS_SIM.running){hide();return;}}catch(e){}
@@ -47,6 +51,20 @@
 #ksShow .kss-shine{background:linear-gradient(100deg,#B8862E 0%,#F2D27A 30%,#FFF6D8 45%,#F2D27A 60%,#B8862E 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:kssShine 3.2s linear infinite}
 @keyframes kssShine{from{background-position:120% 0}to{background-position:-120% 0}}
 #ksShow .kss-comp{position:relative;text-align:center;padding:0 6vw}
+#ksShow .kss-comp.word{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:0}
+#ksShow .kss-wm{position:relative;width:min(86vw,1700px);animation:kssWm 1.3s cubic-bezier(.2,1.2,.3,1) both}
+#ksShow .kss-wm img{display:block;width:100%;height:auto;filter:drop-shadow(0 0 28px rgba(242,210,122,.35)) drop-shadow(0 10px 30px rgba(0,0,0,.6));animation:kssGlow 3.2s ease-in-out infinite 1.3s}
+#ksShow .kss-wsw{position:absolute;inset:0;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;background:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%,transparent 100%);background-size:300% 100%;background-position:120% 0;animation:kssWsw 3.4s ease-in-out infinite 1s;mix-blend-mode:screen}
+@keyframes kssWm{from{opacity:0;transform:scale(.82);filter:blur(16px)}to{opacity:1;transform:none;filter:none}}
+@keyframes kssWsw{0%{background-position:120% 0}60%,100%{background-position:-20% 0}}
+@keyframes kssGlow{50%{filter:drop-shadow(0 0 48px rgba(242,210,122,.6)) drop-shadow(0 10px 30px rgba(0,0,0,.6))}}
+#ksShow .kss-gl{width:0;height:4px;margin:5vh 0 2.6vh;border-radius:2px;background:linear-gradient(90deg,transparent,#F2D27A,#FFF3C4,#F2D27A,transparent);animation:kssGl 1.2s ease-out forwards .9s}
+@keyframes kssGl{to{width:min(60vw,1100px)}}
+#ksShow .kss-comp.word p{font-size:clamp(22px,3.6vh,56px);letter-spacing:.08em;opacity:0;animation:kssUp .8s ease-out forwards 1.4s}
+@keyframes kssUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+#ksShow .kss-spk{position:absolute;inset:0;pointer-events:none}#ksShow .kss-spk i{position:absolute;left:var(--x);top:var(--y);width:26px;height:26px;opacity:0;background:radial-gradient(circle,#fff 0 12%,#FFE7A3 22%,transparent 62%);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:kssTw 1.8s ease-in-out infinite calc(1.2s + var(--k)*.17s)}
+@keyframes kssTw{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1.2) rotate(45deg)}}
+#ksShow .kss-wmsm{position:absolute;top:3vh;left:50%;transform:translateX(-50%);width:min(46vw,860px);z-index:2}#ksShow .kss-wmsm img{display:block;width:100%;filter:drop-shadow(0 0 18px rgba(242,210,122,.3))}
 #ksShow .kss-comp h1{margin:2vh 0 1.5vh;font-weight:900;font-size:clamp(40px,6.4vw,140px);line-height:1.15;word-break:keep-all;filter:drop-shadow(0 6px 30px rgba(242,210,122,.25))}
 #ksShow .kss-comp p{margin:0;font-size:clamp(18px,2.2vw,44px);color:#D9CFBC;font-weight:700}
 #ksShow .kss-rays{position:absolute;left:50%;top:50%;width:160vmax;height:160vmax;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(242,210,122,.07) 0 6deg,transparent 6deg 18deg);animation:kssRot 40s linear infinite;z-index:-1;mask:radial-gradient(circle,#000 0 25%,transparent 60%);-webkit-mask:radial-gradient(circle,#000 0 25%,transparent 60%)}
