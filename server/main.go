@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.22" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.23" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -405,6 +405,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/bat.js":
 		serveAsset(w, "assets/bat.js", "application/javascript; charset=utf-8")
+		return
+	case strings.HasPrefix(p, "/brand/") && !strings.Contains(p, ".."): // v1.7.23 대회 협회 로고 등
+		serveAsset(w, "assets"+p, "")
 		return
 	case p == "/show.js":
 		serveAsset(w, "assets/show.js", "application/javascript; charset=utf-8")

@@ -570,7 +570,7 @@ function rSum(k,R){const T=R.poomsae.types,t=T[k];
   return `${fm}${fm==='컷오프'?' · '+(t.cut==='two'?`예선→결선 ${t.adv}명`:CUTL[t.cut||'rule'].split(' ')[0]):''} · ${t.judges}심${k==='recognized'?` · 품새 ${t.poomsae||1}개`:''}${t.max?` · ${t.min?mmssT(t.min)+'~':''}${mmssT(t.max)}`:''}${k==='recognized'&&t.pstage&&/-/.test(String(t.pstage))&&R.common.std==='comm'?' · 예선 '+String(t.pstage).replace('-','개 · 결선 ')+'개':''}`;}
 const mmssT=v=>{v=Number(v)||0;return `${Math.floor(v/60)}분${v%60?' '+(v%60)+'초':''}`;};
 /* ---------- v1.7.22 🎬 점수 뒤 전광판: 점수 공개가 끝나면 코트 전광판에 대회 이름 · 후원사 · 코트 이름 ---------- */
-const SHOW_DEF={on:false,after:12,steps:[{k:'comp',on:true,sec:5},{k:'spon',on:true,sec:5},{k:'court',on:true,sec:5}],sponsors:[],title:'',sub:'',label:'KICKSTART UP',wait:'다음 경기를 준비하고 있습니다'};
+const SHOW_DEF={on:false,after:12,steps:[{k:'comp',on:true,sec:5},{k:'spon',on:true,sec:5},{k:'court',on:true,sec:5}],sponsors:[],title:'',sub:'',label:'KICKSTART UP',wait:'다음 경기를 준비하고 있습니다',logo:'/brand/wtcaa-logo.jpg'};
 const SHOWS={v:null,at:0},SHOWN={comp:['🏆','대회 이름'],spon:['🤝','후원사 (그림마다 한 장)'],court:['🅰️','코트 이름 (번쩍이며 크게)']};let SHOWD=null;
 async function showLoad(){try{const j=await (await fetch('/api/show',{cache:'no-store'})).json();if(j.show){SHOWS.v=typeof j.show==='string'?JSON.parse(j.show):j.show;SHOWS.at=j.at||0;}}catch(e){}}
 showLoad();
@@ -587,6 +587,9 @@ function vShowCfg(){const V=showNow(),list=courtList().filter(c=>c.online),st=V.
         ${x===last?'<span class="chip ok">다음 경기까지 계속</span>':`<select data-shsec="${i}">${[3,4,5,6,8,10,15].map(n=>`<option value="${n}" ${+x.sec===n?'selected':''}>${n}초${x.k==='spon'?' (한 장)':''}</option>`).join('')}</select>`}
         <span class="row"><button class="btn sm" data-sh="up" data-i="${i}" ${i?'':'disabled'}>▲</button><button class="btn sm" data-sh="dn" data-i="${i}" ${i<st.length-1?'':'disabled'}>▼</button><button class="btn sm ${x.on===false?'':'primary'}" data-sh="tog" data-i="${i}">${x.on===false?'빼 둠':'보여 줌'}</button></span></div>`).join('')}</div></div>
     <div class="rrow" style="align-items:flex-start"><b>대회 이름</b><div class="stack" style="gap:6px;flex:1"><textarea data-shk="title" rows="2" placeholder="대회 이름 (줄 바꿈 가능)">${esc(V.title||'')}</textarea><input data-shk="sub" style="width:100%" placeholder="아래 작은 글 (예: 2026. 11. 28 · ○○체육관)" value="${esc(V.sub||'')}"><input data-shk="label" style="width:100%" placeholder="맨 위 작은 글" value="${esc(V.label||'')}"></div></div>
+    <div class="rrow" style="align-items:flex-start"><b>협회 로고</b><div class="stack" style="gap:8px;flex:1">${V.logo?`<div class="shimg" style="height:90px;max-width:420px"><img src="${esc(V.logo)}" alt=""></div>`:'<span class="small muted">로고 없음</span>'}
+      <span class="row" style="flex-wrap:wrap;gap:6px"><button class="btn sm ${V.logo==='/brand/wtcaa-logo.jpg'?'primary':''}" data-sh="logoDef">세계태권도문화예술협회 로고</button><label class="btn sm">🖼 다른 로고 넣기<input type="file" accept="image/*" data-shlogo style="display:none"></label>${V.logo?'<button class="btn sm" data-sh="logoDel">로고 빼기</button>':''}</span>
+      <span class="small muted">대회 이름 화면 위에 크게, 코트 이름 화면 맨 위에 작게 나옵니다</span></div></div>
     <div class="rrow"><b>코트 화면 글</b><input data-shk="wait" style="flex:1" value="${esc(V.wait||'')}"></div>
     <div class="rrow" style="align-items:flex-start"><b>후원사 그림</b><div class="stack" style="gap:8px;flex:1">
       <div class="shsp">${(V.sponsors||[]).map((x,i)=>`<div class="shp"><div class="shimg"><img src="${x.img}" alt=""></div><input data-shsp="${i}" placeholder="후원사 이름 (비워도 됨)" value="${esc(x.name||'')}"><span class="row"><button class="btn sm" data-sh="sup" data-i="${i}" ${i?'':'disabled'}>◀</button><button class="btn sm" data-sh="sdn" data-i="${i}" ${i<(V.sponsors||[]).length-1?'':'disabled'}>▶</button><button class="btn sm" data-sh="sdel" data-i="${i}">빼기</button></span></div>`).join('')||'<span class="small muted">아직 후원사 그림이 없습니다</span>'}</div>
@@ -601,10 +604,12 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
   if(a==='set'){const v=b.dataset.v;D[b.dataset.k]=v==='true'?true:v==='false'?false:/^\d+$/.test(v)?+v:v;}
   else if(a==='up'&&i>0)[st[i-1],st[i]]=[st[i],st[i-1]];else if(a==='dn'&&i<st.length-1)[st[i+1],st[i]]=[st[i],st[i+1]];
   else if(a==='tog')st[i].on=st[i].on===false;
+  else if(a==='logoDef')D.logo='/brand/wtcaa-logo.jpg';else if(a==='logoDel')D.logo='';
   else if(a==='sup'&&i>0)[sp[i-1],sp[i]]=[sp[i],sp[i-1]];else if(a==='sdn'&&i<sp.length-1)[sp[i+1],sp[i]]=[sp[i],sp[i+1]];else if(a==='sdel')sp.splice(i,1);
   render();});
 document.addEventListener('change',async e=>{const t=e.target;if(!t||!t.closest)return;
   if(t.matches('[data-shfile]')){const D=showDraft();D.sponsors=D.sponsors||[];for(const f of [...t.files]){const img=await shImg(f);if(img)D.sponsors.push({img,name:''});}t.value='';render();return;}
+  if(t.matches('[data-shlogo]')){const f=t.files&&t.files[0];if(f){const img=await shImg(f);if(img)showDraft().logo=img;}t.value='';render();return;}
   if(t.matches('[data-shsec]')){showDraft().steps[+t.dataset.shsec].sec=+t.value;render();return;}
   if(t.matches('[data-shk]')){showDraft()[t.dataset.shk]=t.value;render();return;}
   if(t.matches('[data-shsp]')){showDraft().sponsors[+t.dataset.shsp].name=t.value;render();return;}});

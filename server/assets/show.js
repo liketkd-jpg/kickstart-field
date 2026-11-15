@@ -25,9 +25,10 @@
       else if(s.k==='comp'||s.k==='court')out.push({k:s.k,sec:Math.max(2,+s.sec||5)});});return out;}
   function hide(){if(box){box.remove();box=null;}shown='';}
   function html(p){const C=CFG||{},court=String((window.KS_FIELD&&KS_FIELD.court)||'').trim();
-    if(p.k==='comp')return `<div class="kss-comp"><div class="kss-rays"></div><span class="kss-l">${esc(C.label||'KICKSTART UP')}</span><h1 class="kss-shine">${esc(C.title||'태권도 대회').replace(/\n/g,'<br>')}</h1>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
+    const logo=C.logo?`<div class="kss-logo"><img src="${esc(C.logo)}" alt=""><i></i></div>`:'';
+    if(p.k==='comp')return `<div class="kss-comp"><div class="kss-rays"></div>${logo}<span class="kss-l">${esc(C.label||'KICKSTART UP')}</span><h1 class="kss-shine">${esc(C.title||'태권도 대회').replace(/\n/g,'<br>')}</h1>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
     if(p.k==='spon')return `<div class="kss-spon"><span class="kss-l">${esc(C.sponLabel||'OFFICIAL SPONSOR · 후원')}</span><div class="kss-card"><img src="${p.img}" alt=""></div>${p.name?`<b>${esc(p.name)}</b>`:''}</div>`;
-    return `<div class="kss-court"><div class="kss-flash"></div><div class="kss-ring"></div><div class="kss-ring r2"></div><span class="kss-l">COURT</span><div class="kss-big kss-shine">${esc(court||'—')}</div><span class="kss-n">${esc(court?court+'코트':'')}</span><p>${esc(C.wait||'다음 경기를 준비하고 있습니다')}</p></div>`;}
+    return `<div class="kss-court"><div class="kss-flash"></div><div class="kss-ring"></div><div class="kss-ring r2"></div>${C.logo?`<div class="kss-logo sm"><img src="${esc(C.logo)}" alt=""><i></i></div>`:''}<div class="kss-big kss-shine">${esc(court||'—')}</div><span class="kss-n"><b>${esc(court)}</b> 코트 <small>COURT</small></span><p>${esc(C.wait||'다음 경기를 준비하고 있습니다')}</p></div>`;}
   function tick(){
     if(!CFG||!CFG.on||!isDisp()){hide();return;}
     try{if(window.KS_SIM&&KS_SIM.running){hide();return;}}catch(e){}
@@ -55,14 +56,20 @@
 #ksShow .kss-card img{max-width:100%;max-height:100%;object-fit:contain}
 #ksShow .kss-spon b{font-size:clamp(22px,2.6vw,52px);font-weight:900}
 #ksShow .kss-court{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%}
-#ksShow .kss-big{font:900 clamp(200px,48vh,620px) Archivo,"Noto Sans KR",sans-serif;line-height:.95;animation:kssShine 3.2s linear infinite,kssPop .9s cubic-bezier(.2,1.5,.4,1) both;filter:drop-shadow(0 0 40px rgba(242,210,122,.45))}
+#ksShow .kss-logo{position:relative;display:inline-block;background:linear-gradient(180deg,#fff,#EEF1F6);border-radius:22px;padding:1.4vh 2vw;box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 0 3px rgba(201,162,98,.75),0 0 60px rgba(242,210,122,.25);overflow:hidden;margin-bottom:3vh;animation:kssPop .9s cubic-bezier(.2,1.4,.4,1) both}
+#ksShow .kss-logo img{display:block;height:clamp(90px,17vh,240px);width:auto;max-width:78vw;object-fit:contain}
+#ksShow .kss-logo i{position:absolute;top:0;bottom:0;width:35%;left:-40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.85),transparent);transform:skewX(-20deg);animation:kssSweep 3.6s ease-in-out infinite 1s}
+@keyframes kssSweep{0%{left:-40%}55%,100%{left:120%}}
+#ksShow .kss-logo.sm{position:absolute;top:2.4vh;left:50%;transform:translateX(-50%);padding:.8vh 1.2vw;margin:0;border-radius:14px;animation:none;z-index:2}
+#ksShow .kss-logo.sm img{height:clamp(56px,11vh,150px)}
+#ksShow .kss-big{font:900 clamp(260px,64vh,900px) Archivo,"Noto Sans KR",sans-serif;line-height:.9;margin-top:6vh;-webkit-text-stroke:2px rgba(255,240,200,.35);animation:kssShine 3.2s linear infinite,kssPop .9s cubic-bezier(.2,1.5,.4,1) both;filter:drop-shadow(0 0 40px rgba(242,210,122,.45))}
 @keyframes kssPop{from{transform:scale(.3);opacity:0;filter:blur(18px)}to{transform:none;opacity:1}}
-#ksShow .kss-n{font-size:clamp(28px,4vw,80px);font-weight:900;margin-top:1vh}
-#ksShow .kss-court p{margin:2.4vh 0 0;font-size:clamp(18px,2vw,38px);color:#CFC6B4;font-weight:700;animation:kssBlink 2.4s ease-in-out infinite}
+#ksShow .kss-n{font-size:clamp(40px,8vh,120px);font-weight:900;margin-top:.5vh;line-height:1.1;letter-spacing:.04em}#ksShow .kss-n b{color:#F2D27A}#ksShow .kss-n small{font:800 clamp(16px,2.6vh,40px) Archivo,sans-serif;letter-spacing:.4em;color:#C9A262;margin-left:.6em;vertical-align:middle}
+#ksShow .kss-court p{margin:1.4vh 0 0;font-size:clamp(18px,3vh,44px);color:#CFC6B4;font-weight:700;animation:kssBlink 2.4s ease-in-out infinite}
 @keyframes kssBlink{50%{opacity:.45}}
 #ksShow .kss-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#fff,rgba(255,240,200,.6) 30%,transparent 70%);animation:kssFlash 1.1s ease-out both;pointer-events:none}
 @keyframes kssFlash{0%{opacity:1}100%{opacity:0}}
-#ksShow .kss-ring{position:absolute;left:50%;top:46%;width:40vh;height:40vh;border:4px solid rgba(242,210,122,.7);border-radius:50%;transform:translate(-50%,-50%) scale(.2);animation:kssRing 2.6s ease-out infinite}
+#ksShow .kss-ring{position:absolute;left:50%;top:50%;width:56vh;height:56vh;border:4px solid rgba(242,210,122,.7);border-radius:50%;transform:translate(-50%,-50%) scale(.2);animation:kssRing 2.6s ease-out infinite}
 #ksShow .kss-ring.r2{animation-delay:1.3s}
 @keyframes kssRing{0%{opacity:.9;transform:translate(-50%,-50%) scale(.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(3.2)}}
 @media (prefers-reduced-motion:reduce){#ksShow *{animation:none!important}}`;
