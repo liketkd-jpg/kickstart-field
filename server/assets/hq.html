@@ -614,14 +614,17 @@ function vRules(){let mbody='';const R=RDRAFT||rulesNow(),list=courtList().filte
     ${body}${RSEL?'':foot}</div>${mbody}`;}
 /* v1.7.12 공인 품새 지정 품새표 (학년마다 예선 2개 · 결선 1개를 목록에서 고르기) — 코트의 「지정 품새표」로 그대로 들어감 */
 const PF_ALLH=[...Array.from({length:8},(_,i)=>`태극 ${i+1}장`),'고려','금강','태백','평원','십진','지태','천권','한수','일여'];
-const PF_GRP=['유치부','초등 1학년','초등 2학년','초등 3학년','초등 4학년','초등 5학년','초등 6학년','초등 저학년','초등 고학년','초등부','중등 1학년','중등 2학년','중등 3학년','중등부','고등부','일반부','실버부'];
+const PF_GRP=['유치부','초등 1학년','초등 2학년','초등 3학년','초등 4학년','초등 5학년','초등 6학년','초등 저학년','초등 중학년','초등 고학년','초등부','중등 1학년','중등 2학년','중등 3학년','중등부','고등부','일반부','실버부'];
 let PFTMP=null;
 function pfRowsOf(t){if(PFTMP&&RDRAFT&&t===RDRAFT.poomsae.types.recognized)return PFTMP;const m=new Map();(t.pfix||[]).forEach(r=>{if(!r||!r.g)return;if(!m.has(r.g))m.set(r.g,{g:r.g,pre:['',''],fin:''});const o=m.get(r.g),rr=String(r.r||'');if(/결/.test(rr))o.fin=(r.p||[])[0]||'';else o.pre=[(r.p||[])[0]||'',(r.p||[])[1]||''];});return [...m.values()];}
 function pfToFix(rows){const out=[];rows.forEach(o=>{if(!o.g)return;const pre=o.pre.filter(Boolean);if(pre.length)out.push({g:o.g,r:'예선',p:pre});if(o.fin)out.push({g:o.g,r:'결선',p:[o.fin]});});return out;}
+/* v1.7.19 학년·부 목록: 홈페이지 「④ 부 나누기」에서 보낸 목록(저·중·고학년 · 유급자부·유품자부 …)이 있으면 그것 */
+const pfGroupsOf=t=>Array.isArray(t.pfGroups)&&t.pfGroups.length?t.pfGroups.filter(x=>x&&x.g):PF_GRP.map(g=>({g,t:g}));
 function pfEditor(t){const rows=pfRowsOf(t),sel=(i,f,v,list,ph)=>`<select data-pf="${i}|${f}"><option value="">${ph}</option>${list.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`;
+  const PG=pfGroupsOf(t),gsel=(i,v)=>`<select data-pf="${i}|g"><option value="">학년·부 고르기</option>${[...PG,...(v&&!PG.some(x=>x.g===v)?[{g:v,t:v}]:[])].map(x=>`<option value="${esc(x.g)}" ${x.g===v?'selected':''}>${esc(x.t||x.g)}</option>`).join('')}</select>`;
   return `<div class="rrow" style="align-items:flex-start"><b>지정 품새표</b><div class="pfed"><div class="small muted">학년(부)마다 예선 품새와 결선 품새를 고르면 추첨하지 않고 그대로 씁니다 · 비워 두면 「지정 품새 추첨」대로</div>
-    ${rows.length?`<table class="pft"><tr><th>학년 · 부</th><th>예선 ①</th><th>예선 ②</th><th>결선</th><th></th></tr>${rows.map((o,i)=>`<tr><td>${sel(i,'g',o.g,[...new Set([...PF_GRP,o.g])],'학년 고르기')}</td><td>${sel(i,'p0',o.pre[0],PF_ALLH,'—')}</td><td>${sel(i,'p1',o.pre[1],PF_ALLH,'—')}</td><td>${sel(i,'fin',o.fin,PF_ALLH,'—')}</td><td><button class="btn sm" data-a="pfDel" data-i="${i}">빼기</button></td></tr>`).join('')}</table>`:''}
-    <button class="btn sm" data-a="pfAdd">＋ 학년 줄 더하기</button></div></div>`;}
+    ${rows.length?`<table class="pft"><tr><th>학년 · 부</th><th>예선 ①</th><th>예선 ②</th><th>결선</th><th></th></tr>${rows.map((o,i)=>`<tr><td>${gsel(i,o.g)}</td><td>${sel(i,'p0',o.pre[0],PF_ALLH,'—')}</td><td>${sel(i,'p1',o.pre[1],PF_ALLH,'—')}</td><td>${sel(i,'fin',o.fin,PF_ALLH,'—')}</td><td><button class="btn sm" data-a="pfDel" data-i="${i}">빼기</button></td></tr>`).join('')}</table>`:''}
+    <div class="row"><button class="btn sm" data-a="pfAdd">＋ 학년 줄 더하기</button>${Array.isArray(t.pfGroups)&&t.pfGroups.length?'<button class="btn sm" data-a="pfFill">📋 부 나누기대로 줄 모두 만들기</button><span class="small muted">학년·부 목록은 홈페이지 부 나누기를 따릅니다</span>':''}</div></div></div>`;}
 const jvRow=(k,v)=>{const D=RDRAFT||rulesNow();return `<div class="rrow"><b>심판 채점판 화면</b><div class="seg">${[['auto','자동'],['one','한 종목씩'],['all','한 화면에 모두']].map(([x,l])=>`<button class="${(v||'auto')===x?'on':''}" data-a="rSet" data-k="${k}" data-v="${x}">${l}</button>`).join('')}</div><span class="small muted">자동: 휴대폰은 한 종목씩, 태블릿은 한 화면에 모두 · 격파 채점판에 적용</span></div>`;};
 function rPath(o,p,v){const ks=p.split('.');let x=o;ks.slice(0,-1).forEach(k=>{x[k]=x[k]||{};x=x[k];});x[ks[ks.length-1]]=v;}
 const rDraft=()=>{RDRAFT=RDRAFT||JSON.parse(JSON.stringify(rulesNow()));return RDRAFT;};
@@ -635,6 +638,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   else if(a==='rEv'){const D=rDraft();D.events[b.dataset.k]=!D.events[b.dataset.k];render();}
   else if(a==='rOpen'){RSEL=b.dataset.k;render();}
   else if(a==='rBack'){if(e.target.closest('[data-stop]')&&!e.target.closest('button'))return;RSEL=null;render();}
+  else if(a==='pfFill'){const D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=pfRowsOf(t),PG=pfGroupsOf(t),have=new Set(rows.map(o=>o.g));PG.forEach(x=>{if(!have.has(x.g))rows.push({g:x.g,pre:['',''],fin:''});});
+    const ix=new Map(PG.map((x,i)=>[x.g,i]));rows.sort((p,q)=>(ix.has(p.g)?ix.get(p.g):999)-(ix.has(q.g)?ix.get(q.g):999));t.pfix=pfToFix(rows);PFTMP=rows;render();}
   else if(a==='pfAdd'||a==='pfDel'){const D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=pfRowsOf(t);if(a==='pfAdd')rows.push({g:'',pre:['',''],fin:''});else rows.splice(Number(b.dataset.i),1);t.pfix=pfToFix(rows);PFTMP=rows;render();}
   else if(a==='rUndo'){RDRAFT=null;PFTMP=null;render();}
   else if(a==='rSave'){const R=RDRAFT||rulesNow();document.querySelectorAll('[data-rk]').forEach(i=>{const n=Number(i.value);if(n>0)rPath(R,i.dataset.rk,n);});

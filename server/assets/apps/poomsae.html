@@ -1524,7 +1524,8 @@ function pfixFor(d,rk,rm){
   const nm=pfGk(d.name),rn=rm?'재경기':pfRoundOf(d,rk);if(!rn)return null;let best=null,bs=-1;
   /* 토너먼트는 결승 전 라운드(준결승·8강 …)에 「예선」 줄도 씁니다 (4명 1조: 준결승 = 예선) */
   const alt=!rm&&!STAGES[rk]&&rn!=='결선'?'예선':null;
-  rows.forEach(r=>{const g=pfGk(r.g);if(!g||!nm.includes(g))return;const rr=pfRound(r.r);if(rm?rr!=='재경기':(rr!==rn&&rr!==alt&&rr!=='*'))return;
+  /* v1.7.19 「초등 저학년부 유급자부」처럼 낱말이 떨어져 있어도 낱말마다 부문 이름에 다 들어 있으면 맞음 */
+  rows.forEach(r=>{const g=pfGk(r.g),tk=String(r.g||'').split(/\s+/).map(pfGk).filter(Boolean);if(!g||!(nm.includes(g)||(tk.length>1&&tk.every(t=>nm.includes(t)))))return;const rr=pfRound(r.r);if(rm?rr!=='재경기':(rr!==rn&&rr!==alt&&rr!=='*'))return;
     const sc=g.length*4+(rr==='*'?0:rr===rn?2:1);if(sc>bs){bs=sc;best=r;}});
   return best?best.p.filter(Boolean).map(pfName).slice(0,2):null;
 }
