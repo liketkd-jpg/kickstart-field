@@ -608,11 +608,11 @@ func pollCourt(addr string) {
 		adoptCourtLic(fm.Lic)
 	}
 	// v1.7.22 점수 뒤 전광판 설정도 더 새로우면 보냄
-	if _, at := getShow(); ok && at > 0 && fm.ShowAt < at && getConfig().Role == "hq" {
+	if _, at := getShow(); ok && at > 0 && fm.ShowAt != at && getConfig().Role == "hq" {
 		go pushShowTo(addr)
 	}
 	// 본부의 경기 규칙이 더 새로우면 이 코트에 보냄
-	if _, at := getRules(); ok && at > 0 && fm.RulesAt < at && getConfig().Role == "hq" {
+	if _, at := getRules(); ok && at > 0 && fm.RulesAt != at && getConfig().Role == "hq" {
 		go pushRulesTo(addr)
 	}
 	// 본부에 있는 코드를 이 코트가 아직 모르면 나눠 줌 (새로 켜진 코트 노트북 포함)

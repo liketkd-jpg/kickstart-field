@@ -1902,6 +1902,7 @@ function aSettings(){
     <label class="field"><span class="label">대회명</span><input type="text" id="setName" value="${esc(s.name)}" placeholder="예: 제1회 경민대학교 총장배 품새대회" data-on="setName"></label>
     <div class="field"><span class="label">심판 수</span>
       <div class="seg">${[1,3,5,7].map(n=>`<button class="${s.judges===n?'on':''}" data-act="setJudges" data-n="${n}">${n}심제</button>`).join('')}</div>
+      ${s.hqRulesAt?`<span class="small" style="font-weight:700">📋 본부 경기 규칙: ${[['recognized','공인 품새'],['freestyle','자유 품새'],['gym','태권체조'],['team100','팀 경연']].filter(([t])=>(S.divs||[]).some(d=>d.type===t)||!(S.divs||[]).length).map(([t,l])=>`${l} ${(s.typeJudges||{})[t]||s.judges}심`).join(' · ')} — 바꾸려면 본부에서 고쳐 주세요</span>`:''}
       <span class="small muted">규정(제17조)은 5심제 또는 7심제입니다. 5심제 이상은 항목별로 최고·최저 점수를 빼고 평균합니다(제15조). 3심제는 소규모 대회용으로 세 심판 평균입니다.</span>
     </div>
     <div class="field"><span class="label">부별 구분 (제6조)</span>
@@ -3181,7 +3182,7 @@ const ACT={
     b.dataset.orig=b.textContent;b.classList.add('armed');b.textContent=(b.dataset.warn?'⚠ '+b.dataset.warn+' · ':'')+'한 번 더 누르면 실행';try{window.ROSTERPICK&&ROSTERPICK.armSet(b);}catch(e){}
     armedT.set(b,setTimeout(()=>{b.classList.remove('armed');b.textContent=b.dataset.orig;},4000));
   },
-  setJudges:b=>saveSettings({...SET(),judges:Number(b.dataset.n)}),
+  setJudges:b=>SET().hqRulesAt?toast('심판 수는 본부의 「종목별 경기 규칙」으로 정해져 있습니다 · 바꾸려면 본부에서 고쳐 주세요'):saveSettings({...SET(),judges:Number(b.dataset.n)}),
   setAge:async b=>{S.settings={...SET(),ageScheme:b.dataset.v};await saveSettings(S.settings);if(S.roster.length)await regenerateDivs();render();},
   setFormat:async b=>{const v=b.dataset.v;await saveSettings({...SET(),format:v});
     let n=0,skip=0;const changed=new Set();const list=S.divs.map(d=>{if((d.format||'cutoff')===v)return d;if(d.matchNo){skip++;return d;}n++;changed.add(d.id);return {...d,format:v,stages:null};});

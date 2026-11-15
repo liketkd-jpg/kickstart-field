@@ -27,13 +27,19 @@
       else if(w.adv&&d.advN&&Number(d.advN)!==w.adv){x={...x,advN:null};ch=true;}
       if(ch){n++;x={...x,stages:null};}return x;});
     if(n){await save(list);say(`본부 종목 설정에 맞춰 시작 전 부문 ${n}개를 고쳤습니다`);}}
+  /* v1.7.27 심판 링크·자리 수 = 이 코트에 실제로 있는 종목의 심판 수 가운데 가장 큰 것
+     (안 하는 종목의 기본값 5심 때문에 3심 대회인데 5심 링크가 나오던 것 고침) */
+  async function fixJudges(S){const set=S.settings||{};if(!set.hqRulesAt||!Array.isArray(S.divs)||!S.divs.length)return;const tj=set.typeJudges||{};
+    const js=[...new Set(S.divs.map(d=>d.type))].map(t=>Number(tj[t])).filter(n=>n>0);if(!js.length)return;const need=Math.max(...js);
+    if(Number(set.judges)!==need){const ns={...set,judges:need};await g('saveSettings')(ns);S.settings=ns;say(`심판 수를 이 코트 종목에 맞춰 ${need}심으로 맞췄습니다 (본부 경기 규칙)`);}}
   async function tick(){if(busy||!isAdmin())return;const S=g('S');if(!S)return;if(!S.settings||typeof S.settings!=='object')S.settings={}; /* v1.4.73 새 노트북(대회 설정 아직 없음)도 본부 규칙을 받음 */busy=true;
     try{const j=await (await fetch('/api/rules',{cache:'no-store'})).json();if(!j||!j.at||!j.rules)return;
       const R=typeof j.rules==='string'?JSON.parse(j.rules):j.rules;if(!R)return;
       const set=S.settings,C=R.common||{},ev=R.events||null;
       /* v1.7.12 「코트별 설정」으로 두면 본부 규칙을 보내지 않고 코트에서 직접 정함 (잠금도 풂) */
       if(C.apply==='court'){if(set.hqRulesAt){const ns={...set,hqRulesAt:null};await g('saveSettings')(ns);S.settings=ns;say('📋 본부가 「코트별 설정」으로 바꿨습니다 · 이 코트에서 경기 규칙을 직접 정할 수 있습니다');}return;}
-      if((set.hqRulesAt||0)<j.at&&lastAt!==j.at){lastAt=j.at;const p={hqRulesAt:j.at};
+      /* v1.7.27 「받은 때」가 다르면 받음 (노트북 시계가 서로 달라도 본부 규칙을 그대로 따름) */
+      if((set.hqRulesAt||0)!==j.at&&lastAt!==j.at){lastAt=j.at;const p={hqRulesAt:j.at};
         if(typeof C.sep==='boolean')p.sepDojang=C.sep;
         if(C.std==='comm'&&Number(C.commN)>=2)p.commN=Number(C.commN); /* 생활체육 한 조 인원 */
         if(APPK==='poomsae'){const P=R.poomsae||{},T=P.types||{};
@@ -61,7 +67,7 @@
           else if(wantComm&&p.commN&&Number(set.commN||4)!==p.commN&&typeof cs==='function')await cs({commN:p.commN}); /* 조 인원이 바뀌면 다시 편성 (점수 들어간 조는 그대로) */
           if(APPK==='poomsae'&&C.std!=='comm'&&(S.settings.ageScheme||'kta')!==C.std){const s2={...S.settings,ageScheme:C.std};await g('saveSettings')(s2);S.settings=s2;try{if((S.roster||[]).length)await g('regenerateDivs')();}catch(e){}}}
         say('📋 본부에서 정한 종목 설정을 받았습니다 · 아직 시작 전인 부문부터 적용됩니다');}
-      if(APPK==='poomsae')await fixDivs(S);
+      if(APPK==='poomsae'){await fixDivs(S);await fixJudges(S);}
     }catch(e){console.warn('rules',e);}finally{busy=false;}}
   setInterval(tick,6000);setTimeout(tick,3000);
   window.KS_RULES={want,tick};

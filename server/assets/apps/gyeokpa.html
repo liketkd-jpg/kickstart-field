@@ -2896,7 +2896,7 @@ const ACT={
       if(ok){ui.copyFallback=null;toast(`${label} 링크 복사됨`);render();return;}ui.copyFallback=u;render();const el=document.getElementById('copyFallback');if(el){el.focus();el.select();}};
     try{navigator.clipboard.writeText(u).then(()=>{ui.copyFallback=null;toast(`${label} 링크 복사됨`);render();},fallback);}catch(e){fallback();}
   },
-  setJudges:b=>setS({judges:Number(b.dataset.v)}),
+  setJudges:b=>SET().hqRulesAt?toast('심판 수는 본부의 「종목별 경기 규칙」으로 정해져 있습니다 · 바꾸려면 본부에서 고쳐 주세요'):setS({judges:Number(b.dataset.v)}),
   setAutoReveal:b=>setS({autoReveal:b.dataset.v==='true'}),
   toggleAutoDiv:()=>{setS({autoDiv:SET().autoDiv==='manual'?'auto':'manual'});FLOW_STOP='';},
   setElemMix:b=>setS({elemMix:b.dataset.v==='true'}),

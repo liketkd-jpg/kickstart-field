@@ -1782,7 +1782,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.11'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.12'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2975,6 +2975,8 @@ function grHtml(){const R=UI.gr||grMerge(JSON.parse(JSON.stringify(GR_DEF)),{}),
   return `<div class="gr-body">${row('설정 방법',seg('common.apply',[['hq','🏢 본부 설정으로 일괄'],['court','🖥 코트별 설정']],C.apply||'hq'),(C.apply||'hq')==='court'?'코트 노트북에서 각자 정합니다':'본부로 보내면 모든 코트가 똑같이 따르고, 코트에서는 바꿀 수 없게 잠깁니다')}
     ${row('대회 기준',`<span class="chip">${L.std==='comm'?'생활체육 (조별)':'협회 국내 부별'}</span>`,'① 기본 정보의 「대회 종류」를 따릅니다')}
     ${L.std==='comm'?row('한 조 인원',seg('common.commN',[[4,'4명'],[6,'6명'],[8,'8명']],C.commN||4),'부별 인원을 이 인원씩 고르게 나눕니다 · 메달은 조마다'):''}
+    ${(()=>{const T=R.poomsae.types||{},ev=on.filter(([k])=>k!=='kyorugi'),js=ev.map(([k])=>Number(k==='gyeokpa'?(R.gyeokpa||{}).judges:(T[k]||{}).judges)||5),same=js.length&&js.every(x=>x===js[0])?js[0]:0;
+      return row('심판 수 (모든 종목 한 번에)',`<div class="seg">${[1,3,5,7].map(n=>`<button type="button" class="${same===n?'on':''}" data-a="grJAll" data-v="${n}">${n}심</button>`).join('')}</div>`,(same?`이번 대회 종목 모두 ${same}심`:'종목마다 다름: '+ev.map(([,,nm],i)=>nm+' '+js[i]+'심').join(' · '))+' · 누르면 모든 종목을 한꺼번에 바꿉니다');})()}
     ${row('같은 도장 떨어뜨리기',seg('common.sep',[['true','켜기'],['false','끄기']],C.sep!==false),'조 편성·출전 순서·대진표 추첨')}</div>
     <div class="gr-tiles">${on.map(([k,ic,nm])=>`<button type="button" class="gr-tile" data-a="grOpen" data-k="${k}"><span class="ic">${ic}</span><b>${nm}</b><span class="sm">${esc(grSum(k,R,L))}</span><span class="go">설정 열기 →</span></button>`).join('')||'<div class="empty">② 종목 칸에서 받을 종목을 먼저 체크해 주세요</div>'}</div>`;}
 function grRender(){const b=document.getElementById('grBox');if(b)b.innerHTML=grHtml();dsgSumm();}
@@ -2984,6 +2986,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   if(a==='grSet'){grReadInputs();const v=b.dataset.v;grPath(UI.gr,b.dataset.k,v==='true'?true:v==='false'?false:/^\d+$/.test(v)?Number(v):v);
     const m=/^poomsae\.types\.(gym|team100)\.sheet$/.exec(b.dataset.k);if(m&&v==='wt'){const P='poomsae.types.'+m[1];if(m[1]==='gym'){grPath(UI.gr,P+'.min',100);grPath(UI.gr,P+'.max',120);}else{grPath(UI.gr,P+'.min',0);grPath(UI.gr,P+'.max',240);}}
     grRender();}
+  else if(a==='grJAll'){grReadInputs();const n=Number(b.dataset.v);['recognized','freestyle','gym','team100'].forEach(k=>grPath(UI.gr,'poomsae.types.'+k+'.judges',n));grPath(UI.gr,'gyeokpa.judges',n);grRender();toast(`모든 종목 심판 수를 ${n}심으로 바꿨습니다`);}
   else if(a==='grOpen'){grReadInputs();UI.grSel=b.dataset.k;UI.grPf=null;grRender();const box=document.getElementById('grBox');if(box)box.closest('.dsg-mc').scrollTop=0;}
   else if(a==='grBack'){grReadInputs();UI.grSel=null;UI.grPf=null;grRender();}
   else if(a==='grPfFill'){grReadInputs();const t=UI.gr.poomsae.types.recognized,rows=grPfRows(t),PA=grPfGroups()||[],PG=(b.dataset.m==='common'?PA.filter(x=>x.common):PA.filter(x=>!x.common&&!x.extra)).map(x=>({g:pfkG(pfkParse(x.g))})).filter((x,i,a)=>x.g&&a.findIndex(y=>y.g===x.g)===i),have=new Set(rows.map(o=>pfkG(pfkParse(o.g))));PG.forEach(x=>{if(!have.has(x.g))rows.push({g:x.g,pre:['',''],fin:''});});

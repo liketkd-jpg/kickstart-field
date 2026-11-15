@@ -53,7 +53,8 @@ func setRules(b []byte) bool {
 	}
 	rulesMu.Lock()
 	defer rulesMu.Unlock()
-	if d.At <= rulesAt {
+	// v1.7.27 코트 노트북은 본부가 보낸 것을 그대로 따름 (노트북 시계가 서로 달라 본부 것이 「옛것」으로 보여도)
+	if d.At == rulesAt || (d.At < rulesAt && getConfig().Role == "hq") {
 		return false
 	}
 	rulesCur, rulesAt = append(json.RawMessage(nil), b...), d.At
