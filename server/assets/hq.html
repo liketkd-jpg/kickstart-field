@@ -571,7 +571,7 @@ function rSum(k,R){const T=R.poomsae.types,t=T[k];
 const mmssT=v=>{v=Number(v)||0;return `${Math.floor(v/60)}분${v%60?' '+(v%60)+'초':''}`;};
 /* ---------- v1.7.22 🎬 점수 뒤 전광판: 점수 공개가 끝나면 코트 전광판에 대회 이름 · 후원사 · 코트 이름 ---------- */
 const SHOW_DEF={on:false,after:12,steps:[{k:'comp',on:true,sec:5},{k:'spon',on:true,sec:5},{k:'court',on:true,sec:5}],sponsors:[],title:'',sub:'',label:'KICKSTART UP',wait:'다음 경기를 준비하고 있습니다',logo:'/brand/wtcaa-logo.jpg',word:'/brand/wtcaa-word.png',titleMode:'word'};
-const SHOWS={v:null,at:0},SHOWN={comp:['🏆','대회 이름'],spon:['🤝','후원사 (그림마다 한 장)'],court:['🅰️','코트 이름 (번쩍이며 크게)']};let SHOWD=null;
+const SHOWS={v:null,at:0},SHOWN={comp:['🏆','대회 이름'],spon:['🤝','후원사 (그림마다 한 장)'],court:['🅰️','코트 이름 (코트만 크게 · 번쩍이며)']};let SHOWD=null;
 async function showLoad(){try{const j=await (await fetch('/api/show',{cache:'no-store'})).json();if(j.show){SHOWS.v=typeof j.show==='string'?JSON.parse(j.show):j.show;SHOWS.at=j.at||0;}}catch(e){}}
 showLoad();
 const showNow=()=>SHOWD||{...SHOW_DEF,title:String(CFG().compName||'').trim(),...(SHOWS.v||{})};
@@ -589,13 +589,12 @@ function vShowCfg(){const V=showNow(),list=courtList().filter(c=>c.online),st=V.
     <div class="rrow"><b>대회 이름 화면</b>${seg('titleMode',[['word','🏅 글씨 로고'],['text','글자로 쓴 대회 이름']],V.titleMode||(V.word?'word':'text'))}</div>
     ${(V.titleMode||(V.word?'word':'text'))==='word'?`<div class="rrow" style="align-items:flex-start"><b>글씨 로고</b><div class="stack" style="gap:8px;flex:1">${V.word?`<div style="background:#07080c;border-radius:10px;padding:12px;max-width:640px"><img src="${esc(V.word)}" style="width:100%;display:block" alt=""></div>`:'<span class="small muted">글씨 로고 없음</span>'}
       <span class="row" style="flex-wrap:wrap;gap:6px"><button class="btn sm ${V.word==='/brand/wtcaa-word.png'?'primary':''}" data-sh="wordDef">세계태권도문화예술협회 글씨 로고</button><label class="btn sm">🖼 다른 글씨 로고 넣기 (바탕 없는 PNG)<input type="file" accept="image/png,image/*" data-shword style="display:none"></label></span>
-      <span class="small muted">대회 이름 글자 대신 이 로고가 크게 나오고(빛이 글자 위를 지나감·반짝이), 코트 이름 화면 맨 위에도 나옵니다</span>
+      <span class="small muted">대회 이름 글자 대신 이 로고가 두 줄로 크게 나옵니다 (빛이 글자 위를 지나감·반짝이)</span>
       <input data-shk="sub" style="width:100%" placeholder="로고 아래 작은 글 (예: 2026. 11. 28 · ○○체육관)" value="${esc(V.sub||'')}"></div></div>`
     :`<div class="rrow" style="align-items:flex-start"><b>대회 이름</b><div class="stack" style="gap:6px;flex:1"><textarea data-shk="title" rows="2" placeholder="대회 이름 (줄 바꿈 가능)">${esc(V.title||'')}</textarea><input data-shk="sub" style="width:100%" placeholder="아래 작은 글 (예: 2026. 11. 28 · ○○체육관)" value="${esc(V.sub||'')}"><input data-shk="label" style="width:100%" placeholder="맨 위 작은 글" value="${esc(V.label||'')}"></div></div>
     <div class="rrow" style="align-items:flex-start"><b>협회 로고</b><div class="stack" style="gap:8px;flex:1">${V.logo?`<div class="shimg" style="height:90px;max-width:420px"><img src="${esc(V.logo)}" alt=""></div>`:'<span class="small muted">로고 없음</span>'}
       <span class="row" style="flex-wrap:wrap;gap:6px"><button class="btn sm ${V.logo==='/brand/wtcaa-logo.jpg'?'primary':''}" data-sh="logoDef">세계태권도문화예술협회 로고</button><label class="btn sm">🖼 다른 로고 넣기<input type="file" accept="image/*" data-shlogo style="display:none"></label>${V.logo?'<button class="btn sm" data-sh="logoDel">로고 빼기</button>':''}</span>
       <span class="small muted">대회 이름 화면 위에 크게, 코트 이름 화면 맨 위에 작게 나옵니다</span></div></div>`}
-    <div class="rrow"><b>코트 화면 글</b><input data-shk="wait" style="flex:1" value="${esc(V.wait||'')}"></div>
     <div class="rrow" style="align-items:flex-start"><b>후원사 그림</b><div class="stack" style="gap:8px;flex:1">
       <div class="shsp">${(V.sponsors||[]).map((x,i)=>`<div class="shp"><div class="shimg"><img src="${x.img}" alt=""></div><input data-shsp="${i}" placeholder="후원사 이름 (비워도 됨)" value="${esc(x.name||'')}"><span class="row"><button class="btn sm" data-sh="sup" data-i="${i}" ${i?'':'disabled'}>◀</button><button class="btn sm" data-sh="sdn" data-i="${i}" ${i<(V.sponsors||[]).length-1?'':'disabled'}>▶</button><button class="btn sm" data-sh="sdel" data-i="${i}">빼기</button></span></div>`).join('')||'<span class="small muted">아직 후원사 그림이 없습니다</span>'}</div>
       <label class="btn" style="align-self:flex-start">🖼 그림 넣기 (여러 장 가능)<input type="file" accept="image/*" multiple data-shfile style="display:none"></label><span class="small muted">로고·포스터 그림(PNG·JPG) · 흰 판 위에 크게 보입니다 · 그림마다 한 장씩 차례로</span></div></div>
