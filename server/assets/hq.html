@@ -619,14 +619,27 @@ let PFTMP=null;
 function pfRowsOf(t){if(PFTMP&&RDRAFT&&t===RDRAFT.poomsae.types.recognized)return PFTMP;const m=new Map();(t.pfix||[]).forEach(r=>{if(!r||!r.g)return;if(!m.has(r.g))m.set(r.g,{g:r.g,pre:['',''],fin:''});const o=m.get(r.g),rr=String(r.r||'');if(/결/.test(rr))o.fin=(r.p||[])[0]||'';else o.pre=[(r.p||[])[0]||'',(r.p||[])[1]||''];});return [...m.values()];}
 function pfToFix(rows){const out=[];rows.forEach(o=>{if(!o.g)return;const pre=o.pre.filter(Boolean);if(pre.length)out.push({g:o.g,r:'예선',p:pre});if(o.fin)out.push({g:o.g,r:'결선',p:[o.fin]});});return out;}
 /* v1.7.19 학년·부 목록: 홈페이지 「④ 부 나누기」에서 보낸 목록(저·중·고학년 · 유급자부·유품자부 …)이 있으면 그것 */
+/* v1.7.21 지정 품새표 한 줄 = 부 · 학년 · 급수 세 칸 (빈칸 = 공통). 저장은 「초등부 저학년부 유급자」처럼 낱말로 → 코트는 낱말마다 부문 이름에 있는지로 맞춤 (유급자 = 유급자부·B조, 유품자(단) = 유품자부·유단자·A조) */
+const PFK_D=['유치부','초등부','중등부','고등부','중·고등부','일반부','실버부'];
+const PFK_YH={저학년부:'저학년 (1·2학년)',중학년부:'중학년 (3·4학년)',고학년부:'고학년 (5·6학년)'};
+const pfkY=d=>d==='초등부'?['저학년부','중학년부','고학년부',...[1,2,3,4,5,6].map(i=>i+'학년부')]:/^(중등|고등)부$/.test(d)?[1,2,3].map(i=>i+'학년부'):[];
+const PFK_C=[['','급수 공통'],['유급자','유급자 (B조)'],['유품자(단)','유품자(단) (A조)']];
+function pfkParse(g){let d='',y='',c='';String(g||'').split(/\s+/).filter(Boolean).forEach(x=>{
+  if(/유급|^B조$/.test(x))c='유급자';else if(/유품|유단|^A조$/.test(x))c='유품자(단)';else if(/학년/.test(x))y=x.replace(/부?$/,'부');
+  else{const m=/^(유치|초등|중·고등|중고등|중등|고등|일반|실버)/.exec(x);if(m)d=(m[1]==='중고등'?'중·고등':m[1])+'부';}});
+  if(y&&!pfkY(d).includes(y))y='';return {d,y,c};}
+const pfkG=o=>[o.d,o.y,o.c].filter(Boolean).join(' ');
+const pfkLabel=g=>{const k=pfkParse(g);return k.d?[k.d,k.y?PFK_YH[k.y]||k.y.replace(/부$/,''):'학년 공통',k.c||'급수 공통'].join(' · '):g;};
 const PF_COMMON=[['유치부','유치부'],['초등부','초등부'],['중등부','중등부'],['고등부','고등부'],['일반부','일반부'],['실버부','실버부']].map(([g,n])=>({g,t:`★ ${n} 공통 (모든 ${n.replace('부','')} 부문)`,common:1}));
 const pfGroupsOf=t=>{const L=Array.isArray(t.pfGroups)&&t.pfGroups.length?t.pfGroups.filter(x=>x&&x.g):PF_GRP.map(g=>({g,t:g})),seen=new Set();return [...PF_COMMON,...L].filter(x=>!seen.has(x.g)&&seen.add(x.g));};
 function pfEditor(t){const rows=pfRowsOf(t),sel=(i,f,v,list,ph)=>`<select data-pf="${i}|${f}"><option value="">${ph}</option>${list.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`;
-  const PG=pfGroupsOf(t),gsel=(i,v)=>`<select data-pf="${i}|g"><option value="">학년·부 고르기</option>${[...PG,...(v&&!PG.some(x=>x.g===v)?[{g:v,t:v}]:[])].map(x=>`<option value="${esc(x.g)}" ${x.g===v?'selected':''}>${esc(x.t||x.g)}</option>`).join('')}</select>`;
+  const ksel=(i,g)=>{const k=pfkParse(g),Y=pfkY(k.d);return `<td><select data-pf="${i}|d"><option value="">부 고르기</option>${PFK_D.map(x=>`<option ${x===k.d?'selected':''}>${x}</option>`).join('')}</select></td>
+    <td><select data-pf="${i}|y" ${Y.length?'':'disabled'}><option value="">학년 공통</option>${Y.map(x=>`<option value="${x}" ${x===k.y?'selected':''}>${PFK_YH[x]||x.replace(/부$/,'')}</option>`).join('')}</select></td>
+    <td><select data-pf="${i}|c">${PFK_C.map(([v,l])=>`<option value="${v}" ${v===k.c?'selected':''}>${l}</option>`).join('')}</select></td>`;};
   return `<div class="rrow" style="align-items:flex-start"><b>지정 품새표</b><div class="pfed"><div class="small muted">학년(부)마다 예선 품새와 결선 품새를 고르면 추첨하지 않고 그대로 씁니다 · 비워 두면 「지정 품새 추첨」대로</div>
-    ${rows.length?`<table class="pft"><tr><th>학년 · 부</th><th>예선 ①</th><th>예선 ②</th><th>결선</th><th></th></tr>${rows.map((o,i)=>`<tr><td>${gsel(i,o.g)}</td><td>${sel(i,'p0',o.pre[0],PF_ALLH,'—')}</td><td>${sel(i,'p1',o.pre[1],PF_ALLH,'—')}</td><td>${sel(i,'fin',o.fin,PF_ALLH,'—')}</td><td><button class="btn sm" data-a="pfDel" data-i="${i}">빼기</button></td></tr>`).join('')}</table>`:''}
-    <div class="row"><button class="btn sm" data-a="pfAdd">＋ 학년 줄 더하기</button><button class="btn sm" data-a="pfFill" data-m="common">★ 부별 공통 줄 만들기 (6줄)</button>${Array.isArray(t.pfGroups)&&t.pfGroups.length?'<button class="btn sm" data-a="pfFill">📋 부 나누기대로 줄 모두 만들기</button>':''}</div>
-    <div class="small muted">공통 줄은 그 부의 모든 부문에 같은 품새 · 더 자세한 줄(저학년·유급자부 등)이 있으면 그 부문은 자세한 줄이 먼저${Array.isArray(t.pfGroups)&&t.pfGroups.length?' · 학년·부 목록은 홈페이지 부 나누기를 따릅니다':''}</div></div></div>`;}
+    ${rows.length?`<table class="pft"><tr><th>부</th><th>학년</th><th>급수</th><th>예선 ①</th><th>예선 ②</th><th>결선</th><th></th></tr>${rows.map((o,i)=>`<tr>${ksel(i,o.g)}<td>${sel(i,'p0',o.pre[0],PF_ALLH,'—')}</td><td>${sel(i,'p1',o.pre[1],PF_ALLH,'—')}</td><td>${sel(i,'fin',o.fin,PF_ALLH,'—')}</td><td><button class="btn sm" data-a="pfDel" data-i="${i}">빼기</button></td></tr>`).join('')}</table>`:''}
+    <div class="row"><button class="btn sm" data-a="pfAdd">＋ 줄 더하기</button><button class="btn sm" data-a="pfFill" data-m="common">★ 부별 공통 줄 만들기 (6줄)</button>${Array.isArray(t.pfGroups)&&t.pfGroups.length?'<button class="btn sm" data-a="pfFill">📋 부 나누기대로 줄 모두 만들기</button>':''}</div>
+    <div class="small muted">한 줄 = 부 · 학년 · 급수 (비워 두면 공통) · 더 자세한 줄이 있으면 그 부문은 자세한 줄이 먼저 · 유급자 = 유급자부·B조, 유품자(단) = 유품자부·유단자·A조${Array.isArray(t.pfGroups)&&t.pfGroups.length?' · 학년·부 목록은 홈페이지 부 나누기를 따릅니다':''}</div></div></div>`;}
 const jvRow=(k,v)=>{const D=RDRAFT||rulesNow();return `<div class="rrow"><b>심판 채점판 화면</b><div class="seg">${[['auto','자동'],['one','한 종목씩'],['all','한 화면에 모두']].map(([x,l])=>`<button class="${(v||'auto')===x?'on':''}" data-a="rSet" data-k="${k}" data-v="${x}">${l}</button>`).join('')}</div><span class="small muted">자동: 휴대폰은 한 종목씩, 태블릿은 한 화면에 모두 · 격파 채점판에 적용</span></div>`;};
 function rPath(o,p,v){const ks=p.split('.');let x=o;ks.slice(0,-1).forEach(k=>{x[k]=x[k]||{};x=x[k];});x[ks[ks.length-1]]=v;}
 const rDraft=()=>{RDRAFT=RDRAFT||JSON.parse(JSON.stringify(rulesNow()));return RDRAFT;};
@@ -640,7 +653,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
   else if(a==='rEv'){const D=rDraft();D.events[b.dataset.k]=!D.events[b.dataset.k];render();}
   else if(a==='rOpen'){RSEL=b.dataset.k;render();}
   else if(a==='rBack'){if(e.target.closest('[data-stop]')&&!e.target.closest('button'))return;RSEL=null;render();}
-  else if(a==='pfFill'){const D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=pfRowsOf(t),PA=pfGroupsOf(t),PG=b.dataset.m==='common'?PA.filter(x=>x.common):PA.filter(x=>!x.common&&!x.extra),have=new Set(rows.map(o=>o.g));PG.forEach(x=>{if(!have.has(x.g))rows.push({g:x.g,pre:['',''],fin:''});});
+  else if(a==='pfFill'){const D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=pfRowsOf(t),PA=pfGroupsOf(t),PG=(b.dataset.m==='common'?PA.filter(x=>x.common):PA.filter(x=>!x.common&&!x.extra)).map(x=>({g:pfkG(pfkParse(x.g))})).filter((x,i,a)=>x.g&&a.findIndex(y=>y.g===x.g)===i),have=new Set(rows.map(o=>pfkG(pfkParse(o.g))));PG.forEach(x=>{if(!have.has(x.g))rows.push({g:x.g,pre:['',''],fin:''});});
     const ix=new Map(PG.map((x,i)=>[x.g,i]));rows.sort((p,q)=>(ix.has(p.g)?ix.get(p.g):999)-(ix.has(q.g)?ix.get(q.g):999));t.pfix=pfToFix(rows);PFTMP=rows;render();}
   else if(a==='pfAdd'||a==='pfDel'){const D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=pfRowsOf(t);if(a==='pfAdd')rows.push({g:'',pre:['',''],fin:''});else rows.splice(Number(b.dataset.i),1);t.pfix=pfToFix(rows);PFTMP=rows;render();}
   else if(a==='rUndo'){RDRAFT=null;PFTMP=null;render();}
@@ -648,7 +661,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
     document.querySelectorAll('[data-rt]').forEach(w=>{const m=Number(w.querySelector('[data-rtm]').value)||0,sx=Number(w.querySelector('[data-rts]').value)||0;rPath(R,w.dataset.rt,m*60+sx);});
     const doc={...R,at:NOW()};try{const r=await fetch('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)});if(!r.ok)throw 0;RDRAFT=null;await loadRules();toast('종목 설정을 저장했습니다 · 모든 코트 노트북에 보냅니다');render();}catch(x){toast('저장하지 못했습니다 (본부 노트북에서 저장해 주세요)');}}});
 document.addEventListener('change',e=>{const pf=e.target.closest&&e.target.closest('[data-pf]');if(pf){const [i,f]=pf.dataset.pf.split('|'),D=rDraft(),t=D.poomsae.types.recognized=D.poomsae.types.recognized||{},rows=PFTMP&&PFTMP.length>=pfRowsOf(t).length?PFTMP:pfRowsOf(t),o=rows[Number(i)];if(!o)return;
-    if(f==='g')o.g=pf.value;else if(f==='fin')o.fin=pf.value;else o.pre[f==='p0'?0:1]=pf.value;t.pfix=pfToFix(rows);PFTMP=rows;render();return;}
+    if(f==='d'||f==='y'||f==='c'){const k=pfkParse(o.g);k[f]=pf.value;if(f==='d'&&!pfkY(k.d).includes(k.y))k.y='';o.g=pfkG(k);}else if(f==='fin')o.fin=pf.value;else o.pre[f==='p0'?0:1]=pf.value;t.pfix=pfToFix(rows);PFTMP=rows;render();return;}
   const w=e.target.closest&&e.target.closest('[data-rt]');if(w){const m=Number(w.querySelector('[data-rtm]').value)||0,sx=Number(w.querySelector('[data-rts]').value)||0;rPath(rDraft(),w.dataset.rt,m*60+sx);return;}
   const i=e.target.closest&&e.target.closest('[data-rk]');if(!i)return;const n=Number(i.value);if(n>0)rPath(rDraft(),i.dataset.rk,n);});
 loadRules();setInterval(loadRules,15000);

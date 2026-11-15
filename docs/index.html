@@ -1782,7 +1782,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.9'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.10'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2922,6 +2922,17 @@ function grSum(k,R,L){const t=R.poomsae.types[k]||{};
   if(k==='kyorugi'){const K=R.kyorugi;return `${K.refs}부심 · ${K.system==='sum'?'점수 합산':'3전 다승제'} · ${K.roundSec}초`;}
   const f=L.fmt[k]||t.format||'cutoff',fm=f==='tournament'?'토너먼트':'컷오프';
   return `${fm}${fm==='컷오프'?' · '+(t.cut==='two'?`예선→결선 ${t.adv}명`:GR_CUT[t.cut||'rule'].split(' ')[0]):''} · ${t.judges}심${k==='recognized'?` · 품새 ${L.std==='comm'&&/-/.test(String(t.pstage||''))?String(t.pstage).replace('-','개→'):t.pstage||t.poomsae||1}개`+((t.pfix||[]).length?' · 지정표':''):''}${t.max?` · ${t.min?grMmss(t.min)+'~':''}${grMmss(t.max)}`:''}`;}
+/* v1.7.21 지정 품새표 한 줄 = 부 · 학년 · 급수 세 칸 (빈칸 = 공통). 저장은 「초등부 저학년부 유급자」처럼 낱말로 → 코트는 낱말마다 부문 이름에 있는지로 맞춤 (유급자 = 유급자부·B조, 유품자(단) = 유품자부·유단자·A조) */
+const PFK_D=['유치부','초등부','중등부','고등부','중·고등부','일반부','실버부'];
+const PFK_YH={저학년부:'저학년 (1·2학년)',중학년부:'중학년 (3·4학년)',고학년부:'고학년 (5·6학년)'};
+const pfkY=d=>d==='초등부'?['저학년부','중학년부','고학년부',...[1,2,3,4,5,6].map(i=>i+'학년부')]:/^(중등|고등)부$/.test(d)?[1,2,3].map(i=>i+'학년부'):[];
+const PFK_C=[['','급수 공통'],['유급자','유급자 (B조)'],['유품자(단)','유품자(단) (A조)']];
+function pfkParse(g){let d='',y='',c='';String(g||'').split(/\s+/).filter(Boolean).forEach(x=>{
+  if(/유급|^B조$/.test(x))c='유급자';else if(/유품|유단|^A조$/.test(x))c='유품자(단)';else if(/학년/.test(x))y=x.replace(/부?$/,'부');
+  else{const m=/^(유치|초등|중·고등|중고등|중등|고등|일반|실버)/.exec(x);if(m)d=(m[1]==='중고등'?'중·고등':m[1])+'부';}});
+  if(y&&!pfkY(d).includes(y))y='';return {d,y,c};}
+const pfkG=o=>[o.d,o.y,o.c].filter(Boolean).join(' ');
+const pfkLabel=g=>{const k=pfkParse(g);return k.d?[k.d,k.y?PFK_YH[k.y]||k.y.replace(/부$/,''):'학년 공통',k.c||'급수 공통'].join(' · '):g;};
 function grPfRows(t){if(UI.grPf)return UI.grPf;const m=new Map();(t.pfix||[]).forEach(r=>{if(!r||!r.g)return;if(!m.has(r.g))m.set(r.g,{g:r.g,pre:['',''],fin:''});const o=m.get(r.g);if(/결/.test(String(r.r||'')))o.fin=(r.p||[])[0]||'';else o.pre=[(r.p||[])[0]||'',(r.p||[])[1]||''];});return [...m.values()];}
 function grPfFix(rows){const out=[];rows.forEach(o=>{if(!o.g)return;const pre=o.pre.filter(Boolean);if(pre.length)out.push({g:o.g,r:'예선',p:pre});if(o.fin)out.push({g:o.g,r:'결선',p:[o.fin]});});return out;}
 function grHtml(){const R=UI.gr||grMerge(JSON.parse(JSON.stringify(GR_DEF)),{}),L=grLive(),C=R.common,E=L.ev;
@@ -2937,14 +2948,16 @@ function grHtml(){const R=UI.gr||grMerge(JSON.parse(JSON.stringify(GR_DEF)),{}),
     const fmChip=fm?row('경기 방식',`<span class="chip">${fm==='tournament'?'토너먼트 (청·홍)':'컷오프 (점수 순위)'}</span>`,'② 종목 칸에서 고른 대로'):'';
     let f='';
     if(k==='recognized'){const rows=grPfRows(t),sel=(i,fd,v,list,ph)=>`<select data-grpf="${i}|${fd}"><option value="">${ph}</option>${list.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`;
-      const PG=grPfGroups()||GR_GRP.map(g=>({g,t:g})),gsel=(i,v)=>`<select data-grpf="${i}|g"><option value="">학년·부 고르기</option>${[...PG,...(v&&!PG.some(x=>x.g===v)?[{g:v,t:v+' (부 나누기에 없음)'}]:[])].map(x=>`<option value="${esc(x.g)}" ${x.g===v?'selected':''}>${esc(x.t)}</option>`).join('')}</select>`;
+      const ksel=(i,g)=>{const k=pfkParse(g),Y=pfkY(k.d);return `<td><select data-grpf="${i}|d"><option value="">부 고르기</option>${PFK_D.map(x=>`<option ${x===k.d?'selected':''}>${x}</option>`).join('')}</select></td>
+        <td><select data-grpf="${i}|y" ${Y.length?'':'disabled'}><option value="">학년 공통</option>${Y.map(x=>`<option value="${x}" ${x===k.y?'selected':''}>${PFK_YH[x]||x.replace(/부$/,'')}</option>`).join('')}</select></td>
+        <td><select data-grpf="${i}|c">${PFK_C.map(([v,l])=>`<option value="${v}" ${v===k.c?'selected':''}>${l}</option>`).join('')}</select></td>`;};
       f=fmChip+(fm!=='tournament'?steps():'')+(L.std==='comm'?row('품새 수',seg(P+'.pstage',[[1,'모두 1개'],[2,'모두 2개'],['2-1','예선 2개 · 결선 1개'],['1-2','예선 1개 · 결선 2개']],t.pstage||t.poomsae||1),`${C.commN||4}명 1조의 첫 경기(예선)와 결선의 품새 수`):row('품새 수',seg(P+'.poomsae',[[1,'품새 1개'],[2,'품새 2개']],t.poomsae||1)))
         +J(P,t.judges)+row('지정 품새 추첨',seg(P+'.pdraw',[['call','매 경기 현장 추첨'],['pre','경기 당일 일괄 추첨']],t.pdraw||'call'))
         +row('지정 품새표',`<div class="small mute">학년(부)마다 예선 품새와 결선 품새를 고르면 추첨하지 않고 그대로 씁니다 · 비워 두면 「지정 품새 추첨」대로</div>
-          <div class="small mute">학년·부 목록은 ④ 부 나누기(공인 품새)를 그대로 따릅니다 · 남자·여자는 같은 품새</div>
-          ${rows.length?`<div class="gr-pfw"><table class="gr-pft"><tr><th>학년 · 부</th><th>예선 ①</th><th>예선 ②</th><th>결선</th><th></th></tr>${rows.map((o,i)=>`<tr><td>${gsel(i,o.g)}</td><td>${sel(i,'p0',o.pre[0],GR_PF,'—')}</td><td>${sel(i,'p1',o.pre[1],GR_PF,'—')}</td><td>${sel(i,'fin',o.fin,GR_PF,'—')}</td><td><button type="button" class="btn sm ghost" data-a="grPfDel" data-i="${i}">빼기</button></td></tr>`).join('')}</table></div>`:''}
-          <div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" data-a="grPfAdd">＋ 학년 줄 더하기</button><button type="button" class="btn sm" data-a="grPfFill" data-m="common">★ 부별 공통 줄 만들기 (6줄)</button><button type="button" class="btn sm" data-a="grPfFill">📋 부 나누기대로 줄 모두 만들기</button></div>
-          <div class="small mute">공통 줄은 그 부의 모든 부문에 같은 품새가 들어갑니다 · 저학년·유급자부처럼 더 자세한 줄을 함께 넣으면 그 부문은 자세한 줄이 먼저입니다</div>`)+jv(P+'.jView',t.jView);}
+          <div class="small mute">한 줄 = <b>부 · 학년 · 급수</b> — 학년·급수를 비워 두면 「공통」(그 부 전체) · 남자·여자는 같은 품새</div>
+          ${rows.length?`<div class="gr-pfw"><table class="gr-pft"><tr><th>부</th><th>학년</th><th>급수</th><th>예선 ①</th><th>예선 ②</th><th>결선</th><th></th></tr>${rows.map((o,i)=>`<tr>${ksel(i,o.g)}<td>${sel(i,'p0',o.pre[0],GR_PF,'—')}</td><td>${sel(i,'p1',o.pre[1],GR_PF,'—')}</td><td>${sel(i,'fin',o.fin,GR_PF,'—')}</td><td><button type="button" class="btn sm ghost" data-a="grPfDel" data-i="${i}">빼기</button></td></tr>`).join('')}</table></div>`:''}
+          <div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" data-a="grPfAdd">＋ 줄 더하기</button><button type="button" class="btn sm" data-a="grPfFill" data-m="common">★ 부별 공통 줄 만들기 (6줄)</button><button type="button" class="btn sm" data-a="grPfFill">📋 부 나누기대로 줄 모두 만들기</button></div>
+          <div class="small mute">공통 줄은 그 부의 모든 부문에 같은 품새 · 「초등부 · 저학년 · 유급자」처럼 더 자세한 줄이 있으면 그 부문은 자세한 줄이 먼저 · 유급자 = 유급자부·B조, 유품자(단) = 유품자부·유단자·A조</div>`)+jv(P+'.jView',t.jView);}
     else if(k==='freestyle')f=fmChip+(fm!=='tournament'?steps():'')+J(P,t.judges)+row('연기 시간',`${mmss(P+'.min',t.min)} ~ ${mmss(P+'.max',t.max)}`,'넘거나 모자라면 한마당 규정대로 10초마다 감점')+jv(P+'.jView',t.jView);
     else if(k==='gym'||k==='team100')f=row('채점 양식',seg(P+'.sheet',[['hm','한마당'],['wt','대회 규정 (세계태권도문화예술협회)']],t.sheet||'hm'))+row('경기 방식','<span class="chip">컷오프 · 경연 1회 (고정)</span>')+steps()+J(P,t.judges)
       +row('연기 시간',`${mmss(P+'.min',t.min)} ~ ${mmss(P+'.max',t.max)}`,(t.sheet||'hm')==='wt'?(k==='gym'?'대회 규정: 1분 40초~2분 · 2분을 넘으면 한 번에 −5':'대회 규정: 4분 이내 · 넘으면 한 번에 −5'):k==='gym'?'한마당 규정: 1분 50초~2분 · 벗어난 10초마다 −0.3':'벗어난 10초마다 −3.0 · 최소를 0분 0초로 두면 최대만 봅니다');
@@ -2970,14 +2983,14 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
     grRender();}
   else if(a==='grOpen'){grReadInputs();UI.grSel=b.dataset.k;UI.grPf=null;grRender();const box=document.getElementById('grBox');if(box)box.closest('.dsg-mc').scrollTop=0;}
   else if(a==='grBack'){grReadInputs();UI.grSel=null;UI.grPf=null;grRender();}
-  else if(a==='grPfFill'){grReadInputs();const t=UI.gr.poomsae.types.recognized,rows=grPfRows(t),PA=grPfGroups()||[],PG=b.dataset.m==='common'?PA.filter(x=>x.common):PA.filter(x=>!x.common&&!x.extra),have=new Set(rows.map(o=>o.g));PG.forEach(x=>{if(!have.has(x.g))rows.push({g:x.g,pre:['',''],fin:''});});
+  else if(a==='grPfFill'){grReadInputs();const t=UI.gr.poomsae.types.recognized,rows=grPfRows(t),PA=grPfGroups()||[],PG=(b.dataset.m==='common'?PA.filter(x=>x.common):PA.filter(x=>!x.common&&!x.extra)).map(x=>({g:pfkG(pfkParse(x.g))})).filter((x,i,a)=>x.g&&a.findIndex(y=>y.g===x.g)===i),have=new Set(rows.map(o=>pfkG(pfkParse(o.g))));PG.forEach(x=>{if(!have.has(x.g))rows.push({g:x.g,pre:['',''],fin:''});});
     const idx=new Map(PG.map((x,i)=>[x.g,i]));rows.sort((a,b)=>(idx.has(a.g)?idx.get(a.g):999)-(idx.has(b.g)?idx.get(b.g):999));UI.grPf=rows;t.pfix=grPfFix(rows);grRender();toast(`${PG.length}줄을 만들었습니다 · 품새를 골라 주세요`);}
   else if(a==='grPfAdd'||a==='grPfDel'){grReadInputs();const t=UI.gr.poomsae.types.recognized,rows=grPfRows(t);if(a==='grPfAdd')rows.push({g:'',pre:['',''],fin:''});else rows.splice(Number(b.dataset.i),1);UI.grPf=rows;t.pfix=grPfFix(rows);grRender();}
   else if(a==='dsgOpen')dsgOpen(b.dataset.s);
   else if(a==='dsgClose'){grReadInputs();dsgOpen(null);}});
 document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest)return;
   const pf=t.closest('[data-grpf]');if(pf&&UI.gr){const [i,fd]=pf.dataset.grpf.split('|'),tt=UI.gr.poomsae.types.recognized,rows=grPfRows(tt),o=rows[Number(i)];if(!o)return;
-    if(fd==='g')o.g=pf.value;else if(fd==='fin')o.fin=pf.value;else o.pre[fd==='p0'?0:1]=pf.value;UI.grPf=rows;tt.pfix=grPfFix(rows);grRender();return;}
+    if(fd==='d'||fd==='y'||fd==='c'){const k=pfkParse(o.g);k[fd]=pf.value;if(fd==='d'&&!pfkY(k.d).includes(k.y))k.y='';o.g=pfkG(k);}else if(fd==='fin')o.fin=pf.value;else o.pre[fd==='p0'?0:1]=pf.value;UI.grPf=rows;tt.pfix=grPfFix(rows);grRender();return;}
   if(t.closest('#grBox')&&(t.matches('[data-grk]')||t.closest('[data-grt]'))){grReadInputs();dsgSumm();return;}
   if(t.closest('#fComp')){if(/^(cType|dM_ps|dM_fs)$/.test(t.name||'')||/^dE_/.test(t.id||''))grRender();else dsgSumm();}});
 /* 대회 설계 카드: 누르면 그 칸이 창으로 크게 열리고, 닫으면 카드 목록으로 */
