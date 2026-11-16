@@ -676,7 +676,7 @@ function pfRowsOf(t){if(PFTMP&&RDRAFT&&t===RDRAFT.poomsae.types.recognized)retur
 function pfToFix(rows){const out=[];rows.forEach(o=>{if(!o.g)return;const pre=o.pre.filter(Boolean);if(pre.length)out.push({g:o.g,r:'예선',p:pre});if(o.fin)out.push({g:o.g,r:'결선',p:[o.fin]});});return out;}
 /* v1.7.19 학년·부 목록: 홈페이지 「④ 부 나누기」에서 보낸 목록(저·중·고학년 · 유급자부·유품자부 …)이 있으면 그것 */
 /* v1.7.21 지정 품새표 한 줄 = 부 · 학년 · 급수 세 칸 (빈칸 = 공통). 저장은 「초등부 저학년부 유급자」처럼 낱말로 → 코트는 낱말마다 부문 이름에 있는지로 맞춤 (유급자 = 유급자부·B조, 유품자(단) = 유품자부·유단자·A조) */
-const PFK_D=['유치부','초등부','중등부','고등부','중·고등부','일반부','실버부'];
+const PFK_D=['유치부','초등부','중등부','고등부','중·고등부','대학부','일반부','실버부'];
 const PFK_YH={저학년부:'저학년 (1·2학년)',중학년부:'중학년 (3·4학년)',고학년부:'고학년 (5·6학년)'};
 const pfkY=d=>d==='초등부'?['저학년부','중학년부','고학년부',...[1,2,3,4,5,6].map(i=>i+'학년부')]:/^(중등|고등)부$/.test(d)?[1,2,3].map(i=>i+'학년부'):[];
 const PFK_C=[['','급수 공통'],['유급자','유급자 (B조)'],['유품자(단)','유품자(단) (A조)']];
@@ -686,7 +686,7 @@ function pfkParse(g){let d='',y='',c='';String(g||'').split(/\s+/).filter(Boolea
   if(y&&!pfkY(d).includes(y))y='';return {d,y,c};}
 const pfkG=o=>[o.d,o.y,o.c].filter(Boolean).join(' ');
 const pfkLabel=g=>{const k=pfkParse(g);return k.d?[k.d,k.y?PFK_YH[k.y]||k.y.replace(/부$/,''):'학년 공통',k.c||'급수 공통'].join(' · '):g;};
-const PF_COMMON=[['유치부','유치부'],['초등부','초등부'],['중등부','중등부'],['고등부','고등부'],['일반부','일반부'],['실버부','실버부']].map(([g,n])=>({g,t:`★ ${n} 공통 (모든 ${n.replace('부','')} 부문)`,common:1}));
+const PF_COMMON=[['유치부','유치부'],['초등부','초등부'],['중등부','중등부'],['고등부','고등부'],['대학부','대학부'],['일반부','일반부'],['실버부','실버부']].map(([g,n])=>({g,t:`★ ${n} 공통 (모든 ${n.replace('부','')} 부문)`,common:1}));
 const pfGroupsOf=t=>{const L=Array.isArray(t.pfGroups)&&t.pfGroups.length?t.pfGroups.filter(x=>x&&x.g):PF_GRP.map(g=>({g,t:g})),seen=new Set();return [...PF_COMMON,...L].filter(x=>!seen.has(x.g)&&seen.add(x.g));};
 function pfEditor(t){const rows=pfRowsOf(t),sel=(i,f,v,list,ph)=>`<select data-pf="${i}|${f}"><option value="">${ph}</option>${list.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`;
   const ksel=(i,g)=>{const k=pfkParse(g),Y=pfkY(k.d);return `<td><select data-pf="${i}|d"><option value="">부 고르기</option>${PFK_D.map(x=>`<option ${x===k.d?'selected':''}>${x}</option>`).join('')}</select></td>
@@ -2093,13 +2093,17 @@ const APPN={poomsae:'품새',gyeokpa:'격파',kyorugi:'겨루기'};
 function hdParse(h){const t=String(h||'').replace(/\s+/g,' ').trim(),gm=/ (유품자부|유급자부|[A-Z]조)$/.exec(t),rest=gm?t.slice(0,gm.index):t;
   const dm=/(유치|초등|중등|고등|중·고|실버|일반|대학|성인|시니어|마스터|통합부|장년|청년)/.exec(rest),pre=dm?rest.slice(0,dm.index):rest,sm=/(남자|여자) *$/.exec(pre);
   return {div:dm?rest.slice(dm.index).trim():'',grp:gm?gm[1]:'',sex:sm?(sm[1]==='남자'?'남':'여'):''};}
+/* v1.7.31 품새 복식전·단체전은 개인전과 다른 경기 (대한태권도협회 품새 경기규칙 제5조: 복식=남녀 혼성, 공인 단체=남자부·여자부, 자유 단체=혼성) */
+const kindOf=r=>isTeam(r.ev)||/격파/.test(r.ev)?'':/복식|페어/.test(r.kind||'')?'복식':/단체/.test(r.kind||'')?'단체':'';
+const KL={복식:'복식전',단체:'단체전'};
 function rebuild(){
   G={};
   /* v1.4.90 홈페이지에서 추첨해 온 명단은 홈페이지가 정한 부문(「추첨부문」 칸) 그대로 묶음 — 관리자가 합친 부문도 그대로 */
-  P.roster.forEach((r,i)=>{const id=r.hdDiv?'hd|'+r.ev+'|'+r.hdDiv:[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||''),r.gev||''].join('|');
+  P.roster.forEach((r,i)=>{const kn=kindOf(r),id=r.hdDiv?'hd|'+r.ev+'|'+kn+'|'+r.hdDiv:[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||''),r.gev||'',kn].join('|');
     const x=r.hdDiv?hdParse(r.hdDiv):null; /* v1.5.8 홈페이지가 정한 부문 이름(학년별·유품자부 등)을 그대로 경기 이름으로 */
-    const g=G[id]||(G[id]={id,ev:r.ev,div:x&&x.div?x.div:r.div,grp:x?x.grp:(r.grp||''),sex:isTeam(r.ev)?'':x?x.sex:(r.sex||''),gev:r.gev||'',units:0,people:0,members:[]});
-    g.units++;g.people+=isTeam(r.ev)?(+r.cnt||1):1;g.members.push(i);});
+    const sx=isTeam(r.ev)?'':x?(x.sex||(/혼성/.test(r.hdDiv)?'혼성':'')):(r.sex||'');
+    const g=G[id]||(G[id]={id,ev:r.ev,kind:kn,div:x&&x.div?x.div:r.div,grp:x?x.grp:(r.grp||''),sex:kn==='복식'?'혼성':sx,gev:r.gev||'',units:0,people:0,members:[]});
+    g.units++;g.people+=isTeam(r.ev)||kn?(+r.cnt||1):1;g.members.push(i);});
 }
 const perOf=e=>{const v=Number(P.per[e]);return v>0?v:(DEFPER[e]||(isTeam(e)?4:1.5));};
 const dur=g=>g.units*perOf(g.ev);
@@ -2242,6 +2246,8 @@ function divOf(div,gr,ev,std){div=String(div||'').trim();gr=String(gr||'').trim(
   const gm=/(\d)/.exec(gr);if(/^초등부$/.test(div)&&gm&&!isTeam(ev)){const n=+gm[1];return {div:n<=2?'초등 저학년부':n<=4?'초등 중학년부':'초등 고학년부',merge:false};}
   /* v1.4.96 중등부·고등부 개인·복식·단체도 학년별 (중등 1학년부 …) */
   if(/^(중등|고등)부$/.test(div)&&gm&&!isTeam(ev)&&+gm[1]>=1&&+gm[1]<=3)return {div:`${div.slice(0,2)} ${gm[1]}학년부`,merge:false};
+  /* v1.7.31 대학부: 대한태권도협회 품새 경기규칙 — 대학 1부 = 1·2학년, 대학 2부 = 3·4학년 */
+  if(/^대학부$/.test(div)&&gm&&!isTeam(ev)&&+gm[1]>=1&&+gm[1]<=4)return {div:+gm[1]<=2?'대학 1부':'대학 2부',merge:false};
   return {div:div||'일반',merge:false};}
 /* v1.4.93 부별 오타·빠진 「부」 맞춤: 증등→중등 · 「중등 2학년」→「중등 2학년부」 */
 const divFix=s=>{s=String(s||'').replace(/^증등/,'중등').replace(/^중학교?\s*(?=\d)/,'중등 ').replace(/^고등학교\s*(?=\d)/,'고등 ').replace(/^초등학교\s*(?=\d)/,'초등 ');return /^(초등|중등|고등)\s*\d\s*학년$/.test(s)?s.replace(/\s*학년$/,'학년부').replace(/^(초등|중등|고등)\s*/,'$1 '):s;};
@@ -2261,7 +2267,7 @@ function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
     const mem=col(o,/^(팀원|선수명단)$/),tn=col(o,/^(팀명|팀|팀이름)$/),kind=/복식|단체|페어/.test(kindRaw)?kindRaw:'';
     const g0=col(o,/^(조|실력|조구분|등급|레벨|실력조)$/),gm=/^([A-Za-z])\s*조?$/.exec(g0),s0=col(o,/^성별$/);
     const r={ev,div,grp:dv.merge?'':(gm?gm[1].toUpperCase()+'조':g0),sex:/^(남|M$|male)/i.test(s0)?'남':/^(여|F$|W$|female)/i.test(s0)?'여':s0,
-      name:name0,dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0,drawNo:Number(col(o,/^(추첨|추첨번호)$/))||0,hdDiv:col(o,/^(추첨부문)$/)};
+      name:name0,dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0,drawNo:Number(col(o,/^(추첨|추첨번호)$/))||0,hdDiv:col(o,/^(추첨부문)$/),...(mem&&kind?{mem}:{})};
     if(/^실버|^유치부 통합/.test(r.div))r.sex=''; /* v1.5.5 실버부는 남녀 통합 */
     /* v1.4.85 개인 격파는 세부 종목(체공 도약·수직축 회전 …)별로 따로 부문 */
     if(/격파/.test(ev)&&!kind&&!isTeam(ev)){const kr=kindRaw.replace(/\s/g,''),hit=GEV.find(([k,l])=>l.replace(/\s/g,'')===kr||k===kindRaw);if(hit)r.gev=hit[0];}
@@ -2499,7 +2505,7 @@ function bind(r){
     if(!d.to)return;const from=P.lanes.findIndex(l=>l.includes(d.id));if(from<0)return;
     const cur=P.lanes[from].filter(id=>G[id]).indexOf(d.id);if(from===d.to.lane&&cur===d.to.idx)return;
     commit(()=>{const L=P.lanes.map(l=>l.filter(id=>G[id]&&id!==d.id));L[d.to.lane].splice(d.to.idx,0,d.id);P.lanes=L;});
-    const g=G[d.id];toast(`${g.div} ${g.grp} ${g.sex} (${g.ev}) → ${L8[d.to.lane]||d.to.lane+1}코트 ${d.to.idx+1}번째`);};
+    const g=G[d.id];toast(`${g.kind?KL[g.kind]+' ':''}${g.div} ${g.grp} ${g.sex} (${g.ev}) → ${L8[d.to.lane]||d.to.lane+1}코트 ${d.to.idx+1}번째`);};
   addEventListener('pointerup',end);addEventListener('pointercancel',()=>{if(D&&D.on){D.to=null;}end();});
   addEventListener('keydown',e=>{if(!OPEN)return;const typing=/^(INPUT|SELECT|TEXTAREA)$/.test((e.target||{}).tagName||'');
     if(e.key==='Escape'&&!typing){e.stopImmediatePropagation();if(SW.open||SW.pick!=null){SW.open=false;SW.pick=null;draw();}else if(ASSOC.open){ASSOC.open=false;draw();}else if(OVL){OVL=false;draw();}else if(SEND.open){SEND.open=false;draw();}else close();}
@@ -2512,14 +2518,14 @@ function confirmTwice(b){if(b.dataset.arm)return true;b.dataset.arm='1';const t=
    운영표 1코트 → A코트, 2코트 → B코트 … (현장 프로그램 코트는 A~H 8개까지)
    품새·팀 태권체조·종합시범 → 품새 앱, 개인 격파 → 격파 앱. 부문 이름 앞 번호가 운영표 순서입니다. */
 function laneApps(x){const m={};x.items.forEach((it,k)=>{const a=appOf(it.g.ev);(m[a]=m[a]||[]).push({it,k});});return m;}
-function divName(it,k){const g=it.g,gl=g.gev&&(GEV.find(x=>x[0]===g.gev)||[])[1];return `${String(k+1).padStart(2,'0')} ${gl||g.ev} ${g.div} ${g.grp}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();}
+function divName(it,k){const g=it.g,gl=g.gev&&(GEV.find(x=>x[0]===g.gev)||[])[1];return `${String(k+1).padStart(2,'0')} ${gl||g.ev} ${KL[g.kind]||''} ${g.div} ${g.grp}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();}
 function rowsFor(app,list){
   if(app==='gyeokpa'){const R=[['이름','종목','성별','부별','소속','체중(kg)','신장(cm)','팀원','부문']];
     list.forEach(({it,k})=>{const dn=divName(it,k),team=isTeam(it.g.ev),ev=team?'team':(it.g.gev||SEND.gev);
       it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',ev,team?'혼성':(r.sex||'남'),r.div||it.g.div,r.dojang||'','','','',dn]);});});return R;}
   const R=[['이름','성별','나이','소속','부별','공인/자유','종목','팀원','부문']];
   list.forEach(({it,k})=>{const dn=divName(it,k),ev=it.g.ev,team=isTeam(ev),t=/시범|종합/.test(ev)?'팀대항 종합경연':/체조/.test(ev)?'태권체조':/자유/.test(ev)?'자유':'공인';
-    it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',team?'혼성':(r.sex||'남'),'',r.dojang||'',r.div||it.g.div,t,team?'단체':(r.kind||'개인'),'',dn]);});});
+    it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',team||it.g.kind==='복식'?'혼성':it.g.kind==='단체'?(it.g.sex||r.sex||'혼성'):(r.sex||'남'),'',r.dojang||'',r.div||it.g.div,t,team?'단체':(it.g.kind||'개인'),r.mem||'',dn]);});});
   return R;}
 function sendHtml(TL){
   const lanes=TL.map((x,i)=>({x,i,L:L8[i]||'',apps:laneApps(x)}));
@@ -2633,8 +2639,8 @@ const ASSOC={open:false,rep:null};
 const KIND=e=>/품새/.test(e)?'poom':/격파/.test(e)?'gp':/체조|경연|시범/.test(e)?'team':'other';
 const KINDN={poom:'품새',gp:'격파',team:'태권체조·팀 경연',other:'기타'};
 const ELBL={'품새':'공인','자유 품새':'자유','개인 격파':'격파','팀 태권체조':'체조','팀 종합경연':'경연','종합시범':'시범','겨루기':'겨루기'};
-const glabel=g=>`${(g.gev&&(GEV.find(x=>x[0]===g.gev)||[])[1])||ELBL[g.ev]||g.ev} ${g.div}${g.grp?' '+g.grp:''}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();
-const gcount=g=>isTeam(g.ev)?`${g.units}팀`:`${g.people}명`;
+const glabel=g=>`${(g.gev&&(GEV.find(x=>x[0]===g.gev)||[])[1])||ELBL[g.ev]||g.ev}${g.kind?' '+KL[g.kind]:''} ${g.div}${g.grp?' '+g.grp:''}${g.sex?' '+g.sex:''}`.replace(/\s+/g,' ').trim();
+const gcount=g=>isTeam(g.ev)||g.kind?`${g.units}팀`:`${g.people}명`;
 /* 자동 순서: 종목(공인→자유) → 학년 → B조→A조 → 남→여 */
 const cmpSched=(a,b)=>evRank(a.ev)-evRank(b.ev)||divRank(a.div)-divRank(b.div)||a.div.localeCompare(b.div)||grpRank(a.grp)-grpRank(b.grp)||(a.sex==='남'?0:1)-(b.sex==='남'?0:1);
 function courtKinds(n){const kinds=['poom','gp','team','other'],load={};kinds.forEach(k=>load[k]=0);
