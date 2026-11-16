@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.28" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.29" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -412,6 +412,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/show.js":
 		serveAsset(w, "assets/show.js", "application/javascript; charset=utf-8")
 		return
+	case p == "/detail.css":
+		serveAsset(w, "assets/detail.css", "text/css; charset=utf-8")
+		return
 	case p == "/flow.js":
 		serveAsset(w, "assets/flow.js", "application/javascript; charset=utf-8")
 		return
@@ -551,6 +554,9 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)
+	if key != "hq" {
+		out.WriteString(`<link rel="stylesheet" href="/detail.css">`) // v1.7.29 점수 공개 심판별 세부 점수 색·크기 (앱 스타일 뒤에)
+	}
 	out.WriteString(`</body></html>`)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")

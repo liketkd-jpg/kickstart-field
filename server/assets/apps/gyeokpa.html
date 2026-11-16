@@ -2605,10 +2605,10 @@ function vDisplay(){
     if(canRank)setTimeout(schedule,CB_SCORE_MS-el+30);
     let body='';
     if(JUDGED(k)){
-      const cards=r.judges.map((j,i)=>`<div class="cbj ok shown"><div class="cbjn">${j.judge}심</div>${cols.map(c=>`<div class="cbji"><span>${esc(c.l)}</span><b>${p100max(r)?fP(c.v(j.items||{})*pf(r)):fmtN(c.v(j.items||{}))}</b></div>`).join('')}<div class="cbjt ${i===r.hi||i===r.lo?'drop':''}"><span class="${i===r.hi||i===r.lo?'cbx':''}">${p100max(r)?fP(j.total*pf(r)):fmtN(j.total)}</span></div></div>`).join('');
+      const cards=r.judges.map((j,i)=>`<div class="cbj ok shown rv ${r.judges.length>=5&&(i===r.hi||i===r.lo)?'out':'in'}"><div class="cbjn">${j.judge}심</div>${cols.map(c=>`<div class="cbji"><span>${esc(c.l)}</span><b>${p100max(r)?fP(c.v(j.items||{})*pf(r)):fmtN(c.v(j.items||{}))}</b></div>`).join('')}<div class="cbjt ${i===r.hi||i===r.lo?'drop':''}"><span class="${i===r.hi||i===r.lo?'cbx':''}">${p100max(r)?fP(j.total*pf(r)):fmtN(j.total)}</span></div></div>`).join('');
       body=`<div class="cbjs" style="--j:${r.judges.length}">${cards}</div>
         <div class="cbres"><span>${r.judges.length===1?'1심 점수':'심판 평균'} <b>${fmt3(r.score*pf(r))}</b></span>${r.dedTotal?`<span class="neg">감점 <b>−${fP(r.dedTotal*pf(r))}</b></span>`:''}<span class="cbfinal">${r.dq?'실격':fmt3(p100(r))}</span>${p100max(r)?'<span class="small">100점 기준</span>':''}</div>
-        <div class="cbstat">${r.judges.length>=5?'심판 합계 중 최고·최저(취소선)를 빼고 평균합니다':''}</div>`;
+        <div class="cbstat">${r.judges.length>=5?'<span class="cblg"><i class="k"></i>들어간 점수 <i class="x"></i>빠진 점수 (심판 합계 최고·최저)</span>':''}</div>`;
     }else body=`<div class="cbres"><span class="cbfinal">${resultText(r)}</span>${r.dedTotal?`<span class="neg">감점 <b>−${fmtN(r.dedTotal)}</b></span>`:''}${r.zero?'<span class="neg">격파 0장 · 순위 제외</span>':''}</div>`;
     return `<div class="board cb gpb">${head}${who}${body}</div>`;
   }

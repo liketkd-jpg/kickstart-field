@@ -1,0 +1,40 @@
+/* v1.7.29 점수 공개: 심판별 세부 점수 — 들어간 점수 파랑 · 빠진 점수(최고·최저) 빨강 · 전광판에서는 크게
+   품새·자유 품새·태권체조(품새 앱) · 격파·팀 경연(격파 앱) 「기존 디자인」 공통. 왕실·불꽃·경기장은 skin.js */
+:root{--dt-in:#62B0FF;--dt-in2:#A9D3FF;--dt-out:#FF5F6D}
+.cbj.rv .cbji b.cnt,.cbj.rv.in .cbji b{color:var(--dt-in)!important}
+.cbj.rv .cbji b.drop{color:var(--dt-out)!important;opacity:.78!important;text-decoration:line-through;text-decoration-thickness:.09em}
+.cbj.rv.in{border-color:color-mix(in srgb,var(--dt-in) 70%,transparent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--dt-in) 18%,transparent)!important}
+.cbj.rv.in .cbjt{color:var(--dt-in2)}
+.cbj.rv.out{border-color:color-mix(in srgb,var(--dt-out) 75%,transparent)!important;box-shadow:none!important;background:color-mix(in srgb,var(--dt-out) 8%,transparent)!important}
+.cbj.rv.out .cbji b,.cbj.rv.out .cbjt{color:var(--dt-out)!important;opacity:.8}
+.cbj.rv.out .cbjt span{text-decoration:line-through;opacity:1}
+.cbj.rv.out .cbjn::after{content:" · 제외";color:var(--dt-out);font-size:.7em}
+.bdot .sc .cnt{color:var(--dt-in)}.bdot .sc .drop{color:var(--dt-out);text-decoration:line-through;opacity:.8}
+.cblg{display:inline-flex;align-items:center;gap:.5em;font-weight:800}
+.cblg i{display:inline-block;width:.9em;height:.9em;border-radius:.2em;margin-left:.6em}
+.cblg i.k{background:var(--dt-in)}.cblg i.x{background:var(--dt-out)}
+
+/* 전광판 (1920×1080 기준, 화면 비율 그대로): 심판 카드를 줄이지 않고 화면 폭을 꽉 채움 */
+body.disp .board.cb:has(.cbj.rv){gap:1.2vh!important}
+body.disp .board .cbjs:has(.cbj.rv){transform:none!important;opacity:1!important;gap:min(1.2vw,2vh)!important;width:100%;margin-top:.4vh}
+body.disp .cbj.rv{padding:min(1.6vh,.9vw) min(1.4vw,2.4vh)!important;border-width:3px!important;border-radius:min(1.2vw,2vh)!important;gap:.2vh!important}
+body.disp .cbj.rv .cbjn{font-size:min(2.4vw,4.2vh)!important;line-height:1.1}
+body.disp .cbj.rv .cbji{font-size:min(1.6vw,2.8vh)!important;align-items:center}
+body.disp .cbj.rv .cbji b{font-size:min(4.6vw,8vh)!important;line-height:1.05;font-weight:800}
+body.disp .cbj.rv .cbjt{font-size:min(3.6vw,6.2vh)!important;line-height:1.1;padding-top:.4vh!important}
+/* 격파는 항목이 3~4개 → 한 줄씩 조금 작게 */
+body.disp .board.gpb .cbj.rv .cbji b{font-size:min(3.6vw,6.2vh)!important}
+body.disp .board.gpb .cbj.rv .cbjt{font-size:min(3.8vw,6.6vh)!important}
+/* 심판이 6명 이상이면 카드가 좁아지므로 글자를 조금 줄임 */
+body.disp .cbjs[style*="--j:6"] .cbj.rv .cbji b,body.disp .cbjs[style*="--j:7"] .cbj.rv .cbji b{font-size:min(3.6vw,6.4vh)!important}
+/* 세부 점수가 커진 만큼 최종 점수는 조금 낮게 (그래도 가장 큼) */
+body.disp .board.ksb-solo:has(.cbj.rv) .cbfinal{font-size:min(12vw,20vh)!important}
+body.disp .board.ksb-solo:has(.cbj.rv) .cbname{font-size:min(5.2vw,9vh)!important}
+body.disp .board:has(.cbj.rv) .cbres{font-size:min(1.9vw,3.4vh)!important}
+body.disp .board:has(.cbj.rv) .cbstat{font-size:min(1.5vw,2.6vh)!important;color:#C9CFDA}
+/* 품새는 항목마다 빠지므로 카드 테두리는 차분하게 */
+.cbj.rv:not(.in):not(.out){border-color:rgba(255,255,255,.22)!important;box-shadow:none!important}
+/* 팀 경연처럼 항목이 4개 이상이면 한 줄씩 조금 작게 (최종 점수·안내가 아래 띠에 겹치지 않게) */
+body.disp .cbj.rv:has(>.cbji:nth-child(5)) .cbji b{font-size:min(3vw,5.2vh)!important}
+body.disp .cbj.rv:has(>.cbji:nth-child(5)) .cbjt{font-size:min(3.2vw,5.6vh)!important}
+body.disp .board.ksb-solo:has(.cbj.rv>.cbji:nth-child(5)) .cbfinal{font-size:min(10.5vw,17vh)!important}

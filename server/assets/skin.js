@@ -60,9 +60,11 @@ function live(m,th){const js=(m.judges||[]).map((ok,i)=>`<i class="${ok?'on':''}
     <div class="sk-name" style="font-size:${U(fit(m.name||m.team,190,5))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="sk-team">${E(m.team)}</div>`:''}${m.members?`<div class="sk-mem">${E(m.members)}</div>`:''}
     ${m.liveCount?`<div class="sk-cnt dzlive"><small>${E(m.liveCount.l)}</small>${E(m.liveCount.v)}<small>${E(m.liveCount.u)}</small></div>`:''}
     <div class="sk-timer timer" data-timer>${E(m.timer||'')}</div>${js?`<div class="sk-js">${js}</div>`:''}</div>${foot(m)}`;}
+/* v1.7.29 왕실·불꽃: 심판별 세부 점수 (들어간 점수 파랑 · 빠진 점수 빨강) */
+function skJudges(js){if(!js||!js.length)return '';return `<div class="sk-jd" style="--n:${js.length}">${js.map(j=>`<div class="sk-jc ${j.drop?'out':j.per?'':'in'}"><div class="sk-jh">${j.n}심${j.drop?' <em>제외</em>':''}</div>${(j.items||[]).map(it=>`<div class="sk-ji"><span>${E(it.l)}</span><b class="${it.x?'jx':'jk'}">${E(it.v)}</b></div>`).join('')}<div class="sk-jt">${E(j.t)}</div></div>`).join('')}</div>`;}
 function score(m,th){const parts=(m.parts||[]).map(p=>`<span class="sk-part ${p.neg?'neg':''}"><small>${E(p.l)}</small><b>${E(p.v)}</b></span>`).join('');
-  return `${top(m,th)}${divLine(m)}<div class="sk-center sk-score">
-    <div class="sk-name sm" style="font-size:${U(fit(m.name||m.team,140,6))}">${E(m.name||m.team)}</div>
+  return `${top(m,th)}${divLine(m)}<div class="sk-center sk-score ${m.js&&m.js.length?'hasj':''}">
+    <div class="sk-name sm" style="font-size:${U(fit(m.name||m.team,m.js&&m.js.length?110:140,6))}">${E(m.name||m.team)}</div>${skJudges(m.js)}
     <div class="cbres sk-res">${parts}<span class="cbfinal sk-final">${E(m.final)}</span></div>${m.note?`<div class="sk-note">${E(m.note)}</div>`:''}
     ${th==='fire'?'<svg class="sk-crack" viewBox="0 0 1200 200" preserveAspectRatio="none"><path d="M0 100 L180 88 L260 30 L360 120 L470 60 L560 140 L680 70 L790 120 L900 50 L1010 110 L1200 96"/><path class="b" d="M260 30 L290 0 M360 120 L380 200 M560 140 L540 200 M900 50 L930 0"/></svg>':''}</div>${foot(m)}`;}
 /* v1.7.9 생활체육(4명 1조): 순위 대신 금·은·동·동 */
@@ -111,14 +113,16 @@ function arBot(lab,en,mid,next){return `<div class="ar-bot"><div class="ar-lab">
 function arExtra(m){try{m.top=[];m.js=null;const cur=g('curOf')(),S=g('S');if(!cur||!S)return;m.isTeam=APP==='poomsae'?/^(gym|team100)$/.test(cur.type||''):!!(cur.members);const d=S.divs.find(x=>x.id===cur.divId);if(!d)return;
   if(APP==='poomsae'){const e=(cur.entries||[])[0]||{},stg=cur.stage?g('stagesOf')(d).find(x=>x.key===cur.stage):null;
     if(stg){const rows=g('stageRanked')(d,stg)||[];m.top=rows.slice(0,3).map(x=>{const a=(g('athlete')||(()=>null))(x.id)||{};return {rank:x.rank,name:a.name||'',team:a.team||'',score:(+x.agg.final).toFixed(2),me:x.id===e.athleteId};});m.total=rows.length;}
-    const r=S.results[e.perfId];if(r&&r.judges&&m.scr==='score')m.js=r.judges.map(j=>({n:j.judge,t:((+j.a||0)+(+j.b||0)).toFixed(1),sub:`<span class="${j.dropA?'x':''}">${(+j.a).toFixed(1)}</span> · <span class="${j.dropB?'x':''}">${(+j.b).toFixed(1)}</span>`,drop:j.dropA&&j.dropB}));}
+    const r=S.results[e.perfId];let sh=null;try{sh=g('SHEETS')[cur.type];}catch(x){}const la=(sh&&sh.A&&sh.A.label)||'정확성',lb=(sh&&sh.B&&sh.B.label)||'표현성';
+    /* v1.7.29 항목마다 들어간 점수(k)·빠진 점수(x) */
+    if(r&&r.judges&&m.scr==='score')m.js=r.judges.map(j=>({n:j.judge,t:((+j.a||0)+(+j.b||0)).toFixed(1),items:[{l:la,v:(+j.a).toFixed(1),x:!!j.dropA},{l:lb,v:(+j.b).toFixed(1),x:!!j.dropB}],sub:`<span class="${j.dropA?'x':'k'}">${(+j.a).toFixed(1)}</span> · <span class="${j.dropB?'x':'k'}">${(+j.b).toFixed(1)}</span>`,drop:j.dropA&&j.dropB,per:true}));}
   else{const st=g('stagesOf')(d).find(x=>x.key===cur.stage)||g('curStage')(d),ids=st.groups&&cur.group!=null?st.groups[cur.group]||[]:g('stIds')(st),RT=g('resultText');
     const rows=g('rankList')(d,st.key,ids).filter(x=>x.ok);m.top=rows.slice(0,3).map(x=>{const a=g('athlete')(x.id)||{};return {rank:x.rank,name:a.name||'',team:a.team||'',score:RT(x.r),me:x.id===cur.athleteId};});m.total=rows.length;
     const r=S.results[cur.perfId],JU=g('JUDGED');if(r&&r.judges&&JU&&JU(cur.kind)&&m.scr==='score'){const cols=g('itemCols')(cur),fN=g('fmtN')||(v=>v);
-      const PFf=g('pf'),k1=PFf?PFf(r):1,sc=v=>k1!==1?String(Math.round(v*k1*100)/100):fN(v);m.js=r.judges.map((j,i)=>({n:j.judge,t:sc(j.total),sub:cols.map(c=>`${E(c.l)} ${sc(c.v(j.items||{}))}`).join(' · '),drop:r.judges.length>=5&&(i===r.hi||i===r.lo),why:i===r.hi?'최고점 제외':i===r.lo?'최저점 제외':''}));}}
+      const PFf=g('pf'),k1=PFf?PFf(r):1,sc=v=>k1!==1?String(Math.round(v*k1*100)/100):fN(v);m.js=r.judges.map((j,i)=>{const dr=r.judges.length>=5&&(i===r.hi||i===r.lo);return {n:j.judge,t:sc(j.total),items:cols.map(c=>({l:c.l,v:sc(c.v(j.items||{})),x:dr})),sub:cols.map(c=>`<span class="${dr?'x':'k'}">${E(c.l)} ${sc(c.v(j.items||{}))}</span>`).join(' · '),drop:dr,why:dr?(i===r.hi?'최고점 제외':'최저점 제외'):''};});}}
 }catch(e){console.error('[KS_ARENA]',e);}}
 const arStage=m=>m.label||'';
-function arJudges(js){if(!js||!js.length)return '';return `<div class="ar-js" style="--n:${js.length}">${js.map(j=>j.t!=null?`<div class="ar-j ${j.drop?'drop':''}"><span class="ar-jn">${j.n}</span><b>${E(j.t)}</b><small>${j.drop&&j.why?E(j.why):j.sub}</small></div>`
+function arJudges(js){if(!js||!js.length)return '';return `<div class="ar-js" style="--n:${js.length}">${js.map(j=>j.t!=null?`<div class="ar-j rv ${j.drop?'drop':j.per?'':'in'}"><span class="ar-jn">${j.n}</span><b>${E(j.t)}</b>${j.items?`<div class="ar-ji">${j.items.map(it=>`<span class="${it.x?'jx':'jk'}"><i>${E(it.l)}</i>${E(it.v)}</span>`).join('')}</div>`:`<small>${j.sub}</small>`}${j.drop&&j.why?`<em class="ar-why">${E(j.why)}</em>`:''}</div>`
   :`<div class="ar-j ${j.ok?'ok':'wait'}"><span class="ar-jn">${j.n}</span><b>${j.ok?'입력':'—'}</b><small>${j.ok?'Judge '+j.n:'채점 중'}</small></div>`).join('')}</div>`;}
 function aIdle(m){return `<div class="ar-idle"><span class="ar-en">Official Competition</span><h1 style="font-size:${U(fit(m.comp,120,14))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="ar-clock" data-now></span>${m.court?`<div class="ar-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
 function aWho(m){const team=!m.name||m.isTeam;return `<div class="ar-who"><span class="ar-en">${team?'Team':'Athlete'}</span><div class="ar-nm" style="font-size:${U(fit(m.name||m.team,team?160:210,team?7:4))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ar-tm">${E(m.team)}</div>`:''}${m.members?`<div class="ar-mem">${E(m.members)}</div>`:''}</div>`;}
@@ -244,7 +248,7 @@ function install(){const cur=window.vDisplay;if(typeof cur!=='function')return f
   const w=function(){try{let c=null;try{c=g('curOf')();}catch(e){}const th=skinFor(c);
       if(th==='arena'&&APP==='kyorugi'){const h=arKy(cur);if(h)return h;}
       else if((th==='arena'||th==='duel')&&c&&(c.entries||[]).length===2){const m=arTourModel();if(m){const h=draw(th,m);if(h)return h;}}
-      else if(th){const m=APP==='poomsae'?modelPm():modelGp();if(m){if(th==='arena')arExtra(m);const h=draw(th,m);if(h)return h;}}}catch(e){console.error('[KS_SKIN]',e);}
+      else if(th){const m=APP==='poomsae'?modelPm():modelGp();if(m){if(th==='arena'||m.scr==='score')arExtra(m);const h=draw(th,m);if(h)return h;}}}catch(e){console.error('[KS_SKIN]',e);}
     return cur.apply(this,arguments);};
   w.__sk=true;w.__ksb=true;w.__kst=true;window.vDisplay=w;try{g('render')();}catch(e){}return true;}
 /* 대회 설정: 종목별 고르기 */
@@ -286,6 +290,29 @@ body.disp .board.sk{position:fixed;inset:0;margin:0;padding:0;border:0;border-ra
 .sk-part{display:inline-flex;align-items:baseline;gap:${U(12)};font-size:${U(30)};margin:${U(6)} ${U(18)}}.sk-part b{font:900 ${U(52)} Cinzel,"Noto Sans KR"}
 .sk-res{flex-direction:row;flex-wrap:wrap;justify-content:center}.sk-res .sk-final{flex-basis:100%}
 .sk-note{margin-top:${U(16)};font-size:${U(34)};color:#FF8A8A}
+.sk-jd{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:${U(20)};width:${U(1780)};margin:${U(18)} auto ${U(6)}}
+.sk-jc{border:${U(3)} solid rgba(255,255,255,.22);border-radius:${U(22)};padding:${U(14)} ${U(24)};background:rgba(0,0,0,.35);display:flex;flex-direction:column;gap:${U(2)};animation:skup .6s ease-out both;animation-delay:var(--t)}
+.sk-jc.in{border-color:rgba(98,176,255,.75)}.sk-jc.out{border-color:rgba(255,95,109,.75);background:rgba(255,95,109,.08)}
+.sk-jh{font:900 ${U(40)}/1.15 "Noto Sans KR";text-align:center}.sk-jh em{font-style:normal;color:#FF5F6D;font-size:.7em}
+.sk-ji{display:flex;justify-content:space-between;align-items:center;font:800 ${U(26)} "Noto Sans KR";opacity:.95}.sk-ji span{opacity:.75}
+.sk-ji b{font:900 ${U(72)}/1.05 Cinzel,"Noto Sans KR";color:#62B0FF}.sk-ji b.jx{color:#FF5F6D;opacity:.8;text-decoration:line-through;text-decoration-thickness:.08em}
+.sk-jt{border-top:1px solid rgba(255,255,255,.18);text-align:right;font:900 ${U(56)}/1.15 Cinzel,"Noto Sans KR"}.sk-jc.in .sk-jt{color:#A9D3FF}.sk-jc.out .sk-jt{color:#FF5F6D;text-decoration:line-through}
+.sk-jd[style*="--n:7"] .sk-ji b,.sk-jd[style*="--n:6"] .sk-ji b{font-size:${U(58)}}
+.sk-center.sk-score.hasj{top:${U(205)};bottom:${U(82)};justify-content:space-evenly}
+.sk-score.hasj .sk-final{font-size:${U(185)}}.sk-score.hasj .sk-res{margin-top:0}.sk-score.hasj .sk-part{font-size:${U(24)};margin:0 ${U(16)}}.sk-score.hasj .sk-part b{font-size:${U(42)}}
+.sk-score.hasj .sk-ji b{font-size:${U(62)}}.sk-score.hasj .sk-jt{font-size:${U(48)}}.sk-score.hasj .sk-jh{font-size:${U(36)}}
+.sk:has(.sk-score.hasj) .sk-next{bottom:${U(18)}}
+:is(.board.sk-arena,.board.ky.ar) .ar-j small .k{color:#62B0FF}:is(.board.sk-arena,.board.ky.ar) .ar-j small .x{color:#FF5F6D;opacity:.85}
+:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.in{border-color:rgba(98,176,255,.6)}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.in b{color:#A9D3FF}
+:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop{opacity:.75;border-color:rgba(255,95,109,.6)}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop b{color:#FF5F6D}
+:is(.board.sk-arena,.board.ky.ar) .ar-j small em{font-style:normal;color:#FF5F6D;font-weight:800}
+:is(.board.sk-arena,.board.ky.ar) .ar-j.rv{padding:${U(14)} ${U(22)}}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv small{font-size:${U(34)};font-weight:800;color:#C9D3EA;overflow:visible;white-space:normal;line-height:1.25}
+:is(.board.sk-arena,.board.ky.ar) .ar-j.rv b{font-size:${U(68)}}
+:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop{opacity:.9}
+:is(.board.sk-arena,.board.ky.ar) .ar-ji{grid-column:1/-1;display:flex;justify-content:space-between;gap:${U(10)};font:800 ${U(40)}/1.1 Archivo,"Noto Sans KR",sans-serif;font-stretch:85%}
+:is(.board.sk-arena,.board.ky.ar) .ar-ji span{display:flex;flex-direction:column;align-items:flex-end}:is(.board.sk-arena,.board.ky.ar) .ar-ji i{font:700 ${U(19)} "Noto Sans KR";color:#9AA8C7;font-style:normal}
+:is(.board.sk-arena,.board.ky.ar) .ar-ji .jk{color:#62B0FF}:is(.board.sk-arena,.board.ky.ar) .ar-ji .jx{color:#FF5F6D;text-decoration:line-through}
+:is(.board.sk-arena,.board.ky.ar) .ar-why{grid-column:1/-1;text-align:right;font:800 ${U(22)} "Noto Sans KR";color:#FF5F6D;font-style:normal}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv small em{display:block;font-size:${U(24)}}
 .sk-rkh{position:absolute;left:0;right:0;top:${U(130)};text-align:center}.sk-rkh span{display:block;font:800 ${U(28)} Cinzel;letter-spacing:.5em}.sk-rkh b{display:block;font:800 ${U(44)} "Noto Sans KR";margin-top:${U(10)}}
 .sk-pods{position:absolute;left:0;right:0;top:${U(240)};display:flex;justify-content:center;align-items:flex-end;gap:${U(36)}}
 .sk-pod{width:${U(470)};border-radius:${U(26)};padding:${U(22)} ${U(24)} ${U(24)};text-align:center;animation:skup .8s cubic-bezier(.2,1.2,.3,1) both;animation-delay:calc(var(--t) + var(--i)*.18s)}

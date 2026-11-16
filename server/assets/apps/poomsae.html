@@ -2680,12 +2680,12 @@ function cutBoard(cur,st,ctl,head,clock){
   let ag=null;if(d&&stg){ag=agg(stagePerfIds(d,stg.key,e.athleteId));}
   if(el<CB_SCORE_MS||!ag||!stg){
     if(el<CB_SCORE_MS&&ag&&stg)setTimeout(schedule,CB_SCORE_MS-el+30);
-    const cards=res.judges.map(j=>`<div class="cbj ok shown"><div class="cbjn">${j.judge}심</div><div class="cbji"><span>${labA}</span><b class="${j.dropA?'drop':''}">${fmt1(j.a)}</b></div><div class="cbji"><span>${labB}</span><b class="${j.dropB?'drop':''}">${fmt1(j.b)}</b></div><div class="cbjt">${fmt1((j.a||0)+(j.b||0))}</div></div>`).join('');
+    const cards=res.judges.map(j=>`<div class="cbj ok shown rv"><div class="cbjn">${j.judge}심</div><div class="cbji"><span>${labA}</span><b class="${j.dropA?'drop':'cnt'}">${fmt1(j.a)}</b></div><div class="cbji"><span>${labB}</span><b class="${j.dropB?'drop':'cnt'}">${fmt1(j.b)}</b></div><div class="cbjt">${fmt1((j.a||0)+(j.b||0))}</div></div>`).join('');
     const two=d&&pCountR(d,rkOf(cur))>1&&ag&&!cur.rm;
     return `<div class="board cb">${ctl}<div class="colorband none"></div>${head}${who}
       <div class="cbjs" style="--j:${res.judges.length}">${cards}</div>
       <div class="cbres"><span>${labA} <b>${fmt3(res.a)}</b></span><span>${labB} <b>${fmt3(res.b)}</b></span>${res.deduction?`<span class="neg">감점 <b>−${fmt1(res.deduction)}</b></span>`:''}<span class="cbfinal">${fmt3(res.final)}</span>${two?`<span>품새 평균 <b>${fmt3(ag.final)}</b></span>`:''}</div>
-      <div class="cbstat">${N>=5?'최고·최저 점수(취소선)를 빼고 평균합니다':''}</div></div>`;
+      <div class="cbstat">${res.judges.length>=5?'<span class="cblg"><i class="k"></i>들어간 점수 <i class="x"></i>빠진 점수 (최고·최저)</span>':''}</div></div>`;
   }
   if(el<CB_SCORE_MS+3500)setTimeout(schedule,CB_SCORE_MS+3500-el);
   return `<div class="board cb rankv">${ctl}<div class="colorband none"></div>${head}${cbRanking(d,stg,cur,revAt)}</div>`;
@@ -2701,7 +2701,7 @@ function vDisplay(){
   const clock=`<div class="clockrow"><div class="clock" data-timer>${cdText(ST().timer)}</div><span class="lim">제한 ${limitText(t)}</span></div>`;
   const sent=e=>new Set(cs.filter(x=>x.perfId===e.perfId).map(x=>x.judge));
   const dots=e=>{const g=sent(e);return `<div class="bdots">${Array.from({length:N},(_,i)=>`<div class="bdot ${g.has(i+1)?'done':''}">${i+1}심<span class="small">${g.has(i+1)?'완료':'채점 중'}</span></div>`).join('')}</div>`;};
-  const jrow=res=>`<div class="bdots">${res.judges.map(j=>`<div class="bdot done">${j.judge}심<span class="sc"><span class="${j.dropA?'drop':''}">${fmt1(j.a)}</span> · <span class="${j.dropB?'drop':''}">${fmt1(j.b)}</span></span></div>`).join('')}</div>`;
+  const jrow=res=>`<div class="bdots">${res.judges.map(j=>`<div class="bdot done">${j.judge}심<span class="sc"><span class="${j.dropA?'drop':'cnt'}">${fmt1(j.a)}</span> · <span class="${j.dropB?'drop':'cnt'}">${fmt1(j.b)}</span></span></div>`).join('')}</div>`;
   const head=`<div class="dhead"><span class="div">${esc(cur.divName)} · ${esc(cur.label)}</span><span class="div">${sh.label} · ${N}심제</span></div>`;
   if(cur.entries.length===2){
     const [rb,rr]=cur.entries.map(e=>revealed?S.results[e.perfId]:null);
