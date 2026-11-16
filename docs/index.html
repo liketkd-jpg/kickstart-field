@@ -1219,7 +1219,7 @@ function entryForm(c,tab,a){const f=UI.form||defaults(tab,a);UI.form=f;if(tab===
       <label class="f"><span>부별</span>${sel('eDiv',PS_DIV,f.div,'data-on="ef" data-k="div"')}</label>
       <label class="f"><span>${gradeLbl(f.div)}</span>${sel('eGrade',gradeList(f.div),f.grade,'data-on="ef" data-k="grade"')}</label></div>
       ${/^실버/.test(f.div||'')?`<span class="small mute">실버 1: 55~64세 (1962~1971년생) · 실버 2: 65세 이상 (1961년 이전 출생) · 통합: 55세 이상 모두 (생활체육 대회는 실버부를 통합으로 묶습니다)</span>`:''}${f.div==='유치부'?`<span class="small mute">생활체육 대회 부별: 3~5세 → 유치부 1부 · 6~7세 → 유치부 2부${f.grade?` (지금: ${/^[3-5]/.test(f.grade)?'유치부 1부':'유치부 2부'})`:''}</span>`:''}
-      ${need>1?`<div class="stack" style="gap:6px"><span class="small"><b>함께 나갈 팀원 ${PN.min===PN.max?PN.min-1+'명':`${PN.min-1}~${PN.max-1}명`}</b> · ${f.type==='자유'?'자유':'공인'} 품새 ${f.kind}전: ${PN.t} · 지금 ${1+(f.mates||[]).length}명</span>${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)} <span class="small mute">${x.gender} · ${schoolTxt(x.birth)}</span></span></label>`).join('')||'<span class="small mute">팀원으로 고를 선수가 더 필요합니다.</span>'}</div>`:''}`;
+      ${need>1?`<div class="stack" style="gap:6px"><span class="small mute">${f.type==='자유'?'자유':'공인'} 품새 ${f.kind}전 부 (협회 기준): ${f.type==='자유'?'초등 고학년(4~6학년) · 중등부 · 고등부 · 일반부':'초등 저학년(1~3학년) · 초등 고학년(4~6학년) · 중등부 · 고등부 · 대학부'}</span><span class="small"><b>함께 나갈 팀원 ${PN.min===PN.max?PN.min-1+'명':`${PN.min-1}~${PN.max-1}명`}</b> · ${f.type==='자유'?'자유':'공인'} 품새 ${f.kind}전: ${PN.t} · 지금 ${1+(f.mates||[]).length}명</span>${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)} <span class="small mute">${x.gender} · ${schoolTxt(x.birth)}</span></span></label>`).join('')||'<span class="small mute">팀원으로 고를 선수가 더 필요합니다.</span>'}</div>`:''}`;
   }else if(sport==='kyorugi'){
     const named=['초등부','중등부','고등부'].includes(f.div),WL=kyW(f.div,f.grade,a.gender),list=[{v:'',l:WL.length?'체급 고르기':f.div==='초등부'?'학년을 먼저 고르세요':'체급 고르기'},...WL];
     h=`<div class="grid3"><label class="f"><span>부별</span>${sel('eDiv',KY_DIV,f.div,'data-on="ef" data-k="div"')}</label>
@@ -1799,7 +1799,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.15'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.16'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1828,7 +1828,14 @@ function dsgSaveRules(c){clearTimeout(dsgSaveRules.t);dsgSaveRules.t=setTimeout(
    예전 설정(sex·esex·grp·mid)은 그대로 읽어 같은 부문이 나오게 바꿈 */
 const HD_LV=[['kid','유치부'],['elem','초등부'],['mid','중등부'],['high','고등부'],['uni','대학부'],['gen','일반부'],['silver','실버부']];
 const hdLvOf=d=>{d=String(d||'');return /^유치/.test(d)?'kid':/^실버/.test(d)?'silver':/^초등/.test(d)?'elem':/^(중·고|중고|통합|중)/.test(d)?'mid':/^고/.test(d)?'high':/^대학/.test(d)?'uni':'gen';};
-function hdRuleN(o){const R={...o};if(!R.uni)R.uni='kta';if(!R.midM)R.midM=R.mid||'g';if(!R.midH)R.midH=R.mid||'g';
+/* v1.7.16 품새 복식전·단체전 부 (대한태권도협회 품새 경기규칙 제6조): 공인 = 초등 저학년부(1~3)·고학년부(4~6) · 중등부 · 고등부 · 대학부
+   · 자유 = 초등 고학년부(4~6) · 중등부 · 고등부 · 일반부(대학생 이상) */
+function hdKdiv(d,gr,birth,free){d=String(d||'');const sc=schoolOf(birth||'');
+  if(/^초등/.test(d)){let g=+((/(\d)/.exec(gr)||[])[1]||0);if(!g){const m=/초등\s*(\d)/.exec(d);if(m)g=+m[1];}if(!g&&sc&&sc.lv==='초')g=sc.g;if(!g)g=/저학년/.test(d)?1:/중학년/.test(d)?3:/고학년/.test(d)?5:0;
+    return free?'초등 고학년부':g&&g<=3?'초등 저학년부':g?'초등 고학년부':'초등부';}
+  if(/^중·고/.test(d))return '중·고등부';if(/^중/.test(d))return '중등부';if(/^고/.test(d))return '고등부';
+  if(/^대학/.test(d))return free?'일반부':'대학부';return d;}
+function hdRuleN(o){const R={...o};if(!R.uni)R.uni='kta';if(!R.kdiv)R.kdiv='kta';if(!R.midM)R.midM=R.mid||'g';if(!R.midH)R.midH=R.mid||'g';
   HD_LV.forEach(([k])=>{const mrg=(k==='kid'&&R.kid==='all')||(k==='silver'&&R.silver==='all');
     R['x_'+k]=!!R['s_'+k];if(!R['s_'+k])R['s_'+k]=R.sex==='all'?'all':R.sex==='splitall'?'split':k==='elem'&&R.esex==='all'?'all':mrg||k==='silver'?'all':'split';
     if(!R['g_'+k])R['g_'+k]=R.grp==='all'||mrg?'all':'split';});return R;}
@@ -1869,7 +1876,7 @@ function hdRulePanel(c){if(!UI.hdRuleOpen)return `<div class="row" style="gap:8p
       const gp=team?fix('—'):merged?fix('통합 (부 통합이면 실력조 없음)'):k==='elem'?seg(e,RL,[['g_elem','split','A조·B조','grpn','ab'],['g_elem','split','유품자·유급자','grpn','kup'],['g_elem','all','통합']]):seg(e,RL,[['g_'+k,'split','A조·B조'],['g_'+k,'all','통합']]);
       return `<div class="hd-tr${nk?'':' none'}"><div class="hd-lv"><b>${LN[k]}</b><span class="small mute">${nk?`${nk}${u} · 부문 ${Lk.length}`:'접수 없음'}</span></div><div data-h="나누는 방법">${dv}</div><div data-h="남녀">${sx}</div><div data-h="실력조">${gp}</div></div>`;};
     return `<div class="hd-rl"><div class="row between" style="gap:8px;flex-wrap:wrap"><b style="font-size:16px">${e}</b><span class="small mute">부문 ${L.length}개 · ${n}${u}${few?` · <span style="color:var(--warn)">1${u}뿐인 부문 ${few}개</span>`:''}</span></div>
-      ${team?`<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="small">부 나누기</b>${seg(e,RL,[['tall','lv','부별로'],['tall','all','전체 통합 (유치~실버 한 부)']])}</div>`:''}
+      ${team?`<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="small">부 나누기</b>${seg(e,RL,[['tall','lv','부별로'],['tall','all','전체 통합 (유치~실버 한 부)']])}</div>`:''}${!team&&/품새/.test(e)?`<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="small">복식전·단체전 부</b>${seg(e,RL,[['kdiv','kta',/자유/.test(e)?'협회 기준 (초등 고학년 · 중등 · 고등 · 일반)':'협회 기준 (초등 저·고학년 · 중등 · 고등 · 대학)'],['kdiv','ind','개인전과 같게 (아래 표)']])}</div>`:''}
       ${team&&RL.tall==='all'?'<span class="small mute">모든 팀을 나이·학년 구분 없이 「전체 통합부」 한 부문으로 묶습니다</span>':`<div class="hd-tb"><div class="hd-tr hd-th"><div>부</div><div>나누는 방법</div><div>남녀</div><div>실력조</div></div>${lvs.map(tr).join('')}</div>
       ${team?'<span class="small mute">단체는 남녀·실력조를 나누지 않습니다 · 유치부·실버부도 한 부문</span>':''}`}
       <details><summary class="small">부문 미리 보기 (${L.length}개)</summary><div class="hd-pv">${L.map(g=>`<span class="${g.units.length===1?'few':''}">${esc(g.name.replace(g.evName+' ',''))} <b>${g.units.length}</b></span>`).join('')}</div></details></div>`;};
@@ -1902,9 +1909,11 @@ function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries
     const evName=kind&&/격파/.test(ev)?'기술격파 단체전':det?det:ev==='품새'?'공인 품새':ev==='팀 태권체조'?'태권체조':ev==='팀 종합경연'?'팀 경연':ev;
     /* v1.5.7 부 나누기 설정(종목별): 유치·초등·중고·실버 나누는 방법 · 남녀 · 실력조 */
     const RL=hdRule(c,hdEvGroup(evName)),ath=D().athletes.find(x=>x.id===e.athleteIds[0]);
-    const dv=hdDivR(divFix(col(r,/^(부별|부문|구분|부)$/))||gr,gr,ev,RL,ath&&ath.birth,HD_TEAM(ev));
+    let dv=hdDivR(divFix(col(r,/^(부별|부문|구분|부)$/))||gr,gr,ev,RL,ath&&ath.birth,HD_TEAM(ev));
+    const kdv=/복식|단체|페어/.test(kind)&&!HD_TEAM(ev)&&!/격파/.test(ev)&&RL.kdiv!=='ind'; /* v1.7.16 복식·단체는 협회 기준 부 */
+    if(kdv&&!dv.merge)dv={div:hdKdiv(dv.div,gr,ath&&ath.birth,/자유/.test(ev)),merge:false};
     const lvk=hdLvOf(dv.div);
-    let grp=dv.merge||RL['g_'+lvk]==='all'||HD_TEAM(ev)?'':hdGrpN(col(r,/^(조|실력|조구분|등급|레벨|실력조)$/));
+    let grp=dv.merge||kdv||RL['g_'+lvk]==='all'||HD_TEAM(ev)?'':hdGrpN(col(r,/^(조|실력|조구분|등급|레벨|실력조)$/));
     if(grp&&RL.grpn==='kup'&&/^초등/.test(dv.div))grp=grp==='A조'?'유품자부':grp==='B조'?'유급자부':grp; /* 초등부 A조=유품자부 · B조=유급자부 */
     let sex=team||RL['s_'+lvk]==='all'||(dv.merge&&!RL['x_'+lvk]&&RL.sex!=='splitall')?'':hdSexN(col(r,/^성별$/)); /* v1.6.6 초등부만 남녀 통합 */ /* v1.6.1 유치부 통합도 실버부처럼 남녀 통합 */
     /* v1.7.15 품새 복식전·단체전은 개인전과 다른 부문 · 복식=혼성, 공인 단체=남자부·여자부, 자유 단체=혼성 (대한태권도협회 품새 경기규칙 제5조) */
@@ -2890,7 +2899,7 @@ function dsgSec(c){const d=dsgOf(c)||{},fm={'공인 품새':'t','자유 품새':
     ${SPORTS.hero?`<label class="check"><input type="checkbox" id="cS_hero" ${c&&c.sports.includes('hero')?'checked':''}><span>그 밖의 종목: <b>태권 히어로</b> · 접수비 <input type="number" id="cF_hero" value="${(c&&c.fee&&c.fee.hero)??30000}" step="1000" style="width:110px"></span></label>`:''}`;}
 /* 부 나누기: 대회 설계에서 바로 (화면을 다시 그리지 않고 단추만 바꿈 → 입력한 칸이 지워지지 않음) */
 function dsgRules(c){const cc=c||{id:'new',fee:{ctype:'comm'}};const evs=['공인 품새','자유 품새','격파','태권체조','팀 경연'],LN=Object.fromEntries(HD_LV);
-  const DIVO={kid:[['kid','all','통합'],['kid','age','나이별']],elem:[['elem','g','학년별'],['elem','b','저·중·고'],['elem','all','초등부 하나']],mid:[['midM','g','학년별'],['midM','lv','중등부 하나'],['midM','all','중·고 통합']],high:[['midH','g','학년별'],['midH','lv','고등부 하나'],['midH','all','중·고 통합']],gen:null,silver:[['silver','all','통합'],['silver','lv','실버1·2부']]};
+  const DIVO={kid:[['kid','all','통합'],['kid','age','나이별']],elem:[['elem','g','학년별'],['elem','b','저·중·고'],['elem','all','초등부 하나']],mid:[['midM','g','학년별'],['midM','lv','중등부 하나'],['midM','all','중·고 통합']],high:[['midH','g','학년별'],['midH','lv','고등부 하나'],['midH','all','중·고 통합']],uni:[['uni','kta','대학 1·2부'],['uni','g','학년별'],['uni','lv','대학부 하나'],['uni','gen','일반부와 통합']],gen:null,silver:[['silver','all','통합'],['silver','lv','실버1·2부']]};
   const DIVT={elem:null,mid:[['midM','lv','중등부'],['midM','all','중·고 통합']],high:[['midH','lv','고등부'],['midH','all','중·고 통합']]};
   const seg=(e,RL,opts)=>`<div class="seg">${opts.map(([k,v,l,k2,v2])=>`<button type="button" class="${RL[k]===v&&(!k2||RL[k2]===v2)?'on':''}" data-a="dsgRule" data-e="${e}" data-k="${k}" data-v="${v}"${k2?` data-k2="${k2}" data-v2="${v2}"`:''}>${l}</button>`).join('')}</div>`;
   const fix=t=>`<span class="small mute">${t}</span>`;
@@ -2900,7 +2909,7 @@ function dsgRules(c){const cc=c||{id:'new',fee:{ctype:'comm'}};const evs=['공�
       const sx=team?fix('남녀 함께'):seg(e,RL,[['s_'+k,'split','나눔'],['s_'+k,'all','통합']]);
       const gp=team?fix('—'):merged?fix('통합'):k==='elem'?seg(e,RL,[['g_elem','split','A조·B조','grpn','ab'],['g_elem','split','유품자·유급자','grpn','kup'],['g_elem','all','통합']]):seg(e,RL,[['g_'+k,'split','A조·B조'],['g_'+k,'all','통합']]);
       return `<div class="hd-tr"><div class="hd-lv"><b>${LN[k]}</b></div><div data-h="나누는 방법">${dv}</div><div data-h="남녀">${sx}</div><div data-h="실력조">${gp}</div></div>`;};
-    return `<div class="hd-rl dsr" data-evn="${e}"><b style="font-size:16px">${e}</b>${team?`<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="small">부 나누기</b>${seg(e,RL,[['tall','lv','부별로'],['tall','all','전체 통합 (유치~실버 한 부)']])}</div>`:''}
+    return `<div class="hd-rl dsr" data-evn="${e}"><b style="font-size:16px">${e}</b>${team?`<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="small">부 나누기</b>${seg(e,RL,[['tall','lv','부별로'],['tall','all','전체 통합 (유치~실버 한 부)']])}</div>`:''}${!team&&/품새/.test(e)?`<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="small">복식전·단체전 부</b>${seg(e,RL,[['kdiv','kta',/자유/.test(e)?'협회 기준 (초등 고학년 · 중등 · 고등 · 일반)':'협회 기준 (초등 저·고학년 · 중등 · 고등 · 대학)'],['kdiv','ind','개인전과 같게 (아래 표)']])}</div>`:''}
       ${team&&RL.tall==='all'?'<span class="small mute">모든 팀을 나이·학년 구분 없이 「전체 통합부」 한 부문으로 묶습니다</span>':`<div class="hd-tb"><div class="hd-tr hd-th"><div>부</div><div>나누는 방법</div><div>남녀</div><div>실력조</div></div>${lvs.map(tr).join('')}</div>`}</div>`;};
   return `<div class="stack" id="dsgRules">${evs.map(one).join('')}<span class="small mute">겨루기는 체급별로 나뉘어 경기 앱에서 대진을 짭니다.</span></div>`;}
 function dsgRuleClick(b){const e=b.dataset.e,cc={id:(document.getElementById('fComp')||{dataset:{}}).dataset.id||'new',fee:{ctype:((document.querySelector('input[name=cType]:checked')||{}).value==='kta'?'kta':'comm')}};
