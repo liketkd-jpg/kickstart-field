@@ -2270,8 +2270,10 @@ function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
       name:name0,dojang:col(o,/^(도장|소속|도장명|단체|소속도장)$/),cnt:Number(col(o,/^(인원|팀인원|인원수)$/))||0,drawNo:Number(col(o,/^(추첨|추첨번호)$/))||0,hdDiv:col(o,/^(추첨부문)$/),...(mem&&kind?{mem}:{})};
     if(/^실버|^유치부 통합/.test(r.div))r.sex=''; /* v1.5.5 실버부는 남녀 통합 */
     /* v1.7.32 품새 복식전·단체전 부 (대한태권도협회 품새 경기규칙 제6조): 공인 = 초등 저학년(1~3)·고학년(4~6) · 중등부 · 고등부 · 대학부 · 자유 = 초등 고학년 · 중등 · 고등 · 일반 */
-    if(kind&&!isTeam(ev)&&!/격파/.test(ev)&&!r.hdDiv){const d=r.div,free=/자유/.test(ev),g=+((/(\d)/.exec(gr)||/(\d)/.exec(d)||[])[1]||0);
-      r.div=/^초등/.test(d)?(free?'초등 고학년부':g?(g<=3?'초등 저학년부':'초등 고학년부'):/저학년/.test(d)?'초등 저학년부':'초등 고학년부'):/^중·고/.test(d)?'중·고등부':/^중/.test(d)?'중등부':/^고/.test(d)?'고등부':/^대학/.test(d)?(free?'일반부':'대학부'):d;r.grp='';}
+    if(kind&&!isTeam(ev)&&!/격파/.test(ev)&&!r.hdDiv){const d=r.div,g=+((/(\d)/.exec(gr)||/(\d)/.exec(d)||[])[1]||0);
+      /* v1.7.33 모든 부에서 복식·단체 (유치 · 초등 저·고학년 · 중등 · 고등 · 대학 · 일반 · 성인 · 장년 1·2 · 실버) */
+      r.div=/^유치/.test(d)?'유치부':/^실버/.test(d)?'실버부':/^초등/.test(d)?(g?(g<=3?'초등 저학년부':'초등 고학년부'):/저학년/.test(d)?'초등 저학년부':'초등 고학년부'):/^중·고/.test(d)?'중·고등부':/^중/.test(d)?'중등부':/^고/.test(d)?'고등부':/^대학/.test(d)?'대학부'
+        :/^(금강|태백|성인)/.test(d)?'성인부':/^(지태|장년\s*1)/.test(d)?'장년 1부':/^(천권|한수|장년\s*2)/.test(d)?'장년 2부':d;r.grp='';r.sex=/^(남|M$|male)/i.test(s0)?'남':/^(여|F$|W$|female)/i.test(s0)?'여':s0;}
     /* v1.4.85 개인 격파는 세부 종목(체공 도약·수직축 회전 …)별로 따로 부문 */
     if(/격파/.test(ev)&&!kind&&!isTeam(ev)){const kr=kindRaw.replace(/\s/g,''),hit=GEV.find(([k,l])=>l.replace(/\s/g,'')===kr||k===kindRaw);if(hit)r.gev=hit[0];}
     if(isTeam(ev)||kind){if(kind)r.kind=kind;const k=[ev,r.div,r.grp,tn||r.name||r.dojang].join('|');const add=mem?mem.split(/[,，·]/).filter(x=>x.trim()).length:1;
