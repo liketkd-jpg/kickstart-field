@@ -885,7 +885,7 @@ function render(){
     else if(r.startsWith('comp-'))h=vComp(r.slice(5));
     else if(r.startsWith('live-'))h=vLive(r.slice(5));
     else if(r.startsWith('draw-'))h=vDraw(r.slice(5));
-    else if(r.startsWith('enter-'))h=need('coach',()=>vEnter(r.slice(6)));
+    else if(r.startsWith('enter-'))h=need('enter',()=>vEnter(r.slice(6))); /* v1.7.19 운영자도 접수 (연습 대회·대리 접수) */
     else if(r==='login')h=vLogin();
     else if(r==='signup')h=vSignup();
     else if(r==='athletes')h=need('coach',vAthletes);
@@ -919,7 +919,7 @@ const RANK={coach:0,staff:1,manager:2,admin:3};
 const TAB_MIN={status:'staff',dojang:'staff',members:'manager',results:'manager',board:'manager',setup:'manager',lic:'admin',acct:'admin',quote:'admin',draw:'manager'};
 const canTab=(u,k)=>!!u&&(RANK[u.role]||0)>=RANK[TAB_MIN[k]||'admin'];
 function need(role,fn){const u=me();if(!u)return `<div class="auth"><div class="card"><h2>로그인이 필요합니다</h2><p class="mute">선수 등록과 대회 접수는 지도자 계정으로 로그인한 뒤 할 수 있습니다.</p><div class="row"><a class="btn gold" href="#login">로그인</a><a class="btn" href="#signup">지도자 회원가입</a></div></div></div>`;
-  if(role==='admin'?!isOps(u):u.role!==role)return `<div class="empty">${role==='admin'?'대회 본부(대표·관리자·직원) 계정만 볼 수 있는 화면입니다.':'지도자 계정으로 로그인해 주세요.'}</div>`;return fn();}
+  if(role==='enter'?!(u.role==='coach'||isOps(u)):role==='admin'?!isOps(u):u.role!==role)return `<div class="empty">${role==='admin'?'대회 본부(대표·관리자·직원) 계정만 볼 수 있는 화면입니다.':'지도자 계정으로 로그인해 주세요.'}</div>`;return fn();}
 
 /* ---------- 관람객 실시간 결과 (로그인 없이 봄) ---------- */
 const LIVE={id:null,snap:null,at:'',v:null,st:{q:'',tab:'courts'},busy:false,lastFetch:0,none:false};
@@ -1119,6 +1119,7 @@ function vComp(id){const c=D().comps.find(x=>x.id===id);if(!c)return '<div class
       ${c.docUrl||c.contact?`<div class="row">${c.docUrl?`<a class="btn" href="${esc(safeUrl(c.docUrl))}" target="_blank" rel="noopener">📄 대회 요강${c.docName?' · '+esc(c.docName):''} 내려받기</a>`:''}${c.contact?`<span class="small mute">문의 · <b>${esc(c.contact)}</b></span>`:''}</div>`:''}
       <div class="row">${k==='closed'?'<span class="mute">접수가 끝난 대회입니다.</span>'
         :u&&u.role==='coach'?`<a class="btn gold" href="#enter-${c.id}">이 대회에 선수 접수하기</a><a class="btn" href="#enter-${c.id}">📄 엑셀로 한꺼번에 접수</a>${mine?`<span class="small mute">이미 ${mine}건 접수했습니다</span>`:''}`
+        :u&&isOps(u)?`<a class="btn" href="#enter-${c.id}">📄 운영자로 접수 (엑셀 한꺼번에 · 연습 대회용)</a><span class="small mute">운영자 계정으로 접수하면 선수·접수가 운영자 이름으로 들어갑니다. 접수 현황은 「대회 관리」에서 봅니다.</span>`
         :u?'<span class="small mute">관리자 계정입니다. 접수 현황은 「대회 관리」에서 봅니다.</span>':`<a class="btn gold" href="#login">로그인하고 접수하기</a><a class="btn" href="#signup">지도자 회원가입</a>`}</div></div></div>`;
 }
 
@@ -1804,7 +1805,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.18'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.19'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2584,7 +2585,7 @@ function vAdmin(){ATABS=ATABS_ALL.filter(([k])=>canTab(me(),k));if(!ATABS.some((
     ${UI.newComp?compForm(null):''}
     <div class="row">${!['members','lic','acct','board','quote'].includes(tab)?`<label class="f" style="flex:1;max-width:520px"><span>대회</span>${sel('adComp',C.map(x=>({v:x.id,l:`${x.hidden?'(숨김) ':''}${x.name} (${x.date})`})),UI.adminComp,'data-on="adComp"')}</label>`:''}</div>
     ${c&&!['members','lic','acct','board','quote'].includes(tab)?`<div class="kpis"><div><b>${E.length}</b><span>접수 건수</span></div><div><b>${coaches}</b><span>접수한 지도자(도장)</span></div><div><b>${paid.length}/${E.length}</b><span>입금 확인</span></div><div><b class="num">${(E.reduce((s,e)=>s+e.fee,0)/10000).toLocaleString()}만</b><span>참가비 합계 (원)</span></div></div>`:''}
-    ${c&&!['members','lic','acct','board','quote'].includes(tab)?`<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold" type="button" data-a="hqSend" title="본부 노트북에서 누르세요 · 같은 노트북의 본부 프로그램 대회 운영표로 바로 들어갑니다">🏢 본부로 보내기</button><button class="btn" type="button" data-a="hqXlsx">🏢 본부용 명단 엑셀 (모든 종목 · 추첨 순서)</button><button class="btn" type="button" data-a="fullXlsx">⬇ 전체 접수 명단 엑셀 (확인용 · 생년월일 포함)</button><span class="small mute"><b>🏢 본부로 보내기</b>는 본부 노트북에서 누르면 운영표로 바로 들어갑니다 · 엑셀로 넣을 때는 <b>🏢 본부용</b> 파일 하나만 넣으세요 · 전체 접수 명단은 확인용이라 추첨 순서가 없습니다</span></div>`:''}
+    ${c&&!['members','lic','acct','board','quote'].includes(tab)?`<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold" type="button" data-a="hqSend" title="본부 노트북에서 누르세요 · 같은 노트북의 본부 프로그램 대회 운영표로 바로 들어갑니다">🏢 본부로 보내기</button><button class="btn" type="button" data-a="hqXlsx">🏢 본부용 명단 엑셀 (모든 종목 · 추첨 순서)</button><button class="btn" type="button" data-a="fullXlsx">⬇ 전체 접수 명단 엑셀 (확인용 · 생년월일 포함)</button><a class="btn" href="#enter-${c.id}">📄 운영자로 엑셀 접수 (연습·대리 접수)</a><span class="small mute"><b>🏢 본부로 보내기</b>는 본부 노트북에서 누르면 운영표로 바로 들어갑니다 · 엑셀로 넣을 때는 <b>🏢 본부용</b> 파일 하나만 넣으세요 · 전체 접수 명단은 확인용이라 추첨 순서가 없습니다</span></div>`:''}
     ${c&&tab!=='draw'&&!['members','lic','acct','board','quote'].includes(tab)?ckBar(c):''}
     ${c&&tab!=='draw'?hdAlert(c):''}
     <div class="atabs" role="tablist">${ATABS.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''}" data-a="atab" data-t="${k}">${l}</button>`).join('')}</div>
@@ -3921,7 +3922,7 @@ document.addEventListener('click',e=>{
     run(async()=>{const ins=await q(sb.from('entries').insert(L.map(x=>({comp_id:x.compId,sport:x.sport,athlete_ids:x.athleteIds,f:x.f,fee:x.fee}))).select());
       let up=0,fail=0;const withM=L.map((x,i)=>[x,(ins||[])[i]]).filter(([x,r])=>x.music&&r);
       for(const [x,r] of withM){try{await uploadMusic(mapEnt(r),x.music);up++;}catch(err){fail++;console.warn(err);}}
-      UI.cart=UI.cart.filter(x=>x.compId!==c);UI.payDone={comp:c,n:L.length,mus:up,musFail:fail};await reload();go('entries');window.scrollTo(0,0);
+      UI.cart=UI.cart.filter(x=>x.compId!==c);UI.payDone={comp:c,n:L.length,mus:up,musFail:fail};await reload();if(isOps(me())){UI.adminComp=c;toast(`${L.length}건을 접수했습니다 · 「대회 관리」 접수 현황에서 볼 수 있습니다`);go('admin');}else go('entries');window.scrollTo(0,0);
       if(fail)toast(`음원 ${fail}곡을 올리지 못했습니다. 「내 접수 내역」에서 다시 올려 주세요`);});}
   else if(a==='cancelEntry'){const id=b.dataset.id;if(UI.cArm!==id){UI.cArm=id;render();setTimeout(()=>{UI.cArm=null;},4000);return;}
     run(async()=>{await q(sb.from('entries').update({status:'cancel'}).eq('id',id));UI.cArm=null;await reload();toast('접수를 취소했습니다');});}
