@@ -2102,7 +2102,7 @@ function rebuild(){
   P.roster.forEach((r,i)=>{const kn=kindOf(r),id=r.hdDiv?'hd|'+r.ev+'|'+kn+'|'+r.hdDiv:[r.ev,r.div,r.grp||'',isTeam(r.ev)?'':(r.sex||''),r.gev||'',kn].join('|');
     const x=r.hdDiv?hdParse(r.hdDiv):null; /* v1.5.8 홈페이지가 정한 부문 이름(학년별·유품자부 등)을 그대로 경기 이름으로 */
     const sx=isTeam(r.ev)?'':x?(x.sex||(/혼성/.test(r.hdDiv)?'혼성':'')):(r.sex||'');
-    const g=G[id]||(G[id]={id,ev:r.ev,kind:kn,div:x&&x.div?x.div:r.div,grp:x?x.grp:(r.grp||''),sex:kn==='복식'?'혼성':sx,gev:r.gev||'',units:0,people:0,members:[]});
+    const g=G[id]||(G[id]={id,ev:r.ev,kind:kn,div:x&&x.div?x.div:r.div,grp:x?x.grp:(r.grp||''),sex:kn?(sx||'혼성'):sx,gev:r.gev||'',units:0,people:0,members:[]});
     g.units++;g.people+=isTeam(r.ev)||kn?(+r.cnt||1):1;g.members.push(i);});
 }
 const perOf=e=>{const v=Number(P.per[e]);return v>0?v:(DEFPER[e]||(isTeam(e)?4:1.5));};
@@ -2530,7 +2530,7 @@ function rowsFor(app,list){
       it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',ev,team?'혼성':(r.sex||'남'),r.div||it.g.div,r.dojang||'','','','',dn]);});});return R;}
   const R=[['이름','성별','나이','소속','부별','공인/자유','종목','팀원','부문']];
   list.forEach(({it,k})=>{const dn=divName(it,k),ev=it.g.ev,team=isTeam(ev),t=/시범|종합/.test(ev)?'팀대항 종합경연':/체조/.test(ev)?'태권체조':/자유/.test(ev)?'자유':'공인';
-    it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',team||it.g.kind==='복식'?'혼성':it.g.kind==='단체'?(it.g.sex||r.sex||'혼성'):(r.sex||'남'),'',r.dojang||'',r.div||it.g.div,t,team?'단체':(it.g.kind||'개인'),r.mem||'',dn]);});});
+    it.g.members.forEach(ri=>{const r=P.roster[ri];R.push([r.name||'',team?'혼성':it.g.kind?(it.g.sex||r.sex||'혼성'):(r.sex||'남'),'',r.dojang||'',r.div||it.g.div,t,team?'단체':(it.g.kind||'개인'),r.mem||'',dn]);});});
   return R;}
 function sendHtml(TL){
   const lanes=TL.map((x,i)=>({x,i,L:L8[i]||'',apps:laneApps(x)}));

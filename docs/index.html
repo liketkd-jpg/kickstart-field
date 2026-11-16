@@ -621,12 +621,17 @@ const fsOn=c=>{if(!c.sports.includes('poomsae'))return false;const d=(c.fee||{})
 const psTypes=c=>[...(recOn(c)?['공인']:[]),...(fsOn(c)?['자유']:[])];
 /* v1.7.15 대한태권도협회 품새 경기규칙 제5조: 공인·자유 복식전 = 남녀 혼성 2명 · 공인 단체전 = 남자부·여자부 각 3명
    · 자유 단체전 = 남녀 각 2명 이상 5명 (후보 1명 포함 6명까지) */
-const psNeed=f=>f.kind==='복식'?{min:2,max:2,t:'남녀 혼성 2명 (남 1 · 여 1)'}:f.kind==='단체'?(f.type==='자유'?{min:5,max:6,t:'남녀 각 2명 이상 5명 (후보 1명 포함 6명까지)'}:{min:3,max:3,t:'남자 3명 또는 여자 3명'}):{min:1,max:1,t:''};
-function psCheck(f,A){if(!f||isTeamT(f.type)||!/복식|단체/.test(f.kind||''))return '';const N=psNeed(f),n=A.length,m=A.filter(a=>a.gender==='남').length,w=A.filter(a=>a.gender==='여').length,ev=f.type==='자유'?'자유 품새':'공인 품새';
+/* v1.7.18 남녀 구성·예비 인원: 대회 설정 「③ 기타 설정」에서 바꿈 (fee.psr) · 처음 값 = 협회 기준 + 예비 1명
+   pair: 'mix' 남녀 혼성 | 'any' 상관없음 · tteam(공인 단체): 'split' 남자부·여자부 | 'any' 혼성 가능 · fmin(자유 단체 남녀 최소): 2|1|0
+   rPair·rTeam·rFree: 예비(후보) 인원 */
+const PSR_DEF={pair:'mix',tteam:'split',fmin:2,rPair:1,rTeam:1,rFree:1};
+const psRule=c=>({...PSR_DEF,...((c&&c.fee||{}).psr||{})});
+const psNeed=(f,c)=>{const P=psRule(c);return f.kind==='복식'?{min:2,max:2+P.rPair,t:`${P.pair==='mix'?'남녀 혼성 ':''}2명${P.rPair?` (예비 ${P.rPair}명까지)`:''}`}:f.kind==='단체'?(f.type==='자유'?{min:5,max:5+P.rFree,t:`${P.fmin?`남녀 각 ${P.fmin}명 이상 `:''}5명${P.rFree?` (예비 ${P.rFree}명 포함 ${5+P.rFree}명까지)`:''}`}:{min:3,max:3+P.rTeam,t:`${P.tteam==='split'?'남자만 또는 여자만 ':''}3명${P.rTeam?` (예비 ${P.rTeam}명 포함 ${3+P.rTeam}명까지)`:''}`}):{min:1,max:1,t:''};};
+function psCheck(f,A,c){if(!f||isTeamT(f.type)||!/복식|단체/.test(f.kind||''))return '';const P=psRule(c),N=psNeed(f,c),n=A.length,m=A.filter(a=>a.gender==='남').length,w=A.filter(a=>a.gender==='여').length,ev=f.type==='자유'?'자유 품새':'공인 품새';
   if(n<N.min||n>N.max)return `${ev} ${f.kind}전은 ${N.t}입니다 (지금 ${n}명)`;
-  if(f.kind==='복식'&&!(m===1&&w===1))return `${ev} 복식전은 남녀 혼성입니다. 남자 1명과 여자 1명으로 짜 주세요`;
-  if(f.kind==='단체'&&f.type!=='자유'&&m&&w)return `공인 품새 단체전은 남자부·여자부로 나뉩니다. 남자 3명 또는 여자 3명으로 짜 주세요`;
-  if(f.kind==='단체'&&f.type==='자유'&&(m<2||w<2))return `자유 품새 단체전은 남녀 각 2명 이상이어야 합니다`;return '';}
+  if(f.kind==='복식'&&P.pair==='mix'&&!(m>=1&&w>=1))return `${ev} 복식전은 남녀 혼성입니다. 남자와 여자가 함께 나가야 합니다`;
+  if(f.kind==='단체'&&f.type!=='자유'&&P.tteam==='split'&&m&&w)return `공인 품새 단체전은 남자부·여자부로 나뉩니다. 남자만 또는 여자만으로 짜 주세요 (예비 선수 포함)`;
+  if(f.kind==='단체'&&f.type==='자유'&&P.fmin&&(m<P.fmin||w<P.fmin))return `자유 품새 단체전은 남녀 각 ${P.fmin}명 이상이어야 합니다`;return '';}
 /* 대회 설계에서 고른 복식전·단체전 받기 (예전 대회는 모두 받음) */
 const psKinds=(c,t)=>{const d=(c&&c.fee||{}).design,x=d&&d.ev&&(t==='자유'?(d.ev.freestyle||d.ev.poomsae):d.ev.poomsae),K=(x&&x.kinds)||{};return ['개인',...(K.pair===false?[]:['복식']),...(K.team===false?[]:['단체'])];};
 const offers=(c,k)=>k==='gym'||k==='team100'?c.sports.includes('poomsae')&&(c.fee||{})[k]!==false:k==='poomsae'?recOn(c)||fsOn(c):k==='recognized'?recOn(c):k==='freestyle'?fsOn(c):c.sports.includes(k);
@@ -1196,7 +1201,7 @@ function entryForm(c,tab,a){const f=UI.form||defaults(tab,a);UI.form=f;if(tab===
   let h='';
   if(sport==='poomsae'){
     {const KS=psKinds(c,f.type);if(!TEAM_T[f.type]&&!KS.includes(f.kind))f.kind='개인';}
-    const TT=TEAM_T[f.type],PN=psNeed(f),need=TT?0:PN.max;
+    const TT=TEAM_T[f.type],PN=psNeed(f,c),need=TT?0:PN.max;
     if(TT){const n=1+(f.mates||[]).length;
     h=`<div class="grid2"><label class="f"><span>종목</span><input type="text" value="${esc(f.type==='팀대항 종합경연'?'팀 대항 종합경연':f.type)} (단체)" disabled></label>
       <label class="f"><span>팀 이름 <i>*</i> (전광판에 나옵니다)</span><input type="text" id="eTeam" value="${esc(f.team||'')}" placeholder="예: 경민 시범단 A" data-on="ef" data-k="team"></label>
@@ -1219,7 +1224,7 @@ function entryForm(c,tab,a){const f=UI.form||defaults(tab,a);UI.form=f;if(tab===
       <label class="f"><span>부별</span>${sel('eDiv',PS_DIV,f.div,'data-on="ef" data-k="div"')}</label>
       <label class="f"><span>${gradeLbl(f.div)}</span>${sel('eGrade',gradeList(f.div),f.grade,'data-on="ef" data-k="grade"')}</label></div>
       ${/^실버/.test(f.div||'')?`<span class="small mute">실버 1: 55~64세 (1962~1971년생) · 실버 2: 65세 이상 (1961년 이전 출생) · 통합: 55세 이상 모두 (생활체육 대회는 실버부를 통합으로 묶습니다)</span>`:''}${f.div==='유치부'?`<span class="small mute">생활체육 대회 부별: 3~5세 → 유치부 1부 · 6~7세 → 유치부 2부${f.grade?` (지금: ${/^[3-5]/.test(f.grade)?'유치부 1부':'유치부 2부'})`:''}</span>`:''}
-      ${need>1?`<div class="stack" style="gap:6px"><span class="small mute">${f.type==='자유'?'자유':'공인'} 품새 ${f.kind}전 부: 유치부 · 초등 저학년(1~3학년) · 초등 고학년(4~6학년) · 중등부 · 고등부 · 대학부 · 일반부 · 성인부 · 장년 1·2부 · 실버부</span><span class="small"><b>함께 나갈 팀원 ${PN.min===PN.max?PN.min-1+'명':`${PN.min-1}~${PN.max-1}명`}</b> · ${f.type==='자유'?'자유':'공인'} 품새 ${f.kind}전: ${PN.t} · 지금 ${1+(f.mates||[]).length}명</span>${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)} <span class="small mute">${x.gender} · ${schoolTxt(x.birth)}</span></span></label>`).join('')||'<span class="small mute">팀원으로 고를 선수가 더 필요합니다.</span>'}</div>`:''}`;
+      ${need>1?`<div class="stack" style="gap:6px"><span class="small mute">${f.type==='자유'?'자유':'공인'} 품새 ${f.kind}전 부: 유치부 · 초등 저학년(1~3학년) · 초등 고학년(4~6학년) · 중등부 · 고등부 · 대학부 · 일반부 · 성인부 · 장년 1·2부 · 실버부</span><span class="small"><b>함께 나갈 팀원 ${PN.min===PN.max?PN.min-1+'명':`${PN.min-1}~${PN.max-1}명`}</b> · ${f.type==='자유'?'자유':'공인'} 품새 ${f.kind}전: ${PN.t} · 지금 ${1+(f.mates||[]).length}명</span>${(()=>{const m=psCheck(f,[a,...(f.mates||[]).map(id=>L.find(x=>x.id===id)).filter(Boolean)],c);return m&&1+(f.mates||[]).length>=PN.min?`<span class="small" style="color:var(--warn)">⚠ ${esc(m)}</span>`:'';})()}${L.filter(x=>x.id!==a.id).map(x=>`<label class="check"><input type="checkbox" data-on="mate" value="${x.id}" ${(f.mates||[]).includes(x.id)?'checked':''}><span>${esc(x.name)} <span class="small mute">${x.gender} · ${schoolTxt(x.birth)}</span></span></label>`).join('')||'<span class="small mute">팀원으로 고를 선수가 더 필요합니다.</span>'}</div>`:''}`;
   }else if(sport==='kyorugi'){
     const named=['초등부','중등부','고등부'].includes(f.div),WL=kyW(f.div,f.grade,a.gender),list=[{v:'',l:WL.length?'체급 고르기':f.div==='초등부'?'학년을 먼저 고르세요':'체급 고르기'},...WL];
     h=`<div class="grid3"><label class="f"><span>부별</span>${sel('eDiv',KY_DIV,f.div,'data-on="ef" data-k="div"')}</label>
@@ -1367,7 +1372,7 @@ function bulkParse(wb,c){
       if(teamW(c,T)&&!G.P.some(p=>p.gender==='여')){errs.push([G.sh,rr,`「${G.f.team}」 팀에 여자 선수가 없습니다 (여자 1명 이상)`]);continue;}
       if(G.f.tg&&G.f.tg!=='혼합'&&G.P.some(p=>p.gender!==G.f.tg)){errs.push([G.sh,rr,`「${G.f.team}」 팀 성별이 「${G.f.tg}」인데 다른 성별 팀원이 있습니다 (남녀가 함께면 혼합)`]);continue;}}
     else if(G.sp==='poomsae'){if(!psKinds(c,G.f.type).includes(G.f.kind)){errs.push([G.sh,rr,`이 대회는 ${G.f.type==='자유'?'자유':'공인'} 품새 ${G.f.kind}전을 받지 않습니다`]);continue;}
-      const msg=psCheck(G.f,G.P);if(msg){errs.push([G.sh,rr,`「${G.f.team}」 ${msg}`]);continue;}}
+      const msg=psCheck(G.f,G.P,c);if(msg){errs.push([G.sh,rr,`「${G.f.team}」 ${msg}`]);continue;}}
     else if(G.sp==='gyeokpa'&&(n<5||n>10)){errs.push([G.sh,rr,`기술격파 단체전 ${eun('「'+(G.f.team||'팀')+'」')} 5~10명입니다 (${n}명)`]);continue;}
     ents.push(G);}
   const ok=[],inFile=new Set();for(const e of ents){const tk=e.sp+'|'+(e.sp==='poomsae'?e.f.type:e.sp==='gyeokpa'?e.f.ev:'');const dup=e.P.find(p=>p.id&&done.has(tk+'|'+p.id));
@@ -1799,7 +1804,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.17'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.18'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -1921,7 +1926,7 @@ function hdUnits(c,sport){const rows=exportRows(c,sport),H=rows[0],E=D().entries
     let sex=team||RL['s_'+lvk]==='all'||(dv.merge&&!RL['x_'+lvk]&&RL.sex!=='splitall')?'':hdSexN(col(r,/^성별$/)); /* v1.6.6 초등부만 남녀 통합 */ /* v1.6.1 유치부 통합도 실버부처럼 남녀 통합 */
     /* v1.7.15 품새 복식전·단체전은 개인전과 다른 부문 · 복식=혼성, 공인 단체=남자부·여자부, 자유 단체=혼성 (대한태권도협회 품새 경기규칙 제5조) */
     const kl=/복식|페어/.test(kind)?'복식전':/단체/.test(kind)&&!HD_TEAM(ev)&&!/격파/.test(ev)?'단체전':'';
-    if(kl==='복식전'||(kl==='단체전'&&/자유/.test(evName)))sex='혼성';else if(kl==='단체전'){const s0=hdSexN(col(r,/^성별$/));sex=s0==='남'||s0==='여'?s0:'혼성';}
+    if(kl){const s0=hdSexN(col(r,/^성별$/));sex=s0==='남'||s0==='여'?s0:'혼성';} /* v1.7.18 팀 실제 구성대로: 남녀 섞이면 혼성 */
     const name=col(r,/^(이름|선수|선수명|성명)$/),org=col(r,/^(도장|소속|도장명|단체|소속도장)$/),mem=col(r,/^(팀원|선수명단)$/);
     const shown=[evName,kl,sex==='남'?'남자':sex==='여'?'여자':sex,dv.div,grp].filter(Boolean).join(' ');
     return {id:e.id,sp:sport,key:hdK(shown)+'|'+(kind?'k':''),ev,evName,kl,det,div:dv.div,grp,sex,name,org,mem};}).filter(Boolean);}
@@ -3047,7 +3052,7 @@ function dsgSumm(){const f=document.getElementById('fComp');if(!f)return;const v
   const ty=(document.querySelector('input[name=cType]:checked')||{}).value;
   set(1,v('cName')?`${v('cName')} · ${v('cDate')||'날짜 미정'} · ${ty==='kta'?'승인 대회':'생활체육 대회'}`:'대회 이름·장소·날짜를 넣어 주세요',!!(v('cName')&&v('cPlace')&&v('cDate')&&v('cDead')));
   const evs=EV5.filter(([k])=>ck('dE_'+k)).map(x=>x[1]);set(2,evs.length?evs.join(' · '):'받을 종목을 체크해 주세요',evs.length>0);
-  set(3,`실력조 ${ck('cO_cls')?'A·B조로 나눔':'안 나눔'}${ck('cO_teamW')?' · 팀 경연 여자 1명 이상':''}`,true);
+  set(3,`실력조 ${ck('cO_cls')?'A·B조로 나눔':'안 나눔'}${ck('cO_teamW')?' · 팀 경연 여자 1명 이상':''} · 복식 ${v('cP_pair')==='any'?'성별 상관없음':'남녀 혼성'} · 예비 ${[v('cP_rPair'),v('cP_rTeam'),v('cP_rFree')].some(x=>+x)?'있음':'없음'}`,true);
   set(4,`${evs.filter(x=>x!=='겨루기').length}개 종목 · 부·남녀·실력조 나누는 방법`,true);
   set(5,v('cAcct')?`입금 ${v('cAcct').slice(0,22)}`:'입금 계좌·안내·요강',!!v('cAcct'));
   const L=grLive(),R=UI.gr,n=GR_EV.filter(([k])=>L.ev[k]).length;set(6,R?`${(R.common.apply||'hq')==='court'?'코트별 설정':'본부 일괄'} · ${L.std==='comm'?`${R.common.commN||4}명 1조 · `:''}${n}개 종목`:'종목별 경기 규칙',true);}
@@ -3071,6 +3076,14 @@ function compForm(c){const E=!!c;const c0=c;c=c||{sports:Object.keys(SPORTS),fee
   ${dsgSec(E?c:null)}
   ${secC}${secO(3)}
   <label class="check"><input type="checkbox" id="cO_cls" ${(c.fee||{}).cls!==false?'checked':''}><span><b>실력별 A조 · B조로 나누어 받기</b> <span class="small mute">품새·겨루기·격파 (태권체조·팀 경연 제외). 켜면 지도자가 접수할 때 꼭 고르고, 경기 앱 부문 이름 끝에 A조·B조가 붙습니다</span></span></label>
+  ${(()=>{const P=psRule(c),sel2=(id,opts,v)=>`<select id="${id}">${opts.map(([x,l])=>`<option value="${x}" ${String(v)===String(x)?'selected':''}>${l}</option>`).join('')}</select>`;
+    return `<div class="dsg-psr"><b>품새 복식·단체 남녀 구성과 예비 인원</b> <span class="small mute">처음 값은 대한태권도협회 품새 경기규칙입니다. 생활체육 대회 등 요강이 다르면 바꾸세요</span>
+    <div class="grid3"><label class="f"><span>복식전 남녀</span>${sel2('cP_pair',[['mix','남녀 혼성 (남 1·여 1)'],['any','성별 상관없음']],P.pair)}</label>
+      <label class="f"><span>공인 품새 단체전 남녀</span>${sel2('cP_tteam',[['split','남자부·여자부 따로'],['any','남녀 섞여도 됨 (혼성부)']],P.tteam)}</label>
+      <label class="f"><span>자유 품새 단체전 (5명) 남녀</span>${sel2('cP_fmin',[[2,'남녀 각 2명 이상'],[1,'남녀 각 1명 이상'],[0,'성별 상관없음']],P.fmin)}</label>
+      <label class="f"><span>복식전 예비 인원</span>${sel2('cP_rPair',[[0,'없음 (2명)'],[1,'1명까지 (최대 3명)']],P.rPair)}</label>
+      <label class="f"><span>공인 품새 단체전 예비 인원</span>${sel2('cP_rTeam',[[0,'없음 (3명)'],[1,'1명까지 (최대 4명)'],[2,'2명까지 (최대 5명)']],P.rTeam)}</label>
+      <label class="f"><span>자유 품새 단체전 예비 인원</span>${sel2('cP_rFree',[[0,'없음 (5명)'],[1,'1명까지 (최대 6명)'],[2,'2명까지 (최대 7명)']],P.rFree)}</label></div></div>`;})()}
   <label class="check"><input type="checkbox" id="cO_teamW" ${(c.fee||{}).teamW===true?'checked':''}><span><b>팀대항 종합경연 · 여자 선수 1명 이상 꼭 넣기</b> <span class="small mute">대회 요강에 성별 제한이 있을 때만 켜세요. 끄면 남자만·여자만 팀도 접수됩니다</span></span></label>
   ${secC}${secO(4,'<span class="small mute">체크한 종목만 보입니다 · 대진 추첨 화면에서도 바꿀 수 있습니다</span>')}
   ${dsgRules(E?c:null)}
@@ -3831,7 +3844,7 @@ document.addEventListener('click',e=>{
       if(f.tg!=='혼합'&&GS.some(g=>g!==f.tg)){UI.err=`팀 성별이 「${f.tg}」이면 팀원이 모두 ${f.tg}자여야 합니다. 남녀가 함께면 「혼합」을 고르세요`;render();return;}
       f.kind='단체';f.team=String(f.team).trim();}
     else if(sp==='poomsae'){if(!/복식|단체/.test(f.kind||'')&&ids.length!==1){UI.err='개인전은 1명입니다';render();return;}
-      const msg=psCheck(f,ids.map(id=>D().athletes.find(a=>a.id===id)||{}));if(msg){UI.err=msg;render();return;}}
+      const msg=psCheck(f,ids.map(id=>D().athletes.find(a=>a.id===id)||{}),c);if(msg){UI.err=msg;render();return;}}
     if(sp==='kyorugi'&&!f.weight){UI.err=f.div==='초등부'&&!f.grade?'초등부는 학년을 먼저 골라 주세요':'체급을 골라 주세요';render();return;}
     if(sp==='gyeokpa'){const ev=GP_EV.find(x=>x.n===f.ev);if(ev.k==='power'&&!f.weight){UI.err='위력격파는 체중을 적어 주세요';render();return;}if(ev.k==='height'&&!f.height){UI.err='높이 뛰어차기는 신장을 적어 주세요';render();return;}
       if(ev.k==='team'&&(ids.length<5||ids.length>10)){UI.err='단체전은 5~10명입니다';render();return;}}
@@ -3985,7 +3998,7 @@ document.addEventListener('change',e=>{
     if(t.dataset.k==='type'&&isTeamT(t.value))UI.form.kind='단체';
     if(t.dataset.k==='ev'){const ev=GP_EV.find(x=>x.n===t.value);if((ev.k==='power'||ev.k==='team')&&!['대학부',...GP_LV].includes(UI.form.div))UI.form.div='대학부';}
     UI.err='';render();}
-  else if(on==='mate'){const s=new Set(UI.form.mates||[]);t.checked?s.add(t.value):s.delete(t.value);const tm=(document.getElementById('eTeam')||{}).value;UI.form={...UI.form,mates:[...s],...(tm!=null?{team:tm}:{})};if(isTeamT(UI.form.type))render();}
+  else if(on==='mate'){const s=new Set(UI.form.mates||[]);t.checked?s.add(t.value):s.delete(t.value);const tm=(document.getElementById('eTeam')||{}).value;UI.form={...UI.form,mates:[...s],...(tm!=null?{team:tm}:{})};render();}
   else if(on==='bulk'){const F=t.files&&t.files[0];t.value='';if(F)bulkRead(F);}
   else if(on==='bulkGuard'){UI.bulkOk=t.checked;}
   else if(on==='fieldBase'){let v=t.value.trim();if(v&&!/^https?:\/\//.test(v))v='http://'+v;try{localStorage.setItem('ks_field_base',v||'http://localhost:8080');}catch(e){}t.value=v||'http://localhost:8080';}
@@ -4045,7 +4058,7 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
     const old=editId?D().comps.find(x=>x.id===editId):null,link=v('cDocUrl').trim(),file=(document.getElementById('cDoc')||{}).files,del=document.getElementById('cDocDel');
     if(link&&!/^https?:\/\//i.test(link)){formErr(f,'요강 링크는 https:// 로 시작하는 주소로 넣어 주세요');return;}
     if(file&&file[0]&&file[0].size>20*1024*1024){formErr(f,'요강 파일은 20MB까지 올릴 수 있습니다');return;}
-    const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:{poomsae:on('poomsae')?fv('poomsae'):on('freestyle')?fv('freestyle'):on('gym')?fv('gym'):fv('team100'),fs:on('freestyle'),fsFee:fv('freestyle'),kyorugi:fv('kyorugi'),gyeokpa:fv('gyeokpa'),...(document.getElementById('cF_hero')?{hero:Math.max(0,Number(v('cF_hero'))||0)}:{}),gym:on('gym'),team100:on('team100'),ps:on('poomsae'),gymFee:fv('gym'),team100Fee:fv('team100'),design,cls:!!(document.getElementById('cO_cls')||{}).checked,teamW:!!(document.getElementById('cO_teamW')||{}).checked,ctype:((document.querySelector('input[name=cType]:checked')||{}).value==='kta'?'kta':'comm')},account:v('cAcct').trim()||'입금 계좌를 적어 주세요',note:v('cNote').trim(),notice:v('cNotice').trim(),contact:v('cContact').trim()};
+    const c={name:v('cName').trim(),place:v('cPlace').trim(),date:v('cDate'),deadline:v('cDead'),sports,fee:{poomsae:on('poomsae')?fv('poomsae'):on('freestyle')?fv('freestyle'):on('gym')?fv('gym'):fv('team100'),fs:on('freestyle'),fsFee:fv('freestyle'),kyorugi:fv('kyorugi'),gyeokpa:fv('gyeokpa'),...(document.getElementById('cF_hero')?{hero:Math.max(0,Number(v('cF_hero'))||0)}:{}),gym:on('gym'),team100:on('team100'),ps:on('poomsae'),gymFee:fv('gym'),team100Fee:fv('team100'),design,cls:!!(document.getElementById('cO_cls')||{}).checked,teamW:!!(document.getElementById('cO_teamW')||{}).checked,psr:(()=>{const g=id=>(document.getElementById(id)||{}).value;return {pair:g('cP_pair')||'mix',tteam:g('cP_tteam')||'split',fmin:+(g('cP_fmin')??2),rPair:+(g('cP_rPair')??1),rTeam:+(g('cP_rTeam')??1),rFree:+(g('cP_rFree')??1)};})(),ctype:((document.querySelector('input[name=cType]:checked')||{}).value==='kta'?'kta':'comm')},account:v('cAcct').trim()||'입금 계좌를 적어 주세요',note:v('cNote').trim(),notice:v('cNotice').trim(),contact:v('cContact').trim()};
     c.host=(document.getElementById('cHost')?v('cHost').trim():'')||(editId?((D().comps.find(x=>x.id===editId)||{}).host||''):'KICKSTART UP');
     if(M.musicOk&&document.getElementById('cMusDue')){const md=v('cMusDue');if(md&&md>v('cDate')){formErr(f,'음원 제출 마감일은 대회일보다 앞이어야 합니다');return;}c.music_due=md||null;}
     if(old){const nE=D().entries.filter(e=>e.compId===old.id&&e.status!=='cancel').length,od=dsgOf(old)||{},sig=d=>JSON.stringify([EV5.map(([k])=>{const x=(d.ev||{})[k]||(k==='freestyle'&&(d.ev||{}).poomsae)||{};return [!!x.on,x.fee,x.award,(x.items||[]).join()];}),d.rules||{}]);
