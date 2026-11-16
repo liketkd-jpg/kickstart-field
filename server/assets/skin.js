@@ -249,7 +249,7 @@ function arKy(orig){const L=g('live')&&g('live')();if(!L)return null;const st=g(
    들어간 점수 = 밝은 흰색 · 빠진 점수(최고·최저) = 어두운 회색 (줄 긋지 않음) · 색은 고른 디자인에 맞춤 */
 const LAYS=[['1','① 심판 왼쪽 · 총점 오른쪽'],['2','② 이름·총점 위 · 심판 아래'],['0','디자인 그대로']];
 const LAYS_T=[['1','청·홍 양쪽 심판 · 가운데 총점'],['0','디자인 그대로']];
-const LAY_DEF={recognized:'2',freestyle:'2',gym:'1',team100:'1',gyeokpa:'1',tour:'1'};
+const LAY_DEF={recognized:'2',freestyle:'2',gym:'2',team100:'2',gyeokpa:'2',tour:'1'}; /* v1.7.35 컷오프 경기는 모두 ② (이름·총점 크게) */
 const layKey=cur=>APP==='gyeokpa'?'gyeokpa':cur&&(cur.entries||[]).length===2?'tour':(cur&&cur.type)||'recognized';
 function layFor(cur){if(APP==='kyorugi')return '0';const L=SET().layBy||{},k=layKey(cur);return L[k]!=null?String(L[k]):(LAY_DEF[k]||'1');}
 function lyHead(m,th){return `<div class="ly-top"><span class="ly-court">${E(String(m.court||'').replace(/\s*코트$/,''))}<small>코트</small></span><span class="ly-div">${E(m.div||'')}</span><span class="ly-lab">${E(m.label||'')}</span></div>`;}
@@ -266,8 +266,10 @@ function lySolo(th,lay,m){const js=m.js||[],N=js.length;
       <div class="ly-fin">${E(m.final)}</div><div class="ly-parts">${lyParts(m)}</div>${m.note?`<div class="ly-note">${E(m.note)}</div>`:''}</div></div>
       <div class="ly-foot">${lyLegend(js)}${lyNext(m)}</div>`);}
   const cards=js.map((j,i)=>`<div class="ly-c ${j.drop?'out':''}" style="--d:${i*90}ms"><div class="ly-ch"><b>${j.n}심</b><b class="ly-ct">${E(j.t)}</b></div><div class="ly-its">${(j.items||[]).map(lyIt).join('')}</div></div>`).join('');
-  return lyWrap(th,m,'ly2',`${lyHead(m,th)}<div class="ly-band"><div class="ly-who"><div class="ly-nm" style="font-size:${U(fit(m.name||m.team,200,4))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ly-tm">${E(m.team)}</div>`:''}</div>
-    <div class="ly-sc"><div class="ly-fin">${E(m.final)}</div><div class="ly-parts">${lyParts(m)}</div>${m.note?`<div class="ly-note">${E(m.note)}</div>`:''}</div></div>
+  /* v1.7.35 ② 위쪽 띠를 꽉 채움: 1줄 = 선수(팀) 이름 + 소속 · 2줄 = 세부(정확성·표현성 등) + 아주 큰 총점 */
+  const nm=String(m.name||m.team||''),tm=m.name&&m.team?String(m.team):'',tmW=tm?Math.min(tm.length,12)*78+40:0,nmF=Math.max(110,Math.min(230,(1700-tmW)/Math.max(nm.length,1)));
+  return lyWrap(th,m,'ly2',`${lyHead(m,th)}<div class="ly-band"><div class="ly-r1"><div class="ly-nm" style="font-size:${U(nmF)}">${E(nm)}</div>${tm?`<div class="ly-tm">${E(tm)}</div>`:''}</div>
+    <div class="ly-r2"><div class="ly-pl"><div class="ly-parts">${lyParts(m)}</div>${m.note?`<div class="ly-note">${E(m.note)}</div>`:''}</div><div class="ly-fin">${E(m.final)}</div></div></div>
     <div class="ly-cs" style="--n:${Math.max(N,3)}">${cards}</div><div class="ly-foot">${lyLegend(js)}${lyNext(m)}</div>`);}
 function lyTour(th,m){const S=m.sides||[];if(S.length!==2)return null;const f=v=>v==null?'—':(+v).toFixed(2);
   const col=s=>{const js=(s.js||[]);return `<div class="lt-js ${s.side==='blue'?'b':'r'}">${js.map((j,i)=>`<div class="lt-j ${j.dA&&j.dB?'out':''}" style="--d:${i*90}ms"><b class="ly-jn">${j.n}<small>심</small></b><span class="${j.dA?'o':''}">${(+j.a).toFixed(1)}</span><span class="${j.dB?'o':''}">${(+j.b).toFixed(1)}</span></div>`).join('')}</div>`;};
@@ -712,9 +714,13 @@ body.disp .board.sk-arena .side.win .vfinal.ar-sbig{-webkit-text-fill-color:#E2C
 .ly1 .ly-me .ly-nm,.ly1 .ly-me .ly-tm{max-width:100%}
 .ly1 .ly-fin{margin-top:${U(18)}}.ly1 .ly-parts{justify-content:flex-end;margin-top:${U(10)}}
 /* ② 위 이름·총점 · 아래 심판 한 줄 */
-.ly2 .ly-band{flex:1;display:grid;grid-template-columns:1fr auto;align-items:center;gap:${U(40)};padding:${U(10)} ${U(56)};margin:${U(22)} 0;border-radius:${U(22)};background:linear-gradient(90deg,var(--pan),rgba(255,255,255,.015));border:${U(2)} solid rgba(255,255,255,.08);border-bottom:${U(5)} solid var(--ac);min-height:0}
-.ly2 .ly-who{min-width:0}.ly2 .ly-sc{text-align:right;display:flex;flex-direction:column;align-items:flex-end}.ly2 .ly-fin{font-size:${U(330)}}.ly2 .ly-parts{justify-content:flex-end;font-size:${U(46)}}
-.ly2 .ly-cs{flex:none;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:${U(18)};margin-bottom:${U(18)}}
+.ly2 .ly-band{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:0;padding:${U(6)} ${U(48)};margin:${U(16)} 0;border-radius:${U(22)};background:linear-gradient(90deg,var(--pan),rgba(255,255,255,.015));border:${U(2)} solid rgba(255,255,255,.08);border-bottom:${U(5)} solid var(--ac);min-height:0}
+.ly2 .ly-r1{display:flex;align-items:baseline;gap:${U(40)};min-width:0}.ly2 .ly-r1 .ly-nm{flex:0 1 auto;min-width:0;line-height:1.05}.ly2 .ly-r1 .ly-tm{flex:none;font-size:${U(72)};font-weight:800;margin:0;max-width:${U(960)}}
+.ly2 .ly-r2{display:flex;align-items:flex-end;justify-content:space-between;gap:${U(40)};min-width:0}
+.ly2 .ly-pl{display:flex;flex-direction:column;gap:${U(8)};padding-bottom:${U(24)};min-width:0}.ly2 .ly-pl .ly-parts{flex-direction:column;gap:${U(6)};font-size:${U(62)}}.ly2 .ly-pl .ly-parts i{font-size:${U(32)}}
+.ly2 .ly-fin{font-size:${U(420)};line-height:.84}
+.ly2 .ly-cs{flex:none;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:${U(18)};margin-bottom:${U(14)}}
+.ly2 .ly-top{height:${U(84)}}.ly2 .ly-div{font-size:${U(46)}}
 .ly2 .ly-c{border-radius:${U(16)};background:var(--pan);border:${U(2)} solid rgba(255,255,255,.12);padding:${U(12)} ${U(22)} ${U(14)};animation:lyin .5s ease-out both;animation-delay:calc(var(--t) + var(--d))}
 .ly2 .ly-ch{display:flex;justify-content:space-between;align-items:baseline}.ly2 .ly-ch b:first-child{font:800 ${U(34)} "Noto Sans KR";color:var(--hi)}.ly2 .ly-ct{font:800 ${U(66)}/1 var(--nf);font-stretch:75%;color:#fff}
 .ly2 .ly-its{display:flex;justify-content:space-between;gap:${U(8)};margin-top:${U(6)}}.ly2 .ly-its span{display:flex;flex-direction:column;align-items:center}
