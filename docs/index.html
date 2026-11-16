@@ -1428,7 +1428,7 @@ function payCard(u,E){const P=UI.payDone;if(!P)return '';const c=D().comps.find(
 function editRow(e,mus,act){const f={...(e.f||{}),...(UI.edF&&UI.edF.id===e.id?UI.edF:{})},divs=e.sport==='gyeokpa'?GP_LV:PS_DIV,gl=e.sport==='gyeokpa'?null:gradeList(f.div);
   return `<tr class="edrow"><td colspan="${mus?7:6}"><div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
     <label class="f"><span>부별</span>${sel('ed_div',divs,f.div||'')}</label>${gl?`<label class="f"><span>${gradeLbl(f.div)}</span>${sel('ed_grade',gl,f.grade||'')}</label>`:''}
-    <label class="f"><span>실력조</span>${sel('ed_cls',['',...CLS],f.cls||'')}</label>${edExtra(e,f,!!act)}
+    <label class="f"><span>실력조 <span class="mute" style="font-weight:500">(A조=유품자 · B조=유급자)</span></span>${sel('ed_cls',['',...CLS],f.cls||'')}</label>${edExtra(e,f,!!act)}
     <button class="btn gold" type="button" data-a="${act||'editSave'}" data-id="${e.id}">${act?'고치고 맞는 부문으로 옮기기':'저장'}</button><span class="small mute">부별·학년·실력조${e.sport==='gyeokpa'&&e.athleteIds.length===1?'·세부 종목':''}${e.athleteIds.length>1?'·팀원·팀 이름':''}을 고칠 수 있습니다 · 다시 접수하지 않아도 되고 참가비·입금 상태는 그대로입니다</span></div></td></tr>`;}
 /* v1.6.8 고치기 넓힘: 격파 세부 종목 · 단체(팀) 팀원과 팀 이름 — 다시 접수하지 않고 그 자리에서 */
 const edTeamMin=e=>e.sport==='gyeokpa'?5:/체조/.test((e.f||{}).type||'')?7:/경연|종합/.test((e.f||{}).type||'')?9:2;
@@ -1805,7 +1805,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.19'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.20'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2106,6 +2106,7 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
     ${hdCheckPanel(c)}
     ${fxReqPanel(c)}
     ${fxPanel(c)}
+    ${orgPanel(c)}
     ${divs.length?hdMedalCard(divs):''}
     ${divs.length?evs.map(e=>`<h3 class="hd-ev">${e} <span class="small mute">${divs.filter(d=>d.ev===e).length}개 부문</span></h3><div class="hd-grid">${divs.filter(d=>d.ev===e).map(hdDivCard).join('')}</div>`).join(''):'<div class="empty">아직 추첨하지 않았습니다.</div>'}
   </div>`;}
@@ -2207,6 +2208,29 @@ function fxReqPanel(c){if(!M.reqOk)return '';const L=(M.reqs||[]).filter(r=>r.co
         <td><span class="chip">${KN[r.kind]||r.kind}</span> <b>${e?esc(fxWho(e)):'(선수 고르지 않음)'}</b>${e?`<div class="small mute">${esc(EVN(e))} · ${esc(entryLabel(e).what)} · 대진: ${esc(fxWhereTxt(c,e.id)||'없음')}</div>`:''}${w.div||w.grade?`<div class="small">바꿀 부문: <b>${esc([w.div,w.grade].filter(Boolean).join(' '))}</b></div>`:''}<div class="small">${esc(r.body||'')}</div>${r.status!=='open'?`<div class="small"><span class="chip ${r.status==='done'?'ok':''}">${r.status==='done'?'반영함':'거절함'}</span> ${esc(r.answer||'')}</div>`:''}</td>
         <td>${r.status==='open'?`<div class="stack" style="gap:4px;min-width:150px"><input type="text" id="fxRA_${r.id}" placeholder="지도자에게 남길 말 (선택)"><div class="row" style="gap:4px"><button class="btn sm gold" type="button" data-a="fxReqOk" data-id="${r.id}">${(r.kind==='grade'||r.kind==='div')&&e&&(w.div||w.grade)?'반영 (자동으로 옮김)':'반영'}</button><button class="btn sm ghost" type="button" data-a="fxReqNo" data-id="${r.id}">거절</button>${e?`<button class="btn sm ghost" type="button" data-a="fxReqGo" data-id="${r.id}">선수 찾기</button>`:''}</div></div>`:''}</td></tr>`;}).join('')}</table></div>
     <span class="small mute">학년·부 요청은 「반영」을 누르면 접수를 고치고 맞는 부문으로 바로 옮깁니다. 다른 요청은 아래 「대진 고치기」에서 고친 뒤 「반영」을 누르세요. 결과는 그 지도자 화면에 알림으로 갑니다.</span></details>`;}
+/* v1.7.20 소속(도장) 이름 한꺼번에 바꾸기 — 도장 주인이 바뀐 경우 등. 대진표·추첨 순서는 그대로 두고 이름만 바꿈
+   선수의 소속 → 비어 있으면 지도자 회원 정보의 도장 이름 · 홈페이지에 올린 대진표 속 소속도 같이 · 본부·코트는 다시 보내면 새 이름 */
+function orgList(c){const m=new Map();D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel').forEach(e=>e.athleteIds.forEach(id=>{const a=D().athletes.find(x=>x.id===id)||{},o=String(a.org||coachOf(e.coachId).org||'').trim();if(o)m.set(o,(m.get(o)||0)+1);}));return [...m].sort((a,b)=>a[0].localeCompare(b[0],'ko'));}
+function orgPanel(c){const L=orgList(c);if(!L.length)return '';const O=UI.orgRn||{};
+  return `<details class="card" ${O.open?'open':''} id="orgPanel"><summary><b>🏷 소속(도장) 이름 바꾸기</b> <span class="small mute">도장 이름이 바뀌었을 때 · 대진표와 추첨 순서는 그대로, 이름만 바꿉니다</span></summary>
+    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">
+      <label class="f"><span>지금 이름</span><select id="orgOld"><option value="">— 고르세요 —</option>${L.map(([o,n])=>`<option value="${esc(o)}" ${O.old===o?'selected':''}>${esc(o)} (${n}명)</option>`).join('')}</select></label>
+      <label class="f"><span>새 이름</span><input type="text" id="orgNew" value="${esc(O.nw||'')}" placeholder="새 도장 이름" style="max-width:260px"></label>
+      <label class="check"><input type="checkbox" id="orgTeam" ${O.team===false?'':'checked'}><span>팀 이름 속 도장 이름도 바꾸기 (예: 「옛도장 체조팀」)</span></label>
+      <button class="btn gold" type="button" data-a="fxOrgGo">${HD.arm==='org'?'한 번 더 누르면 바꿉니다':'이름 바꾸기'}</button></div>
+    <span class="small mute">이 대회 선수의 소속(선수 정보가 비어 있으면 지도자 회원 정보의 도장 이름)과 홈페이지에 올린 대진표 속 소속이 함께 바뀝니다. 선수 정보는 앞으로의 대회에도 새 이름으로 남습니다. <b>본부·코트에는 「🏢 본부로 보내기」 → 본부에서 「코트로 보내기」를 다시 하면</b> 전광판·상장에 새 이름이 나옵니다 (경기 시작 전에 해 주세요).</span></details>`;}
+async function orgRename(c,old,nw,team){const E=D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel');let nA=0,nC=0,nT=0,nD=0;
+  const ath=new Set(),coach=new Set();E.forEach(e=>e.athleteIds.forEach(id=>{const a=D().athletes.find(x=>x.id===id);if(!a)return;if(String(a.org||'').trim()===old)ath.add(a.id);else if(!String(a.org||'').trim()&&String(coachOf(e.coachId).org||'').trim()===old)coach.add(e.coachId);}));
+  const A=[...ath];for(let i=0;i<A.length;i+=200){await q(sb.from('athletes').update({org:nw}).in('id',A.slice(i,i+200)));}nA=A.length;
+  for(const id of coach){const u=coachOf(id);if(u&&u.role==='coach'){await q(sb.from('profiles').update({org:nw}).eq('id',id));nC++;}}
+  if(team){for(const e of E){const t=String((e.f||{}).team||'');if(t&&t.includes(old)){await q(sb.from('entries').update({f:{...e.f,team:t.split(old).join(nw)}}).eq('id',e.id));nT++;}}}
+  /* 홈페이지에 올린 대진표: 순서·「수정됨」 표시는 그대로, 소속(t)·팀 이름(n)만 */
+  await loadDraw(c.id);const now=new Date().toISOString();
+  for(const sp of hdSports(c)){const P=hdPub(c,sp);if(!P||!P.data||!P.data.home)continue;let ch=0;
+    const walk=x=>{if(Array.isArray(x))return x.map(walk);if(x&&typeof x==='object'){const o={};for(const k in x){let v=x[k];if(typeof v==='string'&&(k==='t'||k==='org')&&v.trim()===old){v=nw;ch++;}else if(typeof v==='string'&&team&&k==='n'&&v.includes(old)){v=v.split(old).join(nw);ch++;}else v=walk(v);o[k]=v;}return o;}return x;};
+    const data=walk(P.data);if(!ch)continue;data.log=[...(Array.isArray(P.data.log)?P.data.log:[]),{at:now,t:`소속 이름 바꿈: ${old} → ${nw}`}].slice(-400);
+    const {error}=await sb.rpc('publish_draws',{p_comp:c.id,p_sport:sp,p_data:data});if(error)throw error;nD++;}
+  M.drawData[c.id]=null;await reload();await loadDraw(c.id);return {nA,nC,nT,nD};}
 function fxPanel(c){if(!fxHasPub(c))return hdFixPanel(c);
   const R=HD.res[c.id],L=fxLog(c),q=String(UI.fxQ||'').trim(),qn=drN(q);
   const E=D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'&&(e.sport==='poomsae'||e.sport==='gyeokpa'));
@@ -2227,6 +2251,10 @@ function fxSaveBar(c){const R=HD.res[c.id];if(!R||!(HD.rec[c.id]&&HD.rec[c.id].e
   return `<div class="notice fx-save" style="position:sticky;top:8px;z-index:7;border-color:var(--gold3)"><div class="row" style="gap:10px;flex-wrap:wrap;align-items:center"><b>✏️ 고친 내용 ${L.length}건 · 바뀐 부문 ${n}곳</b><button class="btn gold" type="button" data-a="fxSave">${HD.arm==='fxsave'?'한 번 더 누르면 홈페이지에 올립니다':'💾 고친 대진 저장 (홈페이지·대진표 파일·지도자 알림)'}</button><button class="btn ghost sm" type="button" data-a="hdCancel">고친 자리 버리기</button><span class="small mute">다른 부문의 순서는 그대로입니다 · 바뀐 부문에 「수정됨」 표시</span></div></div>`;}
 /* ---------- 관리자 동작 ---------- */
 function fxAct(a,b,S){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;const id=b.dataset.id,e=id?fxEnt(id):null;
+  if(a==='fxOrgGo'){const old=(document.getElementById('orgOld')||{}).value||'',nw=String((document.getElementById('orgNew')||{}).value||'').trim(),team=!!(document.getElementById('orgTeam')||{}).checked;
+    UI.orgRn={open:true,old,nw,team};if(!old||!nw){toast('지금 이름을 고르고 새 이름을 적어 주세요');render();return;}if(old===nw){toast('새 이름이 지금 이름과 같습니다');return;}
+    if(HD.arm!=='org'){HD.arm='org';render();setTimeout(()=>{if(HD.arm==='org'){HD.arm=null;render();}},6000);return;}HD.arm=null;
+    run(async()=>{const r=await orgRename(c,old,nw,team);UI.orgRn={open:true};render();toast(`「${old}」 → 「${nw}」 · 선수 ${r.nA}명${r.nC?` · 지도자 ${r.nC}명`:''}${r.nT?` · 팀 이름 ${r.nT}개`:''}${r.nD?` · 홈페이지 대진표 ${r.nD}종목`:''}을 바꿨습니다 · 본부로 다시 보내 주세요`,9000);});return;}
   if(a==='fxFind'){UI.fxQ=(document.getElementById('fxQ')||{}).value||'';UI.fxTool=null;UI.edit=null;if(UI.fxQ.trim())fxR(c);render();return;}
   if(a==='fxClr'){UI.fxQ='';UI.fxTool=null;UI.edit=null;render();return;}
   if(a==='fxNewOpen'){UI.fxNew=UI.fxNew?null:{};render();return;}
