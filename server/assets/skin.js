@@ -242,10 +242,49 @@ function arKy(orig){const L=g('live')&&g('live')();if(!L)return null;const st=g(
       <div class="ar-clock ${ph==='rest'?'rest':ph!=='fight'?'stop':''}"><span class="ar-en">${ph==='rest'?'Rest':'Time'}</span><b data-timer>${mmss(remain(L.timer))}</b></div>
       <div class="ar-rd"><b>${L.round===4?'GOLDEN ROUND':'ROUND '+L.round}</b></div>${d&&!res?`<div class="ar-lead ${d>0?'b':'r'}">LEAD +${Math.abs(d)} · ${d>0?'청':'홍'}</div>`:''}</div>${side('red')}</div>
     <div class="ar-bot"><div class="ar-lab"><b>라운드</b><span class="ar-en">Rounds</span></div><div class="ar-rlog">${rlog||'<span>1회전</span>'}</div>${arNext(nx)}</div></div></div>`;}
+/* ===================== v1.7.30 점수 공개 화면 모양 (모든 디자인 공통) =====================
+   ① 왼쪽에 1심부터 한 줄씩 · 오른쪽에 선수 이름과 아주 큰 총점
+   ② 위에 선수 이름과 총점을 크게 · 아래에 심판 점수 한 줄 (경기장 「격파 B조」 화면 모양)
+   청·홍 토너먼트: 양쪽 끝에 청·홍 심판 점수 · 가운데에 두 선수 이름과 총점
+   들어간 점수 = 밝은 흰색 · 빠진 점수(최고·최저) = 어두운 회색 (줄 긋지 않음) · 색은 고른 디자인에 맞춤 */
+const LAYS=[['1','① 심판 왼쪽 · 총점 오른쪽'],['2','② 이름·총점 위 · 심판 아래'],['0','디자인 그대로']];
+const LAYS_T=[['1','청·홍 양쪽 심판 · 가운데 총점'],['0','디자인 그대로']];
+const LAY_DEF={recognized:'2',freestyle:'2',gym:'1',team100:'1',gyeokpa:'1',tour:'1'};
+const layKey=cur=>APP==='gyeokpa'?'gyeokpa':cur&&(cur.entries||[]).length===2?'tour':(cur&&cur.type)||'recognized';
+function layFor(cur){if(APP==='kyorugi')return '0';const L=SET().layBy||{},k=layKey(cur);return L[k]!=null?String(L[k]):(LAY_DEF[k]||'1');}
+function lyHead(m,th){return `<div class="ly-top"><span class="ly-court">${E(String(m.court||'').replace(/\s*코트$/,''))}<small>코트</small></span><span class="ly-div">${E(m.div||'')}</span><span class="ly-lab">${E(m.label||'')}</span></div>`;}
+function lyParts(m){return (m.parts||[]).map(p=>`<span class="${p.neg?'neg':''}"><i>${E(p.l)}</i>${E(p.v)}</span>`).join('');}
+function lyLegend(js){return js&&js.length>=5?`<span class="ly-lg"><i class="k"></i>들어간 점수 <i class="o"></i>빠진 점수 (최고·최저)</span>`:'';}
+function lyNext(m){return m.next&&m.next.who?`<span class="ly-nx"><i>NEXT</i>${E(m.next.who)}${m.next.team?' · '+E(m.next.team):''}</span>`:'';}
+const lyIt=it=>`<span class="${it.x?'o':''}"><i>${E(it.l)}</i><b>${E(it.v)}</b></span>`;
+function lyWrap(th,m,cls,body){if(m.el==null)m.el=since('ly|'+(m.key||''));
+  return `<div class="board ksb-solo sk sk-lay ly-${th||'base'} ${cls}" style="--cc:${arCol(m.court)}"><div class="ly-bg"></div><div class="sk-s" style="--t:-${Math.max(0,m.el||0)}ms">${body}</div></div>`;}
+function lySolo(th,lay,m){const js=m.js||[],N=js.length;
+  if(lay==='1'){const rows=js.map((j,i)=>`<div class="ly-j ${j.drop?'out':''}" style="--d:${i*90}ms"><b class="ly-jn">${j.n}<small>심</small></b><span class="ly-its">${(j.items||[]).map(lyIt).join('')}</span><b class="ly-jt">${E(j.t)}</b></div>`).join('');
+    return lyWrap(th,m,'ly1',`${lyHead(m,th)}<div class="ly-main"><div class="ly-js" style="--n:${Math.max(N,3)}">${rows}</div>
+      <div class="ly-me"><div class="ly-nm" style="font-size:${U(fit(m.name||m.team,180,5))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ly-tm">${E(m.team)}</div>`:''}
+      <div class="ly-fin">${E(m.final)}</div><div class="ly-parts">${lyParts(m)}</div>${m.note?`<div class="ly-note">${E(m.note)}</div>`:''}</div></div>
+      <div class="ly-foot">${lyLegend(js)}${lyNext(m)}</div>`);}
+  const cards=js.map((j,i)=>`<div class="ly-c ${j.drop?'out':''}" style="--d:${i*90}ms"><div class="ly-ch"><b>${j.n}심</b><b class="ly-ct">${E(j.t)}</b></div><div class="ly-its">${(j.items||[]).map(lyIt).join('')}</div></div>`).join('');
+  return lyWrap(th,m,'ly2',`${lyHead(m,th)}<div class="ly-band"><div class="ly-who"><div class="ly-nm" style="font-size:${U(fit(m.name||m.team,200,4))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ly-tm">${E(m.team)}</div>`:''}</div>
+    <div class="ly-sc"><div class="ly-fin">${E(m.final)}</div><div class="ly-parts">${lyParts(m)}</div>${m.note?`<div class="ly-note">${E(m.note)}</div>`:''}</div></div>
+    <div class="ly-cs" style="--n:${Math.max(N,3)}">${cards}</div><div class="ly-foot">${lyLegend(js)}${lyNext(m)}</div>`);}
+function lyTour(th,m){const S=m.sides||[];if(S.length!==2)return null;const f=v=>v==null?'—':(+v).toFixed(2);
+  const col=s=>{const js=(s.js||[]);return `<div class="lt-js ${s.side==='blue'?'b':'r'}">${js.map((j,i)=>`<div class="lt-j ${j.dA&&j.dB?'out':''}" style="--d:${i*90}ms"><b class="ly-jn">${j.n}<small>심</small></b><span class="${j.dA?'o':''}">${(+j.a).toFixed(1)}</span><span class="${j.dB?'o':''}">${(+j.b).toFixed(1)}</span></div>`).join('')}</div>`;};
+  const pl=s=>{const b=s.side==='blue',r=s.res||{};return `<div class="lt-p ${b?'b':'r'} ${s.win?'win':''} ${s.lose?'lose':''}"><div class="lt-h">${b?'청':'홍'}${s.win?'<em>WIN</em>':''}</div>
+    <div class="ly-nm" style="font-size:${U(fit(s.name||s.team,120,4))}">${E(s.name||s.team)}</div><div class="ly-tm">${E(s.name?s.team:'')}</div>
+    <div class="ly-fin">${f(r.final)}</div><div class="ly-parts">${r.parts?`<span><i>1품새</i>${f(r.parts[0])}</span><span><i>2품새</i>${f(r.parts[1])}</span>`:`<span><i>${E(m.labA||'정확성')}</i>${f(r.a)}</span><span><i>${E(m.labB||'표현성')}</i>${f(r.b)}</span>`}${r.ded?`<span class="neg"><i>감점</i>−${(+r.ded).toFixed(1)}</span>`:''}</div></div>`;};
+  const B=S.find(x=>x.side==='blue')||S[0],Rd=S.find(x=>x.side==='red')||S[1],js=B.js||[];
+  return lyWrap(th,m,'lyT',`${lyHead(m,th)}<div class="lt-main">${col(B)}<div class="lt-ctr">${pl(B)}${pl(Rd)}</div>${col(Rd)}</div>
+    <div class="ly-foot">${lyLegend(js)}${m.note?`<span class="ly-nx">${E(m.note)}</span>`:''}</div>`);}
+function layDraw(th,c){const lay=layFor(c);if(lay==='0')return null;
+  if(c&&(c.entries||[]).length===2){if(APP!=='poomsae')return null;const tm=arTourModel();return tm&&tm.scr==='duelres'?lyTour(th,tm):null;}
+  const m=APP==='poomsae'?modelPm():modelGp();if(!m||m.scr!=='score')return null;arExtra(m);if(!m.js||!m.js.length)return null;return lySolo(th,lay,m);}
 /* ---------- 감싸기 ---------- */
 function install(){const cur=window.vDisplay;if(typeof cur!=='function')return false;if(cur.__sk)return true;
   if(!cur.__ksb)return false;if(APP==='poomsae'&&!cur.__kst)return false;   /* 금빛 전광판·테마를 감싼 다음에 */
   const w=function(){try{let c=null;try{c=g('curOf')();}catch(e){}const th=skinFor(c);
+      {const h=layDraw(th,c);if(h)return h;}
       if(th==='arena'&&APP==='kyorugi'){const h=arKy(cur);if(h)return h;}
       else if((th==='arena'||th==='duel')&&c&&(c.entries||[]).length===2){const m=arTourModel();if(m){const h=draw(th,m);if(h)return h;}}
       else if(th){const m=APP==='poomsae'?modelPm():modelGp();if(m){if(th==='arena'||m.scr==='score')arExtra(m);const h=draw(th,m);if(h)return h;}}}catch(e){console.error('[KS_SKIN]',e);}
@@ -255,10 +294,15 @@ function install(){const cur=window.vDisplay;if(typeof cur!=='function')return f
 function panel(){const B=by();return `<div class="panel sk-setp"><h2>${APP==='kyorugi'?'겨루기 전광판 디자인':'전광판 디자인 (종목별)'}</h2>
   ${APP==='kyorugi'?'':`<span class="small muted">컷오프 종목의 관중용 전광판 모양을 종목마다 고릅니다. 점수 화면은 이름·점수만 가운데 크게, 그다음 순위 화면에 1·2·3위를 가운데 크게 보여 줍니다. 「기존 디자인」은 지금까지의 전광판(위 「전광판 디자인」)을 그대로 씁니다.${APP==='poomsae'?' 토너먼트(청·홍)는 「기존」이면 위 「전광판 디자인」을 따릅니다.':''}</span>`}
   <span class="small muted">🏟 경기장: 세계 대회 경기장 화면처럼 짙은 남색 바탕에 이름·점수를 크게, 왼쪽 코트 색 띠, 아래에 현재 순위·다음 선수를 보여 줍니다. 효과음·점수 효과는 그대로입니다.</span>
-  ${ROWS.map(([k,l])=>`<div class="field"><span class="label">${l}</span><div class="seg">${(k==='tour'?SKINS_T:k==='kyorugi'?SKINS2:SKINS).map(([v,t])=>`<button class="${(B[k]||'')===v?'on':''}" data-skset="${k}" data-v="${v}">${t}</button>`).join('')}</div></div>`).join('')}</div>`;}
+  ${ROWS.map(([k,l])=>`<div class="field"><span class="label">${l}</span><div class="seg">${(k==='tour'?SKINS_T:k==='kyorugi'?SKINS2:SKINS).map(([v,t])=>`<button class="${(B[k]||'')===v?'on':''}" data-skset="${k}" data-v="${v}">${t}</button>`).join('')}</div></div>`).join('')}
+  ${APP==='kyorugi'?'':`<h2 style="margin-top:14px">점수 공개 화면 모양</h2><span class="small muted">점수가 나올 때 심판 점수와 총점을 놓는 자리입니다. 어느 디자인을 고르든 그 디자인 색으로 나옵니다. 들어간 점수는 밝은 흰색, 빠진 점수(최고·최저)는 어두운 회색입니다.</span>
+  ${ROWS.map(([k,l])=>{const L=SET().layBy||{},v=L[k]!=null?String(L[k]):(LAY_DEF[k]||'1');return `<div class="field"><span class="label">${l}</span><div class="seg">${(k==='tour'?LAYS_T:LAYS).map(([x,t])=>`<button class="${v===x?'on':''}" data-lyset="${k}" data-v="${x}">${t}</button>`).join('')}</div></div>`;}).join('')}`}</div>`;}
 function installSet(){const o=window.aSettings;if(typeof o!=='function')return false;if(o.__sk)return true;
   const w=function(){const h=o.apply(this,arguments);try{return panel()+h;}catch(e){return h;}};w.__sk=true;
   for(const k of ['__ksfx','__kst'])if(o[k])w[k]=true;window.aSettings=w;return true;}
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-lyset]');if(!b)return;e.preventDefault();e.stopPropagation();
+  const S=g('S'),sv=g('saveSettings');if(!S||!sv)return;const cur=S.settings||{},nx={...cur,layBy:{...(cur.layBy||{}),[b.dataset.lyset]:b.dataset.v}};
+  S.settings=nx;try{await sv(nx);}catch(x){}try{g('render')();}catch(x){}},true);
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-skset]');if(!b)return;e.preventDefault();e.stopPropagation();
   const S=g('S'),sv=g('saveSettings');if(!S||!sv)return;const cur=S.settings||{},nx={...cur,skinBy:{...(cur.skinBy||{}),[b.dataset.skset]:b.dataset.v}};
   S.settings=nx;try{await sv(nx);}catch(x){}try{g('render')();}catch(x){}},true);
@@ -292,27 +336,27 @@ body.disp .board.sk{position:fixed;inset:0;margin:0;padding:0;border:0;border-ra
 .sk-note{margin-top:${U(16)};font-size:${U(34)};color:#FF8A8A}
 .sk-jd{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:${U(20)};width:${U(1780)};margin:${U(18)} auto ${U(6)}}
 .sk-jc{border:${U(3)} solid rgba(255,255,255,.22);border-radius:${U(22)};padding:${U(14)} ${U(24)};background:rgba(0,0,0,.35);display:flex;flex-direction:column;gap:${U(2)};animation:skup .6s ease-out both;animation-delay:var(--t)}
-.sk-jc.in{border-color:rgba(98,176,255,.75)}.sk-jc.out{border-color:rgba(255,95,109,.75);background:rgba(255,95,109,.08)}
-.sk-jh{font:900 ${U(40)}/1.15 "Noto Sans KR";text-align:center}.sk-jh em{font-style:normal;color:#FF5F6D;font-size:.7em}
+.sk-jc.in{border-color:rgba(255,255,255,.3)}.sk-jc.out{border-color:rgba(74,80,93,.8);background:rgba(0,0,0,.3)}
+.sk-jh{font:900 ${U(40)}/1.15 "Noto Sans KR";text-align:center}.sk-jh em{font-style:normal;color:#4A505D;font-size:.7em}.sk-jc.out .sk-jh,.sk-jc.out .sk-ji span{color:#4A505D}
 .sk-ji{display:flex;justify-content:space-between;align-items:center;font:800 ${U(26)} "Noto Sans KR";opacity:.95}.sk-ji span{opacity:.75}
-.sk-ji b{font:900 ${U(72)}/1.05 Cinzel,"Noto Sans KR";color:#62B0FF}.sk-ji b.jx{color:#FF5F6D;opacity:.8;text-decoration:line-through;text-decoration-thickness:.08em}
-.sk-jt{border-top:1px solid rgba(255,255,255,.18);text-align:right;font:900 ${U(56)}/1.15 Cinzel,"Noto Sans KR"}.sk-jc.in .sk-jt{color:#A9D3FF}.sk-jc.out .sk-jt{color:#FF5F6D;text-decoration:line-through}
+.sk-ji b{font:900 ${U(72)}/1.05 Cinzel,"Noto Sans KR";color:#fff}.sk-ji b.jx{color:#4A505D}
+.sk-jt{border-top:1px solid rgba(255,255,255,.18);text-align:right;font:900 ${U(56)}/1.15 Cinzel,"Noto Sans KR"}.sk-jc.in .sk-jt{color:#fff}.sk-jc.out .sk-jt{color:#4A505D}
 .sk-jd[style*="--n:7"] .sk-ji b,.sk-jd[style*="--n:6"] .sk-ji b{font-size:${U(58)}}
 .sk-center.sk-score.hasj{top:${U(205)};bottom:${U(82)};justify-content:space-evenly}
 .sk-score.hasj .sk-final{font-size:${U(185)}}.sk-score.hasj .sk-res{margin-top:0}.sk-score.hasj .sk-part{font-size:${U(24)};margin:0 ${U(16)}}.sk-score.hasj .sk-part b{font-size:${U(42)}}
 .sk-score.hasj .sk-ji b{font-size:${U(62)}}.sk-score.hasj .sk-jt{font-size:${U(48)}}.sk-score.hasj .sk-jh{font-size:${U(36)}}
 .sk:has(.sk-score.hasj) .sk-next{bottom:${U(18)}}
-:is(.board.sk-arena,.board.ky.ar) .ar-j small .k{color:#62B0FF}:is(.board.sk-arena,.board.ky.ar) .ar-j small .x{color:#FF5F6D;opacity:.85}
-:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.in{border-color:rgba(98,176,255,.6)}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.in b{color:#A9D3FF}
-:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop{opacity:.75;border-color:rgba(255,95,109,.6)}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop b{color:#FF5F6D}
-:is(.board.sk-arena,.board.ky.ar) .ar-j small em{font-style:normal;color:#FF5F6D;font-weight:800}
+:is(.board.sk-arena,.board.ky.ar) .ar-j small .k{color:#fff}:is(.board.sk-arena,.board.ky.ar) .ar-j small .x{color:#4A526B;text-decoration:none}
+:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.in{border-color:rgba(255,255,255,.3)}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.in b{color:#fff}
+:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop{opacity:1;border-color:rgba(74,82,107,.7)}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop b{color:#4A526B;text-decoration:none}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop .ar-jn{color:#4A526B;text-decoration:none}
+:is(.board.sk-arena,.board.ky.ar) .ar-j small em{font-style:normal;color:#6B7590;font-weight:800}
 :is(.board.sk-arena,.board.ky.ar) .ar-j.rv{padding:${U(14)} ${U(22)}}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv small{font-size:${U(34)};font-weight:800;color:#C9D3EA;overflow:visible;white-space:normal;line-height:1.25}
 :is(.board.sk-arena,.board.ky.ar) .ar-j.rv b{font-size:${U(68)}}
 :is(.board.sk-arena,.board.ky.ar) .ar-j.rv.drop{opacity:.9}
 :is(.board.sk-arena,.board.ky.ar) .ar-ji{grid-column:1/-1;display:flex;justify-content:space-between;gap:${U(10)};font:800 ${U(40)}/1.1 Archivo,"Noto Sans KR",sans-serif;font-stretch:85%}
 :is(.board.sk-arena,.board.ky.ar) .ar-ji span{display:flex;flex-direction:column;align-items:flex-end}:is(.board.sk-arena,.board.ky.ar) .ar-ji i{font:700 ${U(19)} "Noto Sans KR";color:#9AA8C7;font-style:normal}
-:is(.board.sk-arena,.board.ky.ar) .ar-ji .jk{color:#62B0FF}:is(.board.sk-arena,.board.ky.ar) .ar-ji .jx{color:#FF5F6D;text-decoration:line-through}
-:is(.board.sk-arena,.board.ky.ar) .ar-why{grid-column:1/-1;text-align:right;font:800 ${U(22)} "Noto Sans KR";color:#FF5F6D;font-style:normal}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv small em{display:block;font-size:${U(24)}}
+:is(.board.sk-arena,.board.ky.ar) .ar-ji .jk{color:#fff}:is(.board.sk-arena,.board.ky.ar) .ar-ji .jx{color:#4A526B}
+:is(.board.sk-arena,.board.ky.ar) .ar-why{grid-column:1/-1;text-align:right;font:800 ${U(22)} "Noto Sans KR";color:#6B7590;font-style:normal}:is(.board.sk-arena,.board.ky.ar) .ar-j.rv small em{display:block;font-size:${U(24)}}
 .sk-rkh{position:absolute;left:0;right:0;top:${U(130)};text-align:center}.sk-rkh span{display:block;font:800 ${U(28)} Cinzel;letter-spacing:.5em}.sk-rkh b{display:block;font:800 ${U(44)} "Noto Sans KR";margin-top:${U(10)}}
 .sk-pods{position:absolute;left:0;right:0;top:${U(240)};display:flex;justify-content:center;align-items:flex-end;gap:${U(36)}}
 .sk-pod{width:${U(470)};border-radius:${U(26)};padding:${U(22)} ${U(24)} ${U(24)};text-align:center;animation:skup .8s cubic-bezier(.2,1.2,.3,1) both;animation-delay:calc(var(--t) + var(--i)*.18s)}
@@ -622,6 +666,76 @@ body.disp .board.sk-arena .side.win .vfinal.ar-sbig{-webkit-text-fill-color:#E2C
 .board.sk-arena .ar-rr.one .ar-rn b{font-size:calc(var(--rh)*.44*var(--u))}
 .board.sk-arena .ar-rr.one .ar-rn small{font-size:calc(var(--rh)*.2*var(--u))}
 .board.sk-arena .ar-rr.one .ar-rs{font-size:calc(var(--rh)*.56*var(--u))}
+
+/* ---------- v1.7.30 점수 공개 화면 모양 ---------- */
+.board.sk-lay{--bg:#060709;--g1:rgba(232,194,106,.06);--ac:#E8C26A;--hi:#F7E7B4;--ln:rgba(232,194,106,.35);--pan:rgba(255,255,255,.035);--in:#FFFFFF;--out:#4A505D;--nf:Archivo,"Barlow Condensed","Noto Sans KR",sans-serif}
+.board.sk-lay.ly-royal{--bg:#06112C;--g1:rgba(70,110,220,.20);--ac:#E8C26A;--hi:#F7E7B4;--ln:rgba(232,194,106,.42);--pan:rgba(255,255,255,.045);--out:#47506A}
+.board.sk-lay.ly-fire{--bg:#0A0302;--g1:rgba(255,80,20,.16);--ac:#FF8A1F;--hi:#FFD08A;--ln:rgba(255,138,31,.45);--pan:rgba(255,255,255,.04);--out:#5A4842}
+.board.sk-lay.ly-arena,.board.sk-lay.ly-duel{--bg:#07122B;--g1:color-mix(in srgb,var(--cc,#3B82F6) 16%,transparent);--ac:#E8C26A;--hi:#F7E7B4;--ln:rgba(255,255,255,.14);--pan:rgba(255,255,255,.045);--out:#46526E}
+.board.sk-lay{background:var(--bg)}
+.ly-bg{position:absolute;inset:0;background:radial-gradient(${U(1200)} ${U(800)} at 75% 45%,var(--g1),transparent 70%),linear-gradient(180deg,rgba(255,255,255,.03),transparent 30%),var(--bg)}
+.board.sk.sk-lay>.sk-s{box-sizing:border-box;display:flex;flex-direction:column;padding:${U(34)} ${U(56)} ${U(26)}}
+.board.sk.sk-lay>.ly-bg{z-index:0}
+.ly-top{display:flex;align-items:center;gap:${U(28)};height:${U(96)};border-bottom:${U(2)} solid var(--ln);flex:none}
+.ly-court{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:${U(120)};height:${U(84)};padding:0 ${U(14)};border-radius:${U(14)};background:var(--cc,var(--ac));color:#fff;font:800 ${U(54)}/1 var(--nf);font-stretch:75%}
+.ly-fire .ly-court,.ly-base .ly-court,.ly-royal .ly-court{background:var(--ac);color:#140C02}
+.ly-court small{font:800 ${U(18)} "Noto Sans KR";margin-top:${U(2)}}
+.ly-div{flex:1;font:900 ${U(52)}/1.1 "Noto Sans KR";color:var(--hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ly-lab{font:800 ${U(44)} "Noto Sans KR";color:#fff;white-space:nowrap}
+.ly-nm{font-weight:900;line-height:1.02;color:#fff;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:lyup .5s ease-out both;animation-delay:var(--t)}
+.ly-tm{font:700 ${U(54)}/1.2 "Noto Sans KR";color:#C9CFDA;margin-top:${U(8)};white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ly-fin{font:800 ${U(380)}/.9 var(--nf);font-stretch:75%;color:var(--ac);letter-spacing:-.02em;text-shadow:0 ${U(6)} ${U(18)} rgba(0,0,0,.55);animation:lypop .7s cubic-bezier(.2,1.4,.4,1) both;animation-delay:calc(var(--t) + 300ms);white-space:nowrap}
+.ly-fire .ly-fin{color:#fff;text-shadow:0 0 ${U(40)} rgba(255,138,31,.7),${U(10)} ${U(10)} 0 #000}
+.ly-parts{display:flex;gap:${U(40)};flex-wrap:wrap;font:800 ${U(54)} var(--nf);font-stretch:85%;color:#fff}
+.ly-parts i{font:700 ${U(30)} "Noto Sans KR";font-style:normal;color:#AEB6C6;margin-right:${U(12)}}.ly-parts .neg{color:#FF7A85}
+.ly-note{font:800 ${U(34)} "Noto Sans KR";color:#FF8A8A}
+.ly-foot{flex:none;display:flex;align-items:center;justify-content:space-between;gap:${U(30)};height:${U(64)};border-top:${U(2)} solid var(--ln);font:700 ${U(30)} "Noto Sans KR";color:#C9CFDA}
+.ly-lg{display:flex;align-items:center;gap:${U(12)}}.ly-lg i{display:inline-block;width:${U(26)};height:${U(26)};border-radius:${U(6)};margin-left:${U(14)}}.ly-lg i.k{background:var(--in)}.ly-lg i.o{background:var(--out)}
+.ly-nx{margin-left:auto;font-weight:800;color:#fff}.ly-nx i{font:800 ${U(22)} var(--nf);letter-spacing:.2em;color:var(--ac);font-style:normal;margin-right:${U(14)}}
+/* 들어간 점수 흰색 · 빠진 점수 어두운 회색 */
+.sk-lay .ly-its b,.sk-lay .lt-j span{color:var(--in)}
+.sk-lay .ly-its .o b,.sk-lay .ly-its .o i,.sk-lay .lt-j span.o{color:var(--out)!important}
+.sk-lay .out .ly-jn,.sk-lay .out .ly-jt,.sk-lay .out .ly-ct,.sk-lay .out .ly-ch b{color:var(--out)!important}
+.sk-lay .out{border-color:color-mix(in srgb,var(--out) 60%,transparent)!important;background:rgba(0,0,0,.25)!important}
+/* ① 왼쪽 심판 · 오른쪽 총점 */
+.ly1 .ly-main{flex:1;display:grid;grid-template-columns:${U(820)} 1fr;gap:${U(56)};min-height:0;padding:${U(26)} 0}
+.ly1 .ly-js{display:grid;grid-template-rows:repeat(var(--n),1fr);gap:${U(14)};min-height:0}
+.ly1 .ly-j{display:grid;grid-template-columns:${U(120)} 1fr auto;align-items:center;gap:${U(18)};padding:0 ${U(26)};border-radius:${U(16)};background:var(--pan);border:${U(2)} solid rgba(255,255,255,.12);min-height:0;animation:lyin .5s ease-out both;animation-delay:calc(var(--t) + var(--d))}
+.ly1 .ly-jn{font:800 ${U(58)}/1 var(--nf);font-stretch:80%;color:var(--hi)}.ly1 .ly-jn small{font:800 ${U(26)} "Noto Sans KR";margin-left:${U(4)}}
+.ly1 .ly-its{display:flex;gap:${U(26)};justify-content:flex-start}
+.ly1 .ly-its span{display:flex;flex-direction:column;align-items:flex-start}
+.ly1 .ly-its i{font:700 ${U(20)} "Noto Sans KR";font-style:normal;color:#9AA3B5}.ly1 .ly-its b{font:800 ${U(52)}/1 var(--nf);font-stretch:80%}
+.ly1 .ly-jt{font:800 ${U(70)}/1 var(--nf);font-stretch:75%;color:#fff}
+.ly1 .ly-js[style*="--n:6"] .ly-its b,.ly1 .ly-js[style*="--n:7"] .ly-its b{font-size:${U(42)}}.ly1 .ly-js[style*="--n:6"] .ly-jt,.ly1 .ly-js[style*="--n:7"] .ly-jt{font-size:${U(56)}}
+.ly1 .ly-its span:nth-child(4) b,.ly1 .ly-its span:nth-child(5) b{font-size:${U(44)}}
+.ly1 .ly-me{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;min-width:0;gap:${U(6)}}
+.ly1 .ly-me .ly-nm,.ly1 .ly-me .ly-tm{max-width:100%}
+.ly1 .ly-fin{margin-top:${U(18)}}.ly1 .ly-parts{justify-content:flex-end;margin-top:${U(10)}}
+/* ② 위 이름·총점 · 아래 심판 한 줄 */
+.ly2 .ly-band{flex:1;display:grid;grid-template-columns:1fr auto;align-items:center;gap:${U(40)};padding:${U(10)} ${U(56)};margin:${U(22)} 0;border-radius:${U(22)};background:linear-gradient(90deg,var(--pan),rgba(255,255,255,.015));border:${U(2)} solid rgba(255,255,255,.08);border-bottom:${U(5)} solid var(--ac);min-height:0}
+.ly2 .ly-who{min-width:0}.ly2 .ly-sc{text-align:right;display:flex;flex-direction:column;align-items:flex-end}.ly2 .ly-fin{font-size:${U(330)}}.ly2 .ly-parts{justify-content:flex-end;font-size:${U(46)}}
+.ly2 .ly-cs{flex:none;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:${U(18)};margin-bottom:${U(18)}}
+.ly2 .ly-c{border-radius:${U(16)};background:var(--pan);border:${U(2)} solid rgba(255,255,255,.12);padding:${U(12)} ${U(22)} ${U(14)};animation:lyin .5s ease-out both;animation-delay:calc(var(--t) + var(--d))}
+.ly2 .ly-ch{display:flex;justify-content:space-between;align-items:baseline}.ly2 .ly-ch b:first-child{font:800 ${U(34)} "Noto Sans KR";color:var(--hi)}.ly2 .ly-ct{font:800 ${U(66)}/1 var(--nf);font-stretch:75%;color:#fff}
+.ly2 .ly-its{display:flex;justify-content:space-between;gap:${U(8)};margin-top:${U(6)}}.ly2 .ly-its span{display:flex;flex-direction:column;align-items:center}
+.ly2 .ly-its i{font:700 ${U(19)} "Noto Sans KR";font-style:normal;color:#9AA3B5}.ly2 .ly-its b{font:800 ${U(44)}/1.05 var(--nf);font-stretch:80%}
+/* 청·홍: 양쪽 끝 심판 · 가운데 두 선수 */
+.lyT .lt-main{flex:1;display:grid;grid-template-columns:${U(330)} 1fr ${U(330)};gap:${U(28)};min-height:0;padding:${U(24)} 0}
+.lyT .lt-js{display:flex;flex-direction:column;justify-content:center;gap:${U(12)}}
+.lyT .lt-j{display:grid;grid-template-columns:${U(86)} 1fr 1fr;align-items:center;gap:${U(8)};padding:${U(10)} ${U(16)};border-radius:${U(14)};background:var(--pan);border:${U(2)} solid rgba(255,255,255,.1);animation:lyin .5s ease-out both;animation-delay:calc(var(--t) + var(--d))}
+.lyT .lt-js.b .lt-j{border-left:${U(8)} solid #2F7BFF}.lyT .lt-js.r .lt-j{border-right:${U(8)} solid #FF3B4E}
+.lyT .lt-j .ly-jn{font:800 ${U(46)}/1 var(--nf);font-stretch:80%;color:var(--hi)}.lyT .lt-j .ly-jn small{font:800 ${U(20)} "Noto Sans KR"}
+.lyT .lt-j span{font:800 ${U(48)}/1 var(--nf);font-stretch:80%;text-align:right}
+.lyT .lt-ctr{display:grid;grid-template-columns:1fr 1fr;gap:${U(24)};min-width:0}
+.lyT .lt-p{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border-radius:${U(24)};padding:${U(20)};min-width:0;background:var(--pan)}
+.lyT .lt-p.b{background:linear-gradient(180deg,rgba(47,123,255,.32),rgba(47,123,255,.08));border:${U(3)} solid rgba(47,123,255,.6)}
+.lyT .lt-p.r{background:linear-gradient(180deg,rgba(255,59,78,.32),rgba(255,59,78,.08));border:${U(3)} solid rgba(255,59,78,.6)}
+.lyT .lt-p.win{box-shadow:0 0 ${U(60)} color-mix(in srgb,var(--ac) 55%,transparent);border-color:var(--ac)}.lyT .lt-p.lose{opacity:.8;filter:saturate(.7)}
+.lyT .lt-h{font:900 ${U(52)} "Noto Sans KR";color:#fff}.lyT .lt-h em{font:800 ${U(34)} var(--nf);font-style:normal;color:#140C02;background:var(--ac);border-radius:${U(10)};padding:${U(2)} ${U(16)};margin-left:${U(16)};vertical-align:middle}
+.lyT .ly-tm{font-size:${U(40)}}.lyT .ly-fin{font-size:${U(220)};margin-top:${U(10)}}.lyT .ly-parts{justify-content:center;font-size:${U(38)};gap:${U(24)}}.lyT .ly-parts i{font-size:${U(24)}}
+@keyframes lyin{from{opacity:0;transform:translateX(${U(-30)})}to{opacity:1;transform:none}}
+@keyframes lyup{from{opacity:0;transform:translateY(${U(24)})}to{opacity:1;transform:none}}
+@keyframes lypop{0%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.board.sk *,.board.ky.ar *{animation:none!important}}
 `;
 const st=document.createElement('style');st.id='ks-skin-css';st.textContent=css;(document.head||document.documentElement).appendChild(st);

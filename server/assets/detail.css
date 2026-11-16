@@ -1,15 +1,16 @@
-/* v1.7.29 점수 공개: 심판별 세부 점수 — 들어간 점수 파랑 · 빠진 점수(최고·최저) 빨강 · 전광판에서는 크게
+/* v1.7.30 점수 공개: 심판별 세부 점수 — 들어간 점수 밝은 흰색 · 빠진 점수(최고·최저) 어두운 회색 (줄 긋지 않음)
+   (점수 공개 화면 모양 「디자인 그대로」일 때. ①·② 모양은 skin.js)
    품새·자유 품새·태권체조(품새 앱) · 격파·팀 경연(격파 앱) 「기존 디자인」 공통. 왕실·불꽃·경기장은 skin.js */
-:root{--dt-in:#62B0FF;--dt-in2:#A9D3FF;--dt-out:#FF5F6D}
+:root{--dt-in:#FFFFFF;--dt-in2:#FFFFFF;--dt-out:#4A505D}
 .cbj.rv .cbji b.cnt,.cbj.rv.in .cbji b{color:var(--dt-in)!important}
-.cbj.rv .cbji b.drop{color:var(--dt-out)!important;opacity:.78!important;text-decoration:line-through;text-decoration-thickness:.09em}
-.cbj.rv.in{border-color:color-mix(in srgb,var(--dt-in) 70%,transparent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--dt-in) 18%,transparent)!important}
+.cbj.rv .cbji b.drop{color:var(--dt-out)!important;opacity:1!important;text-decoration:none!important}
+.cbj.rv.in{border-color:rgba(255,255,255,.3)!important;box-shadow:none!important}
 .cbj.rv.in .cbjt{color:var(--dt-in2)}
-.cbj.rv.out{border-color:color-mix(in srgb,var(--dt-out) 75%,transparent)!important;box-shadow:none!important;background:color-mix(in srgb,var(--dt-out) 8%,transparent)!important}
-.cbj.rv.out .cbji b,.cbj.rv.out .cbjt{color:var(--dt-out)!important;opacity:.8}
-.cbj.rv.out .cbjt span{text-decoration:line-through;opacity:1}
+.cbj.rv.out{border-color:color-mix(in srgb,var(--dt-out) 75%,transparent)!important;box-shadow:none!important;background:rgba(0,0,0,.25)!important}
+.cbj.rv.out .cbji b,.cbj.rv.out .cbjt,.cbj.rv.out .cbjn,.cbj.rv.out .cbji span{color:var(--dt-out)!important;opacity:1}
+.cbj.rv.out .cbjt span,.cbj.rv .cbjt .cbx,.cbj.rv .cbx{text-decoration:none!important;opacity:1}
 .cbj.rv.out .cbjn::after{content:" · 제외";color:var(--dt-out);font-size:.7em}
-.bdot .sc .cnt{color:var(--dt-in)}.bdot .sc .drop{color:var(--dt-out);text-decoration:line-through;opacity:.8}
+.bdot .sc .cnt{color:var(--dt-in)}.bdot .sc .drop{color:var(--dt-out);text-decoration:none;opacity:1}
 .cblg{display:inline-flex;align-items:center;gap:.5em;font-weight:800}
 .cblg i{display:inline-block;width:.9em;height:.9em;border-radius:.2em;margin-left:.6em}
 .cblg i.k{background:var(--dt-in)}.cblg i.x{background:var(--dt-out)}
