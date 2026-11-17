@@ -1838,7 +1838,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.25'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.26'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2143,8 +2143,7 @@ function vHomeDraw(c){if(!M.drawsOk)return `<div class="notice"><b>대진표 저
   </div>`;}
 /* v1.7.24 대진 화면 칸 모음: 위쪽 색 단추로 하나만 펼침 (하나를 열면 나머지는 닫힘 · 칸마다 「✕ 닫기」) */
 function drSecList(c,divs){const K=ckData(c),reqs=M.reqOk?(M.reqs||[]).filter(r=>r.compId===c.id):[],ro=reqs.filter(r=>r.status==='open').length,fl=fxHasPub(c)?fxLog(c).length:0;
-  return [['edit','✏️ 고치기 (도장 이름 · 선수 · 팀)','org',fl?`저장 안 함 ${fl}`:'',null,!fxHasPub(c)],
-    ['fx','✏️ 대진 고치기','fx','',()=>fxPanel(c),fxHasPub(c)],
+  return [['edit','✏️ 고치기 (도장 이름 · 선수 · 팀)','org',fl?`저장 안 함 ${fl}`:(!fxHasPub(c)?'먼저 홈페이지에 올리기':''),null,false],
     ['ck','🔎 접수 점검','',K.open?`확인 ${K.open}`:'',()=>{UI.ckOpen=true;return hdCheckPanel(c);}],
     ['req','📮 지도자 수정 요청','',ro?`기다림 ${ro}`:'',()=>fxReqPanel(c),!reqs.length],
     ['medal','🏅 메달 집계','','',()=>hdMedalCard(divs),!divs.length]].filter(x=>x[3]!==null&&!x[5]);}
@@ -2413,6 +2412,8 @@ function fxOrgSave(c,b){const B=UI.fxBox;if(!B)return;const h=B.h,old=h.oo,nw=St
     toast(`「${old}」 → 「${nw}」 · 선수 ${r.nA}명${r.nT?` · 팀 이름 ${r.nT}개`:''}${r.nD?' · 홈페이지 대진표에 저장':''} · 본부로 다시 보내 주세요`,9000);});}
 /* ---------- 관리자 동작 ---------- */
 function fxAct(a,b,S){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;const id=b.dataset.id,e=id?fxEnt(id):null;
+  if(a==='fxSec'&&b.dataset.k==='edit'&&!fxHasPub(c)){toast('고치기는 대진표를 홈페이지에 올린 뒤에 쓸 수 있습니다 · 아래 금색 「이 추첨을 홈페이지에 올리기」를 먼저 눌러 주세요',9000);
+    const u=document.querySelector('[data-a="hdPub"]');if(u){u.scrollIntoView({block:'center',behavior:'smooth'});u.style.outline='4px solid #ff5a5a';u.style.outlineOffset='3px';setTimeout(()=>{u.style.outline='';},6000);}return;}
   if(a==='fxSec'&&b.dataset.k==='edit'){fxR(c);UI.fxBox={h:{},v:{}};UI.dsec=null;render();return;}
   if(a==='fxFold'){const B=UI.fxBox;if(!B)return;const k=b.dataset.k;B.f=B.f===k?null:k;if(B.f==='find')setTimeout(()=>{const q=document.getElementById('fxWQ');if(q)q.focus();},50);render();return;}
   if(a==='fxEFold'){const B=UI.fxBox;if(!B)return;const k=b.dataset.k;B.ef=B.ef===k?null:k;render();return;}
