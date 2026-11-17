@@ -1838,7 +1838,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.28'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.29'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2339,7 +2339,7 @@ function fxBoxHtml(c){const B=UI.fxBox;if(!B)return '';B.h=B.h||{};const R=HD.re
       fxFold(B.f,'find','선수 · 팀 찾아 고치기',B.h.qq||'',B.f==='find'?fxFindHtml(c,B):''),
       miss.length?fxFold(B.f,'miss',`대진에 없는 접수 ${miss.length}건`,'',B.f==='miss'?`<div class="fxb-list">${miss.map(e=>`<div class="fxb-it"><b>${esc(fxWho(e))}</b><div class="small">${esc(EVN(e))} · ${esc(entryLabel(e).what)}</div><button class="btn sm gold" type="button" data-a="fxPut" data-id="${e.id}">맞는 부문에 넣기</button></div>`).join('')}</div>`:''):'',
       fxFold(B.f,'new','접수에 없는 선수 새로 넣기','',B.f==='new'?fxNewForm(c):''),
-      fxFold(B.f,'undo','↩ 되돌리기',fxUndoL(c).length?`${fxUndoL(c).length}번 되돌릴 수 있음`:'',B.f==='undo'?fxUndoHtml(c):''),
+      fxFold(B.f,'undo','↩ 되돌리기 · ↪ 다시 하기',[fxUndoL(c).length?`되돌리기 ${fxUndoL(c).length}`:'',fxRedoL(c).length?`다시 하기 ${fxRedoL(c).length}`:''].filter(Boolean).join(' · '),B.f==='undo'?fxUndoHtml(c):''),
       logs.length?fxFold(B.f,'log',`고친 기록 ${logs.length}건`,'',B.f==='log'?`<ol class="small" style="margin:0;padding-left:20px">${logs.map(x=>`<li><span class="mute">${esc(fmtAt(x.at))}</span> ${esc(x.t)}</li>`).join('')}</ol>`:''):''].join('');
     const A=B.f==='org'&&B.h.oo?orgAths(c,B.h.oo).filter(x=>B.h['oa:'+x.a.id]).length:0;
     foot=B.f==='org'&&B.h.oo?`<button class="btn gold" type="button" data-a="fxOrgSave" ${A?'':'disabled'}>${HD.arm==='orgsel'?`한 번 더 누르면 ${A}명을 바꿉니다`:`💾 체크한 선수 바꾸기 (${A}명)`}</button>`:'';}
@@ -2402,19 +2402,29 @@ function fxBoxSave(c){const B=UI.fxBox;if(!B)return;const e=fxEnt(B.id);if(!e)re
     toast(`저장했습니다 · ${done.join(' · ')} · 홈페이지 대진표에 올렸습니다 → 「🏢 본부로 보내기」 → 「📡 코트로 보내기」`,10000);});}
 /* ---------- v1.7.28 ↩ 되돌리기: 고치기 창에서 저장하기 직전 상태(선수 이름·소속, 접수 내용, 대진 순서)를 남겨 두고
    가장 최근 것부터 하나씩 되돌림 (뒤에 고친 것과 엉키지 않게 최근 것부터만) · 이 노트북(브라우저)에 최근 15번까지 */
-function fxSnapRes(c,res,t){const L=fxUndoL(c);L.push({at:new Date().toISOString(),t,A:[],E:[],res,pub:fxHasPub(c)});fxUndoW(c,L.slice(-15));}
-function fxUndoL(c){try{return JSON.parse(localStorage.getItem('ks_fxundo_'+c.id)||'[]')||[];}catch(e){return [];}}
-function fxUndoW(c,L){for(let n=L.length;n>=0;n--){try{localStorage.setItem('ks_fxundo_'+c.id,JSON.stringify(L.slice(L.length-n)));return true;}catch(e){}}return false;}
+function fxSnapRes(c,res,t){const L=fxUndoL(c);L.push({at:new Date().toISOString(),t,A:[],E:[],res,pub:fxHasPub(c)});fxUndoW(c,L.slice(-15));fxRedoW(c,[]);}
+function fxStk(c,k){try{return JSON.parse(localStorage.getItem('ks_fx'+k+'_'+c.id)||'[]')||[];}catch(e){return [];}}
+function fxStkW(c,k,L){for(let n=L.length;n>=0;n--){try{localStorage.setItem('ks_fx'+k+'_'+c.id,JSON.stringify(L.slice(L.length-n)));return true;}catch(e){}}return false;}
+const fxUndoL=c=>fxStk(c,'undo'),fxUndoW=(c,L)=>fxStkW(c,'undo',L),fxRedoL=c=>fxStk(c,'redo'),fxRedoW=(c,L)=>fxStkW(c,'redo',L);
 function fxSnap(c,t,athIds,entIds){try{const R=fxR(c);const A=[...new Set(athIds||[])].map(id=>D().athletes.find(a=>a.id===id)).filter(Boolean).map(a=>({id:a.id,name:a.name,org:a.org||''}));
   const E=[...new Set(entIds||[])].map(id=>D().entries.find(e=>e.id===id)).filter(Boolean).map(e=>({id:e.id,f:JSON.parse(JSON.stringify(e.f||{})),ids:[...e.athleteIds],st:e.status}));
-  const L=fxUndoL(c);L.push({at:new Date().toISOString(),t,A,E,res:R?JSON.stringify(R):null,pub:fxHasPub(c)});fxUndoW(c,L.slice(-15));}catch(err){console.warn('되돌리기 기록 실패',err);}}
-async function fxUndoDo(c){const L=fxUndoL(c),u=L.pop();if(!u)return null;
-  for(const a of u.A)await q(sb.from('athletes').update({name:a.name,org:a.org||null}).eq('id',a.id));
+  const L=fxUndoL(c);L.push({at:new Date().toISOString(),t,A,E,res:R?JSON.stringify(R):null,pub:fxHasPub(c)});fxUndoW(c,L.slice(-15));fxRedoW(c,[]);}catch(err){console.warn('되돌리기 기록 실패',err);}}
+/* 지금 상태를 같은 범위(선수·접수·대진)로 찍어 둠 → 되돌리기/다시 하기에서 반대쪽 목록에 넣음 */
+function fxNow(c,u){const R=HD.res[c.id];return {at:u.at,t:u.t,A:u.A.map(a=>{const x=D().athletes.find(y=>y.id===a.id)||a;return {id:x.id,name:x.name,org:x.org||''};}),
+  E:u.E.map(e=>{const x=D().entries.find(y=>y.id===e.id);return x?{id:x.id,f:JSON.parse(JSON.stringify(x.f||{})),ids:[...x.athleteIds],st:x.status}:e;}),res:R?JSON.stringify(R):null,pub:fxHasPub(c)};}
+async function fxApply(c,u){for(const a of u.A)await q(sb.from('athletes').update({name:a.name,org:a.org||null}).eq('id',a.id));
   for(const e of u.E)await q(sb.from('entries').update({f:e.f,athlete_ids:e.ids,status:e.st}).eq('id',e.id));
-  await reload();if(u.res){HD.res[c.id]=JSON.parse(u.res);fxRefresh(c);await hdPublish(c);}
-  fxUndoW(c,L);fxLogAdd(c,{sp:(hdSports(c)[0]||'poomsae'),db:1,t:`↩ 되돌림: ${u.t}`});return u;}
-function fxUndoHtml(c){const L=fxUndoL(c).slice().reverse();if(!L.length)return '<span class="small mute">아직 되돌릴 것이 없습니다 (이 노트북에서 「✏️ 고치기」 창으로 저장한 것만 되돌릴 수 있습니다)</span>';
-  return `<span class="small mute">가장 최근에 고친 것부터 하나씩 되돌립니다. 한 번 더 누르면 그 앞의 것이 되돌아갑니다. 되돌리면 홈페이지 대진표에도 바로 올라갑니다 → 본부·코트로 다시 보내 주세요.</span>
+  await reload();if(u.res){HD.res[c.id]=JSON.parse(u.res);fxRefresh(c);await hdPublish(c);}}
+async function fxUndoDo(c){const L=fxUndoL(c),u=L.pop();if(!u)return null;fxR(c);const now=fxNow(c,u);
+  fxLogAdd(c,{sp:(hdSports(c)[0]||'poomsae'),db:1,t:`↩ 되돌림: ${u.t}`});await fxApply(c,u);fxUndoW(c,L);const RL=fxRedoL(c);RL.push(now);fxRedoW(c,RL.slice(-15));return u;}
+async function fxRedoDo(c){const RL=fxRedoL(c),r=RL.pop();if(!r)return null;fxR(c);const now=fxNow(c,r);
+  fxLogAdd(c,{sp:(hdSports(c)[0]||'poomsae'),db:1,t:`↪ 다시 함: ${r.t}`});await fxApply(c,r);fxRedoW(c,RL);const L=fxUndoL(c);L.push(now);fxUndoW(c,L.slice(-15));return r;}
+function fxUndoHtml(c){const L=fxUndoL(c).slice().reverse(),RL=fxRedoL(c).slice().reverse();
+  const redo=RL.length?`<div class="fxb-grp" style="border-color:var(--gold3,#C9A45A)"><div class="small"><b>↪ 다시 하기</b> · 되돌렸던 것을 다시 고친 상태로 (${RL.length}번)</div>
+      <div class="fxb-it"><div><span class="small mute">${esc(fmtAt(RL[0].at))}</span> <b>${esc(RL[0].t)}</b></div><button class="btn sm ${HD.arm==='redo'?'danger':''}" type="button" data-a="fxRedo">${HD.arm==='redo'?'한 번 더 누르면 다시 고칩니다':'↪ 이것 다시 하기'}</button></div>
+      <span class="small mute">되돌린 뒤 새로 고치면 「다시 하기」 목록은 지워집니다</span></div>`:'';
+  if(!L.length)return redo+'<span class="small mute">더 되돌릴 것이 없습니다 (이 노트북에서 「✏️ 고치기」 창으로 저장한 것만 되돌릴 수 있습니다)</span>';
+  return `${redo}<span class="small mute">가장 최근에 고친 것부터 하나씩 되돌립니다. 한 번 더 누르면 그 앞의 것이 되돌아갑니다. 되돌리면 홈페이지 대진표에도 바로 올라갑니다 → 본부·코트로 다시 보내 주세요.</span>
     <div class="fxb-list">${L.map((u,i)=>`<div class="fxb-it" style="${i?'opacity:.55':''}"><div><span class="small mute">${esc(fmtAt(u.at))}</span> <b>${esc(u.t)}</b></div>${i===0?`<button class="btn sm ${HD.arm==='undo'?'danger':'gold'}" type="button" data-a="fxUndo">${HD.arm==='undo'?'한 번 더 누르면 되돌립니다':'↩ 이것 되돌리기'}</button>`:'<span class="small mute">위의 것을 먼저 되돌리면 되돌릴 수 있습니다</span>'}</div>`).join('')}</div>`;}
 async function fxOrgSaveDo(c,old,nw,ids,team){const E=D().entries.filter(e=>e.compId===c.id&&e.status!=='cancel'),S=new Set(ids);
   for(let i=0;i<ids.length;i+=200)await q(sb.from('athletes').update({org:nw}).in('id',ids.slice(i,i+200)));
@@ -2438,6 +2448,8 @@ function fxAct(a,b,S){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;
   if(a==='fxWFind'){const B=UI.fxBox;if(!B)return;B.h.qq=(document.getElementById('fxWQ')||{}).value||B.h.q||'';B.h.q=B.h.qq;fxR(c);render();return;}
   if(a==='fxBack'){const B=UI.fxBox;if(!B)return;if(B.dirty&&!B.armB){B.armB=true;toast('저장하지 않은 내용이 있습니다 · 한 번 더 누르면 버리고 목록으로 갑니다');setTimeout(()=>{B.armB=false;},5000);return;}B.id=null;B.v={};B.dirty=false;B.armB=false;B.armX=false;B.f=B.f||'find';render();return;}
   if(a==='fxOrgSave'){fxOrgSave(c,b);return;}
+  if(a==='fxRedo'){if(HD.arm!=='redo'){HD.arm='redo';render();setTimeout(()=>{if(HD.arm==='redo'){HD.arm=null;render();}},6000);return;}HD.arm=null;
+    run(async()=>{const r=await fxRedoDo(c);render();toast(r?`↪ 다시 고쳤습니다: ${r.t} · 홈페이지 대진표에 올렸습니다 → 본부·코트로 다시 보내 주세요`:'다시 할 것이 없습니다',9000);});return;}
   if(a==='fxUndo'){if(HD.arm!=='undo'){HD.arm='undo';render();setTimeout(()=>{if(HD.arm==='undo'){HD.arm=null;render();}},6000);return;}HD.arm=null;
     run(async()=>{const u=await fxUndoDo(c);render();toast(u?`↩ 되돌렸습니다: ${u.t} · 홈페이지 대진표에 올렸습니다 → 본부·코트로 다시 보내 주세요`:'되돌릴 것이 없습니다',9000);});return;}
   if(a==='fxSec'){const k=b.dataset.k;UI.dsec=UI.dsec===k?null:k;if(UI.dsec==='fx')fxR(c);render();setTimeout(()=>{const el=document.querySelector('.dsec-bar');if(el){const y=el.getBoundingClientRect().top+scrollY-90;if(Math.abs(scrollY-y)>40)window.scrollTo({top:y,behavior:'smooth'});}},60);return;}
