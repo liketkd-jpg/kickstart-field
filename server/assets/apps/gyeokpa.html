@@ -4193,7 +4193,7 @@ function board(){
   const c=info[ci];
   return {v:1,app:APP,appName:APPNAME,court:F.court||'',comp:(SET&&SET().name)||'',
     now,curDiv:c?c.d.name:'',progress:c?{done:c.done,total:c.total}:null,next,nextDiv,
-    divs:info.map(x=>({name:x.d.name,done:x.done,total:x.total})),
+    divs:info.map(x=>({name:x.d.name,done:x.done,total:x.total,n:Array.isArray(x.d.order)?x.d.order.length:null})), /* v1.7.36 n: 부문 인원(팀) → 본부 「인원 맞추기」 */
     /* 대기실 연결: 지금·다음 부문 선수 명단 (출석 체크용) */
     upcoming:[...info.slice(ci),...info.slice(0,ci)].filter(x=>x&&x.total>x.done).slice(0,4).map(x=>{const m=new Map();
       x.it.forEach(it=>(it.names||[]).forEach(p=>{if(p&&p.name)m.set(p.name+'|'+(p.team||''),{name:p.name,team:p.team||''});}));return {name:x.d.name,names:[...m.values()].slice(0,120)};}),

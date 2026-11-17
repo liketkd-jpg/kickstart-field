@@ -1946,6 +1946,7 @@ html.pl-lock,html.pl-lock body{overflow:hidden}
 .pl-kpis{display:flex;gap:6px;margin-left:auto;padding-left:12px}
 .pl-kpi{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;padding:4px 11px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(160deg,rgba(214,182,124,.09),rgba(255,255,255,.01));color:var(--ink);font:inherit;text-align:left}
 button.pl-kpi{cursor:pointer}button.pl-kpi:hover{border-color:var(--gold)}
+.ck-ok{color:#5BC08A}.ck-bad{color:#FF6B6B}td.ck-bad{background:rgba(255,80,80,.08)}.pl-note{margin:6px 12px 0;padding:8px 12px;font-size:14px}
 .pl-kpi small{font-size:10.5px;color:var(--muted);font-weight:800}.pl-kpi b{font-size:16px;font-variant-numeric:tabular-nums}
 .pl-kpi.ok b{color:#5BD08F}.pl-kpi.warn b{color:#F2C14E}.pl-kpi.bad b{color:#FF6B6B}.pl-kpi.bad{border-color:rgba(255,107,107,.45)}
 .pl-live-slot{padding:6px 16px 0}.pl-live-slot:empty{display:none}
@@ -2276,7 +2277,7 @@ function rowsFromSheet(rows,opt){const std=(opt&&opt.std)||'';
         :/^(금강|태백|성인)/.test(d)?'성인부':/^(지태|장년\s*1)/.test(d)?'장년 1부':/^(천권|한수|장년\s*2)/.test(d)?'장년 2부':d;r.grp='';r.sex=/^(남|M$|male)/i.test(s0)?'남':/^(여|F$|W$|female)/i.test(s0)?'여':s0;}
     /* v1.4.85 개인 격파는 세부 종목(체공 도약·수직축 회전 …)별로 따로 부문 */
     if(/격파/.test(ev)&&!kind&&!isTeam(ev)){const kr=kindRaw.replace(/\s/g,''),hit=GEV.find(([k,l])=>l.replace(/\s/g,'')===kr||k===kindRaw);if(hit)r.gev=hit[0];}
-    if(isTeam(ev)||kind){if(kind)r.kind=kind;const k=[ev,r.div,r.grp,tn||r.name||r.dojang].join('|');const add=mem?mem.split(/[,，·]/).filter(x=>x.trim()).length:1;
+    if(isTeam(ev)||kind){if(kind)r.kind=kind;const k=[ev,r.div,r.grp,tn||r.name||r.dojang,mem?'#'+mem:''].join('|'); /* v1.7.36 팀원 칸이 있는 줄(홈페이지 명단)은 한 줄이 한 팀 → 같은 도장의 이름 같은 두 팀을 하나로 합치지 않음 */const add=mem?mem.split(/[,，·]/).filter(x=>x.trim()).length:1;
       if(teams[k]){teams[k].cnt+=r.cnt||add;return;}r.name=tn||r.name||r.dojang;r.cnt=r.cnt||add;r.sex=kind?r.sex:'';teams[k]=r;}
     out.push(r);});
   return out;
@@ -2374,6 +2375,49 @@ function timelineHtml(TL,O,tgt,lateEnd,earlyEnd){TLLAST=[O,tgt,lateEnd,earlyEnd]
         <s class="pl-tgt" style="left:${X(tgt)}" title="목표 종료 ${hm(tgt)}"></s>${g&&g.f<1?`<s class="pl-pos ${lv}" style="left:${X(g.pos)}" title="${esc(g.court)}코트 지금 여기 · ${g.done}/${g.total}경기"><b>${esc(g.court)}</b></s>`:''}${showNow?`<s class="pl-now" style="left:${X(nm)}" title="지금 ${hm(nm)}"></s>`:''}</div></div>`;}).join('')}
     <div class="pl-tlleg">${events().map(e=>`<span class="pl-leg" style="--c:${evColor(e)}"><i></i>${esc(e)}</span>`).join('')}<span class="pl-leg"><i class="hatch"></i>쉬는 시간</span><span class="pl-leg"><i class="tg"></i>목표 종료 ${hm(tgt)}</span>${showNow?'<span class="pl-leg"><i class="nw"></i>지금</span>':''}<span class="pl-leg"><i class="ov"></i>선수 겹침</span>${PG.some(Boolean)?'<span class="pl-leg"><i class="pd"></i>끝난 경기</span><span class="pl-leg"><i class="pp"></i>지금 위치 (초록 계획대로 · 노랑 10분↑ 늦음 · 빨강 25분↑)</span>':''}<span class="small muted">· 순서를 바꾸려면 「🗂 카드」 보기에서 끌어 옮기세요</span></div></div>`;
 }
+/* ---------- v1.7.36 👥 인원 맞추기 · 다시 보내기 알림 ----------
+   홈페이지 접수(본부로 보낼 때 센 줄 수) ↔ 본부 운영표 명단 ↔ 코트 배정 ↔ 각 코트 노트북이 받은 명단(코트 운영석이 알려 주는 부문별 인원)
+   보여 주기만 합니다 (명단·순서는 건드리지 않음) */
+let HOMECHG=null,CHK=false,homeT=0;
+const planSig=()=>{let t='';(P.lanes||[]).forEach((l,i)=>t+=i+':'+l.join(',')+';');P.roster.forEach(r=>t+=r.name+'|'+r.dojang+'|'+r.ev+'|'+(r.hdDiv||r.div)+'\n');let h=5381;for(let i=0;i<t.length;i++)h=((h*33)^t.charCodeAt(i))>>>0;return h.toString(36);};
+async function homePoll(){clearTimeout(homeT);homeT=setTimeout(homePoll,60000);const H=P.home;if(!H||!H.url||!H.comp)return;
+  try{const r=await fetch(`${H.url}/rest/v1/draws?select=sport,updated_at&comp_id=eq.${encodeURIComponent(H.comp)}`,{headers:{apikey:H.key,Authorization:'Bearer '+H.key},cache:'no-store'});if(!r.ok)return;
+    const L=await r.json();let mx='';(L||[]).forEach(d=>{if(String(d.updated_at||'')>mx)mx=String(d.updated_at);});
+    const nw=mx&&H.drawsAt!==undefined&&mx>String(H.drawsAt||'')?{at:mx}:null;
+    if(JSON.stringify(nw)!==JSON.stringify(HOMECHG)){HOMECHG=nw;if(nw)toast('⚠ 홈페이지 대진표가 본부로 받은 뒤 바뀌었습니다 · 홈페이지에서 「🏢 본부로 보내기」를 다시 해 주세요',10000);if(OPEN)draw();}}catch(e){}}
+function sendState(){const S=P.sent;if(!P.roster.length)return null;
+  if(!S)return {k:'never'};if(P.home&&P.home.at>S.at)return {k:'home'};if(S.sig&&S.sig!==planSig())return {k:'plan'};return {k:'ok'};}
+function noteHtml(){const n=[],st=sendState(),fmt=t=>{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+  if(HOMECHG)n.push(`<div class="alert warn pl-note"><b>⚠ 홈페이지 대진표가 바뀌었습니다</b> (홈페이지 ${fmt(HOMECHG.at)} · 본부가 받은 때 ${fmt(P.home.at)}) — 홈페이지에서 <b>🏢 본부로 보내기</b>를 다시 하고, 여기서 <b>📡 코트로 보내기</b>를 해 주세요</div>`);
+  if(st&&st.k==='home')n.push(`<div class="alert warn pl-note"><b>⚠ 새 명단이 있습니다</b> — 홈페이지에서 받은 명단(${fmt(P.home.at)})을 아직 코트로 보내지 않았습니다 · <b>📡 코트로 보내기</b>를 눌러 주세요</div>`);
+  else if(st&&st.k==='plan')n.push(`<div class="alert warn pl-note"><b>⚠ 코트로 보낸 뒤 운영표가 바뀌었습니다</b> (보낸 때 ${fmt(P.sent.at)}) — 바뀐 코트가 있으면 <b>📡 코트로 보내기</b>를 다시 해 주세요</div>`);
+  else if(st&&st.k==='never')n.push(`<div class="alert pl-note"><b>📡 아직 코트로 보내지 않았습니다</b> — 운영표를 다 짠 뒤 <b>📡 코트로 보내기</b>를 눌러 주세요</div>`);
+  return n.join('');}
+function courtHas(L,app,names){const c=Object.values(COURTS).find(c=>c.court===L);if(!c)return {st:'none'};
+  const b=c.apps&&c.apps[app]&&c.apps[app].board;if(!b||!Array.isArray(b.divs))return {st:c.online?'nobd':'off',on:c.online};
+  const base=n=>String(n||'').replace(/ · \d+조$/,''),set=new Set(names),D=b.divs.filter(d=>set.has(base(d.name)));  /* 코트는 인원이 많으면 「 · 1조」「 · 2조」로 나눔 */
+  return {st:c.online?'on':'off',n:new Set(D.map(d=>base(d.name))).size,u:D.some(d=>d.n==null)?null:D.reduce((a,d)=>a+(+d.n||0),0),miss:names.filter(x=>!b.divs.some(d=>base(d.name)===x))};}
+function chkHtml(TL){const H=P.home,evs=events(),inLane=new Set();(P.lanes||[]).forEach(l=>l.forEach(id=>inLane.add(id)));
+  const rowsOf=e=>P.roster.filter(r=>r.ev===e).length,laneOf=e=>Object.values(G).filter(g=>g.ev===e&&inLane.has(g.id)).reduce((a,g)=>a+g.units,0);
+  const all=[...new Set([...evs,...Object.keys((H&&H.counts)||{})])].sort((a,b)=>evRank(a)-evRank(b));
+  const cell=(a,b)=>a==null||b==null?`<td>${b==null?'—':b}</td>`:`<td class="${a===b?'ck-ok':'ck-bad'}"><b>${b}</b>${a===b?' ✓':` <small>(${b-a>0?'+':''}${b-a})</small>`}</td>`;
+  const T1=`<table><tr><th>종목</th><th>① 홈페이지 접수</th><th>② 본부 운영표</th><th>③ 코트에 배정</th></tr>${all.map(e=>{const h=H&&H.counts?(H.counts[e]||0):null,r=rowsOf(e),l=laneOf(e);
+      return `<tr><td><b>${esc(e)}</b>${isTeam(e)?' <small class="muted">(팀)</small>':''}</td><td>${h==null?'—':h}</td>${cell(h,r)}${cell(r,l)}</tr>`;}).join('')}
+    <tr><td><b>합계</b></td><td>${H&&H.counts?Object.values(H.counts).reduce((a,b)=>a+b,0):'—'}</td>${cell(H&&H.counts?Object.values(H.counts).reduce((a,b)=>a+b,0):null,P.roster.length)}${cell(P.roster.length,all.reduce((a,e)=>a+laneOf(e),0))}</tr></table>`;
+  const S=P.sent,keys=S?Object.keys(S.by||{}).sort():[];
+  const T2=S?`<table><tr><th>코트</th><th>종목 앱</th><th>④ 본부가 보낸 것</th><th>⑤ 코트 노트북에 있는 것</th></tr>${keys.map(k=>{const [L,app]=k.split('|'),x=S.by[k],c=courtHas(L,app,x.names);
+      const got=c.st==='none'?'<span class="chip">코트 못 찾음</span>':c.st==='off'&&c.n==null?'<span class="chip bad">끊김</span>':c.st==='nobd'?'<span class="small muted">코트 운영석 화면을 열면 보입니다</span>':
+        `<span class="${c.n===x.n&&(c.u==null||c.u===x.u)?'ck-ok':'ck-bad'}"><b>${c.n}부문${c.u==null?'':` · ${c.u}건`}</b>${c.n===x.n&&(c.u==null||c.u===x.u)?' ✓':' ⚠'}</span>${c.u==null?' <small class="muted">(인원은 코트 1.7.36부터)</small>':''}${c.st==='off'?' <span class="chip bad">끊김</span>':''}${c.miss&&c.miss.length?`<div class="small muted">코트에 없는 부문 ${c.miss.length}개: ${c.miss.slice(0,4).map(esc).join(' · ')}${c.miss.length>4?' …':''} → 코트 노트북에서 「명단 가져오기」를 했는지 확인</div>`:''}`;
+      return `<tr><td><b>${L}코트</b></td><td>${APPN[app]||app}</td><td>${x.n}부문 · ${x.u}건</td><td>${got}</td></tr>`;}).join('')}</table>`:'<span class="small muted">아직 코트로 보낸 적이 없습니다</span>';
+  return `<div class="pl-mask"><div class="pl-modal"><div class="row between"><h3>👥 인원 맞추기</h3><button class="btn" data-p="chkX">닫기 ✕</button></div>
+    <span class="small muted">홈페이지 → 본부 → 코트로 가는 동안 빠진 선수가 없는지 숫자로 비교합니다 (건 = 개인 1명 · 복식·단체·팀 1팀). 초록 ✓는 앞 칸과 같음, 빨강은 다름입니다. 보여 주기만 하고 명단은 바꾸지 않습니다.</span>
+    ${noteHtml()}
+    <h4 style="margin:6px 0 2px">홈페이지 → 본부 운영표 ${H?`<small class="muted">(${esc(H.name||'')} · 받은 때 ${new Date(H.at).toLocaleString('ko-KR')})</small>`:'<small class="muted">(홈페이지 「🏢 본부로 보내기」로 받은 명단이 아니라 ①은 비어 있습니다)</small>'}</h4>
+    <div style="overflow-x:auto">${T1}</div>
+    <h4 style="margin:10px 0 2px">본부 → 코트 노트북 ${S?`<small class="muted">(보낸 때 ${new Date(S.at).toLocaleString('ko-KR')})</small>`:''}</h4>
+    <div style="overflow-x:auto">${T2}</div>
+    <span class="small muted">②와 ③이 다르면 운영표에서 코트에 넣지 않은 부문이 있는 것입니다 · ④와 ⑤가 다르면 그 코트 노트북에서 「명단 가져오기」를 다시 하거나 「📡 코트로 보내기」를 다시 해 주세요.</span>
+  </div></div>`;}
 function ovlHtml(O){return `<div class="pl-mask"><div class="pl-modal"><div class="row between"><h3>⚠ 선수 겹침 ${O.list.length}건</h3><button class="btn" data-p="ovlX">닫기 ✕</button></div>
   <span class="small muted">한 선수가 여러 종목에 나갈 때, 예상 출전 시각 차이가 「경기 시간 + 겹침 여유 ${Math.max(0,Number(P.buf)||0)}분」보다 짧으면 표시합니다 (같은 이름·도장·부별을 같은 선수로 봄). 카드를 끌어 한쪽 부문을 앞이나 뒤로 옮기면 사라집니다.</span>
   ${O.list.length?`<div style="overflow:auto"><table><tr><th>선수</th><th>먼저</th><th>나중</th><th>차이</th></tr>${O.list.slice(0,200).map(o=>{const [a,b]=o.a.t<=o.b.t?[o.a,o.b]:[o.b,o.a];
@@ -2401,9 +2445,11 @@ function draw(){
       <div class="pl-g"><button class="btn primary" data-p="autoSched" ${has?'':'disabled'} title="A·B 품새 · C·D 격파 · E 태권체조·팀 경연 · 학년 순 B조→A조 · 유치·실버부는 정한 시각 뒤 · 두 종목 출전 겹침 조절">🗓 자동 일정표 구성</button><button class="btn" data-p="auto" ${has?'':'disabled'} title="예전 방식: 종목별 걸리는 시간으로 코트 수를 나눔">✨ 자동 추천</button><button class="btn" data-p="virt">🧪 가상 데이터</button><button class="btn" data-p="imp">📥 명단 엑셀</button><input type="file" accept=".xlsx,.xls,.csv" data-p="file" hidden></div>`:''}
       ${has?`<span class="pl-kpis"><span class="pl-kpi ${late>tgt?'bad':'ok'}" title="전체 예상 종료 · ${late>tgt?`목표보다 ${Math.round(late-tgt)}분 늦음`:`목표 ${hm(tgt)} 안`}"><small>종료</small><b>${act.length?hm(late):'-'}</b></span>
         ${act.length>1?`<span class="pl-kpi ${late-early>=30?'warn':''}" title="가장 빨리 끝나는 코트 ${hm(early)} · 가장 늦게 끝나는 코트 ${hm(late)}"><small>코트 차이</small><b>${Math.round(late-early)}분</b></span>`:''}
+        <button class="pl-kpi ${(()=>{const k=(sendState()||{}).k;return HOMECHG||k==='home'||k==='plan'?'bad':'ok';})()}" data-p="chk" title="홈페이지·본부·코트 인원 비교"><small>인원 맞추기</small><b>👥 확인</b></button>
         <button class="pl-kpi ${nOv?'bad':'ok'}" data-p="ovl" title="눌러서 겹치는 선수 보기"><small>선수 겹침</small><b>${nOv}명</b></button>
         <span class="pl-kpi" title="${esc(P.src||'명단')} · ${evs.map(e=>esc(e)+' '+evCount(e)).join(' · ')}"><small>인원</small><b>${P.roster.reduce((a,x)=>a+(isTeam(x.ev)?(+x.cnt||1):1),0)}명</b></span>${HOMEDRAW()?'<span class="pl-kpi" title="홈페이지에서 추첨한 순서 그대로 코트로 보내고, 코트에서는 다시 추첨하지 못합니다"><small>대진</small><b>🎲 홈페이지 추첨</b></span>':''}</span>`:''}
     </div>
+    ${has?noteHtml():''}
     ${has?`<div class="pl-live-slot">${liveHtml(TL)}</div>`:''}
     ${!has?`<div class="pl-board"><div class="pl-empty">아직 명단이 없습니다.<br>「🧪 가상 데이터」로 800명 가상 명단을 넣어 시험하거나,<br>「📥 명단 엑셀」로 접수 명단(종목·부별·조·성별·이름·도장 칸)을 넣어 주세요.</div></div>`:
     VIEW.mode==='tower'?towerHtml(TL,tgt):VIEW.mode==='time'?timelineHtml(TL,O,tgt,late,early):
@@ -2418,6 +2464,7 @@ function draw(){
             <div class="m">${esc(it.g.ev)} · ${isTeam(it.g.ev)?it.g.units+'팀':it.g.people+'명'} · ${Math.round(dur(it.g))}분</div></div>`).join('')}</div></div>`;}).join('')}</div>`}`;
   if(SEND.open&&has)r.insertAdjacentHTML('beforeend',sendHtml(TL));
   if(OVL&&has)r.insertAdjacentHTML('beforeend',ovlHtml(O));
+  if(CHK&&has)r.insertAdjacentHTML('beforeend',chkHtml(TL));
   if(ASSOC.open&&has)r.insertAdjacentHTML('beforeend',assocHtml());
   if(SW.open&&has)r.insertAdjacentHTML('beforeend',swapHtml(TL));
   r.querySelectorAll('.pl-list').forEach((l,i)=>{if(keep[i])l.scrollTop=keep[i];});
@@ -2448,6 +2495,7 @@ function bind(r){
     else if(a==='vCard'||a==='vTime'||a==='vTower'){VIEW.mode=a==='vCard'?'card':a==='vTime'?'time':'tower';saveView();draw();}
     else if(a==='vSet'){VIEW.set=!VIEW.set;saveView();draw();}
     else if(a==='ovl'){OVL=true;draw();}else if(a==='ovlX'){OVL=false;draw();}
+    else if(a==='chk'){CHK=true;draw();}else if(a==='chkX'){CHK=false;draw();}
     else if(a==='dojang')exportDojang();
     else if(a==='goMove'){close();if(window.KS_HQOPEN)KS_HQOPEN('move');}
     else if(a==='send'){SEND.open=true;SEND.res={};draw();}
@@ -2555,13 +2603,14 @@ function sendHtml(TL){
 async function postJ(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j;}
 async function sendAll(){P.lanes=(P.lanes||[]).map(lateOrder);
   if(!(window.KS_FIELD&&KS_FIELD.status))return toast('코트로 보내기는 현장 모드(본부 노트북 프로그램)에서만 됩니다');
-  SEND.busy=true;SEND.res={};draw();const TL=timeline();let ok=0,bad=0;
+  SEND.busy=true;SEND.res={};draw();const TL=timeline();let ok=0,bad=0;const SENT={};
   for(let i=0;i<TL.length&&i<8;i++){const L=L8[i],apps=laneApps(TL[i]);const out=[];
     for(const [app,list] of Object.entries(apps)){
       if(app==='kyorugi'){out.push('겨루기 ✕ (아직 지원 안 함)');bad++;continue;}
-      try{const rows=rowsFor(app,list),times={};list.forEach(({it,k})=>times[divName(it,k)]=hm(it.s));await postJ('/api/hq/push',{court:L,app,name:'대회 운영표',divs:list.length,rows,from:'본부 운영표',sim:SEND.sim&&!ISLIVE(),times,homeDraw:HOMEDRAW()});out.push(`${APPN[app]} ${rows.length-1}건 ✓`);ok++;}
+      try{const rows=rowsFor(app,list),times={};list.forEach(({it,k})=>times[divName(it,k)]=hm(it.s));await postJ('/api/hq/push',{court:L,app,name:'대회 운영표',divs:list.length,rows,from:'본부 운영표',sim:SEND.sim&&!ISLIVE(),times,homeDraw:HOMEDRAW()});SENT[L+'|'+app]={n:list.length,u:list.reduce((a,y)=>a+y.it.g.units,0),names:list.map(({it,k})=>divName(it,k))};out.push(`${APPN[app]} ${rows.length-1}건 ✓`);ok++;}
       catch(e){out.push(`${APPN[app]} ✕ ${e.message}`);bad++;}}
     SEND.res[L]=out.join(' · ');draw();}
+  if(ok){P.sent={at:Date.now(),by:SENT,homeAt:(P.home&&P.home.at)||0,sig:planSig()};save();}
   SEND.busy=false;draw();toast(bad?`보냄 ${ok}건 · 실패 ${bad}건 (표에서 확인)`:`모든 코트로 보냈습니다${SEND.sim?' · 코트 노트북 운영석에서 명단이 바로 바뀝니다':''}`);
 }
 async function simReset(){
@@ -2811,12 +2860,13 @@ window.addEventListener('message',async ev=>{const d=ev.data;if(!d||d.type!=='ks
     let rulesOk=false;if(d.rules&&typeof d.rules==='object'){try{const rr=await fetch('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...d.rules,at:Date.now()})});rulesOk=rr.ok;if(rulesOk)toast('홈페이지에서 정한 종목별 경기 규칙을 받았습니다 · 모든 코트 노트북에 보냅니다',6000);}catch(e){}}
     if(!n){reply({state:'ok',only:true,rules:rulesOk,n:0});return;}   /* 접수 없이 경기 규칙만 */
     if(P.roster.length&&!confirm(`홈페이지에서 「${d.name||'대회'}」 명단 ${n}건이 왔습니다.\n\n지금 대회 운영표 명단(${P.roster.length}줄)을 이 명단으로 바꿀까요?\n(바꾼 뒤 「📡 코트로 보내기」를 눌러야 코트에 갑니다)`)){reply({state:'no',rules:rulesOk});toast('홈페이지 명단을 넣지 않았습니다'+(rulesOk?' · 경기 규칙은 받았습니다':''));return;}
-    open();const r=await importObjs(rows,`홈페이지 · ${d.name||'대회'}`);reply({state:'ok',rules:rulesOk,...r});}
+    open();const r=await importObjs(rows,`홈페이지 · ${d.name||'대회'}`);if(d.home&&typeof d.home==='object'){P.home={...d.home,at:Date.now(),rows:n};HOMECHG=null;save();draw();setTimeout(homePoll,3000);}reply({state:'ok',rules:rulesOk,...r});}
   catch(x){reply({state:'err',err:x.message||String(x)});toast(x.message||'홈페이지 명단을 읽지 못했습니다');}});
-window.KSPLAN={open,close,tileState,sched:()=>P.roster.length&&P.lanes.some(l=>l.length)?daySched():null,get state(){return clone(P);},get simOn(){return !!SEND.simOn;}};
+window.KSPLAN={open,close,tileState,homePoll:()=>homePoll(),sched:()=>P.roster.length&&P.lanes.some(l=>l.length)?daySched():null,get state(){return clone(P);},get simOn(){return !!SEND.simOn;}};
 
 (async function(){
   try{const d=JSON.parse(localStorage.getItem('ks_hqplan')||'null');if(d){P={...clone(DEF),...d};rebuild();}}catch(e){}
+  setTimeout(homePoll,5000);
   try{if(window.claude&&window.claude.use){DB=await window.claude.use('db');DL=await window.claude.use('downloads');
     DB.doc('hqplan/main').onSnapshot(s=>{if(s&&s.exists)adopt(s.data());});
     DB.collection('courts').onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());COURTS=m;if(OPEN&&SEND.open&&!(D&&D.on))draw();});}}catch(e){}
