@@ -1805,7 +1805,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.21'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.22'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -2179,6 +2179,11 @@ function fxTools(c,e,R){const T=UI.fxTool;if(!T||T.id!==e.id)return '';const sp=
     return `<tr class="edrow"><td colspan="6"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>옮길 곳</b><select id="fxTo" style="max-width:420px"><option value="auto">자동 — 지금 접수 부문(부별·학년)에 맞는 곳</option>${G.map((g,gi)=>g.parts.map((p,pi)=>cur&&cur.gi===gi&&cur.pi===pi?'':`<option value="${gi}|${pi}">${esc(g.name)}${g.parts.length>1?` ${pi+1}조`:''} (${p.length}${u})</option>`).join('')).join('')}</select>
       <button class="btn gold" type="button" data-a="fxMoveGo" data-id="${e.id}">여기로 옮기기</button><span class="small mute">컷오프는 맨 뒤 순서에, 토너먼트는 부전승 자리에 들어갑니다. 원래 부문과 새 부문만 바뀝니다. 학년이 틀린 것이면 「학년·부 고치기」가 접수까지 함께 고칩니다.</span></div></td></tr>`;}
   if(T.k==='gr')return editRow(e,true,'fxGradeSave');
+  /* v1.7.22 팀 이름 고치기: 출전 순서·팀원은 그대로, 이름만 */
+  if(T.k==='tn'){const cur=String((e.f||{}).team||'');
+    return `<tr class="edrow"><td colspan="6"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end"><label class="f"><span>지금 팀 이름</span><input type="text" value="${esc(cur||'(없음)')}" disabled style="width:220px"></label>
+      <label class="f"><span>새 팀 이름</span><input type="text" id="fxTN" value="${esc(cur)}" style="width:260px" autocomplete="off"></label>
+      <button class="btn gold" type="button" data-a="fxTNGo" data-id="${e.id}">팀 이름 바꾸기</button><span class="small mute">출전 순서·팀원·부문은 그대로이고 이름만 바뀝니다 · 「💾 고친 대진 저장」 → 「🏢 본부로 보내기」 → 「📡 코트로 보내기」</span></div></td></tr>`;}
   if(T.k==='tm'){const team=new Set(e.athleteIds),L=D().athletes.filter(a=>a.coachId===e.coachId&&!team.has(a.id)).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'));
     const A=e.athleteIds.map(id=>D().athletes.find(a=>a.id===id)||{id,name:'(지워진 선수)'});
     return `<tr class="edrow"><td colspan="6"><div class="stack" style="gap:8px">
@@ -2188,7 +2193,7 @@ function fxTools(c,e,R){const T=UI.fxTool;if(!T||T.id!==e.id)return '';const sp=
       <div class="row" style="gap:8px;align-items:center"><button class="btn gold" type="button" data-a="fxTeamGo" data-id="${e.id}">팀원 교체</button><span class="small mute">팀 이름·출전 순서는 그대로이고 팀원만 바뀝니다 · 기록에 「부상 교체」로 남고, 다친 선수의 다른 종목 접수는 그대로입니다</span></div></div></td></tr>`;}
   return '';}
 function fxRowBtns(e,arm){const team=e.athleteIds.length>1;
-  return `<div class="row" style="gap:4px;flex-wrap:wrap"><button class="btn sm" type="button" data-a="fxTool" data-k="mv" data-id="${e.id}">옮기기</button><button class="btn sm" type="button" data-a="fxTool" data-k="gr" data-id="${e.id}">학년·부 고치기</button>${team?`<button class="btn sm" type="button" data-a="fxTool" data-k="tm" data-id="${e.id}">팀원 교체</button>`:''}<button class="btn sm danger" type="button" data-a="fxDrop" data-id="${e.id}">${arm?'한 번 더 누르면 뺍니다 (접수 취소)':'빼기'}</button></div>`;}
+  return `<div class="row" style="gap:4px;flex-wrap:wrap"><button class="btn sm" type="button" data-a="fxTool" data-k="mv" data-id="${e.id}">옮기기</button><button class="btn sm" type="button" data-a="fxTool" data-k="gr" data-id="${e.id}">학년·부 고치기</button>${team||(e.f||{}).team?`<button class="btn sm" type="button" data-a="fxTool" data-k="tn" data-id="${e.id}">팀 이름 고치기</button>`:''}${team?`<button class="btn sm" type="button" data-a="fxTool" data-k="tm" data-id="${e.id}">팀원 교체</button>`:''}<button class="btn sm danger" type="button" data-a="fxDrop" data-id="${e.id}">${arm?'한 번 더 누르면 뺍니다 (접수 취소)':'빼기'}</button></div>`;}
 function fxNewForm(c){const N=UI.fxNew||{},co=D().users.filter(u=>u.role==='coach').sort((a,b)=>String(a.org||'').localeCompare(String(b.org||''),'ko')),cid=N.coach||'';
   const L=cid?D().athletes.filter(a=>a.coachId===cid).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko')):[];
   const ev=[...(offers(c,'recognized')?[['ps:공인','공인 품새 (개인)']]:[]),...(offers(c,'freestyle')?[['ps:자유','자유 품새 (개인)']]:[]),...(c.sports.includes('gyeokpa')?gpEvs(c).filter(x=>x.k!=='team').map(x=>['gp:'+x.n,'격파 · '+x.n]):[])];
@@ -2289,6 +2294,12 @@ function fxAct(a,b,S){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;
   if(a==='fxGradeSave'){const v=k=>(document.getElementById('ed_'+k)||{}).value;const nf={};['div','grade','cls'].forEach(k=>{const x=v(k);if(x!=null)nf[k]=x;});if(v('ev'))nf.ev=v('ev');
     {const k=dupKey({...e,f:{...e.f,...nf}}),other=D().entries.find(y=>y.id!==e.id&&y.compId===e.compId&&y.status!=='cancel'&&dupKey(y)===k);if(other)return toast('같은 선수가 같은 종목에 이미 접수되어 있습니다');}
     run(async()=>{const mv=await fxRegrade(c,e,nf);UI.fxTool=null;UI.edit=null;UI.edF=null;render();toast(mv?`접수를 고치고 옮겼습니다${mv}`:'접수를 고쳤습니다 · 부문은 그대로입니다',7000);});return;}
+  if(a==='fxTNGo'){const nw=String((document.getElementById('fxTN')||{}).value||'').replace(/\s+/g,' ').trim(),old=String((e.f||{}).team||'');
+    if(!nw)return toast('새 팀 이름을 적어 주세요');if(nw===old)return toast('지금 이름과 같습니다');
+    run(async()=>{await q(sb.from('entries').update({f:{...(e.f||{}),team:nw}}).eq('id',e.id));await reload();fxR(c);fxRefresh(c);
+      const R=HD.res[c.id],w=R&&R[sp]?hdFind(R[sp],e.id):null;if(w)R[sp][w.gi].edited=true;
+      fxLogAdd(c,{sp,eid:e.id,db:1,t:`팀 이름 바꿈: ${old||'(없음)'} → ${nw}`});UI.fxTool=null;UI.fxQ=nw;render();
+      toast(`팀 이름을 「${nw}」(으)로 바꿨습니다 · 「💾 고친 대진 저장」을 누르면 홈페이지 대진표에 나오고, 본부·코트로 다시 보내 주세요`,8000);});return;}
   if(a==='fxTeamGo'){const outs=[...document.querySelectorAll('.fxOut:checked')].map(i=>i.value),ins=[...document.querySelectorAll('.fxIn:checked')].map(i=>i.value),v=k=>((document.getElementById(k)||{}).value||'').trim(),nn=v('fxNN');
     if(!outs.length)return toast('빠질 선수(다친 선수)를 골라 주세요');if(!ins.length&&!nn)return toast('들어갈 선수를 고르거나 새 선수 이름을 넣어 주세요');
     run(async()=>{const inIds=[...ins];const co=coachOf(e.coachId),org0=(D().athletes.find(a=>a.id===e.athleteIds[0])||{}).org||co.org||'';
