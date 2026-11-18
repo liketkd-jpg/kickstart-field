@@ -61,6 +61,13 @@ func slimBoard(raw json.RawMessage) (map[string]any, string, string) {
 		}
 		out["upcoming"] = slim
 	}
+	// v1.7.38 남은 부문 전체 출전 순서 (지도자 「내 도장」 예상 시각) — 코트 노트북이 400건까지로 줄여 보냄
+	if pl, ok := b["plan"].([]any); ok {
+		if len(pl) > 80 {
+			pl = pl[:80]
+		}
+		out["plan"] = pl
+	}
 	comp, _ := b["comp"].(string)
 	name, _ := b["appName"].(string)
 	return out, comp, name

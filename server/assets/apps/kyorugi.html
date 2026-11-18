@@ -3052,6 +3052,9 @@ function board(){
     now,curDiv:c?c.d.name:'',progress:c?{done:c.done,total:c.total}:null,next,nextDiv,
     divs:info.map(x=>({name:x.d.name,done:x.done,total:x.total})),
     /* 대기실 연결: 지금·다음 부문 선수 명단 (출석 체크용) */
+    /* v1.7.38 남은 부문 전체 출전 순서 (지도자 「내 도장」: 우리 선수가 몇 번째 뒤·몇 시쯤) · k=그 부문에서 남은 순서(0=지금/바로 다음) · 400건까지 */
+    plan:(()=>{let n=0;return [...info.slice(ci),...info.slice(0,ci)].filter(x=>x&&x.total>x.done).slice(0,80).map(x=>{const L=[];let k=0;
+      x.it.forEach(it=>{if(it.done)return;if(n<400){L.push({k,l:now&&it.id===now.id?1:0,p:(it.names||[]).filter(q=>q&&q.name).map(q=>[q.name,q.team||''])});n++;}k++;});return {name:x.d.name,done:x.done,total:x.total,it:L};});})(),
     upcoming:[...info.slice(ci),...info.slice(0,ci)].filter(x=>x&&x.total>x.done).slice(0,4).map(x=>{const m=new Map();
       x.it.forEach(it=>(it.names||[]).forEach(p=>{if(p&&p.name)m.set(p.name+'|'+(p.team||''),{name:p.name,team:p.team||''});}));return {name:x.d.name,names:[...m.values()].slice(0,120)};}),
     totals:{divs:info.length,doneDivs:info.filter(x=>x.total&&x.done===x.total).length},

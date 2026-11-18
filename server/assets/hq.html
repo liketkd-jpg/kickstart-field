@@ -1818,8 +1818,8 @@ async function lvComps(){LVS.loading=true;schedule();try{const tok=await sbToken
   catch(e){LVS.err=e.message||String(e);}finally{LVS.loading=false;schedule();}}
 /* 코트별 예상 시각 (본부 「코트 진행」과 같은 계산) */
 function lvEta(court,app){const L=lanes().find(x=>x.court===court&&x.app===app);if(!L)return null;let t=NOW();const divs=[];let next=0;
-  L.rem.forEach(d=>{const left=d.total-d.done;if(!d.live&&!next)next=t;if(divs.length<4)divs.push({name:d.name,start:d.live?0:t});t+=left*L.p.min*60000;});
-  return {end:L.end,next,divs,real:!!L.p.real};}
+  L.rem.forEach(d=>{const left=d.total-d.done;if(!d.live&&!next)next=t;if(divs.length<80)divs.push({name:d.name,start:d.live?0:t});t+=left*L.p.min*60000;});
+  return {end:L.end,next,divs,real:!!L.p.real,min:L.p.min};}  /* v1.7.38 부문 전체 + 한 순서 걸리는 분(min) → 선수별 예상 시각 */
 async function lvPush(force){const cf=CFG();if(!cf.lvOn||!cf.lvComp||LVS.busy||!lvLeader())return;const now=Date.now();
   if(!force&&now-LVS.lastAt<12000)return;
   LVS.busy=true;try{const r=await fetch('/api/view',{cache:'no-store'});if(!r.ok)throw new Error('진행 정보를 읽지 못했습니다');const snap=await r.json();
