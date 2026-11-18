@@ -627,7 +627,8 @@ document.addEventListener('keydown',e=>{if(!LANGOPEN)return;const L=[...document
 /* ================= 기본 자료 (대회 앱 불러오기 형식과 같은 값) ================= */
 const SPORTS={poomsae:{n:'품새',c:'ps'},kyorugi:{n:'겨루기',c:'ky'},gyeokpa:{n:'격파',c:'gp'},hero:{n:'태권 히어로',c:'hr'}};
 /* 태권 히어로 (유아 장애물 스피드): 부별(반 이름 기준 나이) + 성별로 부문 */
-const HR_DIV=['3세부','4세부','5세부','6세부','7세부','초등 1학년부','초등 2학년부','초등 3학년부','초등 4학년부','초등 5학년부','초등 6학년부'];
+const HR_DIV=['3세부','4세부','5세부','6세부','7세부','초등 1학년부','초등 2학년부','초등 3학년부','초등 4학년부','초등 5학년부','초등 6학년부','아빠부','엄마부'];
+const HR_PARENT=d=>/^(아빠|엄마)부$/.test(String(d||''));
 const PS_DIV=['유치부','초등부','중등부','고등부','대학부','일반부','성인부','금강1부','금강2부','태백1부','태백2부','지태1부','지태2부','천권부','한수부','장년1부','장년2부','실버부'];
 /* 태권체조 · 팀 대항 종합경연: 품새 부별 + 통합부(여러 나이가 섞인 팀) · 팀 성별(혼합 기본) */
 const TEAM_DIV=[...PS_DIV,'통합부'],TEAM_G=['혼합','남','여'];
@@ -885,7 +886,7 @@ function defaults(sport,a){
   if(TABS[sport]&&TABS[sport].type){const d=defaults('poomsae',a);return {...d,type:TABS[sport].type,kind:'단체',team:'',tg:'혼합'};}
   if(sport==='poomsae'){if(kidAge(a.birth))return {type:'공인',kind:'개인',div:'유치부',grade:kidAge(a.birth)};return {type:'공인',kind:'개인',div:{초:'초등부',중:'중등부',고:'고등부',대:'대학부',일:'일반부'}[s.lv],grade:s.lv==='초'?s.g+'학년':s.lv==='중'||s.lv==='고'?s.g+'학년':''};}
   if(sport==='kyorugi'){const div={초:'초등부',중:'중등부',고:'고등부',대:'대학부',일:'일반부'}[s.lv],grade=['초','중','고'].includes(s.lv)?s.g+'학년':'';return {div,grade,weight:kyGuess(kyW(div,grade,a.gender),a.weight)};}
-  if(sport==='hero'){const k=a.birth?YEAR-Number(a.birth.slice(0,4))+1:6;return {div:k<=3?'3세부':k<=7?k+'세부':`초등 ${Math.min(k-7,6)}학년부`};}
+  if(sport==='hero'){const k=a.birth?YEAR-Number(a.birth.slice(0,4))+1:6;if(k>=20)return {div:a.gender==='여'?'엄마부':'아빠부'};return {div:k<=3?'3세부':k<=7?k+'세부':`초등 ${Math.min(k-7,6)}학년부`};}
   const lv=kidAge(a.birth)?`유치 ${kidAge(a.birth)}부`:s.lv==='초'?(s.g>=5?'초등 고학년부':'초등 중학년부'):s.lv==='중'?`중등 ${s.g}학년부`:s.lv==='고'?`고등 ${s.g}학년부`:s.lv==='대'?(s.g>=3?'대학 2부':'대학 1부'):'일반 1부';
   return {ev:'체공 도약 격파',div:lv,weight:a.weight||'',height:a.height||''};
 }
@@ -1229,7 +1230,7 @@ function vAthletes(){const L=myAth();const ed=UI.editAth?L.find(a=>a.id===UI.edi
 function entryLabel(e){const f=e.f||{};const names=e.athleteIds.map(id=>(D().athletes.find(a=>a.id===id)||{}).name||'(삭제됨)');
   if(e.sport==='poomsae')return {who:f.team?`${f.team} (${names.length}명)`:names.join(' · '),what:`${f.type}${isTeamT(f.type)?'':' '+f.kind} · ${f.div}${f.grade?' '+f.grade:''}${isTeamT(f.type)?' · '+(f.tg||'혼합'):''}${clsTxt(f)}`};
   if(e.sport==='kyorugi')return {who:names[0],what:`${f.div}${f.grade?' '+f.grade:''} · ${f.weight}${clsTxt(f)}`};
-  if(e.sport==='hero'){const a=D().athletes.find(x=>x.id===e.athleteIds[0])||{};return {who:names[0],what:`${f.div} · ${a.gender==='여'?'여자부':'남자부'}`};}
+  if(e.sport==='hero'){const a=D().athletes.find(x=>x.id===e.athleteIds[0])||{};return {who:names[0],what:HR_PARENT(f.div)?f.div:`${f.div} · ${a.gender==='여'?'여자부':'남자부'}${f.parent?' · 가족 릴레이 '+f.parent:''}`};}
   return {who:names.join(' · '),what:`${f.ev} · ${f.div}${f.weight?' · '+f.weight+'kg':''}${f.height?' · '+f.height+'cm':''}${clsTxt(f)}`};}
 function entryForm(c,tab,a){const f=UI.form||defaults(tab,a);UI.form=f;if(tab==='gyeokpa'&&!gpEvs(c).some(x=>x.n===f.ev))f.ev=gpEvs(c)[0].n;const L=myAth(),sport=TABS[tab].sp,fixed=TABS[tab].type;
   let h='';
@@ -1268,7 +1269,8 @@ function entryForm(c,tab,a){const f=UI.form||defaults(tab,a);UI.form=f;if(tab===
   }else if(sport==='hero'){
     h=`<div class="grid2"><label class="f"><span>부별 <i>*</i></span>${sel('eDiv',HR_DIV,f.div,'data-on="ef" data-k="div"')}</label>
       <label class="f"><span>성별 (선수 정보)</span><input type="text" value="${esc(a.gender)}자부" disabled></label></div>
-      <span class="small mute">유아 장애물 스피드 경기입니다. 부별(반 이름 기준 나이)과 성별로 부문이 나뉩니다. 생년월일로 미리 맞춰 두었으니 확인만 해 주세요.</span>`;
+      ${HR_PARENT(f.div)?'':`<label class="f"><span>보호자 이름 (가족 릴레이 · 선택)</span><input type="text" maxlength="20" value="${esc(f.parent||'')}" data-on="ef" data-k="parent" placeholder="예: 김엄마 — 아이와 이어 달릴 엄마나 아빠"></label>`}
+      <span class="small mute">유아 장애물 스피드 경기입니다. 부별(반 이름 기준 나이)과 성별로 부문이 나뉩니다. 생년월일로 미리 맞춰 두었으니 확인만 해 주세요. 엄마·아빠가 직접 뛰는 경기는 부모님을 선수로 등록하고 「아빠부」·「엄마부」를 고르세요. 가족 릴레이에 나가면 아이 접수에 보호자 이름을 적어 주세요.</span>`;
   }else{
     const ev=GP_EV.find(x=>x.n===f.ev)||GP_EV[3];const lv=ev.k==='power'||ev.k==='team'?['대학부',...GP_LV]:GP_LV;
     h=`<div class="grid2"><label class="f"><span>종목</span>${sel('eEv',gpEvs(c).map(x=>x.n),f.ev,'data-on="ef" data-k="ev"')}</label>
@@ -1395,7 +1397,7 @@ function bulkParse(wb,c){
         const WL=kyW(div,grade,p.gender),wn=kyNorm(w);if(!WL.some(x=>x.v===wn)){errs.push([sh,ri,`${nm}: ${div}${div==='초등부'?' '+grade:''} ${p.gender}자에는 「${w}」 체급이 없습니다 (${WL.map(x=>x.v).join('·')})`]);continue;}
         ents.push({sp:'kyorugi',f:{div,grade,weight:wn,...(cls?{cls}:{})},P:[p],rows:[ri],sh});}
       else if(meta.sp==='hero'){if(!HR_DIV.includes(div)){errs.push([sh,ri,`${nm}: 「${div}」는 태권 히어로 부별 목록에 없습니다 (${HR_DIV.join('·')})`]);continue;}
-        ents.push({sp:'hero',f:{div},P:[p],rows:[ri],sh});}
+        const par=String(R[col('보호자','보호자 이름','보호자 (가족 릴레이)','부모')]??'').trim();ents.push({sp:'hero',f:{div,...(par&&!HR_PARENT(div)?{parent:par.slice(0,20)}:{})},P:[p],rows:[ri],sh});}
       else{const ev=gpEvs(c).find(x=>x.n===String(g('kind')||'').trim());if(!ev){errs.push([sh,ri,GP_EV.some(x=>x.n===String(g('kind')||'').trim())?`${nm}: 「${String(g('kind')).trim()}」은 이 대회 격파 종목이 아닙니다 (${gpEvs(c).map(x=>x.n).join('·')})`:`${nm}: 격파 종목을 목록에서 골라 주세요`]);continue;}
         const kg=g('kg'),cm=g('height');if(ev.k==='power'&&!Number(kg)){errs.push([sh,ri,`${nm}: 위력격파는 체중을 적어 주세요`]);continue;}if(ev.k==='height'&&!Number(cm)){errs.push([sh,ri,`${nm}: 높이 뛰어차기는 신장을 적어 주세요`]);continue;}
         const f={ev:ev.n,div,weight:kg?String(kg):'',height:cm?String(cm):'',...(cls?{cls}:{})};
@@ -1417,7 +1419,7 @@ function bulkParse(wb,c){
   return {ents:ok,errs,rowsN,newA:newA.filter(p=>used.has(p)),fee:ok.reduce((s,e)=>s+feeOf(c,e.sp,e.f),0)};}
 function bulkCard(c){const B=UI.bulk;const minors=B?B.newA.filter(p=>{const a=age(p.birth);return a!==null&&a<14;}).length:0;
   const lab=e=>e.sp==='poomsae'?(e.f.team?`${e.f.team} (${e.P.length}명)`:e.P.map(p=>p.name).join(' · ')):e.sp==='gyeokpa'&&e.f.team!=null&&e.P.length>1?`${e.f.team||'단체'} (${e.P.length}명)`:e.P[0].name;
-  const what=e=>(e.sp==='poomsae'?`${e.f.type}${isTeamT(e.f.type)?'':' '+e.f.kind} · ${e.f.div}${e.f.grade?' '+e.f.grade:''}${isTeamT(e.f.type)?' · '+(e.f.tg||'혼합'):''}`:e.sp==='kyorugi'?`${e.f.div}${e.f.grade?' '+e.f.grade:''} · ${e.f.weight}`:e.sp==='hero'?`${e.f.div} · ${e.P[0].gender}자부`:`${e.f.ev} · ${e.f.div}`)+clsTxt(e.f);
+  const what=e=>(e.sp==='poomsae'?`${e.f.type}${isTeamT(e.f.type)?'':' '+e.f.kind} · ${e.f.div}${e.f.grade?' '+e.f.grade:''}${isTeamT(e.f.type)?' · '+(e.f.tg||'혼합'):''}`:e.sp==='kyorugi'?`${e.f.div}${e.f.grade?' '+e.f.grade:''} · ${e.f.weight}`:e.sp==='hero'?(HR_PARENT(e.f.div)?e.f.div:`${e.f.div} · ${e.P[0].gender}자부${e.f.parent?' · 보호자 '+e.f.parent:''}`):`${e.f.ev} · ${e.f.div}`)+clsTxt(e.f);
   const bySh={};(B?B.ents:[]).forEach(e=>{bySh[e.sh]=(bySh[e.sh]||0)+1;});
   return `<section class="card stack" id="bulkBox" style="border-color:var(--gold3)"><div class="row between"><div><h3>📄 엑셀로 한꺼번에 접수</h3>
       <span class="small mute">선수가 많으면 양식에 적어 올리세요. 시트: 공인품새 · 프리스타일품새 · 태권체조 · 팀대항 종합경연 · 겨루기 · 격파 · 태권히어로</span></div>
@@ -3961,8 +3963,8 @@ function exportRows0(c,sport){
       return [i+1,team?(f.team||A.map(a=>a.name).join(',')):A[0].name,orgOk(A[0].org)||co(e).org,co(e).name,...appDivGrade(f),isTeamT(f.type)&&f.tg?({혼합:'혼성',남:'남',여:'여'}[f.tg]||'혼성'):g.size>1?'혼성':A[0].gender,f.type,isTeamT(f.type)?'단체':f.kind,team?A.map(a=>a.name).join(','):''];})];}
   if(sport==='kyorugi'){const H=['번호','이름','소속','지도자','부별','학년','성별','체급'];
     return [H,...E.map((e,i)=>{const a=ath(e.athleteIds[0]);return [i+1,a.name,orgOk(a.org)||co(e).org,co(e).name,e.f.div,e.f.grade||'',a.gender,e.f.weight];})];}
-  if(sport==='hero'){const H=['번호','이름','소속','지도자','부별','성별','생년월일'];
-    return [H,...E.map((e,i)=>{const a=ath(e.athleteIds[0]);return [i+1,a.name,orgOk(a.org)||co(e).org,co(e).name,e.f.div,a.gender,a.birth||''];})];}
+  if(sport==='hero'){const H=['번호','이름','소속','지도자','부별','성별','생년월일','보호자 (가족 릴레이)'];
+    return [H,...E.map((e,i)=>{const a=ath(e.athleteIds[0]);return [i+1,a.name,orgOk(a.org)||co(e).org,co(e).name,e.f.div,a.gender,a.birth||'',e.f.parent||''];})];}
   const H=['이름','종목','성별','부별','소속','지도자','체중(kg)','신장(cm)','팀원','부문'];
   return [H,...E.map(e=>{const A=e.athleteIds.map(ath),f=e.f,team=f.ev==='기술격파 단체전';
     return [team?`${orgOk(A[0].org)||co(e).org} 팀`:A[0].name,f.ev,team?'':A[0].gender,f.div,orgOk(A[0].org)||co(e).org,co(e).name,f.weight||'',f.height||'',team?A.map(a=>a.name).join(','):'',''];})];
