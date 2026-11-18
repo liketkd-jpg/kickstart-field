@@ -966,7 +966,9 @@ function vLive(id){const c=D().comps.find(x=>x.id===id);
     <div id="lvroot" class="lvroot"></div>
     <p class="small mute" style="text-align:center;margin:0">대회장 노트북이 보내는 진행 상황입니다. 몇 초 늦을 수 있고, 공식 결과는 대회 본부 발표를 따릅니다.</p></div>`;}
 function liveMount(id){const el=document.getElementById('lvroot');if(!el)return;
-  if(LIVE.id!==id){LIVE.id=id;LIVE.snap=null;LIVE.at='';LIVE.none=false;LIVE.st={q:'',tab:'courts'};}
+  if(LIVE.id!==id){LIVE.id=id;LIVE.snap=null;LIVE.at='';LIVE.none=false;LIVE.st={q:'',tab:'courts'};
+    /* v1.7.30 지도자 계정으로 들어오면 「⭐ 내 도장」을 그 도장으로 (직접 고른 적이 있으면 그대로) */
+    try{const u=me();if(u&&u.org&&!localStorage.getItem('lv_my'))LIVE.st.my=String(u.org).trim();}catch(e){}}
   LIVE.v=LV.mount(el,LIVE.st);LIVE.st=LIVE.v.st;LIVE.v.set(LIVE.snap||(LIVE.none?{comp:'',courts:[]}:null));if(!LIVE.snap)livePoll(true);}
 /* 10초마다: 바뀐 시각만 먼저 묻고, 바뀌었을 때만 내용을 받음 (데이터를 아낌) */
 async function livePoll(force){const r=route();if(!r.startsWith('live-')||LIVE.busy||!M.liveOk)return;if(!force&&document.hidden)return;const id=r.slice(5);LIVE.busy=true;
@@ -1838,7 +1840,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.29'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.30'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');

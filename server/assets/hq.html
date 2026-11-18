@@ -378,8 +378,15 @@ const route=()=>{const h=location.hash.replace('#','');return ['board','admin','
 const S={courts:{},cfg:{},announce:null,log:[],ready:false,moves:{},mvArm:null};window.KS_HQS=()=>S;
 let DB=null,DL=null;
 const CFGDEF={autoCall:true,voice:true,notice:{text:'',mode:'off'},manual:[],points:[3,2,1]};
-const CFG=()=>({...CFGDEF,...(S.cfg||{})});
-const saveCfg=p=>DB.doc('hqcfg/main').set({...CFG(),...p}).catch(()=>toast('저장하지 못했습니다'));
+/* v1.7.37 「지도자용 진행 상황」의 대회·보내기 켜기는 이 노트북에도 따로 적어 둠 → 본부 설정 저장이 실패해도 고른 대회가 다른 대회로 바뀌지 않음 */
+const LVLOC=()=>{try{return JSON.parse(localStorage.getItem('ks_hq_lvloc')||'{}')||{};}catch(e){return {};}};
+const LVKEYS=['lvComp','lvCompName','lvOn'];
+const CFG=()=>({...CFGDEF,...(S.cfg||{}),...LVLOC()});
+async function saveCfg(p){const lv={};LVKEYS.forEach(k=>{if(k in p)lv[k]=p[k];});
+  if(Object.keys(lv).length){try{localStorage.setItem('ks_hq_lvloc',JSON.stringify({...LVLOC(),...lv}));}catch(e){}if(typeof schedule==='function')schedule();}
+  const doc=()=>{const c={...CFGDEF,...(S.cfg||{}),...LVLOC(),...p};return DB.doc('hqcfg/main').set(c);};
+  try{await doc();}catch(e1){await new Promise(r=>setTimeout(r,1500));try{await doc();}catch(e){const why=e&&(e.code||e.message)||'';
+    toast(Object.keys(lv).length&&Object.keys(lv).length===Object.keys(p).length?'본부 설정에는 저장하지 못했지만 이 노트북에는 저장했습니다 (보내기는 그대로 됩니다)':`저장하지 못했습니다${why?' ('+why+')':''} · 본부 화면 창이 너무 많이 열려 있으면 몇 개 닫고 다시 해 주세요`);}}}
 const NOW=()=>Date.now();
 /* v1.4.69 공지 표시 시간: 정한 시간이 지나면 모니터에서 저절로 내려감 (until). 「계속」이면 직접 내릴 때까지 */
 const NDUR=[[60,'1분'],[180,'3분'],[300,'5분'],[600,'10분'],[0,'계속']];
@@ -1883,7 +1890,7 @@ async function lvClick(a,b){const cf=CFG();
   else if(a==='lvCopy'){const u=lvUrl(cf.lvComp);try{await navigator.clipboard.writeText(u);toast('링크를 복사했습니다 · 오픈 채팅방에 붙여 넣으세요');}catch(e){prompt('이 주소를 복사하세요',u);}}
   else if(a==='lvQR'){if(window.KSQR)KSQR.open({title:'지도자용 진행 상황',items:[{label:cf.lvCompName||'실시간 결과',sub:'휴대폰 카메라로 찍으면 어디서나 (인터넷)',url:lvUrl(cf.lvComp)}]});}
   else if(a==='lvPrint'||a==='lvPrintW')lvPrint(a==='lvPrintW');}
-document.addEventListener('change',e=>{if(e.target&&e.target.dataset&&e.target.dataset.lvcomp){const c=(LVS.comps||[]).find(x=>x.id===e.target.value);if(c){saveCfg({lvComp:c.id,lvCompName:c.name});LVS.last='';}e.target.blur();}});
+document.addEventListener('change',e=>{if(e.target&&e.target.dataset&&e.target.dataset.lvcomp){const c=(LVS.comps||[]).find(x=>x.id===e.target.value);if(c){saveCfg({lvComp:c.id,lvCompName:c.name});LVS.last='';toast(`「${c.name}」을(를) 골랐습니다`);}e.target.blur();}});
 
 /* ---------- 시작 ---------- */
 (async function boot(){
