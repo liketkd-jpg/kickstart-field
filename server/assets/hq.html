@@ -2813,7 +2813,9 @@ function assocHtml(){const R=ASSOC.rep,li=(t,a,c)=>a.length?`<div class="pl-rep 
 
 /* ---------- 하루 일정표: A4 가로 한 장에 코트를 나란히 ---------- */
 function daySched(){const TL=timeline();return {start:P.start,courts:TL.map((x,i)=>({c:L8[i]||String(i+1),ev:x.evs.map(e=>ELBL[e]||e).join('·'),end:x.items.length?hm(x.end):'',
-  rows:[].concat(...x.items.map((it,k)=>[...x.marks.filter(m=>m.at===k).map(m=>({b:1,t:`${m.b.ic} ${m.b.l}`,s:hm(m.b.s),e:hm(m.b.e)})),{s:hm(it.s),e:hm(it.e),t:glabel(it.g),n:gcount(it.g),ev:it.g.ev}]))}))};}
+  rows:[].concat(...x.items.map((it,k)=>[...x.marks.filter(m=>m.at===k).map(m=>({b:1,t:`${m.b.ic} ${m.b.l}`,s:hm(m.b.s),e:hm(m.b.e)})),{s:hm(it.s),e:hm(it.e),t:glabel(it.g),n:gcount(it.g),ev:it.g.ev,
+    /* v1.7.39 지도자·학부모 「⭐ 내 도장」: 선수 이름·도장·예상 시각 (경기 시작 전에도) */
+    p:(()=>{const per=perOf(it.g.ev);return it.g.members.map((ri,k)=>{const r=P.roster[ri];return r&&r.name?[r.name,r.dojang||'',hm(it.s+k*per)]:null;}).filter(Boolean);})()}]))}))};}
 function printDay(){const D=daySched(),cf=(window.KS_HQS&&KS_HQS().cfg)||{},title=(cf.compName||'').trim().replace(/\s*\n\s*/g,' '),n=D.courts.length;
   const most=Math.max(1,...D.courts.map(c=>c.rows.length)),fs=Math.max(7,Math.min(12,Math.floor(560/(most+3)/1.55)));
   const w=window.open('','_blank');if(!w)return toast('새 창을 열지 못했습니다 (팝업 차단을 풀어 주세요)');
