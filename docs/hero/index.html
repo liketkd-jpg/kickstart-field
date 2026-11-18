@@ -1,4 +1,53 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta name="theme-color" content="#0a0f2c"><style>[hidden]{display:none!important}body{margin:0}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta name="theme-color" content="#0a0f2c"><style>[hidden]{display:none!important}body{margin:0}
+/* ===== 왕중왕전 대진표 (전광판) ===== */
+.kokwrap{height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:1.4vh}
+.kokhead{text-align:center;display:grid;gap:.3vh}
+.kokt{font-family:var(--f-num,var(--f-hero));font-weight:800;font-size:2.4vw;letter-spacing:.14em;background:linear-gradient(90deg,var(--gold),#fff6c8,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.kokhead small{font-size:1.15vw;color:var(--muted);letter-spacing:.2em}
+.koknote{text-align:center;color:var(--muted);font-size:1.3vw;margin:0}
+.kokq{display:flex;flex-wrap:wrap;gap:1.4vw;justify-content:center;align-content:center}
+.kokqc{min-width:14vw;border:2px dashed rgba(255,255,255,.18);border-radius:1.2vw;padding:1.2vw 1.6vw;display:grid;gap:.3vw;text-align:center}
+.kokqc small{color:var(--muted);font-size:1vw;letter-spacing:.1em}.kokqc b{font-size:2vw}.kokqc span{color:var(--muted);font-size:1vw}
+.kokqc.on{border:2px solid var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent);box-shadow:0 0 2vw color-mix(in srgb,var(--gold) 30%,transparent)}
+.kokbr{display:grid;grid-template-columns:repeat(calc(var(--cols) - 1),minmax(0,1fr)) minmax(0,.8fr);gap:2.6vw;min-height:0;height:100%}
+.kcol{display:grid;grid-template-rows:auto minmax(0,1fr);gap:1vh;min-height:0}
+.kcol h3{margin:0;text-align:center;font-size:1.1vw;letter-spacing:.14em;color:var(--muted);font-weight:800}
+.kcol.fin h3{color:var(--gold)}
+.kbody{display:flex;flex-direction:column;justify-content:space-around;min-height:0}
+.kpair{flex:1;display:flex;flex-direction:column;justify-content:space-around;position:relative;min-height:0}
+.kpair::after{content:"";position:absolute;right:-1.3vw;top:25%;bottom:25%;width:1.3vw;border:.22vw solid rgba(255,255,255,.28);border-left:0;border-radius:0 .6vw .6vw 0}
+.kpair.one::after{display:none}
+.kmatch{position:relative;display:grid;gap:.35vh;margin:.4vh 0}
+.kcol:not(:first-child) .kmatch::before{content:"";position:absolute;left:-1.3vw;width:1.3vw;top:50%;border-top:.22vw solid rgba(255,255,255,.28)}
+.kslot{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:.6vw;align-items:center;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.14);border-radius:.8vw;padding:.45vw .9vw;min-height:3.2vw}
+.kslot .nm{font-weight:900;font-size:1.35vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kslot small{grid-row:2;color:var(--muted);font-size:.85vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kslot .tm{grid-row:1/3;grid-column:2;font-family:var(--f-num,monospace);font-weight:800;font-size:1.2vw;color:var(--muted)}
+.kslot.empty{background:transparent;border-style:dashed;opacity:.5}
+.kokwrap.q{grid-template-rows:auto auto minmax(0,1fr)}
+.kslot.bye{opacity:.5;border-style:dashed;background:transparent}.kslot.bye .nm{font-weight:500;font-size:.95vw;color:var(--muted);letter-spacing:.06em}
+.kslot.byew{border-color:var(--neon,#38e8ff);background:color-mix(in srgb,var(--neon,#38e8ff) 10%,rgba(255,255,255,.04))}
+.kbye{font-style:normal;font-family:var(--f-num,monospace);font-size:.8vw;letter-spacing:.12em;color:#04121a;background:var(--neon,#38e8ff);border-radius:999px;padding:.15vw .6vw}
+.kslot{height:3.6vw;min-height:0}
+.kslot.win{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 16%,rgba(255,255,255,.04));box-shadow:0 0 1.4vw color-mix(in srgb,var(--gold) 35%,transparent)}
+.kslot.win .tm{color:var(--gold)}
+.kslot.lose{opacity:.42}
+.kslot.anim{animation:kflip .6s cubic-bezier(.2,1.4,.4,1) both;animation-delay:var(--d,0s)}
+.kslot.wanim{animation:kwin 1.2s ease both}
+@keyframes kflip{from{opacity:0;transform:perspective(600px) rotateX(-90deg) translateX(-1vw)}to{opacity:1;transform:none}}
+@keyframes kwin{0%{transform:scale(1)}30%{transform:scale(1.08)}100%{transform:scale(1)}}
+.kcol:not(:first-child) .kslot.anim{animation:krise .8s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes krise{from{opacity:0;transform:translateX(-4vw) scale(.9);filter:brightness(2)}to{opacity:1;transform:none;filter:none}}
+.kcol.trophy .kbody{justify-content:center}
+.kchamp{display:grid;justify-items:center;gap:.6vh;padding:1.6vw 1vw;border-radius:1.4vw;border:2px dashed rgba(255,255,255,.2);text-align:center}
+.kchamp .cup{font-size:5vw;filter:grayscale(1) opacity(.35)}
+.kchamp b{font-size:1.8vw;font-weight:900}.kchamp small{color:var(--muted);font-size:1vw}
+.kchamp.on{border:2px solid var(--gold);background:radial-gradient(circle at 50% 30%,color-mix(in srgb,var(--gold) 30%,transparent),transparent 70%)}
+.kchamp.on .cup{filter:drop-shadow(0 0 1.6vw var(--gold))}
+.kchamp.anim{animation:kchamp 1.4s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes kchamp{0%{opacity:0;transform:scale(.4) rotate(-8deg)}60%{opacity:1;transform:scale(1.12)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.kslot.anim,.kslot.wanim,.kchamp.anim{animation:none}}
+</style></head><body>
 <title>태권 히어로 챌린지</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -739,7 +788,7 @@ const T={
  ko:{app:'태권 히어로',sub:'유아·초등 장애물 스피드 챌린지',tSetup:'설정',tRun:'경기 진행',tBoard:'전광판',openBoard:'전광판 새 창',
   focusOk:'버튼 입력 준비됨',focusNo:'화면을 한 번 클릭하세요',
   evInfo:'대회 정보',fxTitle:'대회 연출 (켜기·끄기)',fxIntro:'입장 소개',fxIntroD:'시작을 누르면 레인마다 히어로가 날아 들어와 아이 이름·도장을 소개하고, 네 명이 함께 선 뒤 출발합니다. 소개 중 시작 버튼을 다시 누르면 건너뜁니다.',fxRecord:'신기록 알림',fxRecordD:'이 부문 오늘 가장 빠른 기록(페널티 포함)이 깨지면 전광판에 NEW RECORD!가 터집니다. 전광판에 오늘 최고 기록도 보입니다.',fxCheer:'관중 응원 미터',fxCheerD:'노트북 마이크로 레인별 함성 크기를 재서 전광판 게이지로 보여 주고 응원 1등을 발표합니다. 기록·순위와는 상관없습니다.',fxCam:'결승선 카메라 다시 보기',fxCamD:'결승선 정면에 웹캠을 두면, 1등 도착 순간 앞뒤 3초를 결과 확정 때 슬로모션으로 다시 보여 주고 그 레인을 확대합니다. 이 노트북 화면과 전광판 창에서 나옵니다.',bestToday:'오늘 최고',newRec:'오늘 최고 기록을 새로 세웠어요!',oldRec:'이전 기록',readyGo:'준비! READY?',skipIntro:'소개 건너뛰고',cheerT:'응원 미터',cheerHelp:'레인 버튼을 누르면 「○레인 응원해 주세요!」 뒤 4초 동안 함성을 잽니다. 「자동」은 선수가 있는 레인을 차례로 재고 응원 1등을 발표합니다.',cheerCall:'{n}레인 응원해 주세요!',cheerWin:'응원 1등은 {n}레인!',cheerAuto:'자동으로 차례대로',cheerWinBtn:'응원 1등 발표',micNo:'마이크를 쓸 수 없습니다. 브라우저의 마이크 허용을 확인해 주세요',camOn:'카메라 켜기',camOff:'카메라 끄기',camDefault:'기본 카메라',camNo:'카메라를 켜지 못했습니다. 웹캠 연결과 브라우저 카메라 허용을 확인해 주세요. (현장 모드 프로그램이나 홈페이지 앱 주소에서 됩니다)',camHint:'카메라를 켜면 여기에 결승선 화면이 보입니다. 네 레인이 모두 보이게 맞춰 주세요.',camRev:'화면 오른쪽이 1레인 (카메라 방향이 반대일 때)',camZoom:'1등 레인 확대',slowmo:'슬로모션',flow_replay:'{s}초 다시 보기',pwBtn:'결승 파워업 연출',judge:'심판',lkBtn:'심판 폰 · 전광판 QR',lkTitle:'심판 폰 · 전광판 연결',lkHow:'연결 방식',lkModeField:'현장 모드 와이파이',lkModeOnline:'인터넷',lkField:'현장 모드 와이파이로 연결됨 · 심판 폰을 같은 공유기 와이파이에 연결한 뒤 QR을 찍으세요',lkOnline:'인터넷으로 연결됨 · 방 코드 {r} · 심판 폰은 인터넷(LTE·와이파이)만 되면 됩니다',lkNone:'아직 연결되지 않았습니다',lkWhyNone:'심판 폰 연결은 KICKSTART 현장 모드 프로그램이나 홈페이지 앱 주소(liketkd-jpg.github.io/kickstart-field/hero/)에서 열었을 때 됩니다. 인터넷 방식은 인터넷 연결이 필요합니다.',lkBoardHelp:'TV·태블릿 전광판',lkNoKid:'이번 조 선수 없음',lkCopy:'주소 복사',copiedLink:'주소를 복사했습니다',lkSteps:'레인마다 심판 한 명이 자기 레인 QR을 찍습니다. 선수가 있는 레인만 밝게 표시됩니다(2명 경기면 2명, 3명이면 3명). 심판은 감점(+초)을 누르고, 아이가 결승선을 지나면 「도착!」을 누릅니다. 초록 점은 연결된 심판입니다.',lkWaitOp:'운영석을 기다리는 중…',lkConnecting:'연결하는 중…',lkRest:'이번 조는 이 레인에 선수가 없습니다. 다음 조를 기다려 주세요.',licTitle:'사용 권한 (허가 코드)',licPractice:'연습 모드 · 허가 코드 넣기',licLife:'평생',licKinds:{event:'대회권',week:'일주일권',month:'한 달권',year:'1년권',life:'평생권'},licSt_expired:'사용 기간이 끝났습니다',licSt_early:'사용 기간 전입니다',licSt_place:'이 코드는 홈페이지 앱 주소에서만 쓸 수 있습니다',licSt_need:'인터넷에 연결해 권한을 다시 확인해 주세요',licSt_app:'태권 히어로용 코드가 아닙니다',licNet:'인터넷에 연결되어 있어야 코드를 확인할 수 있습니다',licFail:'코드를 확인하지 못했습니다',licHelp:'코드가 없으면 연습 모드로 모든 기능을 써 볼 수 있습니다. 다만 선수는 {n}명까지이고 전광판에 「연습용」이 표시됩니다. KICKSTART UP에서 받은 코드를 넣으면 풀립니다.',licGo:'코드 확인하고 풀기',licBusy:'확인 중…',licRe:'지금 다시 확인',licDel:'이 기기에서 코드 빼기',licNeed:'코드를 넣어 주세요',licDone:'허가되었습니다 · {h}',licCap:'연습 모드는 선수 {n}명까지입니다 ({c}명은 넣지 못했습니다). 허가 코드를 넣으면 모두 등록됩니다',licOnline:'인터넷 주소에서만',licFile:'인터넷 없이 {n}일',licChecked:'마지막 확인',evNameEn:'대회명 (영어 화면용)',evDivEn:'부문 (영어 화면용)',evName:'대회명',evDiv:'부문',
-  mode:'경기 방식',mCut:'컷오프만',mTour:'토너먼트만',mBoth:'컷오프 후 토너먼트',
+  mode:'경기 방식',mComm:'생활체육 4명 1조 + 왕중왕전',mCommD:'4명씩 조를 나눠 한 번 뛰고, 조마다 1등 금 · 2등 은 · 나머지는 모두 동메달. 그다음 같은 부문의 조 1등끼리 1:1 토너먼트(왕중왕전)로 트로피를 겨룹니다.',grpRound:'조 경기',kokR:'왕중왕전 {n}강',kokSemi:'왕중왕전 준결승',kokFin:'왕중왕전 결승',kok:'왕중왕전',kokEn:'CHAMPION OF CHAMPIONS',kokDraw:'🎲 왕중왕전 대진 추첨',kokRedraw:'🎲 다시 추첨',kokDrawn:'왕중왕전 대진 추첨을 마쳤습니다. 첫 경기를 시작하면 다시 추첨할 수 없습니다.',kokBye:'부전승',match:'경기',kokOne:'조가 하나뿐이라 왕중왕전 없이 조 1등이 우승입니다.',kokWait:'조 경기가 모두 끝나면 조 1등끼리 왕중왕전 대진을 추첨합니다.',kokQual:'왕중왕전 진출',kokGrpDone:'조 경기가 모두 끝났습니다. 조 1등 {n}명이 왕중왕전에 나갑니다.',sepT:'같은 소속 떨어뜨리기',sepTD:'같은 도장(소속) 아이들이 한 조에 몰리지 않게 고르게 나눕니다.',kokChamp:'왕중왕전 우승',kokTrophy:'트로피',kokNext:'다음 라운드 →',kokGrp:'{n}조 1등',mCut:'컷오프만',mTour:'토너먼트만',mBoth:'컷오프 후 토너먼트',
   mCutD:'모든 선수가 한 번씩 뛰고 기록 순으로 최종 순위를 정합니다.',mTourD:'4명씩 한 조로 뛰고 조별 상위 선수가 다음 라운드로 올라갑니다.',mBothD:'컷오프 기록 상위 선수만 토너먼트에 진출합니다.',
   advN:'토너먼트 진출 인원',perHeat:'조별 진출 인원',
   course:'코스 종목과 페널티',courseHelp:'종목 이름과 실수 1회당 더해지는 초를 정하세요. 경기 중에는 레인마다 이 버튼으로 페널티를 줍니다.',stName:'종목명',stEn:'영문명',stPen:'실수 1회 +초',addSt:'종목 추가',
@@ -759,7 +808,7 @@ const T={
  en:{app:'Taekwon Heroes',sub:'Kids Obstacle Speed Challenge',tSetup:'Setup',tRun:'Run Event',tBoard:'Scoreboard',openBoard:'Scoreboard window',
   focusOk:'Buttons ready',focusNo:'Click the screen once',
   evInfo:'Event',fxTitle:'Show effects (on/off)',fxIntro:'Runner intros',fxIntroD:'Press Start and each lane’s hero flies in with the child’s name and team, then all line up and the race starts. Press Start again to skip.',fxRecord:'New record alert',fxRecordD:'When today’s fastest time in this division (with penalties) is beaten, NEW RECORD! bursts on the board. Today’s best is also shown.',fxCheer:'Crowd cheer meter',fxCheerD:'Measures crowd noise per lane with the laptop mic, shows gauges and announces the loudest lane. Does not affect results.',fxCam:'Finish-line camera replay',fxCamD:'With a webcam facing the finish line, the 3 seconds before and after the winner crosses replay in slow motion when results are confirmed, zoomed to that lane.',bestToday:'Today’s best',newRec:'A new best time today!',oldRec:'Previous',readyGo:'READY?',skipIntro:'Skip intro &',cheerT:'Cheer meter',cheerHelp:'Tap a lane: after “Cheer for lane N!” the noise is measured for 4 seconds. Auto measures each lane with a runner, then announces the winner.',cheerCall:'Cheer for lane {n}!',cheerWin:'Loudest: lane {n}!',cheerAuto:'Auto, lane by lane',cheerWinBtn:'Announce winner',micNo:'Microphone not available. Allow mic access in the browser',camOn:'Turn camera on',camOff:'Turn camera off',camDefault:'Default camera',camNo:'Could not start the camera. Check the webcam and browser permission (works in field mode or at the online app address).',camHint:'Turn the camera on to see the finish line here. Make all four lanes visible.',camRev:'Lane 1 is on the right side of the picture',camZoom:'Zoom to the winner’s lane',slowmo:'slow motion',flow_replay:'Replay {s}s',pwBtn:'Final power-up',judge:'Judge',lkBtn:'Judge phones · board QR',lkTitle:'Connect judge phones & scoreboard',lkHow:'Connection',lkModeField:'Field-mode Wi-Fi',lkModeOnline:'Internet',lkField:'Connected over field-mode Wi-Fi · join the same router Wi-Fi, then scan',lkOnline:'Connected over the internet · room {r} · judge phones just need internet',lkNone:'Not connected yet',lkWhyNone:'Judge phones work when this app is opened in the KICKSTART field-mode program or at the online app address (liketkd-jpg.github.io/kickstart-field/hero/). Internet mode needs a connection.',lkBoardHelp:'TV / tablet scoreboard',lkNoKid:'No runner this heat',lkCopy:'Copy link',copiedLink:'Link copied',lkSteps:'One judge per lane scans that lane’s QR. Lanes with a runner are highlighted. Judges tap penalties (+s) and press FINISH when the child crosses the line. A green dot means the judge is connected.',lkWaitOp:'Waiting for the operator…',lkConnecting:'Connecting…',lkRest:'No runner in this lane this heat. Please wait for the next heat.',licTitle:'License code',licPractice:'Practice mode · enter code',licLife:'lifetime',licKinds:{event:'Event pass',week:'1 week',month:'1 month',year:'1 year',life:'Lifetime'},licSt_expired:'License period has ended',licSt_early:'License period has not started',licSt_place:'This code works only at the online app address',licSt_need:'Connect to the internet to re-check the license',licSt_app:'This code is not for Taekwon Heroes',licNet:'Internet is needed to check the code',licFail:'Could not check the code',licHelp:'Without a code you can try every feature in practice mode, with up to {n} runners and a “PRACTICE” mark on the scoreboard. Enter the code from KICKSTART UP to unlock.',licGo:'Check & unlock',licBusy:'Checking…',licRe:'Re-check now',licDel:'Remove code from this device',licNeed:'Enter a code',licDone:'Unlocked · {h}',licCap:'Practice mode allows {n} runners ({c} not added). Enter a license code to add everyone.',licOnline:'online only',licFile:'{n} days offline',licChecked:'last check',evNameEn:'Event name (English screens)',evDivEn:'Division (English screens)',evName:'Event name',evDiv:'Division',
-  mode:'Format',mCut:'Cut-off only',mTour:'Tournament only',mBoth:'Cut-off, then tournament',
+  mode:'Format',mComm:'Groups of 4 + Champion of Champions',mCommD:'Kids run once in groups of 4. Each group: 1st gold, 2nd silver, everyone else bronze. Then the group winners of each division meet 1-on-1 for the trophy.',grpRound:'Group race',kokR:'Champions Round of {n}',kokSemi:'Champions Semifinal',kokFin:'Champions Final',kok:'Champion of Champions',kokEn:'CHAMPION OF CHAMPIONS',kokDraw:'🎲 Draw the Champions bracket',kokRedraw:'🎲 Draw again',kokDrawn:'Bracket drawn. Once the first match starts it cannot be redrawn.',kokBye:'Bye',match:'Match',kokOne:'Only one group, so the group winner is the champion.',kokWait:'When every group has run, the group winners are drawn into the Champions bracket.',kokQual:'Qualified',kokGrpDone:'All groups are done. {n} group winners go to the Champions bracket.',sepT:'Spread out the same dojang',sepTD:'Kids from the same dojang are spread across groups.',kokChamp:'Champion of Champions',kokTrophy:'Trophy',kokNext:'Next round →',kokGrp:'Group {n} winner',mCut:'Cut-off only',mTour:'Tournament only',mBoth:'Cut-off, then tournament',
   mCutD:'Every child runs once; final ranking by time.',mTourD:'Heats of 4; the top runners of each heat move on.',mBothD:'Only the fastest cut-off runners enter the tournament.',
   advN:'Runners into tournament',perHeat:'Advance per heat',
   course:'Course stations & penalties',courseHelp:'Name each station and set the seconds added per mistake. During a run, each lane gets a penalty button for every station.',stName:'Station',stEn:'English name',stPen:'+sec per mistake',addSt:'Add station',
@@ -861,9 +910,77 @@ function makeHeats(ids,snake){
   return groups.map(g=>newHeat(g));
 }
 function newHeat(ids){const lanes=[0,1,2,3].map(i=>ids[i]??null);return{lanes,time:[null,null,null,null],pen:[{},{},{},{}],dnf:[false,false,false,false],done:false}}
+
+/* ================= 생활체육 4명 1조 + 왕중왕전 =================
+   조 나누기는 경기 시스템(품새·격파 생활체육)과 같은 규칙: 조 수는 4명 기준 올림, 인원은 고르게 (5명 3·2 · 6명 3·3 · 9명 3·3·3 · 10명 4·3·3).
+   조마다 1등 금 · 2등 은 · 나머지 동(3위). 같은 부문 조 1등끼리 1:1 토너먼트(왕중왕전) — 부전승 자리까지 모두 추첨, 4레인에서 두 경기를 함께 뜁니다. */
+const isComm=()=>S.mode==='community';
+function commSizes(n){const G=4;if(n<=G)return n?[n]:[];const k=Math.ceil(n/G),b=Math.floor(n/k),x=n%k;return Array.from({length:k},(_,i)=>b+(i<x?1:0))}
+function commGroups(players){
+  const team=id=>{const p=players.find(x=>x.id===id);return String(p&&p.team||'').trim()};
+  let ids=players.map(p=>p.id);if(S.shuffle!==false)ids=shuffle(ids);
+  const sizes=commSizes(ids.length),G=sizes.map(()=>[]);
+  if(S.cfg.sepT===false){let i=0;sizes.forEach((s,g)=>{for(let k=0;k<s;k++)G[g].push(ids[i++])})}
+  else{const by=new Map();ids.forEach(id=>{const t=team(id)||'\u0000'+id;if(!by.has(t))by.set(t,[]);by.get(t).push(id)});
+    [...by.values()].sort((a,b)=>b.length-a.length).flat().forEach(id=>{const t=team(id);let best=-1,bs=Infinity;
+      G.forEach((g,gi)=>{if(g.length>=sizes[gi])return;const same=t?g.filter(x=>team(x)===t).length:0;const sc=same*100+g.length/sizes[gi]+gi*1e-6;if(sc<bs){bs=sc;best=gi}});G[best].push(id)});
+    G.forEach((g,i)=>G[i]=shuffle(g))}
+  return G.map(g=>{const h=newHeat(g);h.grp=true;return h})}
+function pairWin(h,i){const j=i^1;if(h.lanes[j]==null)return true;const a=total(h,i),b=total(h,j);if(a==null||b==null)return null;return a<b||(a===b&&i<j)}
+function grpWinners(r){return r.heats.map(h=>{const o=heatOrder(h).filter(i=>!h.dnf[i]);return o.length?h.lanes[o[0]]:(h.lanes.find(x=>x!=null)??null)}).filter(x=>x!=null)}
+function kokRoundOf(slots,stamp){
+  const matches=[];for(let i=0;i<slots.length;i+=2)matches.push({a:slots[i]??null,b:slots[i+1]??null,w:null});
+  matches.forEach(m=>{if(m.a!=null&&m.b==null)m.w=m.a;else if(m.b!=null&&m.a==null)m.w=m.b});
+  const real=matches.map((m,mi)=>mi).filter(mi=>matches[mi].a!=null&&matches[mi].b!=null),heats=[];
+  for(let i=0;i<real.length;i+=2){const A=matches[real[i]],B=i+1<real.length?matches[real[i+1]]:null;
+    const h=newHeat([A.a,A.b,B?B.a:null,B?B.b:null]);h.pair=true;h.mi=[real[i],B?real[i+1]:null];heats.push(h)}
+  return{kind:'kok',size:slots.length,matches,heats,final:slots.length===2,at:stamp||Date.now(),drawn:!!stamp}}
+const kokStarted=()=>S.rounds.some(r=>r.kind==='kok'&&r.heats.some(h=>h.done||h.time.some(x=>x!=null)));
+function kokDraw(){
+  if(R.phase==='running'||R.phase==='countdown')return;
+  const g=S.rounds.find(r=>r.kind==='grp');if(!g||!roundDone(g)||kokStarted())return;
+  const W=grpWinners(g);if(W.length<2)return;
+  let B=2;while(B<W.length)B*=2;const pairs=B/2,byes=B-W.length;
+  const byeAt=new Set(shuffle([...Array(pairs).keys()]).slice(0,byes)),pl=shuffle(W),slots=[];let k=0;
+  for(let p=0;p<pairs;p++){if(byeAt.has(p)){const top=Math.random()<.5;slots.push(top?pl[k++]:null,top?null:pl[k++])}else slots.push(pl[k++],pl[k++])}
+  S.rounds=S.rounds.filter(r=>r.kind!=='kok');S.rounds.push(kokRoundOf(slots,Date.now()));
+  clearFlow();S.cur={r:S.rounds.length-1,h:0};S.champ=null;S.board='bracket';R={phase:'idle',count:0,start:0,go:0};commit();sfx('whoosh')}
+function kokSettle(r,h){if(!h.pair)return;(h.mi||[]).forEach((mi,k)=>{if(mi==null)return;const m=r.matches[mi],i=k*2;m.w=pairWin(h,i)?h.lanes[i]:h.lanes[i+1]});S.kokFx={at:Date.now()}}
+function kokNext(r){const W=r.matches.map(m=>m.w);if(W.some(x=>x==null)||r.final)return false;
+  S.rounds.push(kokRoundOf(W));S.cur={r:S.rounds.length-1,h:0};S.board='bracket';R={phase:'idle',count:0,start:0,go:0};commit();sfx('whoosh');
+  if(W.length===2)setTimeout(()=>fx('powerup'),400);return true}
+const kokLabel=s=>s<=2?t('kokFin'):s===4?t('kokSemi'):t('kokR',{n:s});
+function commAnyRes(){return typeof anyResults==='function'?anyResults():(S.rounds||[]).some(r=>r.heats.some(h=>h.done||h.time.some(x=>x!=null)))}
+/* 전광판 · 왕중왕전 대진표: 추첨하면 이름이 한 칸씩 뒤집혀 나오고, 이긴 아이는 오른쪽(위) 칸으로 올라갑니다 */
+const KOK_SEEN=new Set();
+function kokAnim(key,at){if(KOK_SEEN.has(key))return'';KOK_SEEN.add(key);return Date.now()-(at||0)<9000?'anim':''}
+function boardKok(){
+  const g=S.rounds.find(r=>r.kind==='grp'),K=S.rounds.filter(r=>r.kind==='kok');
+  const title=`<div class="kokhead"><span class="kokt">${esc(t('kokEn'))}</span>${S.lang==='en'?'':`<small>${esc(t('kok'))}</small>`}</div>`;
+  if(!g)return`<div class="empty">${esc(t('noDraw'))}</div>`;
+  if(!K.length){const W=g.heats.map((h,hi)=>{const o=heatOrder(h).filter(i=>!h.dnf[i]);return{hi,pid:h.done&&o.length?h.lanes[o[0]]:null}});
+    return`<div class="kokwrap q">${title}<p class="koknote">${esc(g.heats.length<2?t('kokOne'):roundDone(g)?t('kokGrpDone',{n:W.length}):t('kokWait'))}</p>
+      <div class="kokq">${W.map(x=>{const p=x.pid!=null?P(x.pid):null;return`<div class="kokqc ${p?'on':''}"><small>${esc(t('kokGrp',{n:x.hi+1}))}</small><b>${p?esc(pn(p)):'?'}</b>${p&&p.team?`<span>${esc(p.team)}</span>`:''}</div>`}).join('')}</div></div>`}
+  const r0=K[0],cols=[],nR=Math.round(Math.log2(r0.size));
+  let prevW=null;
+  for(let c=0;c<nR;c++){const r=K[c],size=r0.size>>c,M=size/2;
+    const ms=Array.from({length:M},(_,mi)=>{const m=r?r.matches[mi]:{a:prevW?prevW[mi*2]:null,b:prevW?prevW[mi*2+1]:null,w:null},isBye=!!r&&(m.a==null)!==(m.b==null),slot=(pid,side)=>{
+        const key=`${S.dkey}|${c}|${mi}|${side}|${pid}`,p=pid!=null?P(pid):null,bye=isBye&&pid==null;
+        const st=isBye?(p?'byew':''):m.w!=null&&pid!=null?(m.w===pid?'win':'lose'):'';const h=r&&r.heats.find(x=>(x.mi||[]).includes(mi)),ln=h?h.lanes.indexOf(pid):-1;
+        const tm=h&&h.done&&ln>=0&&!bye?(h.dnf[ln]?t('dnf'):fmt(total(h,ln))):'';
+        const an=p?kokAnim(key,r?r.at:(S.kokFx&&S.kokFx.at)):'',wa=st==='win'?kokAnim(key+'|w',S.kokFx&&S.kokFx.at):'';
+        return`<div class="kslot ${st} ${p?'':'empty'} ${bye?'bye':''} ${an} ${wa?'wanim':''}" style="--d:${(c===0?(mi*2+(side==='b'?1:0)):0)*0.14}s"><span class="nm">${p?esc(pn(p)):bye?esc(t('kokBye'))+' · BYE':''}</span>${p&&p.team?`<small>${esc(p.team)}</small>`:''}<span class="tm">${st==='byew'?'<em class="kbye">BYE</em>':esc(tm)}</span></div>`};
+      return`<div class="kmatch ${isBye?'isbye':''}">${slot(m.a,'a')}${slot(m.b,'b')}</div>`});
+    prevW=(r?r.matches:Array.from({length:M},()=>({w:null}))).map(m=>m.w);
+    const pairs=[];for(let i=0;i<ms.length;i+=2)pairs.push(`<div class="kpair ${ms.length===1?'one':''}">${ms[i]}${ms[i+1]||''}</div>`);
+    cols.push(`<div class="kcol ${c===nR-1?'fin':''}"><h3>${esc(kokLabel(size))}</h3><div class="kbody">${pairs.join('')}</div></div>`)}
+  const fin=K.find(r=>r.final),cw=fin&&fin.matches[0].w,cp=cw!=null?P(cw):null;
+  cols.push(`<div class="kcol trophy"><h3>🏆 ${esc(t('kokTrophy'))}</h3><div class="kbody"><div class="kchamp ${cp?'on '+kokAnim('champ|'+S.dkey+'|'+cw,S.kokFx&&S.kokFx.at):''}"><div class="cup">🏆</div><b>${cp?esc(pn(cp)):'?'}</b>${cp&&cp.team?`<small>${esc(cp.team)}</small>`:''}</div></div></div>`);
+  return`<div class="kokwrap">${title}<div class="kokbr" style="--cols:${cols.length}">${cols.join('')}</div></div>`}
 function drawFor(players){
   let ids=players.map(p=>p.id); if(S.shuffle) ids=shuffle(ids);
   const rounds=[];
+  if(ids.length&&isComm()){rounds.push({kind:'grp',heats:commGroups(players)});return {players,rounds,cur:{r:0,h:0},champ:null,lastHeat:null}}
   if(ids.length){if(S.mode==='tour'||S.mode==='both'&&ids.length<=Math.max(4,S.advN)) rounds.push({kind:'tour',final:ids.length<=4,heats:makeHeats(ids,false)});
     else rounds.push({kind:'cut',heats:makeHeats(ids,false)});}
   return {players,rounds,cur:{r:0,h:0},champ:null,lastHeat:null};
@@ -883,18 +1000,22 @@ const curHeat=()=>curRound()?.heats[S.cur.h];
 function penSec(h,i){let s=0;const pp=h.pen[i]||{};for(const k in pp){const st=S.st.find(x=>x.id===k);if(st)s+=st.pen*pp[k]}return s}
 function total(h,i){if(h.dnf[i])return Infinity;if(h.time[i]==null)return null;return h.time[i]+penSec(h,i)*1000}
 function heatOrder(h){return [0,1,2,3].filter(i=>h.lanes[i]!=null&&total(h,i)!=null).sort((a,b)=>total(h,a)-total(h,b))}
-function placeOf(h,i){const o=heatOrder(h);const ix=o.indexOf(i);return ix<0?null:ix+1}
+function placeOf(h,i){if(h.pair){if(h.lanes[i]==null||total(h,i)==null)return null;const w=pairWin(h,i);return w==null?null:w?1:2}
+  const o=heatOrder(h);const ix=o.indexOf(i);return ix<0?null:(h.grp?Math.min(ix+1,3):ix+1)}
 function heatComplete(h){return h.lanes.every((p,i)=>p==null||h.dnf[i]||h.time[i]!=null)}
 function roundDone(r){return r&&r.heats.every(h=>h.done)}
 function roundLabel(ri){
   const r=S.rounds[ri];if(!r)return'';
+  if(r.kind==='grp')return t('grpRound');if(r.kind==='kok')return kokLabel(r.size);
   if(r.kind==='cut')return t('cutoff');
   if(r.final)return t('final');
   if(r.heats.length*S.perHeat<=4)return t('semi');
   const idx=S.rounds.slice(0,ri+1).filter(x=>x.kind==='tour').length;
   return S.lang==='en'?`${t('round')} ${idx}`:`${idx}${t('round')}`;
 }
-function heatLabel(hi,n){return S.lang==='en'?`${t('heat')} ${hi+1}`:`${hi+1}${t('heat')}`}
+function heatLabel(hi,n,ri){const rr=S.rounds&&S.rounds[ri??S.cur.r],hh=rr&&rr.kind==='kok'&&rr.heats[hi];if(hh&&hh.mi){const ns=hh.mi.filter(x=>x!=null).map(x=>x+1);return S.lang==='en'?`${t('match')} ${ns.join(' · ')}`:`${ns.join('·')}${t('match')}`}
+  return _heatLabel(hi,n)}
+function _heatLabel(hi,n){return S.lang==='en'?`${t('heat')} ${hi+1}`:`${hi+1}${t('heat')}`}
 function entries(r){ // all runners of a round with totals
   const out=[];r.heats.forEach((h,hi)=>h.lanes.forEach((p,i)=>{if(p!=null)out.push({pid:p,lane:i,hi,raw:h.time[i],pen:penSec(h,i),tot:total(h,i),done:h.done,dnf:h.dnf[i]})}));
   return out.sort((a,b)=>{const A=a.tot??Infinity,B=b.tot??Infinity;if(A!==B)return A-B;return a.done===b.done?0:a.done?-1:1});
@@ -907,6 +1028,8 @@ function projection(rounds=S.rounds,players=S.players){ // future tournament rou
   const out=[];let n;
   const last=rounds[rounds.length-1];
   if(!last){return out}
+  if(last.kind==='grp'){const n=last.heats.length;if(n<2)return out;let B=2;while(B<n)B*=2;for(let z=B;z>=2;z/=2)out.push({n:z,heats:Math.ceil(z/4),final:z===2,kok:true});return out}
+  if(last.kind==='kok'){for(let z=last.size/2;z>=2;z/=2)out.push({n:z,heats:Math.ceil(z/4),final:z===2,kok:true});return out}
   if(last.kind==='cut'){if(S.mode!=='both')return out;n=Math.min(S.advN,players.length)}
   else{if(last.final)return out;n=Math.min(last.heats.reduce((s,h)=>s+Math.min(S.perHeat,h.lanes.filter(x=>x!=null).length),0),last.heats.length*S.perHeat)}
   let guard=0;
@@ -966,7 +1089,10 @@ function confirmHeat(){
   const o=heatOrder(h).filter(i=>!h.dnf[i]);
   const r=curRound();
   let champ=false;
+  if(r&&r.kind==='kok')kokSettle(r,h);
   if(roundDone(r)){
+    if(r.kind==='kok'&&r.final){const m=r.matches[0],ln=[h.lanes.indexOf(m.w),h.lanes.indexOf(m.w===m.a?m.b:m.a)].filter(x=>x>=0);S.champ={order:ln.map(i=>h.lanes[i]),lanes:ln,times:ln.map(i=>total(h,i)),kok:true};champ=true}
+    if(r.kind==='grp'&&r.heats.length===1){const e=heatOrder(h);S.champ={order:e.map(i=>h.lanes[i]),lanes:e,times:e.map(i=>total(h,i))};champ=true}
     if(r.kind==='tour'&&r.final){S.champ={order:o.map(i=>h.lanes[i]),lanes:o,times:o.map(i=>total(h,i))};champ=true}
     if(r.kind==='cut'&&S.mode==='cut'){const e=entries(r).filter(x=>isFinite(x.tot));S.champ={order:e.map(x=>x.pid),lanes:e.map(x=>x.lane),times:e.map(x=>x.tot)};champ=true}
   }
@@ -982,7 +1108,8 @@ function confirmHeat(){
 }
 function afterMedal(){
   schedule(S.cfg.medalSec,'stand',()=>{
-    if(S.board==='heatres'){S.board='standings'}
+    const r0=curRound(),ko=r0&&r0.kind==='kok';if(S.board==='heatres'){S.board=ko?'bracket':'standings'}
+    if(S.cfg.auto&&ko&&roundDone(r0)&&!r0.final&&nextOpenHeat()<0)schedule(S.cfg.standSec,'next',()=>{if(R.phase==='idle'&&curRound()===r0)kokNext(r0)});
     if(S.cfg.auto&&nextOpenHeat()>=0)schedule(S.cfg.standSec,'next',()=>{if(R.phase==='idle')nextHeat()});
     commit();
   });
@@ -1005,6 +1132,8 @@ function pickHeat(ri,hi){if(R.phase==='running'||R.phase==='countdown')return;cl
 function pickDiv(k){if(R.phase==='running'||R.phase==='countdown')return;if(!S.divs[k]||k===S.dkey)return;clearFlow();loadDiv(k);R={phase:'idle',count:0,start:0,go:0};S.board='intro';slideIx=0;commit()}
 function nextRound(){
   const r=curRound();if(!roundDone(r))return;
+  if(r.kind==='grp'){kokDraw();return}
+  if(r.kind==='kok'){kokNext(r);return}
   let ids;
   if(r.kind==='cut'){ids=entries(r).filter(x=>isFinite(x.tot)).slice(0,S.advN).map(x=>x.pid)}
   else{if(r.final)return;ids=advancers(r)}
@@ -1031,7 +1160,7 @@ function goNextInOrder(){if(R.phase==='running'||R.phase==='countdown')return;co
   if(n.build){S.cur={r:S.rounds.length-1,h:0};const before=S.rounds.length;nextRound();if(S.rounds.length!==before)return}
   const ri=S.rounds.length-1,r=S.rounds[ri],hi=r?r.heats.findIndex(h=>!h.done):-1;S.cur={r:ri,h:Math.max(0,hi)};
   S.board=moved?'intro':'live';if(moved)slideIx=0;commit()}
-function orderBanner(r){const n=nextInOrder(),fin=!!S.champ&&(r.final||r.kind==='cut'&&S.mode==='cut');
+function orderBanner(r){const n=nextInOrder(),fin=!!S.champ&&(r.final||r.kind==='cut'&&S.mode==='cut'||r.kind==='grp');
   const go=n?`<button class="btn red" data-act="nextOrder">${esc(n.build&&n.k===S.dkey?t('nextRound'):n.build?t('nextBuild',{d:divLabel(n.k)}):t('nextGo',{d:divLabel(n.k)}))} →</button>`:`<b>🎉 ${esc(t('allDivDone'))}</b>`;
   return`<div class="banner">${fin?'🏆 '+esc(t('allDone')):esc(t('roundDone'))} ${fin?`<button class="btn" data-act="screen" data-v="champion">${esc(t('sChamp'))}</button>`:''}${go}</div>`}
 
@@ -1071,7 +1200,12 @@ function downloadTemplate(){if(!window.XLSX)return toast(t('xlsLib'));
 
 /* 접수 홈페이지로 결과 보내기: 부문별 1·2·3·4위 (3·4위는 동메달 → 3위로) */
 window.AW={results(){stashDiv();const rows=[];
-  divKeys().forEach(k=>{const d=S.divs[k];if(!d||!d.champ)return;
+  divKeys().forEach(k=>{const d=S.divs[k];if(!d)return;
+    const g=(d.rounds||[]).find(r=>r.kind==='grp');
+    if(g){const add=(pid,div,rank)=>{const p=d.players.find(x=>x.id===pid)||{};(p.members||[p]).forEach(m=>rows.push({kind:'medal',div,rank,name:m.name||'',team:m.team||'',coach:m.coach||''}))};
+      g.heats.forEach((h,hi)=>{if(!h.done)return;const o=heatOrder(h);[0,1,2,3].filter(i=>h.lanes[i]!=null).forEach(i=>{const ix=o.indexOf(i);add(h.lanes[i],g.heats.length>1?`${k} ${hi+1}조`:k,ix<0?3:Math.min(ix+1,3))})});
+      const kf=(d.rounds||[]).find(r=>r.kind==='kok'&&r.final&&r.matches[0].w!=null);if(kf)add(kf.matches[0].w,`${k} 왕중왕전`,1);return}
+    if(!d.champ)return;
     d.champ.order.slice(0,4).forEach((pid,i)=>{const p=d.players.find(x=>x.id===pid)||{};rows.push({kind:'medal',div:k,rank:Math.min(i+1,3),name:p.name||'',team:p.team||'',coach:p.coach||''})})});
   return {rows,meta:{}};}};
 
@@ -1519,12 +1653,13 @@ function viewSetup(){
     </div>
     <h2 style="margin-top:16px"><span class="tag">2</span>${esc(t('mode'))}</h2>
     <div class="modes">
-     ${[['cut','mCut'],['tour','mTour'],['both','mBoth']].map(([v,k])=>`<label class="mode"><input type="radio" name="mode" id="mode-${v}" data-in="mode" value="${v}" ${S.mode===v?'checked':''}><b>${esc(t(k))}</b><span>${esc(t(k+'D'))}</span></label>`).join('')}
+     ${[['community','mComm'],['cut','mCut'],['tour','mTour'],['both','mBoth']].map(([v,k])=>`<label class="mode"><input type="radio" name="mode" id="mode-${v}" data-in="mode" value="${v}" ${S.mode===v?'checked':''}><b>${esc(t(k))}</b><span>${esc(t(k+'D'))}</span></label>`).join('')}
     </div>
     <div class="row" style="margin-top:10px">
      <label class="f" style="width:11rem">${esc(t('advN'))}<input type="number" id="advN" min="2" max="64" data-in="advN" value="${S.advN}" ${S.mode!=='both'?'disabled':''}></label>
-     <label class="f" style="width:11rem">${esc(t('perHeat'))}<select id="perHeat" data-in="perHeat"><option value="1" ${S.perHeat==1?'selected':''}>1</option><option value="2" ${S.perHeat==2?'selected':''}>2</option></select></label>
+     <label class="f" style="width:11rem">${esc(t('perHeat'))}<select id="perHeat" data-in="perHeat" ${isComm()?'disabled':''}><option value="1" ${S.perHeat==1?'selected':''}>1</option><option value="2" ${S.perHeat==2?'selected':''}>2</option></select></label>
     </div>
+    ${isComm()?`<label class="chk" style="margin-top:8px"><input type="checkbox" id="sepT" data-in="cfg.sepT" ${S.cfg.sepT!==false?'checked':''}>${esc(t('sepT'))}</label><p class="note">${esc(t('sepTD'))}</p>`:''}
     <h2 style="margin-top:16px"><span class="tag">2</span>${esc(t('order'))}</h2>
     <div class="modes">${[['div','oDiv'],['round','oRound']].map(([v,k])=>`<label class="mode"><input type="radio" name="order" id="order-${v}" data-in="order" value="${v}" ${(S.order||'div')===v?'checked':''}><b>${esc(t(k))}</b><span>${esc(t(k+'D'))}</span></label>`).join('')}</div>
    </section>
@@ -1617,9 +1752,11 @@ function viewRun(){
   let banner='';
   const nd=divKeys().find(k=>k!==S.dkey&&!divDone(S.divs[k]));
   if(byRound()&&roundDone(r))banner=orderBanner(r);
-  else if(S.champ&&roundDone(r)&&(r.final||r.kind==='cut'&&S.mode==='cut'))banner=`<div class="banner">🏆 ${esc(t('allDone'))} <button class="btn" data-act="screen" data-v="champion">${esc(t('sChamp'))}</button>${nd?`<button class="btn red" data-act="pickDiv" data-v="${esc(nd)}">${esc(t('nextDiv',{d:divLabel(nd)}))} →</button>`:''}</div>`;
+  else if(isComm()&&r&&r.kind==='kok'&&r.drawn&&!kokStarted()&&!roundDone(r))banner=`<div class="banner">🎲 ${esc(t('kokDrawn'))} <button class="btn" data-act="kokDraw">${esc(t('kokRedraw'))}</button><button class="btn" data-act="screen" data-v="bracket">${esc(t('sBracket'))}</button></div>`;
+  else if(isComm()&&r&&r.kind==='grp'&&roundDone(r)&&!S.champ&&r.heats.length>1)banner=`<div class="banner">${esc(t('kokGrpDone',{n:r.heats.length}))} <button class="btn red" data-act="kokDraw">${esc(t('kokDraw'))}</button><button class="btn" data-act="screen" data-v="bracket">${esc(t('sBracket'))}</button></div>`;
+  else if(S.champ&&roundDone(r)&&(r.final||r.kind==='cut'&&S.mode==='cut'||r.kind==='grp'))banner=`<div class="banner">🏆 ${esc(t('allDone'))} <button class="btn" data-act="screen" data-v="champion">${esc(t('sChamp'))}</button>${nd?`<button class="btn red" data-act="pickDiv" data-v="${esc(nd)}">${esc(t('nextDiv',{d:divLabel(nd)}))} →</button>`:''}</div>`;
   else if(roundDone(r)){
-    const canNext=(r.kind==='cut'&&S.mode==='both')||(r.kind==='tour'&&!r.final);
+    const canNext=(r.kind==='cut'&&S.mode==='both')||(r.kind==='tour'&&!r.final)||(r.kind==='kok'&&!r.final);
     banner=`<div class="banner">${esc(t('roundDone'))} ${canNext?`<button class="btn red" data-act="nextRound">${esc(r.kind==='cut'?t('startTour',{n:Math.min(S.advN,S.players.length)}):t('nextRound'))}</button>`:''}</div>`;
   }
   return`<div class="runview">
@@ -1695,7 +1832,7 @@ function renderBoard(){
   if(!linked)body=`<div class="empty">${esc(t('waitCtrl'))}</div>`;
   else if(S.board==='live'&&h)body=boardLive(h);
   else if(S.board==='standings')body=boardStand();
-  else if(S.board==='bracket')body=boardBracket();
+  else if(S.board==='bracket')body=isComm()?boardKok():boardBracket();
   else if(S.board==='champion')body=boardChamp();
   else if(S.board==='heatres')body=boardHeatRes();
   else if(S.board==='cheer')body=cheerBoard();
@@ -1978,6 +2115,7 @@ document.addEventListener('click',e=>{
     case'pickHeat':pickHeat(S.cur.r,+v);break;
     case'pickRound':pickHeat(+v,Math.max(0,S.rounds[+v].heats.findIndex(h=>!h.done)));break;
     case'nextRound':nextRound();break;
+    case'kokDraw':kokDraw();break;
     case'nextOrder':goNextInOrder();break;
     case'screen':S.board=v;slideIx=0;commit();if(v==='champion'&&S.champ)fx('champion');break;
     case'full':goFull();break;
@@ -2014,6 +2152,7 @@ document.addEventListener('change',e=>{
   if(k==='advN')val=Math.max(2,parseInt(val)||8);
   if(k==='perHeat')val=parseInt(val)||2;
   const path=k.split('.');let o=S;while(path.length>1)o=o[path.shift()];o[path[0]]=val;
+  if((k==='mode'||k==='cfg.sepT')&&R.phase==='idle'&&!commAnyRes()&&(S.roster||[]).length){clearFlow();buildDraw();S.board='intro';if(typeof slideIx!=='undefined')slideIx=0}
   if(k==='order'&&byRound()&&R.phase==='idle'&&!(S.rounds||[]).some(r=>r.heats.some(h=>h.done))){const n=nextInOrder();if(n&&!n.build&&n.k!==S.dkey){clearFlow();loadDiv(n.k);S.cur={r:S.rounds.length-1,h:0};S.board='intro';slideIx=0}}
   commit();
 });
@@ -2063,7 +2202,7 @@ function rows(sp,E){const R=rows0(sp,E);const nat=e=>[...new Set(e.athletes.map(
   if(!E.some(e=>nat(e)))return R;R[0]=[...R[0],'나라'];E.forEach((e,i)=>{if(R[i+1])R[i+1]=[...R[i+1],nat(e)];});return R;}
 function rows0(sp,E){
   const org=e=>(e.athletes[0]&&e.athletes[0].org)||e.coach.org||'',names=e=>e.athletes.map(a=>a.name).join(',');
-  if(sp==='hero')return [['번호','이름','소속','지도자','부별','성별','생년월일','영문 이름'],...E.map((e,i)=>{const a=e.athletes[0];return [i+1,a.name,org(e),e.coach.name||'',e.f.div||'',a.gender,a.birth||'',a.name_en||''];})];
+  if(sp==='hero')return [['번호','이름','소속','지도자','부별','성별','생년월일','영문 이름','보호자 (가족 릴레이)'],...E.map((e,i)=>{const a=e.athletes[0];return [i+1,a.name,org(e),e.coach.name||'',e.f.div||'',a.gender,a.birth||'',a.name_en||'',e.f.parent||''];})];
   if(sp==='poomsae')return [['번호','이름','소속','지도자','부별','학년','성별','공인/자유','종목','팀원'],...E.map((e,i)=>{const A=e.athletes,g=new Set(A.map(a=>a.gender)),team=A.length>1;
     return [i+1,team?(e.f.team||names(e)):A[0].name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',g.size>1?'혼성':A[0].gender,e.f.type||'공인',/체조|종합/.test(e.f.type||'')?'단체':(e.f.kind||'개인'),team?names(e):''];})];
   if(sp==='kyorugi')return [['번호','이름','소속','지도자','부별','학년','성별','체급'],...E.map((e,i)=>{const a=e.athletes[0];return [i+1,a.name,org(e),e.coach.name||'',e.f.div||'',e.f.grade||'',a.gender,e.f.weight||''];})];
