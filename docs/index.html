@@ -955,7 +955,7 @@ function render(){
   try{
     if(r==='home')h=vHome();
     else if(r.startsWith('comp-'))h=vComp(r.slice(5));
-    else if(r.startsWith('live-'))h=vLive(r.slice(5));
+    else if(r.startsWith('live-'))h=vLive(liveIdOf(r));
     else if(r.startsWith('draw-'))h=vDraw(r.slice(5));
     else if(r.startsWith('enter-'))h=need('enter',()=>vEnter(r.slice(6))); /* v1.7.19 운영자도 접수 (연습 대회·대리 접수) */
     else if(r==='login')h=vLogin();
@@ -976,7 +976,7 @@ function render(){
   document.getElementById('view').innerHTML=h;
   if(/^admin/.test(r))numTables(document.getElementById('view'));
   if(r==='admin'&&UI.atab==='results')setTimeout(certPreview,0);
-  if(r.startsWith('live-'))liveMount(r.slice(5));
+  if(r.startsWith('live-'))liveMount(liveIdOf(r),liveMyOf(r));
   if(r==='admin'&&UI.atab==='results')setTimeout(liveQr,0);
   const ta=document.getElementById('ctText');if(ta&&UI.contact&&UI.contact.focus){UI.contact.focus=false;ta.focus();}
 }
@@ -997,20 +997,26 @@ function need(role,fn){const u=me();if(!u)return `<div class="auth"><div class="
 const LIVE={id:null,snap:null,at:'',v:null,st:{q:'',tab:'courts'},busy:false,lastFetch:0,none:false};
 function liveRow(id){return (M.live||[]).find(x=>x.comp_id===id);}
 function liveOn(id,min){const r=liveRow(id);return !!r&&Date.now()-new Date(r.updated_at).getTime()<min*60000;}
-function liveUrl(id){return location.origin+location.pathname+'#live-'+id;}
+function liveUrl(id,my){return location.origin+location.pathname+'#live-'+id+(my?'~'+encodeURIComponent(String(my).trim()):'');}
+/* v1.7.32 지도자가 보낸 「우리 도장」 주소: #live-<대회>~<도장 이름> → 학부모가 누르면 「⭐ 내 도장」에 그 도장이 바로 */
+const liveIdOf=r=>r.slice(5).split('~')[0];
+const liveMyOf=r=>{const i=r.indexOf('~');if(i<0)return '';try{return decodeURIComponent(r.slice(i+1)).trim();}catch(e){return r.slice(i+1);}};
 function vLive(id){const c=D().comps.find(x=>x.id===id);
   return `<div class="stack"><a class="small" href="${c?'#comp-'+id:'#home'}">← ${c?'대회 안내':'대회 일정'}</a>
-    ${c?`<div class="row between"><div><span class="eyebrow">Live Results</span><h1 style="margin:2px 0 0" data-notr>${esc(c.name)}</h1><span class="small mute">${fmtDate(c.date)} · <span data-notr>${esc(c.place)}</span></span></div><button class="btn sm" type="button" data-a="liveShare">🔗 주소 복사</button></div>`:''}
+    ${c?`<div class="row between"><div><span class="eyebrow">Live Results</span><h1 style="margin:2px 0 0" data-notr>${esc(c.name)}</h1><span class="small mute">${fmtDate(c.date)} · <span data-notr>${esc(c.place)}</span></span></div><div class="row" style="gap:6px">${(()=>{const u=me();return u&&u.org?`<button class="btn sm gold" type="button" data-a="liveShareMy">📤 우리 학부모에게 보내기</button>`:'';})()}<button class="btn sm" type="button" data-a="liveShare">🔗 주소 복사</button></div></div>
+    ${(()=>{const u=me();return u&&u.org?`<div class="small mute" style="margin-top:-4px">「📤 우리 학부모에게 보내기」를 누르면 <b data-notr>${esc(u.org)}</b> 선수만 바로 보이는 주소가 복사됩니다 · 도장 단체방에 붙여 넣으세요 (학부모님은 로그인 없이 봅니다)</div>`:'';})()}`:''}
     ${!M.liveOk?'<div class="empty">실시간 결과를 아직 쓸 수 없습니다. 대회 본부에 알려 주세요.</div>':''}
     <div id="lvroot" class="lvroot"></div>
     <p class="small mute" style="text-align:center;margin:0">대회장 노트북이 보내는 진행 상황입니다. 몇 초 늦을 수 있고, 공식 결과는 대회 본부 발표를 따릅니다.</p></div>`;}
-function liveMount(id){const el=document.getElementById('lvroot');if(!el)return;
-  if(LIVE.id!==id){LIVE.id=id;LIVE.snap=null;LIVE.at='';LIVE.none=false;LIVE.st={q:'',tab:'courts'};
+function liveMount(id,my){const el=document.getElementById('lvroot');if(!el)return;
+  if(LIVE.id!==id||(my&&my!==LIVE.my)){LIVE.id=id;LIVE.my=my||'';LIVE.snap=null;LIVE.at='';LIVE.none=false;LIVE.st={q:'',tab:'courts'};
+    /* v1.7.32 지도자가 보낸 주소에 도장이 들어 있으면 그 도장 「⭐ 내 도장」 화면으로 */
+    if(my){LIVE.st.my=my;LIVE.st.mode='my';try{localStorage.setItem('lv_my',my);localStorage.setItem('lv_mode','my');}catch(e){}}
     /* v1.7.30 지도자 계정으로 들어오면 「⭐ 내 도장」을 그 도장으로 (직접 고른 적이 있으면 그대로) */
-    try{const u=me();if(u&&u.org&&!localStorage.getItem('lv_my'))LIVE.st.my=String(u.org).trim();}catch(e){}}
+    else try{const u=me();if(u&&u.org&&!localStorage.getItem('lv_my'))LIVE.st.my=String(u.org).trim();}catch(e){}}
   LIVE.v=LV.mount(el,LIVE.st);LIVE.st=LIVE.v.st;LIVE.v.set(LIVE.snap||(LIVE.none?{comp:'',courts:[]}:null));if(!LIVE.snap)livePoll(true);}
 /* 10초마다: 바뀐 시각만 먼저 묻고, 바뀌었을 때만 내용을 받음 (데이터를 아낌) */
-async function livePoll(force){const r=route();if(!r.startsWith('live-')||LIVE.busy||!M.liveOk)return;if(!force&&document.hidden)return;const id=r.slice(5);LIVE.busy=true;
+async function livePoll(force){const r=route();if(!r.startsWith('live-')||LIVE.busy||!M.liveOk)return;if(!force&&document.hidden)return;const id=liveIdOf(r);LIVE.busy=true;
   try{const {data,error}=await sb.from('live_view').select('updated_at').eq('comp_id',id);if(error)throw error;const t=data&&data[0]&&data[0].updated_at;
     if(!t){LIVE.none=true;LIVE.snap=null;if(LIVE.v)LIVE.v.set({comp:'',courts:[]});return;}
     if(t!==LIVE.at||force){const d=await sb.from('live_view').select('data,updated_at').eq('comp_id',id);if(d.error)throw d.error;const row=d.data&&d.data[0];
@@ -1879,7 +1885,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.31'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.32'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -4282,7 +4288,11 @@ document.addEventListener('click',e=>{
     run(()=>certPdf(L.map(r=>({r,comp:c})),`${c.name}_상장${isOps(u)?'_전체':'_'+(u.org||u.name)}`));}
   else if(a==='certPrev'){certPreview();}
   else if(a==='liveCopy'){copyText(b.dataset.u,'관람객 주소를 복사했습니다');}
-  else if(a==='liveShare'){copyText(liveUrl(route().slice(5)),'주소를 복사했습니다. 단체방에 붙여 넣으세요');}
+  else if(a==='liveShare'){copyText(liveUrl(liveIdOf(route())),'주소를 복사했습니다. 단체방에 붙여 넣으세요');}
+  else if(a==='liveShareMy'){const u=me(),id=liveIdOf(route()),c=D().comps.find(x=>x.id===id);if(!u||!u.org)return;const url=liveUrl(id,u.org);
+    const text=`[${c?c.name:'대회'}] ${u.org} 선수 출전 시각·결과 실시간 보기 (로그인 없이)`;
+    if(navigator.share&&/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)){navigator.share({title:text,text,url}).catch(()=>copyText(text+'\n'+url,'주소를 복사했습니다. 도장 단체방에 붙여 넣으세요'));}
+    else copyText(text+'\n'+url,'우리 도장 주소를 복사했습니다. 도장 단체방에 붙여 넣으세요');}
   else if(a==='liveOff'){const id=b.dataset.id;if(UI.liveArm!==id){UI.liveArm=id;render();return;}
     run(async()=>{await q(sb.from('live_view').delete().eq('comp_id',id));UI.liveArm=null;await reload();toast('실시간 결과 화면을 내렸습니다');});}
   else if(a==='certNotice'){const c=S.comps.find(x=>x.id===UI.adminComp);if(!c)return;const ids=[...new Set(resultsOf(c).filter(r=>r.coachId).map(r=>r.coachId))];
