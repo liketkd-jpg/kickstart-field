@@ -30,6 +30,8 @@ main:has(.hqs-open){max-width:none;padding:12px 22px 16px}
 .hqs-page .mvgrid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 .hqs-page .mvl{max-height:calc(100vh - 360px);min-height:180px}
 .hqs-page .mvr{font-size:15px;padding-block:2px}
+/* v1.7.44 코트 칸이 좁으면 부문 이름을 한 줄에 다 쓰고, 고르기·옮기기는 아랫줄 오른쪽으로 */
+.hqs-page .mvr{flex-wrap:wrap;row-gap:4px;padding-block:6px;border-bottom:1px solid rgba(255,255,255,.06)}.hqs-page .mvn{flex:1 1 calc(100% - 60px)}.hqs-page .mvn+*{margin-left:auto}
 .hqs-page[data-k="court"] table td,.hqs-page[data-k="court"] table th{font-size:15px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{background:transparent;border:0;border-right:1px solid var(--line);color:var(--muted,#A39D91);font:inherit;font-weight:800;font-size:14px;padding:7px 12px;cursor:pointer}
@@ -501,11 +503,13 @@ function mvPlan(L,busy){const now=NOW(),C={};
   L.forEach(x=>{const c=C[x.court]||(C[x.court]={court:x.court,end:now});c.end+=x.left*x.p.min*60000;});
   const q={};L.forEach(x=>{q[x.court+'|'+x.app]=x.rem.filter(d=>d.fresh&&!busy.has(x.court+'|'+x.app+'|'+d.name)).slice();});
   const plan=[];
-  for(let it=0;it<60;it++){const arr=Object.values(C).sort((a,b)=>a.end-b.end);if(arr.length<2)break;const lo=arr[0],hi=arr[arr.length-1];
-    if(hi.end-lo.end<10*60000)break;
+  /* v1.7.43 받는 코트는 같은 종목(품새→품새, 격파→격파)을 하고 있는 코트만: 격파 장비가 없는 품새 코트로 보내지 않음 */
+  const apps=c=>new Set(L.filter(y=>y.court===c).map(y=>y.app));
+  for(let it=0;it<60;it++){const arr=Object.values(C).sort((a,b)=>a.end-b.end);if(arr.length<2)break;const hi=arr[arr.length-1];
     let best=null;L.filter(x=>x.court===hi.court).forEach(x=>{const Q=q[x.court+'|'+x.app];if(!Q||!Q.length)return;const d=Q[Q.length-1];
-      const dur=d.total*x.p.min*60000,add=d.total*pace(lo.court,x.app).min*60000,gain=hi.end-Math.max(hi.end-dur,lo.end+add);if(!best||gain>best.gain)best={x,d,dur,add,gain};});
-    if(!best||best.gain<60000)break;
+      const cands=arr.filter(c=>c!==hi&&apps(c.court).has(x.app));if(!cands.length)return;const lo=cands[0];if(hi.end-lo.end<10*60000)return;
+      const dur=d.total*x.p.min*60000,add=d.total*pace(lo.court,x.app).min*60000,gain=hi.end-Math.max(hi.end-dur,lo.end+add);if(!best||gain>best.gain)best={x,d,dur,add,gain,lo};});
+    if(!best||best.gain<60000)break;const lo=best.lo;
     q[best.x.court+'|'+best.x.app].pop();hi.end-=best.dur;lo.end+=best.add;
     plan.push({from:hi.court,app:best.x.app,div:best.d.name,to:lo.court,n:best.d.total,pos:best.x.rem.indexOf(best.d)+1});}
   return {plan,ends:Object.values(C)};}

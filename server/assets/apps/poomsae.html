@@ -6196,7 +6196,7 @@ function started(d){try{const f=g('divHasResults');if(typeof f==='function'&&f(d
   try{const c=g('curOf');const cur=typeof c==='function'?c():null;if(cur&&cur.divId===d.id)return true;}catch(e){}
   if(APPK==='kyorugi')try{const L=g('live')();if(L&&L.divId===d.id)return true;}catch(e){}
   return false;}
-function idsOf(d){const S=g('S'),dk=g('divKey');if(typeof dk==='function'&&d.key)return S.roster.filter(a=>{try{return dk(a)===d.key;}catch(e){return false;}}).map(a=>a.id);return (d.order||[]).slice();}
+function idsOf(d){const S=g('S'),dk=g('divKey');/* v1.7.43 「· 1조」처럼 나뉜 부문은 그 조의 선수 목록(order)을 먼저 */if(Array.isArray(d.order)&&d.order.length)return d.order.slice();if(typeof dk==='function'&&d.key)return S.roster.filter(a=>{try{return dk(a)===d.key;}catch(e){return false;}}).map(a=>a.id);return (d.order||[]).slice();}
 function moveBan(html){if(MVBAN)MVBAN.remove();MVBAN=document.createElement('div');MVBAN.className='ksinb ksmv';MVBAN.innerHTML=html+'<div class="ksinbb"><button class="btn" data-mvx>확인</button></div>';document.body.appendChild(MVBAN);}
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-mvx]')&&MVBAN){MVBAN.remove();MVBAN=null;}});
 const lastComp=()=>{try{return localStorage.getItem('ks_draw_comp_'+APPK)||'';}catch(e){return '';}};
