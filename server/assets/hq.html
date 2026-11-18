@@ -482,7 +482,9 @@ function lanes(){const out=[];for(const c of courtList()){if(!c.online)continue;
     const p=pace(c.court,app),divs=b.divs.map(x=>({...x,done:x.done||0,total:x.total||0,live:!!(b.now&&b.now.div===x.name),fresh:(x.done||0)===0&&!(b.now&&b.now.div===x.name)&&(x.total||0)>0})),
       rem=divs.filter(x=>x.total>x.done),left=rem.reduce((a,x)=>a+(x.total-x.done),0);
     out.push({court:c.court,app,b,p,rem,left,end:NOW()+left*p.min*60000,divs});}}
-  return out.sort((a,b)=>a.court.localeCompare(b.court));}
+  /* v1.7.43 같은 코트·같은 종목이 두 번(노트북 주소 둘) 잡히면 하나만: 최근 진행 정보 쪽 */
+  const one=new Map();out.forEach(x=>{const k=x.court+'|'+x.app,o=one.get(k);if(!o||((x.b&&x.b.at)||0)>((o.b&&o.b.at)||0))one.set(k,x);});
+  return [...one.values()].sort((a,b)=>a.court.localeCompare(b.court));}
 /* v1.4.55 가상 경기 초기화: 본부가 기억한 진행 속도·멈춤 기록도 지움 */
 window.KS_HQRESET=()=>{Object.keys(HIST).forEach(k=>delete HIST[k]);try{Object.keys(STALL).forEach(k=>delete STALL[k]);}catch(e){}};
 window.KS_HQLANES=()=>lanes();window.KS_HQCOURTS=()=>courtList();window.KS_HQSTALL=()=>STALL;   /* 대회 운영표: 실제 진행 속도로 다시 계산 */
@@ -531,7 +533,11 @@ async function tgAct(a,b){
       await DB.doc('hqtog/main').set({list});S.tog={list};await tgSend(court,app);names.forEach(n=>TG.sel.delete(court+'|'+app+'|'+n));toast(`${court}코트 ${ds.length}개 부문을 같이 경기로 묶었습니다 · 순위·메달·상장은 부문마다 따로 나옵니다`);}
     if(a==='tgOff'){const t=tgList().find(x=>x.id===b.dataset.id);if(!t)return;const list=tgList().filter(x=>x.id!==t.id);await DB.doc('hqtog/main').set({list});S.tog={list};await tgSend(t.court,t.app);toast('묶음을 풀었습니다 · 원래대로 부문마다 따로 진행합니다');}
   }catch(e){toast(e.message||String(e));}finally{TG.busy=false;schedule();}}
-function vMove(){const L=lanes();if(!L.length)return '';const MV=Object.values(S.moves||{}).sort((a,b)=>b.at-a.at);
+function vMove(){const L=lanes();
+  /* v1.7.43 코트 진행 정보가 없어도 칸(타일)은 늘 보이게: 예전에는 칸이 통째로 사라져 「기능이 없어졌다」고 보였음 */
+  if(!L.length){const on=courtList().filter(c=>c.online).length;return `<div class="panel"><div class="row between"><h2>🔀 코트 진행 · 부문 옮기기</h2><span class="chip">${on?'진행 정보 기다림':'코트 연결 기다림'}</span></div>
+    <span class="small muted">한 코트가 일찍 끝나고 다른 코트가 늦어질 때, 늦은 코트의 <b>아직 시작하지 않은 부문</b>을 일찍 끝나는 코트로 넘겨주는 곳입니다. 코트마다 끝나는 예상 시각과 「옮기기 추천」이 여기에 나옵니다.</span>
+    <div class="alert">${on?`코트 노트북 ${on}대가 연결되어 있지만 아직 진행 정보가 없습니다. 각 코트 노트북에서 <b>경기 운영석 화면</b>(품새·격파 앱의 운영 화면)을 열어 두면 몇 초 뒤 코트별 남은 부문이 나옵니다.`:'코트 노트북이 아직 연결되지 않았습니다. 「🖥️ 코트 연결」에서 코트들이 연결됨으로 나오는지 먼저 확인해 주세요.'}</div></div>`;}const MV=Object.values(S.moves||{}).sort((a,b)=>b.at-a.at);
   const busy=new Set(MV.filter(m=>['req','sending','sent'].includes(m.state)).map(m=>m.from+'|'+m.app+'|'+m.div));
   const act=L.filter(x=>x.left>0),late=act.length>1?act.reduce((a,b)=>b.end>a.end?b:a):null,early=act.length>1?L.reduce((a,b)=>b.end<a.end?b:a):null;
   const gap=late&&early?Math.round((late.end-early.end)/60000):0;
@@ -830,7 +836,7 @@ function vAdmin(){
     <div class="row">${presets.map((p,i)=>`<button class="btn sm" data-a="preset" data-i="${i}">${esc(p.split('.')[0])}</button>`).join('')}</div>
     <div class="row"><button class="btn ${NURG?'urgb':''}" data-a="noticeUrg" title="켜면 본부 모니터의 공지 띠가 노란색으로 깜빡입니다">⚠ 급한 공지 ${NURG?'켜짐':'꺼짐'}</button><button class="btn primary" data-a="notice" data-m="banner">아래 띠로 띄우기</button><button class="btn primary" data-a="notice" data-m="full">전체 화면으로 띄우기</button><button class="btn" data-a="notice" data-m="off">공지 내리기</button><button class="btn" data-a="noticeSay">🔊 소리로 읽기</button><button class="btn sm ${NSAY()?'primary':''}" data-a="noticeSayAuto" title="공지를 띄울 때 전광판 방송으로 소리 내어 읽습니다">띄울 때 소리로도 읽기 ${NSAY()?'켜짐':'꺼짐'}</button></div>
     ${CFG().voice?'':'<div class="alert warn">본부 설정의 「방송 소리」가 꺼져 있어 공지·호출을 소리로 읽지 않습니다</div>'}</div>`;
-  const alS=[...al].sort((x,y)=>(x[0]==='bad'?0:1)-(y[0]==='bad'?0:1)),alV=ALMORE||alS.length<=3?alS:alS.slice(0,2);
+  const alS=[...new Map(al.map(x=>[x[1],x])).values()].sort((x,y)=>(x[0]==='bad'?0:1)-(y[0]==='bad'?0:1)),alV=ALMORE||alS.length<=3?alS:alS.slice(0,2);
   return `${roomAlerts()}${alV.map(a=>`<div class="alert ${a[0]}">${esc(a[1])}</div>`).join('')}${alS.length>3?`<button class="btn sm almore" data-a="alMore">${ALMORE?'▲ 알림 접기':`▼ 알림 ${alS.length-2}건 더 보기 (끊김·이름 겹침 등)`}</button>`:''}
   <div class="panel"><div class="row between"><h2>📋 대회 운영표</h2><button class="btn primary" data-a="hqOpen" data-k="plan">운영표 열기</button></div><span class="small muted">코트 수·종목별 경기 시간으로 코트 배정과 예상 시각을 짜고 엑셀로 내보냅니다</span></div>
   ${vOps(cf,n,callP,noticeP)}
@@ -1357,6 +1363,9 @@ function hqTileState(k){const cf=CFG(),list=courtList(),n=noticeNow(cf);
     case 'coll':{const c=Object.keys((S.coll&&S.coll.courts)||{}).length;return [c?`${c}개 코트 모음`:'아직 없음',c?'ok':''];}
     case 'cert':{const q=certFiles().filter(needPrint).length;return [`${cf.certAuto?'켜짐':'꺼짐'}${q?` · 대기 ${q}`:''}`,cf.certAuto?(q?'warn':'ok'):''];}
     case 'backup':{const b=S.bk||{};return [`${cf.backupAuto?'켜짐':'꺼짐'}${b.at?' · '+ago(b.at):''}${BK.err?' · 오류':''}`,BK.err?'warn':cf.backupAuto&&b.at?'ok':''];}
+    case 'move':{const L=lanes(),act=L.filter(x=>x.left>0);if(!L.length)return ['코트 진행 정보 기다림',''];if(act.length<2)return [act.length?'한 코트만 진행 중':'모두 끝','ok'];
+      const g=Math.round((Math.max(...act.map(x=>x.end))-Math.min(...L.map(x=>x.end)))/60000);let n=0;try{n=mvPlan(L,new Set()).plan.length;}catch(e){}
+      return [`끝 차이 ${g}분${n?` · 옮기기 추천 ${n}개`:''}`,g>=20?'warn':'ok'];}
     case 'mon':return ['대기실 TV·태블릿',''];
     case 'show':{const v=SHOWS.v,on=list.filter(c=>c.online),got=on.filter(c=>SHOWS.at&&c.showAt===SHOWS.at).length;return [v&&v.on?`켜짐 · 후원사 ${(v.sponsors||[]).length}개 · ${got}/${on.length} 코트 받음`:'꺼짐',v&&v.on?(got===on.length?'ok':'warn'):''];}
     case 'bat':return window.KS_BAT?KS_BAT.tile():['정보 없음',''];
