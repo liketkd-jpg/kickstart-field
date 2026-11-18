@@ -209,3 +209,28 @@ func printerStatus() map[string]any {
 	}
 	return v
 }
+
+// v1.7.42 윈도우의 진짜 「다운로드」 폴더 (OneDrive·D드라이브로 옮겨 둔 경우까지): 레지스트리 User Shell Folders
+func knownDownloads() string {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "reg", "query", `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders`, "/v", "{374DE290-123F-4565-9164-39C4925E467B}")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	m := regexp.MustCompile(`REG_(?:EXPAND_)?SZ\s+(.+)`).FindStringSubmatch(string(out))
+	if m == nil {
+		return ""
+	}
+	p := strings.TrimSpace(m[1])
+	p = regexp.MustCompile(`%([^%]+)%`).ReplaceAllStringFunc(p, func(v string) string { return os.Getenv(strings.Trim(v, "%")) })
+	if fi, err := os.Stat(p); err == nil && fi.IsDir() {
+		return p
+	}
+	return ""
+}
+
+// 저장한 파일을 탐색기에서 골라 보여 줌
+func revealFile(path string) error { return exec.Command("explorer", "/select,", path).Start() }

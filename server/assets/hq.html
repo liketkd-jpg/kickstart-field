@@ -2492,7 +2492,7 @@ function bind(r){
     else if(a==='auto'){commit(()=>plan(recommendEv()));toast('종목별 코트 수와 순서를 새로 추천했습니다');}
     else if(a==='autoSched'){let w='';commit(()=>{w=autoSched();});toast(w||'자동 일정표를 짰습니다 (↶ 되돌리기 가능)');}
     else if(a==='assoc'){ASSOC.open=true;draw();}else if(a==='assocX'){ASSOC.open=false;ASSOC.rep=null;draw();}
-    else if(a==='assocBlank')exportAssoc(false);else if(a==='assocNow')exportAssoc(true);
+    else if(a==='assocBlank')exportAssoc(false);else if(a==='assocNow')exportAssoc(true);else if(a==='assocReveal')assocReveal();
     else if(a==='assocIn')r.querySelector('[data-p="afile"]').click();
     else if(a==='printDay')printDay();
     else if(a==='swapOpen'){SW.open=true;SW.a=0;SW.b=Math.min(1,P.courts-1);draw();}else if(a==='swapX'){SW.open=false;draw();}
@@ -2778,7 +2778,12 @@ function exportAssoc(fill){
       x=x.slice(0,at)+dv+x.slice(at);f.content=new TextEncoder().encode(x);f.size=f.content.length;});
     data=XLSX.CFB.write(cfb,{fileType:'zip',type:'array'});}catch(e){console.warn('dv',e);toast('고르기 목록을 넣지 못했습니다 · 칸에 직접 적어도 불러올 수 있습니다');}
   const d=new Date(),p2=v=>String(v).padStart(2,'0'),fn=`${fill?'경기일정_조정본':'경기일정_협회요청시트'}_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}.xlsx`;
-  Promise.resolve(DL?DL.save({filename:fn,data:new Uint8Array(data)}):null).then(r=>{if(!r){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=fn;a.click();toast(`저장했습니다: ${fn}`);}}).catch(()=>toast('저장하지 못했습니다'));}
+  Promise.resolve(DL?DL.save({filename:fn,data:new Uint8Array(data)}):null).then(r=>{if(!r){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=fn;a.click();}
+    /* v1.7.42 저장한 곳을 창에 계속 보여 줌 (알림은 금방 사라져서 「반응이 없다」고 느끼기 쉬움) */
+    ASAVED={fn,path:(r&&r.path)||'',at:Date.now()};toast(`저장했습니다: ${fn}`);draw();}).catch(()=>{ASAVED={fn,err:1,at:Date.now()};toast('저장하지 못했습니다');draw();});}
+let ASAVED=null;
+async function assocReveal(){const p=ASAVED&&ASAVED.path;if(!p)return toast('브라우저 「다운로드」에 저장했습니다 · 브라우저 오른쪽 위 내려받기 표시를 눌러 보세요');
+  try{const r=await fetch('/hq/api/reveal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:p})});if(!r.ok)throw 0;}catch(e){toast('폴더를 열지 못했습니다 · 파일 위치: '+p);}}
 async function importAssoc(f){
   try{if(typeof XLSX==='undefined')throw new Error('엑셀 도구를 불러오지 못했습니다');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
     const norm=v=>String(v||'').replace(/\s*\(\s*\d+\s*(명|팀)\s*\)\s*$/,'').replace(/\s+/g,' ').trim();
@@ -2804,7 +2809,7 @@ async function importAssoc(f){
 function assocHtml(){const R=ASSOC.rep,li=(t,a,c)=>a.length?`<div class="pl-rep ${c}"><b>${t} ${a.length}개</b><ul>${a.slice(0,30).map(x=>`<li>${esc(x)}</li>`).join('')}${a.length>30?`<li>… 외 ${a.length-30}개</li>`:''}</ul></div>`:'';
   return `<div class="pl-mask"><div class="pl-modal"><div class="row between"><h3>📨 협회 요청 시트</h3><button class="btn" data-p="assocX">닫기 ✕</button></div>
     <p class="small muted" style="margin:0">협회가 코트마다 종목을 정하고, 그 아래에 부문을 순서대로 고르는 엑셀입니다. 1·2·3일차 시트가 있고, 채운 날만 일정으로 만듭니다. 칸을 누르면 실제 접수된 부문과 인원이 목록으로 나옵니다.</p>
-    <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn primary" data-p="assocBlank">① 빈 요청 시트 내보내기</button><button class="btn primary" data-p="assocIn">② 채운 시트 불러오기</button><button class="btn" data-p="assocNow" title="지금 운영표 일정을 1일차 시트에 담아 내보냅니다 (협회 확인용, 고쳐서 다시 불러와도 됩니다)">③ 지금 일정 담아 내보내기</button><input type="file" accept=".xlsx,.xls" data-p="afile" hidden></div>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn primary" data-p="assocBlank">① 빈 요청 시트 내보내기</button><button class="btn primary" data-p="assocIn">② 채운 시트 불러오기</button><button class="btn" data-p="assocNow" title="지금 운영표 일정을 1일차 시트에 담아 내보냅니다 (협회 확인용, 고쳐서 다시 불러와도 됩니다)">③ 지금 일정 담아 내보내기</button>${ASAVED?`<div class="pl-repbox" style="margin:0">${ASAVED.err?`<b style="color:var(--red)">✕ 저장하지 못했습니다 (${esc(ASAVED.fn)})</b>`:`<div><b>✓ 엑셀을 저장했습니다</b> · <span class="small">${esc(ASAVED.fn)}</span></div><div class="small muted">${ASAVED.path?`저장한 곳: <b>${esc(ASAVED.path)}</b> (노트북 「대회결과」 폴더에도 한 부)`:'브라우저 「다운로드」 폴더'}</div><div class="row" style="gap:8px"><button class="btn sm primary" data-p="assocReveal">📂 폴더 열기</button></div>`}</div>`:''}<input type="file" accept=".xlsx,.xls" data-p="afile" hidden></div>
     ${R?`<div class="pl-repbox"><div><b>${esc(R.file)}</b> · ${R.day}일차 · ${R.placed}부문을 시트 순서대로 넣었습니다${R.other.length?` <span class="small muted">(${R.other.map(d=>d+'일차').join('·')} 시트도 채워져 있습니다 — 다시 불러와 고를 수 있습니다)</span>`:''}</div>
       ${li('⚠ 시트에 없어 자동으로 넣은 부문',R.missing,'warn')}${li('⚠ 두 번 넣은 부문 (처음 것만 씀)',R.dup,'warn')}${li('✕ 명단에 없는 부문 (빠짐)',R.unknown,'bad')}
       ${!R.missing.length&&!R.dup.length&&!R.unknown.length?'<div class="pl-rep ok"><b>✓ 빠지거나 두 번 넣은 부문이 없습니다</b></div>':''}

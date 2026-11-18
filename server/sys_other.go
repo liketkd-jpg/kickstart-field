@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"syscall"
 )
@@ -60,3 +61,7 @@ func scanPlaces() [][3]string {
 func printerStatus() map[string]any {
 	return map[string]any{"ok": false, "err": "윈도우 노트북에서만 확인합니다"}
 }
+
+func knownDownloads() string { return "" }
+
+func revealFile(path string) error { return openFolder(filepath.Dir(path)) }

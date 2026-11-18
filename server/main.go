@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.41" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.42" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -827,6 +827,34 @@ func (s *Store) api(w http.ResponseWriter, r *http.Request, op string) {
 		}
 		s.mu.Unlock()
 		writeJSON(w, 200, map[string]any{"ok": ok})
+	case "reveal": // v1.7.42 저장한 파일을 탐색기로 보여 주기 (이 노트북에서만 · 대회결과/다운로드 폴더 안만)
+		if !isLocalReq(r) {
+			writeJSON(w, 403, map[string]any{"error": "local_only"})
+			return
+		}
+		var req struct {
+			Path string `json:"path"`
+		}
+		if err := readBody(r, 1<<16, &req); err != nil || req.Path == "" {
+			writeJSON(w, 400, map[string]any{"error": "invalid_argument"})
+			return
+		}
+		p := filepath.Clean(req.Path)
+		okDir := false
+		for _, d := range []string{resultsDir, downloadsDir()} {
+			if d != "" && strings.HasPrefix(strings.ToLower(p), strings.ToLower(filepath.Clean(d)+string(filepath.Separator))) {
+				okDir = true
+			}
+		}
+		if !okDir {
+			writeJSON(w, 400, map[string]any{"error": "invalid_path"})
+			return
+		}
+		if err := revealFile(p); err != nil {
+			writeJSON(w, 500, map[string]any{"error": "open"})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"ok": true})
 	case "save":
 		name := sanitizeName(r.URL.Query().Get("name"))
 		if name == "" {
@@ -1027,7 +1055,14 @@ func realPrinter(name string) bool {
 }
 
 // 이 노트북 사용자의 「다운로드」 폴더 (없으면 빈 값)
+var dlOnce sync.Once
+var dlKnown string
+
 func downloadsDir() string {
+	dlOnce.Do(func() { dlKnown = knownDownloads() })
+	if dlKnown != "" {
+		return dlKnown
+	}
 	h, err := os.UserHomeDir()
 	if err != nil || h == "" {
 		return ""
