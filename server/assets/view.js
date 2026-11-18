@@ -67,7 +67,9 @@ function myView(F,st,snap){const my=st.my;if(!my)return '<div class="lv-empty lv
 function hit(q,...v){if(!q)return false;const t=v.join(' ').toLowerCase().replace(/\s+/g,'');return t.includes(q);}
 function mark(s,q){s=String(s||'');if(!q)return E(s);const i=s.toLowerCase().indexOf(q);if(i<0)return E(s);return E(s.slice(0,i))+'<mark>'+E(s.slice(i,i+q.length))+'</mark>'+E(s.slice(i+q.length));}
 function person(p,q,my){return `<span class="lv-p ${p.side?'lv-'+p.side:''} ${my&&nt(p.team)===nt(my)?'lv-me':''}" data-notr>${p.side?'<i></i>':''}<b>${mark(p.name,q)}</b>${p.team?` <small>${mark(p.team,q)}</small>`:''}</span>`;}
-function flat(snap){const out=[];(snap&&snap.courts||[]).forEach(c=>(c.apps||[]).forEach(a=>out.push({c,a,b:a.board||null,r:a.results||null})));return out;}
+function flat(snap){const out=[],ix=new Map();(snap&&snap.courts||[]).forEach(c=>(c.apps||[]).forEach(a=>{const x={c,a,b:a.board||null,r:a.results||null};
+  /* v1.7.41 같은 코트·같은 종목이 두 번 오면(코트 노트북 주소가 둘) 하나만 · 연결된 쪽·최근 것 */
+  const k=(c.court||'?')+'|'+a.app,i=ix.get(k);if(c.court&&i!=null){const o=out[i],sc=y=>(y.c.online===false?0:2)+((y.b&&y.b.at)||0)/1e13;if(sc(x)>sc(o))out[i]=x;return;}ix.set(k,out.length);out.push(x);}));return out;}
 /* 도장 종합: 금 3점 · 은 2점 · 동 1점 */
 function teamTable(F){const T=new Map();
   F.forEach(({r})=>(r&&r.divs||[]).forEach(d=>(d.podium||[]).forEach(p=>{if(!p.team||!MD[p.rank])return;const t=T.get(p.team)||{team:p.team,g:0,s:0,b:0};t[MD[p.rank][1]]++;T.set(p.team,t);})));
@@ -106,24 +108,31 @@ function schedHtml(S,q){if(!S||!(S.courts||[]).length)return '<div class="lv-emp
   <div class="lv-sched" style="--n:${Math.min(S.courts.length,6)}">${S.courts.map(c=>`<section><h3><span>${E(c.c)}코트</span><small>${E(c.ev||'')}</small></h3>
     ${(c.rows||[]).map(r=>r.b?`<div class="lv-sr lv-sb"><span>${E(r.t)}</span><span>${E(r.s)}~${E(r.e)}</span></div>`:`<div class="lv-sr ${q&&hit(q,r.t)?'hit':''}"><span class="lv-st2">${E(r.s)}</span><span data-notr>${q?mark(r.t,q):E(r.t)}</span><small>${E(r.n||'')}</small></div>`).join('')}
     ${c.end?`<div class="lv-se">끝 약 ${E(c.end)}</div>`:''}</section>`).join('')}</div>`;}
+/* v1.7.41 맨 위 세 단추: 전체 경기 일정 · 내 도장 경기 일정 · 결과 */
+const MODES=[['all','🏟 전체 경기 일정'],['my','⭐ 내 도장 경기 일정'],['res','🏅 결과']];
+const modeOf=st=>MODES.some(m=>m[0]===st.mode)?st.mode:'all';
+const modeBar=md=>`<div class="lv-mode lv-mode3">${MODES.map(([k,l])=>`<button type="button" data-lv="mode" data-m="${k}" class="${md===k?'on':''}">${l}</button>`).join('')}</div>`;
+function teamsHtml(T,q){return T.length?`<div class="lv-teams"><table><tr><th>순위</th><th>도장</th><th>금</th><th>은</th><th>동</th><th>점수</th></tr>${T.map((t,i)=>`<tr class="${hit(q,t.team)?'hit':''}"><td>${i&&T[i-1].pt===t.pt?'':i+1}</td><td><b data-notr>${mark(t.team,q)}</b></td><td>${t.g}</td><td>${t.s}</td><td>${t.b}</td><td><b>${t.pt}</b></td></tr>`).join('')}</table><p class="lv-sub">금 3점 · 은 2점 · 동 1점으로 더한 참고 순위입니다. 공식 종합 순위는 대회 본부 발표를 따릅니다.</p></div>`:'<div class="lv-empty">아직 입상한 도장이 없습니다</div>';}
+function resView(F,q,st){const T=teamTable(F),sub=st.rtab==='teams'?'teams':'res',M=st.my?mine(F,st.my).filter(x=>x.k==='medal'):[];
+  return `${M.length?`<section class="lv-my2"><h4 class="lv-my2s" style="margin:0">⭐ <span data-notr>${E(st.my)}</span> 입상 ${M.length}</h4><ul class="lv-my2l">${M.map(f=>`<li><div class="lv-mw"><span class="lv-m ${MD[f.rank]?MD[f.rank][1]:''}">${f.rank}</span></div><div class="lv-mb"><div class="lv-mn"><b data-notr>${E(f.p.name)}</b></div><div class="lv-mi"><span data-notr>${E(f.where)} · ${E(f.div)}</span></div></div></li>`).join('')}</ul></section>`:''}
+    <div class="lv-tabs" role="tablist">${[['res','부문별 입상'],['teams','도장 종합']].map(([k,l])=>`<button type="button" role="tab" class="${sub===k?'on':''}" data-lv="rtab" data-t="${k}">${l}</button>`).join('')}</div>
+    ${sub==='teams'?teamsHtml(T,q):results(F,q)}`;}
 function html(snap,st){st=st||{};const q=String(st.q||'').toLowerCase().replace(/\s+/g,''),tab=st.tab||'courts',now=st.now||Date.now();
-  if(snap&&snap.sched&&!(snap.courts||[]).length){const md=st.mode==='my'?'my':'all',bar=`<div class="lv-mode"><button type="button" data-lv="mode" data-m="all" class="${md==='all'?'on':''}">🏟 전체 일정표</button><button type="button" data-lv="mode" data-m="my" class="${md==='my'?'on':''}">⭐ 내 도장</button></div>`;
-    return {head:`${snap.comp?`<div class="lv-top"><h2 data-notr>${E(snap.comp)}</h2></div>`:''}${bar}`,body:md==='my'?mySchedView(snap.sched,st,snap):`<div class="lv-tabs"><button type="button" class="on">일정표</button></div>${schedHtml(snap.sched,q)}`};}
+  if(snap&&snap.sched&&!(snap.courts||[]).length){const md=modeOf(st);
+    return {head:`${snap.comp?`<div class="lv-top"><h2 data-notr>${E(snap.comp)}</h2></div>`:''}${modeBar(md)}`,body:md==='my'?mySchedView(snap.sched,st,snap):md==='res'?'<div class="lv-empty lv-wait"><b>아직 나온 결과가 없습니다</b><br>부문 경기가 끝나면 입상 결과가 여기에 바로 나옵니다.</div>':schedHtml(snap.sched,q)};}
   if(!snap||!(snap.courts||[]).length)return {head:snap&&snap.comp?`<div class="lv-top"><h2>${E(snap.comp)}</h2></div>`:'',body:`<div class="lv-empty lv-wait"><b>경기 소식을 기다리는 중입니다</b><br>대회가 시작되면 코트별 진행 상황과 입상 결과가 여기에 바로 나옵니다.</div>`};
   const F=flat(snap),T=teamTable(F),stale=snap.at&&now-snap.at>60000;
   const found=find(F,q);
   const nRes=F.reduce((n,{r})=>n+((r&&r.divs)||[]).filter(d=>(d.podium||[]).length).length,0);
-  const mode=st.mode==='my'?'my':'all',modeBar=`<div class="lv-mode"><button type="button" data-lv="mode" data-m="all" class="${mode==='all'?'on':''}">🏟 전체 코트</button><button type="button" data-lv="mode" data-m="my" class="${mode==='my'?'on':''}">⭐ 내 도장</button></div>`;
+  const mode=modeOf(st);
   const MY=st.my?mine(F,st.my):null,nOn=F.filter(({b})=>b&&b.now).length,nCt=new Set((snap.courts||[]).map(c=>c.court)).size;
   const myBox=st.my?`<section class="lv-mybox"><h3><span>⭐ ${E(st.my)}</span><small>${MY.length?`지금 ${MY.filter(x=>x.k==='now').length} · 곧 ${MY.filter(x=>x.k==='next'||x.k==='soon').length} · 입상 ${MY.filter(x=>x.k==='medal').length}`:'지금·다음 부문에 이 도장 선수가 없습니다'}</small></h3>
     ${MY.length?`<ul>${MY.map(f=>`<li class="lv-f-${f.k}">${f.k==='medal'?`<span class="lv-m ${MD[f.rank]?MD[f.rank][1]:''}">${f.rank}</span>`:`<span class="lv-tag">${f.k==='now'?'지금':f.k==='next'?'곧':'예정'}</span>`}<div><b data-notr>${E(f.p.name)}</b><span class="lv-sub" data-notr>${E(f.where)} · ${E(f.div)}</span></div>${f.txt?`<em>${E(f.txt)}</em>`:''}</li>`).join('')}</ul>`:''}</section>`:'';
-  if(mode==='my')return {head:`<div class="lv-top"><div><span class="lv-live ${stale?'stale':''}"><i></i>${stale?'잠시 끊김':'LIVE'}</span> <small>${E(ago(snap.at,now))} 갱신</small></div>${snap.comp?`<h2 data-notr>${E(snap.comp)}</h2>`:''}</div>${modeBar}`,body:myView(F,st,snap)};
-  return {head:`${''}<div class="lv-top"><div class="lv-kpis"><span><b>${nCt}</b>코트</span><span><b>${nOn}</b>경기 중</span><span><b>${nRes}</b>입상 부문</span></div><div><span class="lv-live ${stale?'stale':''}"><i></i>${stale?'잠시 끊김':'LIVE'}</span> <small>${E(ago(snap.at,now))} 갱신</small></div>${snap.comp?`<h2 data-notr>${E(snap.comp)}</h2>`:''}</div>${modeBar}`,body:`
+  if(mode==='my')return {head:`<div class="lv-top"><div><span class="lv-live ${stale?'stale':''}"><i></i>${stale?'잠시 끊김':'LIVE'}</span> <small>${E(ago(snap.at,now))} 갱신</small></div>${snap.comp?`<h2 data-notr>${E(snap.comp)}</h2>`:''}</div>${modeBar(mode)}`,body:myView(F,st,snap)};
+  return {head:`${''}<div class="lv-top"><div class="lv-kpis"><span><b>${nCt}</b>코트</span><span><b>${nOn}</b>경기 중</span><span><b>${nRes}</b>입상 부문</span></div><div><span class="lv-live ${stale?'stale':''}"><i></i>${stale?'잠시 끊김':'LIVE'}</span> <small>${E(ago(snap.at,now))} 갱신</small></div>${snap.comp?`<h2 data-notr>${E(snap.comp)}</h2>`:''}</div>${modeBar(mode)}`,body:mode==='res'?`${q?'':''}`+resView(F,q,st):`
     ${''}${q?`<section class="lv-found"><h3>「${E(st.q)}」 찾은 곳 <small>${found.length}</small></h3>${found.length?`<ul>${found.map(f=>`<li class="lv-f-${f.k}">${f.k==='medal'?`<span class="lv-m ${MD[f.rank]?MD[f.rank][1]:''}">${f.rank}</span>`:`<span class="lv-tag">${f.k==='now'?'지금':'곧'}</span>`}<div><b data-notr>${mark(f.p.name,q)}</b> <small data-notr>${mark(f.p.team,q)}</small><div class="lv-sub">${E(f.where)} · <span data-notr>${E(f.div||'')}</span>${f.k==='next'?' · '+E(f.txt):f.k==='now'?' · '+E(f.txt):''}</div></div></li>`).join('')}</ul>`:'<div class="lv-empty">지금 진행·다음 순서·입상 결과에 없습니다</div>'}</section>`:''}
-    <div class="lv-tabs" role="tablist">${[['courts','코트 현황'],['results',`입상 결과${nRes?` <small>${nRes}</small>`:''}`],['teams','도장 종합'],...(snap.sched?[['sched','일정표']]:[])].map(([k,l])=>`<button type="button" role="tab" aria-selected="${tab===k}" class="${tab===k?'on':''}" data-lv="tab" data-t="${k}">${l}</button>`).join('')}</div>
-    ${tab==='sched'?schedHtml(snap.sched,q):tab==='courts'?wallCourts(F,q,st)
-     :tab==='results'?results(F,q)
-     :T.length?`<div class="lv-teams"><table><tr><th>순위</th><th>도장</th><th>금</th><th>은</th><th>동</th><th>점수</th></tr>${T.map((t,i)=>`<tr class="${hit(q,t.team)?'hit':''}"><td>${i&&T[i-1].pt===t.pt?'':i+1}</td><td><b data-notr>${mark(t.team,q)}</b></td><td>${t.g}</td><td>${t.s}</td><td>${t.b}</td><td><b>${t.pt}</b></td></tr>`).join('')}</table><p class="lv-sub">금 3점 · 은 2점 · 동 1점으로 더한 참고 순위입니다. 공식 종합 순위는 대회 본부 발표를 따릅니다.</p></div>`:'<div class="lv-empty">아직 입상한 도장이 없습니다</div>'}`};}
+    ${snap.sched?`<div class="lv-tabs" role="tablist">${[['courts','코트 현황'],['sched','일정표']].map(([k,l])=>`<button type="button" role="tab" aria-selected="${tab===k}" class="${tab===k?'on':''}" data-lv="tab" data-t="${k}">${l}</button>`).join('')}</div>`:''}
+    ${tab==='sched'&&snap.sched?schedHtml(snap.sched,q):wallCourts(F,q,st)}`};}
 const CSS=`.lv{--g1:#F3DFAE;--g2:#C9A262;--g3:#8E6A30;--bg:#0B0D12;--p1:#14171D;--p2:#1B1F27;--ln:rgba(255,255,255,.09);--tx:#F2EEE6;--mu:#A39C8E;display:flex;flex-direction:column;gap:14px;color:var(--tx);font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;word-break:keep-all}
 .lv small{color:var(--mu);font-weight:600}
 .lv-top{display:flex;flex-direction:column;gap:4px}.lv-top h2{margin:0;font-size:clamp(20px,5vw,28px);line-height:1.25}
@@ -132,6 +141,9 @@ const CSS=`.lv{--g1:#F3DFAE;--g2:#C9A262;--g3:#8E6A30;--bg:#0B0D12;--p1:#14171D;
 @keyframes lvp{50%{opacity:.25}}
 .lv-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.lv-pick button{background:var(--p2);border:1px solid rgba(201,162,98,.5);color:var(--g1);border-radius:999px;font:inherit;font-weight:800;padding:7px 12px;cursor:pointer}
 .lv-mode{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--p1);border:1px solid var(--ln);border-radius:14px;padding:5px}
+.lv-mode.lv-mode3{grid-template-columns:repeat(3,1fr)}
+.lv.lv-is-res .lv-wallbar{display:none!important}@media (max-width:999px){.lv-wallbar{display:none!important}}
+@media (max-width:520px){.lv-mode.lv-mode3 button{font-size:13.5px;padding:10px 4px;line-height:1.25}}
 .lv-mode button{background:none;border:0;border-radius:10px;color:var(--mu);font:inherit;font-weight:900;font-size:16px;padding:11px 8px;cursor:pointer}.lv-mode button.on{background:linear-gradient(180deg,#EBD5A3,#B8904E);color:#1A1306}
 .lv.lv-is-my .lv-q,.lv.lv-is-my .lv-wallbar{display:none!important}.lv:not(.lv-is-my) .lv-myrow{display:none!important}.lv.lv-is-my [data-lv=head]{order:-2}
 .lv-my2{display:flex;flex-direction:column;gap:10px}.lv-my2h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}.lv-my2h h3{margin:0;font-size:20px}
@@ -198,11 +210,12 @@ function mount(el,st0){const st=Object.assign({q:'',tab:'courts'},st0||{});let s
   let teamsKey='';const fillTeams=()=>{const T=teamsOf(snap);if(st.my&&!T.includes(st.my))T.unshift(st.my);const k=T.join('|');if(k===teamsKey||document.activeElement===SEL)return;teamsKey=k;
     SEL.innerHTML='<option value="">도장을 고르면 우리 선수만 위에 모아 보여 드려요</option>'+T.map(t=>`<option value="${E(t)}" ${t===st.my?'selected':''}>${E(t)}</option>`).join('');};
   el.addEventListener('change',e=>{if(e.target.dataset.lv==='my'){st.my=e.target.value;try{localStorage.setItem('lv_my',st.my);}catch(x){}draw();}});
-  const modeUi=()=>{const L=el.querySelector('.lv');L.classList.toggle('lv-is-my',st.mode==='my');};
+  const modeUi=()=>{const L=el.querySelector('.lv');L.classList.toggle('lv-is-my',st.mode==='my');L.classList.toggle('lv-is-res',st.mode==='res');};
   const draw=()=>{fillTeams();modeUi();const o=html(snap,st);if(H.innerHTML!==o.head)H.innerHTML=o.head;B.innerHTML=o.body;};
   el.addEventListener('input',e=>{if(e.target.dataset.lv==='q'){st.q=e.target.value;draw();}});
   el.addEventListener('click',e=>{const pk=e.target.closest('[data-lv=pick]');if(pk){st.my=pk.dataset.t;try{localStorage.setItem('lv_my',st.my);}catch(x){}teamsKey='';draw();return;}
     const md=e.target.closest('[data-lv=mode]');if(md){st.mode=md.dataset.m;try{localStorage.setItem('lv_mode',st.mode);}catch(x){}draw();return;}
+    const rt=e.target.closest('[data-lv=rtab]');if(rt){st.rtab=rt.dataset.t;draw();return;}
     const b=e.target.closest('[data-lv=tab]');if(b){st.tab=b.dataset.t;draw();}
     const w=e.target.closest('[data-lv=wall]');if(w){st.wall=w.dataset.w||'';try{localStorage.setItem('lv_wall',st.wall);}catch(x){}wallUi();draw();}});
   wallUi();
