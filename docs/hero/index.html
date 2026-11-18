@@ -757,6 +757,154 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .board.v3 .bossslide .bline b{font-family:var(--bt);font-weight:900;font-size:calc(2.2*var(--u))}
 .board.v3 .bossslide .bline .villain{height:calc(20*var(--u))}.board.v3 .bossslide .bline>div:nth-of-type(3) .villain{height:calc(26*var(--u))}
 .board.v3 .bossslide p{font-size:calc(1.6*var(--u));max-width:calc(70*var(--u))}
+/* SKIN2:START */
+/* 2타입 (프리미엄): 짙은 남색 바탕 · 금색 하나만 강조 · 레인 색 차분하게 · 얇은 선. 아래는 1타입 CSS에서 patch_skin.py가 자동으로 만든 규칙입니다. */
+:root[data-skin="2"]{--night:#070b18;--panel:#0f1629;--panel2:#17203a;--line:#27324f;--ink:#03060f;--paper:#eef1f7;--muted:#8f9bb7;--gold:#d9b25c;
+  --red:#c2484f;--blue:#3e72c4;--green:#3b9a6d;--yellow:#c9a24b;--bad:#cf5f6c;--good:#5db98c;--silver:#c9d0de;--bronze:#b9804f;
+  --f-hero:"Chakra Petch","Noto Sans KR",sans-serif;--f-disp:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--f-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;}
+:root[data-skin="2"] .kokt{font-weight:800;background:linear-gradient(90deg,var(--gold),#dfc486,var(--gold))}
+:root[data-skin="2"] .kslot.byew{border-color:var(--neon,#8694b1);background:color-mix(in srgb,var(--neon,#8694b1) 10%,rgba(255,255,255,.04))}
+:root[data-skin="2"] .kbye{color:#090c15;background:var(--neon,#8694b1)}
+:root[data-skin="2"] .logo b{font-weight:800}
+:root[data-skin="2"] .tabs button{border:1px solid rgba(255,255,255,.13);box-shadow:none;font-weight:800}
+:root[data-skin="2"] .lang{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .card{border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .card h2{font-weight:800}
+:root[data-skin="2"] .card h2 .tag{font-weight:800}
+:root[data-skin="2"] .btn{border:1px solid rgba(255,255,255,.13);box-shadow:none;font-weight:800}
+:root[data-skin="2"] .btn:active{box-shadow:none}
+:root[data-skin="2"] .mode b{font-weight:800}
+:root[data-skin="2"] .st .n{font-weight:800}
+:root[data-skin="2"] .runhead .lbl{font-weight:800}
+:root[data-skin="2"] .clock{text-shadow:0 1px 2px rgba(0,0,0,.45)}
+:root[data-skin="2"] .go{font-weight:800;border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .lane{border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .lane-top{font-weight:800}
+:root[data-skin="2"] .lhero{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .pname{font-weight:800}
+:root[data-skin="2"] .medal{font-weight:800;border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .finish{font-weight:800;border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .heatchip b{font-weight:800}
+:root[data-skin="2"] .banner{border:1px solid rgba(255,255,255,.13);font-weight:800;box-shadow:none}
+:root[data-skin="2"] .toast{border:1px solid rgba(255,255,255,.13);font-weight:800}
+:root[data-skin="2"] .blogo{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .bev b{font-weight:800}
+:root[data-skin="2"] .bround{font-weight:800;border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .bevbig{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .board.live .bev span{font-weight:800}
+:root[data-skin="2"] .bclock{text-shadow:0 0 2vw color-mix(in srgb,var(--blue) 70%,transparent)}
+:root[data-skin="2"] .bl{border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .bl .htag{font-weight:800;border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .bl .bn{font-weight:800}
+:root[data-skin="2"] .bl .bpen span{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .bl .bplace{font-weight:800;border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .cd b{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .splash .big{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .splash .ko{font-weight:800}
+:root[data-skin="2"] .splash .div{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .squad > div{border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .squad b{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .squad span{font-weight:800}
+:root[data-skin="2"] .stitle{font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+:root[data-skin="2"] .cnode .ic{border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .cnode b{font-weight:800}
+:root[data-skin="2"] .carrow{font-weight:800}
+:root[data-skin="2"] .nextup > div{border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .nextup b{font-weight:800}
+:root[data-skin="2"] .nextup i{font-weight:800}
+:root[data-skin="2"] .srow .r{font-weight:800}
+:root[data-skin="2"] .srow .nm{font-weight:800}
+:root[data-skin="2"] .srow.top2 .r{color:#c1c8d7}
+:root[data-skin="2"] .srow.top3 .r{color:#dcc07d}
+:root[data-skin="2"] .cutline{font-weight:800}
+:root[data-skin="2"] .bcol h3{font-weight:800;border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .bheat{border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .bslot .nm{font-weight:800}
+:root[data-skin="2"] .bslot .rk{font-weight:800}
+:root[data-skin="2"] .podium b{font-weight:800}
+:root[data-skin="2"] .podium .blk{border:1px solid rgba(255,255,255,.13);font-weight:800;box-shadow:none}
+:root[data-skin="2"] .podium.p1 b{text-shadow:0 1px 2px rgba(0,0,0,.45)}
+:root[data-skin="2"] .champtitle{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .restline{font-weight:800}
+:root[data-skin="2"] .empty{font-weight:800}
+:root[data-skin="2"] .gate{font-weight:800}
+:root[data-skin="2"] .gate b{font-weight:800}
+:root[data-skin="2"] .flowpill{border:1px solid rgba(255,255,255,.13);font-weight:800}
+:root[data-skin="2"] .runbar .lbl{font-weight:800}
+:root[data-skin="2"] .rtable td b{font-weight:800}
+:root[data-skin="2"] .divsel{font-weight:800;border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .rgbox{border:1px solid rgba(255,255,255,.13) !important;box-shadow:none !important}
+:root[data-skin="2"] .ksw{color:#dfc486}
+:root[data-skin="2"] .ks .ksw b{color:#d6b76e}
+:root[data-skin="2"] .hlogo b{font-weight:800}
+:root[data-skin="2"] .shine::after{background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.95) 45%,rgba(223,196,134,.6) 52%,transparent 66%)}
+:root[data-skin="2"] .nxt .nl{font-weight:800}
+:root[data-skin="2"] .bev span{font-weight:800}
+:root[data-skin="2"] .licbox{border:1px solid rgba(255,255,255,.13);box-shadow:none}
+:root[data-skin="2"] .licbox .lt{font-weight:800}
+:root[data-skin="2"] .licst{font-weight:800}
+:root[data-skin="2"] .wm span{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .qh{font-weight:800}
+:root[data-skin="2"] .jtop{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .jtop b{font-weight:800}
+:root[data-skin="2"] .jtop .dot{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .jfig{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .jkid b{font-weight:800}
+:root[data-skin="2"] .jfin{border:1px solid rgba(255,255,255,.13);font-weight:800;box-shadow:none}
+:root[data-skin="2"] .jfin:active:not(:disabled){box-shadow:none}
+:root[data-skin="2"] .jpen button{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .jpen span{font-weight:800}
+:root[data-skin="2"] .jwait{font-weight:800}
+:root[data-skin="2"] .rig.pw .gbelt{filter:drop-shadow(0 0 4px #d6b566)}
+:root[data-skin="2"] .pwov .rays{background:repeating-conic-gradient(from 0deg,rgba(214,181,102,.38) 0 8deg,transparent 8deg 18deg)}
+:root[data-skin="2"] .pwt b{font-weight:800;-webkit-text-stroke:0;text-shadow:1vw 1vw 0 var(--red),0 0 4vw #dfc486}
+:root[data-skin="2"] .pwt span{font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+:root[data-skin="2"] .fxrow b{font-weight:800}
+:root[data-skin="2"] .lanes4 i{font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+:root[data-skin="2"] .bbest{font-weight:800}
+:root[data-skin="2"] .ilane{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .ihero{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .iname{font-weight:800}
+:root[data-skin="2"] .iall b{font-weight:800}
+:root[data-skin="2"] .iready{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .recov{background:radial-gradient(circle,rgba(214,181,102,.35),transparent 60%)}
+:root[data-skin="2"] .rect b{font-weight:800;-webkit-text-stroke:0}
+:root[data-skin="2"] .rect span{font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+:root[data-skin="2"] .rect i{font-weight:800;border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .rect small{text-shadow:0 1px 2px rgba(0,0,0,.45)}
+:root[data-skin="2"] .ccol{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .cbar{border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .ccol span{font-weight:800}
+:root[data-skin="2"] .rtag{font-weight:800;border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .rname{font-weight:800;border:1px solid rgba(255,255,255,.13)}
+:root[data-skin="2"] .finish, :root[data-skin="2"] .go{box-shadow:inset 0 1px 0 rgba(255,255,255,.65), 0 12px 20px -6px rgba(0,0,0,.6)}
+:root[data-skin="2"] .finish:active:not(:disabled), :root[data-skin="2"] .go:active:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,255,255,.65), 0 4px 8px -4px rgba(0,0,0,.6)}
+:root[data-skin="2"] .board .bl{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 36%,transparent) 0%,color-mix(in srgb,var(--c) 10%,rgba(10,15,26,.45)) 46%,rgba(0,0,0,.6) 100%)}
+:root[data-skin="2"] .board .srow.top1 .r{background:radial-gradient(circle at 35% 30%,#dfc486,var(--gold) 45%,#8d6e25)}
+:root[data-skin="2"] .board .srow.top2 .r{background:radial-gradient(circle at 35% 30%,#fff,#c1c8d7 45%,#7d889e)}
+:root[data-skin="2"] .board .srow.top3 .r{background:radial-gradient(circle at 35% 30%,#dfc486,#d2ae58 45%,#836623)}
+:root[data-skin="2"] .jpen .jn{font-weight:800}
+:root[data-skin="2"] .manhint{background:rgba(214,181,102,.1);border:1px solid rgba(214,181,102,.4)}
+:root[data-skin="2"] .manhd b{font-weight:800}
+:root[data-skin="2"] .manbody h3{font-weight:800}
+:root[data-skin="2"] .mansteps li i{background:#7d8dac}
+:root[data-skin="2"] .mantip{background:rgba(214,181,102,.12);border:1px solid rgba(214,181,102,.45)}
+:root[data-skin="2"] .board.v3 .bl .htag{color:#05070b}
+:root[data-skin="2"] .board.v3 .champtitle{text-shadow:0 0 calc(2*var(--u)) rgba(215,181,103,.35)}
+:root[data-skin="2"] .bossslide .bline b{font-weight:800;color:#c1c8d7}
+:root[data-skin="2"] body{font-weight:500;background:radial-gradient(1200px 600px at 50% -10%,#17213f 0%,transparent 60%),var(--night)!important}
+:root[data-skin="2"] b,:root[data-skin="2"] strong,:root[data-skin="2"] h1,:root[data-skin="2"] h2,:root[data-skin="2"] h3,:root[data-skin="2"] .btn{font-weight:700}
+:root[data-skin="2"] svg [stroke="#020010"],:root[data-skin="2"] svg [stroke="#04061a"]{stroke:rgba(3,6,15,.55);stroke-width:2.2px}
+:root[data-skin="2"] .board{background:radial-gradient(1400px 700px at 50% -20%,#16203d 0%,#0a1022 55%,#05080f 100%)!important}
+:root[data-skin="2"] .board::before,:root[data-skin="2"] .board::after{opacity:.35}
+:root[data-skin="2"] .board.v3 .bround b{background:var(--gold);color:var(--ink)}
+:root[data-skin="2"] header.top{letter-spacing:-.02em}:root[data-skin="2"] header.top .licchip,:root[data-skin="2"] header.top .link,:root[data-skin="2"] header.top .tabs button,:root[data-skin="2"] header.top .lang button,:root[data-skin="2"] header.top .skinsw button{font-size:12px}
+:root[data-skin="2"] .board.v3 .bl .htag{background:color-mix(in srgb,var(--c) 85%,#fff 0%);color:#fff}
+:root[data-skin="2"] .skinsw{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-left:6px}
+.skinsw{display:inline-flex;border:1px solid rgba(255,255,255,.18);border-radius:999px;overflow:hidden;margin-left:6px}
+.skinsw button{background:none;border:0;color:var(--muted);padding:3px 10px;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.skinsw button[aria-pressed="true"]{background:var(--gold);color:var(--ink)}
+/* SKIN2:END */
 </style>
 
 <header class="top" id="top"></header>
@@ -1617,6 +1765,7 @@ function renderTop(){
     <div class="lang" role="group" aria-label="language">
       <button data-act="lang" data-v="ko" aria-pressed="${S.lang==='ko'}">KO</button><button data-act="lang" data-v="en" aria-pressed="${S.lang==='en'}">EN</button>
     </div>
+    <div class="skinsw" role="group" aria-label="${esc(S.lang==='en'?'Design type':'디자인 형식')}" title="${esc(S.lang==='en'?'Design type: 1 Hero · 2 Premium':'디자인 형식: 1타입 히어로 · 2타입 프리미엄')}"><button data-act="skin" data-v="1" aria-pressed="${S.cfg.skin!=='2'}">${S.lang==='en'?'Type 1':'1타입'}</button><button data-act="skin" data-v="2" aria-pressed="${S.cfg.skin==='2'}">${S.lang==='en'?'Type 2':'2타입'}</button></div>
   </div>`;
   focusState();
 }
@@ -1625,7 +1774,10 @@ function goFull(){keepAwake();try{const el=document.documentElement;if(!document
 
 function camPreview(){const pv=document.getElementById('camPv');if(pv&&CAM.video&&!pv.contains(CAM.video)){CAM.video.className='camv';pv.prepend(CAM.video)}
   if(S.cfg.fx.cam&&!window.__camsAsked){window.__camsAsked=1;camList().then(l=>{window.__cams=l;if(tab==='setup')render()})}}
-function render(){
+/* 디자인 형식: 1타입(히어로) / 2타입(프리미엄) — S.cfg.skin 에 저장 */
+const SKIN2_HEX=['#c2484f', '#3e72c4', '#3b9a6d', '#c9a24b'];
+function applySkin(){const two=S&&S.cfg&&S.cfg.skin==='2';const el=document.documentElement;if(el.dataset.skin!==(two?'2':'1'))el.dataset.skin=two?'2':'1';HEROES.forEach((h,i)=>{if(h.hex0==null)h.hex0=h.hex;h.hex=two?SKIN2_HEX[i]:h.hex0})}
+function render(){applySkin();
   if(ROLE==='judge'){renderJudge();return}
   setTimeout(camPreview,0);
   if(ROLE==='board'){renderBoard();return}
@@ -1820,7 +1972,7 @@ function inLang(l,fn){const o=S.lang;S.lang=l;try{return fn()}finally{S.lang=o}}
 function bil(fn){const en=inLang('en',fn);if(S.lang==='en')return{a:en,b:''};const ko=inLang('ko',fn);return{a:en,b:ko===en?'':ko}}
 const heroEn=i=>HEROES[i].en.toUpperCase();
 function stt(fn){const x=bil(fn);return esc(x.a.toUpperCase())+(x.b?`<small>${esc(x.b)}</small>`:'')}
-function renderBoard(){
+function renderBoard(){applySkin();
   const host=document.getElementById('boardHost');
   if(!boardVisible()){host.innerHTML='';return}
   if(ROLE==='board'){document.getElementById('top').hidden=true;document.getElementById('app').hidden=true}
@@ -2104,6 +2256,7 @@ document.addEventListener('click',e=>{
     case'pickDiv':pickDiv(v);break;
     case'stopFlow':clearFlow();render();break;
     case'openBoard':{const t0=Date.now();setTimeout(()=>{if(boardSeen<t0){toast(t('noWin'));setTab('board')}},2500)}break;
+    case'skin':S.cfg.skin=v==='2'?'2':'1';applySkin();commit();break;
     case'lang':S.lang=v;commit();if(MAN)manDraw();break;
     case'start':startHeat();break;
     case'fin':finishLane(+v);break;
