@@ -1925,7 +1925,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.38'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.39'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -3516,6 +3516,9 @@ function vAdminResults0(c,L,coaches,cf){
           <label class="f"><span>대표 이름</span><input type="text" id="ceARep" value="${esc(cf.aRep||'')}" placeholder="${esc(ASSOC_DEF.rep)}"></label></div>
         <label class="f"><span>상장 문구</span><textarea id="ceABody" rows="3" placeholder="${esc(ASSOC_DEF.body)}">${esc(cf.aBody||'')}</textarea></label>
         <span class="small mute">빈칸이면 회색 글씨(기본 문구)로 찍힙니다.</span>
+        <div class="acct" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><img id="ceSealImg" alt="직인" src="${esc((UI.certSeal!==undefined?UI.certSeal:cf.aSeal)||ASSOC_SEAL)}" style="width:72px;height:72px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px">
+          <div class="stack" style="gap:6px;flex:1;min-width:220px"><b>협회장 직인 그림</b><span class="small mute" id="ceSealNote">${(UI.certSeal!==undefined?UI.certSeal:cf.aSeal)?'올린 직인으로 찍힙니다':'지금은 기본 직인(사진에서 다시 그린 것)으로 찍힙니다'} · 흰 바탕 스캔·사진(JPG)도 흰 부분은 저절로 투명해집니다</span>
+            <div class="row" style="gap:8px"><label class="btn sm gold" style="cursor:pointer">📎 직인 파일 올리기<input type="file" id="ceSeal" accept="image/png,image/jpeg,image/webp" data-on="ceSeal" hidden></label>${(UI.certSeal!==undefined?UI.certSeal:cf.aSeal)?'<button class="btn sm" type="button" data-a="ceSealDef">기본 직인으로 되돌리기</button>':''}</div></div></div>
         <label class="row" style="gap:8px"><input type="checkbox" id="ceABg" ${cf.aBg?'checked':''} data-on="ceAOpt"> 배경(보라 띠·로고)도 함께 인쇄 — 인쇄된 종이가 없을 때 일반 종이용</label>
         <label class="row" style="gap:8px"><input type="checkbox" id="ceANoSeal" ${cf.aNoSeal?'checked':''} data-on="ceAOpt"> 직인은 찍지 않기 (직인을 손으로 찍을 때)</label></div>
       <details class="olddes" ${!['wt','assoc'].includes(cf.style||'wt')?'open':''}><summary>예전 디자인 (띠 · 리본 · 내 사진)</summary><div class="stylepick">${CERT_STYLES2.filter(x=>x[0]!=='wt'&&x[0]!=='assoc').map(([k,l])=>spItem(k,l,cf.style||'wt')).join('')}</div></details>
@@ -4038,7 +4041,7 @@ function drawWT(ctx,r,comp,no){
 /* 상장 설정 화면에서 지금 고른 값 */
 function certForm(c){const v=id=>{const el=document.getElementById(id);return el?el.value:undefined;},t=(id,old)=>{const x=v(id);return x===undefined?(old||''):x.trim();},ck=n=>(document.querySelector(`input[name=${n}]:checked`)||{}).value;const o=c.cert||{};
   const cb=(id,old)=>{const el=document.getElementById(id);return el?!!el.checked:!!old;},sty=ck('ceStyle')||o.style||'wt';
-  return {...o,aHost:t('ceAHost',o.aHost),aTitle:t('ceATitle',o.aTitle),aRep:t('ceARep',o.aRep),aBody:t('ceABody',o.aBody),aBg:cb('ceABg',o.aBg),aNoSeal:cb('ceANoSeal',o.aNoSeal),style:sty,orient:sty==='assoc'?'port':(ck('ceOrient')||o.orient||'port'),bg:UI.certBg!==undefined?UI.certBg:o.bg,host:t('ceHost',o.host),title:t('ceTitle',o.title),rep:t('ceRep',o.rep),date:v('ceDate')??o.date,serial:t('ceSerial',o.serial),
+  return {...o,aHost:t('ceAHost',o.aHost),aTitle:t('ceATitle',o.aTitle),aRep:t('ceARep',o.aRep),aBody:t('ceABody',o.aBody),aBg:cb('ceABg',o.aBg),aNoSeal:cb('ceANoSeal',o.aNoSeal),aSeal:UI.certSeal!==undefined?UI.certSeal:(o.aSeal||''),style:sty,orient:sty==='assoc'?'port':(ck('ceOrient')||o.orient||'port'),bg:UI.certBg!==undefined?UI.certBg:o.bg,host:t('ceHost',o.host),title:t('ceTitle',o.title),rep:t('ceRep',o.rep),date:v('ceDate')??o.date,serial:t('ceSerial',o.serial),
     lang:ck('ceLang')||o.lang||'ko',flang:v('ceFlang')||o.flang||'en',name_f:t('ceNameF',o.name_f),place_f:t('cePlaceF',o.place_f),host_f:t('ceHostF',o.host_f),title_f:t('ceTitleF',o.title_f),rep_f:t('ceRepF',o.rep_f)};}
 function spItem(k,l,cur){return `<label class="sp ${cur===k?'on':''}"><input type="radio" name="ceStyle" value="${k}" ${cur===k?'checked':''} data-on="ceStyle"><canvas class="spthumb" data-style="${k}" width="124" height="175" aria-hidden="true"></canvas><span>${l}</span></label>`;}
 /*@@INTLEND*/
@@ -4233,7 +4236,22 @@ function drawAssocText(ctx, r, cf, im, CW, CH, F) {
 const ASSOC_SEAL='cert/wtcaa_seal.png',ASSOC_LOGO='cert/wtcaa_logo.jpg';
 const ASSOC_DEF={host:'세계태권도문화예술협회',title:'회장',rep:'김원섭',body:'위 사람은 제9회 세계태권도문화예술협회 태권도대회에서 위와 같은 성적을 거두었기에 상장을 주어 높이 칭찬합니다.'};
 function assocImg(u){const p=BGC.get(u);return p&&p.__img||null;}
-async function prepAssoc(){for(const u of [ASSOC_SEAL,ASSOC_LOGO]){const p=loadBg(u);const im=await p;if(im)p.__img=im;}}
+async function prepAssoc(list){const us=new Set([ASSOC_SEAL,ASSOC_LOGO]);(list||[]).forEach(x=>{const u=x&&x.comp&&x.comp.cert&&x.comp.cert.aSeal;if(u)us.add(u);});
+  for(const u of us){const p=loadBg(u);const im=await p;if(im)p.__img=im;}}
+/* v1.7.39 협회장 직인 그림 올리기: 흰 바탕은 투명하게 · 둘레를 잘라 정사각형으로 (PNG 투명 그림은 그대로) */
+async function uploadCertSeal(F){
+  const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('그림을 읽지 못했습니다 (PNG·JPG로 올려 주세요)'));i.src=URL.createObjectURL(F);});
+  const z=Math.min(1,1400/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*z)),h=Math.max(1,Math.round(im.height*z));
+  const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.drawImage(im,0,0,w,h);
+  const d=g.getImageData(0,0,w,h),p=d.data;let hasA=false;for(let i=3;i<p.length;i+=16)if(p[i]<240){hasA=true;break;}
+  if(!hasA)for(let i=0;i<p.length;i+=4){const lum=.3*p[i]+.59*p[i+1]+.11*p[i+2],sat=p[i]-Math.min(p[i+1],p[i+2]);const a=Math.max(0,Math.min(1,Math.max((235-lum)/90,sat/70)));p[i+3]=Math.round(a*255);}
+  let x0=w,y0=h,x1=-1,y1=-1;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(p[(y*w+x)*4+3]>40){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  if(x1<0)throw new Error('그림에서 직인을 찾지 못했습니다. 흰 바탕에 빨간 직인 그림을 올려 주세요');
+  g.putImageData(d,0,0);const side=Math.max(x1-x0,y1-y0)+12,o=document.createElement('canvas'),S=Math.min(760,side);o.width=S;o.height=S;
+  const k=S/side;o.getContext('2d').drawImage(c,x0-(side-(x1-x0))/2,y0-(side-(y1-y0))/2,side,side,0,0,S,S);
+  const blob=await new Promise(r=>o.toBlob(r,'image/png'));const path=`${UI.adminComp}/cert_seal_${Date.now()}.png`;
+  try{const {error}=await sb.storage.from('comp-docs').upload(path,blob,{upsert:true,contentType:'image/png'});if(error)throw error;return sb.storage.from('comp-docs').getPublicUrl(path).data.publicUrl;}
+  catch(e){const sm=document.createElement('canvas');sm.width=sm.height=Math.min(420,S);sm.getContext('2d').drawImage(o,0,0,sm.width,sm.height);return sm.toDataURL('image/png');}}
 function assocCf(cf){cf=cf||{};return {host:cf.aHost||ASSOC_DEF.host,title:cf.aTitle||ASSOC_DEF.title,rep:cf.aRep||ASSOC_DEF.rep,body:cf.aBody||ASSOC_DEF.body,bg:!!cf.aBg,noSeal:!!cf.aNoSeal};}
 function drawAssocCert(ctx,r,comp,no,thumb){
   const cf=comp.cert||{},a=assocCf(cf),F={serif:SERIF,sans:SANS,cin:'Cinzel,serif',lat:SERIF},team=r.kind==='team';
@@ -4241,7 +4259,7 @@ function drawAssocCert(ctx,r,comp,no,thumb){
   ctx.save();ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,CW,CH);
   if(a.bg||thumb)drawAssoc(ctx,{},{},{logo:assocImg(ASSOC_LOGO)},CW,CH,{...F,bgOnly:true});
   const rr={sport:team?'종합':(SPORTS[r.sport]?SPORTS[r.sport].n:''),div:team?'':(r.div||''),rankText:team?awardTitle(r):`${r.rank}위`,org:team?(r.name||''):(r.team||''),name:team?'':(r.name||''),members:team?'':(r.members||'')};
-  drawAssocText(ctx,rr,{host:a.host,title:a.title,rep:a.rep,dateText:`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`,body:a.body,serial:no?`제 ${no} 호`:''},{seal:a.noSeal?null:assocImg(ASSOC_SEAL)},CW,CH,F);
+  drawAssocText(ctx,rr,{host:a.host,title:a.title,rep:a.rep,dateText:`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`,body:a.body,serial:no?`제 ${no} 호`:''},{seal:a.noSeal?null:(cf.aSeal&&assocImg(cf.aSeal))||assocImg(ASSOC_SEAL)},CW,CH,F);
   ctx.restore();}
 
 function drawCertStyled(ctx,r,comp,no){const cf=comp.cert||{};let st=cf.style||'wt';if(st==='assoc'){setCertSize('port');return drawAssocCert(ctx,r,comp,no,!!cf.__thumb);}setCertSize(cf.orient);if(st==='modern'&&LAND())st='wt';if(st==='wt')return drawWT(ctx,r,comp,no);
@@ -4258,7 +4276,7 @@ async function uploadCertBg(F){const bmp=await new Promise((res,rej)=>{const im=
   try{const {error}=await sb.storage.from('comp-docs').upload(path,blob,{upsert:true,contentType:'image/jpeg'});if(error)throw error;return sb.storage.from('comp-docs').getPublicUrl(path).data.publicUrl;}
   catch(e){const z2=Math.min(1,1500/big),d=document.createElement('canvas');d.width=Math.round(bmp.width*z2);d.height=Math.round(bmp.height*z2);d.getContext('2d').drawImage(bmp,0,0,d.width,d.height);return d.toDataURL('image/jpeg',.72);}}
 async function certPdf(list,fname){if(!list.length)return;toast(`상장 ${list.length}장 만드는 중…`);
-  const lib=await loadJsPDF();await certFonts(list);await prepBg(list);if(list.some(x=>(x.comp.cert||{}).style==='assoc'))await prepAssoc();await prepFlags(list);const cv=document.createElement('canvas');const ctx=cv.getContext('2d');
+  const lib=await loadJsPDF();await certFonts(list);await prepBg(list);if(list.some(x=>(x.comp.cert||{}).style==='assoc'))await prepAssoc(list);await prepFlags(list);const cv=document.createElement('canvas');const ctx=cv.getContext('2d');
   const land=c=>(c.cert||{}).orient==='land'&&(c.cert||{}).style!=='assoc';const doc=new lib.jsPDF({orientation:land(list[0].comp)?'landscape':'portrait',unit:'mm',format:'a4',compress:true});
   for(let i=0;i<list.length;i++){const {r,comp}=list[i],L=land(comp);if(i)doc.addPage('a4',L?'landscape':'portrait');setCertSize(L?'land':'port');if(cv.width!==CW||cv.height!==CH){cv.width=CW;cv.height=CH;}
     const cf=comp.cert||{};drawCertStyled(ctx,r,comp,cf.serial?`${cf.serial}${String(i+1).padStart(3,'0')}`:'');
@@ -4267,10 +4285,10 @@ async function certPdf(list,fname){if(!list.length)return;toast(`상장 ${list.l
 async function certPreview(){const cv=document.getElementById('certCv');if(!cv)return;const c=D().comps.find(x=>x.id===UI.adminComp);if(!c)return;
   const r=resultsOf(c).find(x=>x.kind==='medal')||{kind:'medal',sport:c.sports[0]||'poomsae',rank:1,div:'공인 남자 개인전 초등 5학년부',name:'김태권',team:'의정부태권도',coach:'',nat:'KOR',nameEn:'Kim Tae-kwon'};
   const cert=certForm(c);
-  const L1=[{r,comp:{...c,cert}}];await certFonts(L1);await prepBg(L1);await prepAssoc();await prepFlags(L1);const land=cert.orient==='land';
+  const L1=[{r,comp:{...c,cert}}];await certFonts(L1);await prepBg(L1);await prepAssoc(L1);await prepFlags(L1);const land=cert.orient==='land';
   if(cv.width!==(land?877:620)){cv.width=land?877:620;cv.height=land?620:877;}
   const ctx=cv.getContext('2d');setCertSize(cert.orient);ctx.save();ctx.scale(cv.width/CW,cv.height/CH);drawCertStyled(ctx,r,{...c,cert},cert.serial?cert.serial+'001':'');ctx.restore();
-  document.querySelectorAll('canvas.spthumb').forEach(t=>{const key=t.dataset.style+cert.orient+(t.dataset.style==='photo'?cert.bg||'':'')+(t.dataset.style==='wt'?cert.lang+cert.flang:'')+(t.dataset.style==='assoc'?JSON.stringify([cert.aHost,cert.aTitle,cert.aRep,cert.aBody,cert.aNoSeal]):'');if(t.dataset.done===key)return;t.dataset.done=key;
+  document.querySelectorAll('canvas.spthumb').forEach(t=>{const key=t.dataset.style+cert.orient+(t.dataset.style==='photo'?cert.bg||'':'')+(t.dataset.style==='wt'?cert.lang+cert.flang:'')+(t.dataset.style==='assoc'?JSON.stringify([cert.aHost,cert.aTitle,cert.aRep,cert.aBody,cert.aNoSeal,cert.aSeal]):'');if(t.dataset.done===key)return;t.dataset.done=key;
     if(t.width!==(land?175:124)){t.width=land?175:124;t.height=land?124:175;}const st=(t.dataset.style==='modern'||t.dataset.style==='assoc')&&land?'wt':t.dataset.style;
     const x=t.getContext('2d');setCertSize(cert.orient);x.save();x.scale(t.width/CW,t.height/CH);drawCertStyled(x,r,{...c,cert:{...cert,style:st,__thumb:true}},'');x.restore();t.closest('.sp').classList.toggle('dis',(t.dataset.style==='modern'||t.dataset.style==='assoc')&&land);});
   const pz=document.getElementById('cePhoto');if(pz)pz.hidden=cert.style!=='photo';const az=document.getElementById('ceAssoc');if(az)az.hidden=cert.style!=='assoc';}
@@ -4587,6 +4605,7 @@ document.addEventListener('click',e=>{
   else if(a==='certAll'){const c=S.comps.find(x=>x.id===b.dataset.c);if(!c)return;const u=me(),L=resultsOf(c,isOps(u)?null:u);
     run(()=>certPdf(L.map(r=>({r,comp:c})),`${c.name}_상장${isOps(u)?'_전체':'_'+(u.org||u.name)}`));}
   else if(a==='certPrev'){certPreview();}
+  else if(a==='ceSealDef'){UI.certSeal='';const im=document.getElementById('ceSealImg');if(im)im.src=ASSOC_SEAL;const nt=document.getElementById('ceSealNote');if(nt)nt.textContent='기본 직인으로 찍힙니다';certPreview();toast('기본 직인으로 바꿨습니다. 「상장 설정 저장」을 눌러 주세요');}
   else if(a==='liveCopy'){copyText(b.dataset.u,'관람객 주소를 복사했습니다');}
   else if(a==='liveShare'){copyText(liveUrl(liveIdOf(route())),'주소를 복사했습니다. 단체방에 붙여 넣으세요');}
   else if(a==='liveShareMy'){const u=me(),id=liveIdOf(route()),c=D().comps.find(x=>x.id===id);if(!u||!u.org)return;const url=liveUrl(id,u.org);
@@ -4633,6 +4652,7 @@ document.addEventListener('change',e=>{
   else if(on==='ceFlang'){certPreview();}
   else if(on==='ceStyle'){document.querySelectorAll('.stylepick .sp').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const pz=document.getElementById('cePhoto');if(pz)pz.hidden=t.value!=='photo';const az=document.getElementById('ceAssoc');if(az)az.hidden=t.value!=='assoc';certPreview();}
   else if(on==='ceAOpt'){certPreview();}
+  else if(on==='ceSeal'){const F=t.files&&t.files[0];if(!F)return;run(async()=>{UI.certSeal=await uploadCertSeal(F);const im=document.getElementById('ceSealImg');if(im)im.src=UI.certSeal;const nt=document.getElementById('ceSealNote');if(nt)nt.textContent='올린 직인으로 찍힙니다 · 「상장 설정 저장」을 눌러야 지도자 상장에도 들어갑니다';await certPreview();toast('직인 그림을 올렸습니다. 미리보기를 확인하고 「상장 설정 저장」을 눌러 주세요',7000);});}
   else if(on==='licDate'){const d=t.value;UI.licForm={...(UI.licForm||{kind:'event'}),date:d,starts:'',ends:'',holder:(document.getElementById('lcHolder')||{}).value||'',contact:(document.getElementById('lcContact')||{}).value||'',note:(document.getElementById('lcNote')||{}).value||''};render();}
   else if(on==='resOpen'){const c=UI.adminComp,v=t.checked;run(async()=>{await q(sb.from('comps').update({results_open:v}).eq('id',c));await reload();toast(v?'지도자에게 결과·상장을 공개했습니다':'결과·상장을 비공개로 바꿨습니다');});}
   else if(on==='resCoach'){const id=t.dataset.id,v=t.value||null;run(async()=>{await q(sb.from('results').update({coach_id:v}).eq('id',id));await reload();toast(v?'지도자를 연결했습니다':'연결을 풀었습니다');});}
@@ -4719,7 +4739,7 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,v=id=
   else if(f.id==='fCert'){const c=D().comps.find(x=>x.id===UI.adminComp);if(!c)return;
     const cert=certForm(c);
     if(cert.style==='photo'&&!cert.bg){formErr(f,'배경 사진을 먼저 골라 주세요');return;}
-    run(async()=>{await q(sb.from('comps').update({cert}).eq('id',c.id));UI.certBg=undefined;await reload();toast('상장 설정을 저장했습니다');});}
+    run(async()=>{await q(sb.from('comps').update({cert}).eq('id',c.id));UI.certBg=undefined;UI.certSeal=undefined;await reload();toast('상장 설정을 저장했습니다');});}
   else if(f.id==='fMe'){const d={name:v('mName').trim(),org:v('mOrg').trim(),phone:v('mPhone').trim(),license:v('mLic').trim()};if(M.hasNat&&v('mNat'))d.country=v('mNat');
     if(!d.name||!d.org||!d.phone){formErr(f,'이름·소속·휴대폰을 모두 적어 주세요');return;}
     run(async()=>{await q(sb.from('profiles').update(d).eq('id',me().id));await reload();toast('내 정보를 저장했습니다');});}
