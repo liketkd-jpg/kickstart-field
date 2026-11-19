@@ -1925,7 +1925,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.37'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.38'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
@@ -3508,8 +3508,17 @@ function vAdminResults0(c,L,coaches,cf){
     <label class="switch"><input type="checkbox" data-on="resOpen" ${c.resultsOpen?'checked':''}><span>${c.resultsOpen?'지도자에게 공개 중':'공개 전 (관리자만 봄)'}</span></label></div>
     <div class="certgrid"><form class="card stack" id="fCert"><h3>상장 설정</h3>
       <div class="stack" style="gap:6px"><span class="small" style="font-weight:800;color:var(--mute)">상장 디자인</span><div class="seg2" role="radiogroup" aria-label="상장 방향">${[['port','세로 (A4)'],['land','가로 (A4)']].map(([k,l])=>`<label class="${(cf.orient||'port')===k?'on':''}"><input type="radio" name="ceOrient" value="${k}" ${(cf.orient||'port')===k?'checked':''} data-on="ceOrient">${l}</label>`).join('')}</div>
-      <div class="stylepick wtpick">${CERT_STYLES2.filter(x=>x[0]==='wt').map(([k,l])=>spItem(k,l,cf.style||'wt')).join('')}</div>
-      <details class="olddes" ${(cf.style||'wt')!=='wt'?'open':''}><summary>예전 디자인 (띠 · 리본 · 내 사진)</summary><div class="stylepick">${CERT_STYLES2.filter(x=>x[0]!=='wt').map(([k,l])=>spItem(k,l,cf.style||'wt')).join('')}</div></details>
+      <div class="stylepick wtpick">${CERT_STYLES2.filter(x=>x[0]==='wt'||x[0]==='assoc').map(([k,l])=>spItem(k,l,cf.style||'wt')).join('')}</div>
+      <div id="ceAssoc" class="acct stack" style="gap:8px" ${(cf.style||'wt')==='assoc'?'':'hidden'}><b>협회 양식 · 인쇄된 상장 종이에 글씨와 직인만 찍습니다</b>
+        <span class="small mute">띠·로고·테두리가 이미 인쇄된 종이를 프린터에 넣고 뽑으세요. 위치가 조금 어긋나면 프린터 「여백 없음 · 실제 크기(100%)」로 인쇄해 주세요.</span>
+        <div class="grid2"><label class="f"><span>협회 이름</span><input type="text" id="ceAHost" value="${esc(cf.aHost||'')}" placeholder="${esc(ASSOC_DEF.host)}"></label>
+          <label class="f"><span>직함</span><input type="text" id="ceATitle" value="${esc(cf.aTitle||'')}" placeholder="${esc(ASSOC_DEF.title)}"></label>
+          <label class="f"><span>대표 이름</span><input type="text" id="ceARep" value="${esc(cf.aRep||'')}" placeholder="${esc(ASSOC_DEF.rep)}"></label></div>
+        <label class="f"><span>상장 문구</span><textarea id="ceABody" rows="3" placeholder="${esc(ASSOC_DEF.body)}">${esc(cf.aBody||'')}</textarea></label>
+        <span class="small mute">빈칸이면 회색 글씨(기본 문구)로 찍힙니다.</span>
+        <label class="row" style="gap:8px"><input type="checkbox" id="ceABg" ${cf.aBg?'checked':''} data-on="ceAOpt"> 배경(보라 띠·로고)도 함께 인쇄 — 인쇄된 종이가 없을 때 일반 종이용</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="ceANoSeal" ${cf.aNoSeal?'checked':''} data-on="ceAOpt"> 직인은 찍지 않기 (직인을 손으로 찍을 때)</label></div>
+      <details class="olddes" ${!['wt','assoc'].includes(cf.style||'wt')?'open':''}><summary>예전 디자인 (띠 · 리본 · 내 사진)</summary><div class="stylepick">${CERT_STYLES2.filter(x=>x[0]!=='wt'&&x[0]!=='assoc').map(([k,l])=>spItem(k,l,cf.style||'wt')).join('')}</div></details>
       <div id="cePhoto" class="acct" ${(cf.style||'wt')==='photo'?'':'hidden'}><b>내 사진 배경</b> <span class="small mute">가운데가 비어 있는 그림이 좋습니다. 가로 사진도 세로 상장에 맞게 돌려서 채웁니다. 가장자리는 조금 잘립니다.</span>
         <label class="f" style="margin-top:8px"><span>배경 사진 고르기 (JPG·PNG)</span><input type="file" id="ceBg" accept="image/*" data-on="ceBg"></label>${cf.bg?'<span class="small mute">지금 올린 사진이 있습니다. 새로 고르면 바뀝니다.</span>':''}</div></div>
       <div class="grid2"><label class="f"><span>주최 (상장 아래 큰 글씨)</span><input type="text" id="ceHost" value="${esc(cf.host)}" placeholder="KICKSTART UP 대회 조직위원회"></label>
@@ -3543,7 +3552,7 @@ function wrapT(ctx,text,maxW){const out=[];let line='';for(const w of String(tex
 function fitFont(ctx,text,weight,size,family,maxW){let s=size;do{ctx.font=`${weight} ${s}px ${family}`;if(ctx.measureText(text).width<=maxW)break;s-=2;}while(s>24);return s;}
 /* 한글 글꼴은 글자 묶음별로 나뉘어 있어, 상장에 쓸 글자를 알려 줘야 그 묶음을 받아 옴 */
 const CERT_BASE='상 장금은동메달제위종합우승준팀명성부문소속대회지도자선수들은에서와같이우수한적을거두었으므로이수여합니다입하였년월일직인호0123456789 ·,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-function certChars(list){const set=new Set(CERT_BASE+'ÄÖÜäöüßÁÉÍÓÚÑáéíóúñ¿¡«»„“”’–·.º()');list.forEach(({r,comp})=>{const fl=certFl(comp.cert);const T=CT[fl];[T.title,T.sub,T.cert,T.certTeam,T.res(r,true),T.res(r,false),T.div('',''),T.at(''),fDate(new Date(),fl),divTr(r.div,fl),r.nameEn,r.nat,r.name,r.team,r.div,r.coach,comp.name,comp.place,SPORTS[r.sport]?SPORTS[r.sport].n:'',...Object.values(comp.cert||{})].forEach(v=>{for(const ch of String(v||''))set.add(ch);});});return [...set].join('');}
+function certChars(list){const set=new Set(CERT_BASE+'ÄÖÜäöüßÁÉÍÓÚÑáéíóúñ¿¡«»„“”’–·.º()');list.forEach(({r,comp})=>{const fl=certFl(comp.cert);const T=CT[fl];[T.title,T.sub,T.cert,T.certTeam,T.res(r,true),T.res(r,false),T.div('',''),T.at(''),fDate(new Date(),fl),divTr(r.div,fl),r.nameEn,r.nat,r.name,r.team,r.div,r.coach,comp.name,comp.place,SPORTS[r.sport]?SPORTS[r.sport].n:'',...Object.values(comp.cert||{}),...Object.values(ASSOC_DEF),'종목순위소속성명팀원종합우승준년월일호CERTIFICATE OF AWARD',r.members].forEach(v=>{for(const ch of String(v||''))set.add(ch);});});return [...set].join('');}
 async function certFonts(list){const t=certChars(list||[]);
   try{await Promise.all([['900 200px','"Noto Serif KR"'],['700 60px','"Noto Serif KR"'],['600 40px','"Noto Serif KR"'],['500 36px','"Noto Serif KR"'],['700 30px','"Noto Sans KR"'],['800 30px','Archivo'],['400 300px','"Nanum Brush Script"'],['700 100px','Cinzel'],['900 100px','Cinzel']].map(([w,f])=>document.fonts.load(`${w} ${f}`,t)));}catch(e){}}
 function drawCert(ctx,r,comp,no){
@@ -3845,7 +3854,7 @@ function drawPhoto(ctx,r,comp,no){const cf=comp.cert||{};const im=cf.bg&&BGC.has
   const v=ctx.createRadialGradient(CW/2,CH/2,U()*.15,CW/2,CH/2,U()*.62);v.addColorStop(0,dark?'rgba(0,0,0,.35)':'rgba(255,255,255,.45)');v.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=v;ctx.fillRect(0,0,CW,CH);
   certText(ctx,r,comp,no,dark?LIGHT:INK);ctx.restore();}
 async function prepBg(list){for(const {comp} of list){const u=comp.cert&&comp.cert.bg;if(u){const p=loadBg(u);const im=await p;if(im)p.__img=im;}}}
-const CERT_STYLES2=[['wt','국제 격식 (흰 바탕 · 검정·금색)'],['cloth','흰 천 휘날리는 띠'],['satin','붓글씨 · 홍청 리본'],['knot','띠 매듭 (검정)'],['belt','두툼한 태권도 띠'],['night','밤하늘 리본'],['modern','모던 (세로 전용)'],['photo','내 사진 배경']];
+const CERT_STYLES2=[['assoc','협회 양식 (인쇄된 상장 종이용)'],['wt','국제 격식 (흰 바탕 · 검정·금색)'],['cloth','흰 천 휘날리는 띠'],['satin','붓글씨 · 홍청 리본'],['knot','띠 매듭 (검정)'],['belt','두툼한 태권도 띠'],['night','밤하늘 리본'],['modern','모던 (세로 전용)'],['photo','내 사진 배경']];
 
 /*@@INTL*/
 /* ===== 국제 대회: 나라 코드(올림픽·WT 3글자) · 국기 · 상장 언어 ===== */
@@ -4028,11 +4037,214 @@ function drawWT(ctx,r,comp,no){
 
 /* 상장 설정 화면에서 지금 고른 값 */
 function certForm(c){const v=id=>{const el=document.getElementById(id);return el?el.value:undefined;},t=(id,old)=>{const x=v(id);return x===undefined?(old||''):x.trim();},ck=n=>(document.querySelector(`input[name=${n}]:checked`)||{}).value;const o=c.cert||{};
-  return {...o,style:ck('ceStyle')||o.style||'wt',orient:ck('ceOrient')||o.orient||'port',bg:UI.certBg!==undefined?UI.certBg:o.bg,host:t('ceHost',o.host),title:t('ceTitle',o.title),rep:t('ceRep',o.rep),date:v('ceDate')??o.date,serial:t('ceSerial',o.serial),
+  const cb=(id,old)=>{const el=document.getElementById(id);return el?!!el.checked:!!old;},sty=ck('ceStyle')||o.style||'wt';
+  return {...o,aHost:t('ceAHost',o.aHost),aTitle:t('ceATitle',o.aTitle),aRep:t('ceARep',o.aRep),aBody:t('ceABody',o.aBody),aBg:cb('ceABg',o.aBg),aNoSeal:cb('ceANoSeal',o.aNoSeal),style:sty,orient:sty==='assoc'?'port':(ck('ceOrient')||o.orient||'port'),bg:UI.certBg!==undefined?UI.certBg:o.bg,host:t('ceHost',o.host),title:t('ceTitle',o.title),rep:t('ceRep',o.rep),date:v('ceDate')??o.date,serial:t('ceSerial',o.serial),
     lang:ck('ceLang')||o.lang||'ko',flang:v('ceFlang')||o.flang||'en',name_f:t('ceNameF',o.name_f),place_f:t('cePlaceF',o.place_f),host_f:t('ceHostF',o.host_f),title_f:t('ceTitleF',o.title_f),rep_f:t('ceRepF',o.rep_f)};}
 function spItem(k,l,cur){return `<label class="sp ${cur===k?'on':''}"><input type="radio" name="ceStyle" value="${k}" ${cur===k?'checked':''} data-on="ceStyle"><canvas class="spthumb" data-style="${k}" width="124" height="175" aria-hidden="true"></canvas><span>${l}</span></label>`;}
 /*@@INTLEND*/
-function drawCertStyled(ctx,r,comp,no){const cf=comp.cert||{};let st=cf.style||'wt';setCertSize(cf.orient);if(st==='modern'&&LAND())st='wt';if(st==='wt')return drawWT(ctx,r,comp,no);
+/* 협회 양식 상장 (보라·금 리본 · 가운데 로고 메달) — 캔버스 1240×1754 (A4 세로)
+   r: {sport, div, rank, org, name}, cf: {host, title, rep, date, body, bodyF, hostF, serial}, im: {logo, seal} */
+function drawAssoc(ctx, r, cf, im, CW, CH, F) {
+  const X = CW / 2, SERIF = F.serif, SANS = F.sans, CIN = F.cin;
+  const gold = (x0, y0, x1, y1) => { const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    [[0, '#8A6420'], [.18, '#E9CB7A'], [.32, '#FFF3C4'], [.48, '#B8892F'], [.66, '#F2D48A'], [.82, '#9C7426'], [1, '#E3C273']].forEach(([o, c]) => g.addColorStop(o, c)); return g; };
+  const purp = (x0, y0, x1, y1) => { const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, '#4A2A86'); g.addColorStop(.45, '#2C1658'); g.addColorStop(1, '#170A33'); return g; };
+  ctx.save(); ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
+
+  /* 1. 종이: 상아빛 흰 바탕 + 은은한 가장자리 */
+  ctx.fillStyle = '#FFFEFB'; ctx.fillRect(0, 0, CW, CH);
+  const vg = ctx.createRadialGradient(X, CH * .5, 200, X, CH * .5, CH * .78);
+  vg.addColorStop(0, 'rgba(255,255,255,0)'); vg.addColorStop(1, 'rgba(120,90,170,.09)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, CW, CH);
+
+  /* 2. 가운데 위조방지 무늬 (가는 물결 원) */
+  ctx.save(); ctx.translate(X, CH * .52); ctx.strokeStyle = 'rgba(90,60,150,.06)'; ctx.lineWidth = 1.2;
+  for (let k = 0; k < 26; k++) { ctx.beginPath(); const R0 = 150 + k * 17;
+    for (let a = 0; a <= Math.PI * 2 + .01; a += Math.PI / 180) { const rr = R0 + 7 * Math.sin(a * 18 + k * .5);
+      const x = rr * Math.cos(a), y = rr * Math.sin(a); a ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); }
+  ctx.restore();
+
+  /* 3. 가운데 큰 로고 워터마크 */
+  if (im.logo) { ctx.save(); ctx.globalAlpha = .045; ctx.filter = 'grayscale(1) blur(2px)'; const s = 640;
+    ctx.beginPath(); ctx.arc(X, CH * .52, s / 2 * .94, 0, Math.PI * 2); ctx.clip(); ctx.drawImage(im.logo, X - s / 2, CH * .52 - s / 2, s, s); ctx.restore(); }
+
+  /* 4. 금색 이중 테두리 (안쪽) */
+  const o = 54; ctx.strokeStyle = gold(0, 0, CW, CH); ctx.lineWidth = 5; ctx.strokeRect(o, o, CW - o * 2, CH - o * 2);
+  ctx.lineWidth = 1.6; ctx.strokeRect(o + 14, o + 14, CW - o * 2 - 28, CH - o * 2 - 28);
+  /* 모서리 장식 (마름모) */
+  [[o + 14, o + 14], [CW - o - 14, o + 14], [o + 14, CH - o - 14], [CW - o - 14, CH - o - 14]].forEach(([x, y]) => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4); ctx.fillStyle = gold(-10, -10, 10, 10); ctx.fillRect(-9, -9, 18, 18); ctx.restore(); });
+
+  /* 5. 리본 띠 (위: 왼쪽 아래 → 오른쪽 위 / 아래: 반대) */
+  const band = (flip) => { ctx.save(); if (flip) { ctx.translate(CW, CH); ctx.rotate(Math.PI); }
+    /* 연보라 그림자 띠 */
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(CW, 0); ctx.lineTo(CW, 150); ctx.quadraticCurveTo(CW * .55, 150, 0, 292); ctx.closePath();
+    const lg = ctx.createLinearGradient(0, 0, CW, 300); lg.addColorStop(0, 'rgba(176,150,214,.55)'); lg.addColorStop(1, 'rgba(226,214,240,.35)'); ctx.fillStyle = lg; ctx.fill();
+    /* 진보라 띠 */
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(CW, 0); ctx.lineTo(CW, 100); ctx.quadraticCurveTo(CW * .52, 108, 0, 246); ctx.closePath();
+    ctx.fillStyle = purp(0, 0, CW, 320); ctx.fill();
+    /* 띠 위 은은한 광택 */
+    ctx.save(); ctx.clip(); const sh = ctx.createLinearGradient(0, 60, CW, 200); sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(.5, 'rgba(255,255,255,.10)'); sh.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = sh; ctx.fillRect(0, 0, CW, 260); ctx.restore();
+    /* 금박 줄 두 개 */
+    const line = (y0, y1, cy, w) => { ctx.beginPath(); ctx.moveTo(-10, y0); ctx.quadraticCurveTo(CW * .52, cy, CW + 10, y1); ctx.strokeStyle = gold(0, 0, CW, 0); ctx.lineWidth = w; ctx.stroke(); };
+    line(246, 100, 110, 10); line(270, 128, 134, 3); line(292, 150, 152, 1.2);
+    ctx.restore(); };
+  band(false); band(true);
+
+  /* 6. 메달 (금 로제트 + 리본 꼬리 + 로고) */
+  const MY = 168, MR = 84;
+  ctx.save(); /* 리본 꼬리 */
+  [[-1], [1]].forEach(([s]) => { ctx.beginPath(); ctx.moveTo(X + s * 30, MY + 40); ctx.lineTo(X + s * 66, MY + 118); ctx.lineTo(X + s * 46, MY + 106); ctx.lineTo(X + s * 32, MY + 132); ctx.lineTo(X + s * (-4), MY + 70); ctx.closePath();
+    ctx.fillStyle = gold(X - 100, MY, X + 100, MY + 180); ctx.shadowColor = 'rgba(40,20,70,.35)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4; ctx.fill(); });
+  ctx.restore();
+  ctx.save(); ctx.beginPath(); /* 물결 테두리 */
+  for (let a = 0; a <= Math.PI * 2 + .01; a += Math.PI / 240) { const rr = MR + 9 * Math.cos(a * 22); const x = X + rr * Math.cos(a), y = MY + rr * Math.sin(a); a ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.closePath(); ctx.fillStyle = gold(X - MR, MY - MR, X + MR, MY + MR); ctx.shadowColor = 'rgba(40,20,70,.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6; ctx.fill(); ctx.restore();
+  ctx.beginPath(); ctx.arc(X, MY, MR - 18, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(110,80,20,.55)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(X, MY, MR - 24, 0, Math.PI * 2); ctx.fillStyle = '#1E1030'; ctx.fill();
+  if (im.logo) { ctx.save(); ctx.beginPath(); ctx.arc(X, MY, MR - 27, 0, Math.PI * 2); ctx.clip(); const s = (MR - 27) * 2 * 1.06; ctx.drawImage(im.logo, X - s / 2, MY - s / 2, s, s); ctx.restore(); }
+  ctx.beginPath(); ctx.arc(X, MY, MR - 26, 0, Math.PI * 2); ctx.strokeStyle = gold(X - MR, MY, X + MR, MY); ctx.lineWidth = 3; ctx.stroke();
+
+  if (F.bgOnly) { ctx.restore(); return; }
+  /* 7. 제목 */
+  let y = 500; ctx.fillStyle = '#1C1030'; ctx.font = `900 118px ${SERIF}`;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '60px'; ctx.fillText('상장', X + 30, y); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  y += 58; ctx.font = `700 26px ${CIN}`; ctx.fillStyle = '#9A7429'; if ('letterSpacing' in ctx) ctx.letterSpacing = '9px';
+  ctx.fillText('CERTIFICATE OF AWARD', X + 4, y); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  const orn = (yy) => { ctx.strokeStyle = gold(X - 300, 0, X + 300, 0); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X - 300, yy); ctx.lineTo(X - 22, yy); ctx.moveTo(X + 22, yy); ctx.lineTo(X + 300, yy); ctx.stroke();
+    ctx.save(); ctx.translate(X, yy); ctx.rotate(Math.PI / 4); ctx.fillStyle = gold(-8, -8, 8, 8); ctx.fillRect(-7, -7, 14, 14); ctx.restore(); };
+  orn(y + 30);
+
+  /* 8. 내용 칸 (종목 · 순위 · 소속 · 성명) */
+  y += 100; const LX = 300, VX = 460, rowH = 74;
+  const row = (lab, val, font, color, maxW) => { ctx.textAlign = 'left'; ctx.font = `700 30px ${SERIF}`; ctx.fillStyle = '#6A5590';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '14px'; ctx.fillText(lab, LX, y); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    ctx.fillStyle = '#B48A35'; ctx.fillText(':', VX - 34, y);
+    ctx.font = font; ctx.fillStyle = color; let lines = wrap(ctx, val, maxW || 520); lines.forEach((t, i) => ctx.fillText(t, VX, y + i * 46)); y += rowH + (lines.length - 1) * 46; };
+  row('종목', r.sport, `700 36px ${SERIF}`, '#1C1030');
+  if (r.div) { y -= 26; ctx.textAlign = 'left'; ctx.font = `500 26px ${SERIF}`; ctx.fillStyle = '#5B4A75'; const L = wrap(ctx, r.div, 520); L.forEach((t, i) => ctx.fillText(t, VX, y + i * 36)); y += 22 + L.length * 36 + 4; }
+  /* 순위: 금색 글씨 */
+  ctx.textAlign = 'left'; ctx.font = `700 30px ${SERIF}`; ctx.fillStyle = '#6A5590'; if ('letterSpacing' in ctx) ctx.letterSpacing = '14px'; ctx.fillText('순위', LX, y); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  ctx.fillStyle = '#B48A35'; ctx.fillText(':', VX - 34, y);
+  ctx.font = `900 44px ${SERIF}`; ctx.fillStyle = gold(VX, y - 40, VX + 200, y); ctx.fillText(r.rankText, VX, y + 4);
+  ctx.lineWidth = .8; ctx.strokeStyle = 'rgba(110,80,20,.5)'; ctx.strokeText(r.rankText, VX, y + 4); y += rowH + 4;
+  row('소속', r.org, `700 36px ${SERIF}`, '#1C1030');
+  ctx.textAlign = 'left'; ctx.font = `700 30px ${SERIF}`; ctx.fillStyle = '#6A5590'; if ('letterSpacing' in ctx) ctx.letterSpacing = '14px'; ctx.fillText('성명', LX, y + 6); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  ctx.fillStyle = '#B48A35'; ctx.fillText(':', VX - 34, y + 6);
+  ctx.font = `900 54px ${SERIF}`; ctx.fillStyle = '#1C1030'; if ('letterSpacing' in ctx) ctx.letterSpacing = '22px'; ctx.fillText(r.name, VX, y + 10); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  y += 60; ctx.strokeStyle = gold(LX, 0, CW - LX, 0); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(LX - 20, y); ctx.lineTo(CW - LX + 40, y); ctx.stroke();
+
+  /* 9. 본문 */
+  y += 84; ctx.textAlign = 'center'; ctx.font = `600 37px ${SERIF}`; ctx.fillStyle = '#20152E';
+  const B = wrap(ctx, cf.body, 880); B.forEach((t, i) => ctx.fillText(t, X, y + i * 64)); y += B.length * 64 - 20;
+  if (cf.bodyF) { y += 12; ctx.font = `italic 500 21px ${F.lat}`; ctx.fillStyle = '#8B7A9F'; const E = wrap(ctx, cf.bodyF, 860); E.forEach((t, i) => ctx.fillText(t, X, y + i * 30)); y += E.length * 30; }
+
+  /* 10. 날짜 */
+  y += 62; ctx.font = `700 40px ${SERIF}`; ctx.fillStyle = '#1C1030'; ctx.fillText(cf.dateText, X, y);
+
+  /* 11. 주최 · 대표 · 직인 */
+  y += 104; ctx.textAlign = 'right'; ctx.font = `700 36px ${SERIF}`; ctx.fillStyle = '#1C1030';
+  const repW = (() => { ctx.font = `900 58px ${SERIF}`; if ('letterSpacing' in ctx) ctx.letterSpacing = '26px'; const w = ctx.measureText(cf.rep).width; if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'; return w; })();
+  ctx.font = `700 36px ${SERIF}`; const hostT = `${cf.host} ${cf.title}`, hw = ctx.measureText(hostT).width, total = hw + 30 + repW, sx = X - total / 2 - 40;
+  ctx.textAlign = 'left'; ctx.fillText(hostT, sx, y);
+  ctx.font = `900 58px ${SERIF}`; if ('letterSpacing' in ctx) ctx.letterSpacing = '26px'; ctx.fillText(cf.rep, sx + hw + 30, y + 4); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  /* 직인 자리 (이름 끝 글자에 반쯤 걸치게) */
+  const SS = 150, sxx = sx + hw + 30 + repW - 70, syy = y - 108;
+  if (im.seal) { ctx.save(); ctx.globalAlpha = .9; ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(im.seal, sxx, syy, SS, SS); ctx.restore(); }
+  else { ctx.save(); ctx.setLineDash([8, 6]); ctx.strokeStyle = 'rgba(200,40,40,.75)'; ctx.lineWidth = 3; ctx.strokeRect(sxx, syy, SS, SS); ctx.setLineDash([]);
+    ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(200,40,40,.8)'; ctx.font = `700 26px ${SANS}`; ctx.fillText('직인 자리', sxx + SS / 2, syy + SS / 2 + 9); ctx.restore(); }
+  if (cf.hostF) { ctx.textAlign = 'center'; ctx.font = `600 20px ${CIN}`; ctx.fillStyle = '#9A7429'; if ('letterSpacing' in ctx) ctx.letterSpacing = '4px'; ctx.fillText(cf.hostF, X - 40, y + 46); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'; }
+
+  /* 12. 상장 번호 */
+  if (cf.serial) { ctx.textAlign = 'left'; ctx.font = `500 20px ${SANS}`; ctx.fillStyle = '#8B7A9F'; ctx.fillText(cf.serial, 100, 360); }
+  ctx.restore();
+
+  function wrap(c, s, w) { s = String(s || ''); const out = []; let cur = ''; const words = s.split(/(\s+)/);
+    for (const wd of words) { const t = cur + wd; if (c.measureText(t.trim()).width > w && cur.trim()) { out.push(cur.trim()); cur = wd.trimStart(); }
+      else cur = t; while (c.measureText(cur).width > w) { let k = cur.length; while (k > 1 && c.measureText(cur.slice(0, k)).width > w) k--; out.push(cur.slice(0, k)); cur = cur.slice(k); } }
+    if (cur.trim()) out.push(cur.trim()); return out; }
+  function justify(c, t, cx, yy, w, last) { const ws = t.split(' '); if (last || ws.length < 2) { c.textAlign = last ? 'left' : 'center'; c.fillText(t, last ? cx - w / 2 : cx, yy); c.textAlign = 'center'; return; }
+    const tw = ws.reduce((a, x) => a + c.measureText(x).width, 0), gap = (w - tw) / (ws.length - 1); let x = cx - w / 2; c.textAlign = 'left';
+    ws.forEach(x0 => { c.fillText(x0, x, yy); x += c.measureText(x0).width + gap; }); c.textAlign = 'center'; }
+}
+
+/* 협회 양식 상장 — 미리 인쇄된 종이(띠·로고·테두리) 위에 글씨와 직인만 찍음. 캔버스 1240×1754 (A4 세로)
+   r: {sport, div, rankText, org, name}, cf: {host, title, rep, dateText, body, serial}, im: {seal} */
+function drawAssocText(ctx, r, cf, im, CW, CH, F) {
+  const X = CW / 2, SERIF = F.serif, CIN = F.cin, INK = '#1C1430', LAB = '#5B4B7C', GOLD = '#9C7428';
+  const sp = v => { if ('letterSpacing' in ctx) ctx.letterSpacing = v; };
+  const wrap = (s, w) => { s = String(s || ''); const out = []; let cur = '';
+    for (const wd of s.split(/(\s+)/)) { const t = cur + wd; if (ctx.measureText(t.trim()).width > w && cur.trim()) { out.push(cur.trim()); cur = wd.trimStart(); } else cur = t;
+      while (ctx.measureText(cur).width > w) { let k = cur.length; while (k > 1 && ctx.measureText(cur.slice(0, k)).width > w) k--; out.push(cur.slice(0, k)); cur = cur.slice(k); } }
+    if (cur.trim()) out.push(cur.trim()); return out; };
+  ctx.save(); ctx.textBaseline = 'alphabetic';
+
+  /* 제목 */
+  ctx.textAlign = 'center'; ctx.fillStyle = INK; ctx.font = `900 112px ${SERIF}`; sp('64px'); ctx.fillText('상장', X + 32, 410); sp('0px');
+  ctx.font = `700 22px ${CIN}`; ctx.fillStyle = GOLD; sp('10px'); ctx.fillText('CERTIFICATE OF AWARD', X + 5, 458); sp('0px');
+  ctx.strokeStyle = GOLD; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X - 250, 482); ctx.lineTo(X - 16, 482); ctx.moveTo(X + 16, 482); ctx.lineTo(X + 250, 482); ctx.stroke();
+  ctx.save(); ctx.translate(X, 482); ctx.rotate(Math.PI / 4); ctx.fillStyle = GOLD; ctx.fillRect(-5, -5, 10, 10); ctx.restore();
+
+  /* 내용 칸: 이름표(종목·순위·소속·성명) */
+  const LX = 318, CX = 452, VX = 486; let y = 556;
+  const fit = (t, w, big, small, wt) => { let z = big; ctx.font = `${wt} ${z}px ${SERIF}`; while (z > small && ctx.measureText(t).width > w) { z--; ctx.font = `${wt} ${z}px ${SERIF}`; } return z; };
+  const lab = (t, yy) => { ctx.textAlign = 'left'; ctx.font = `700 30px ${SERIF}`; ctx.fillStyle = LAB; sp('16px'); ctx.fillText(t, LX, yy); sp('0px'); ctx.fillStyle = GOLD; ctx.fillText(':', CX, yy); };
+  lab('종목', y); ctx.font = `700 38px ${SERIF}`; ctx.fillStyle = INK; ctx.fillText(r.sport, VX, y + 1);
+  if (r.div) { const z = fit(r.div, 560, 27, 22, 500); ctx.fillStyle = LAB; const L = wrap(r.div, 560); L.forEach((t, i) => ctx.fillText(t, VX, y + 44 + i * (z + 8))); y += 44 + (L.length - 1) * (z + 8); }
+  y += 76; lab('순위', y); ctx.font = `900 46px ${SERIF}`; ctx.fillStyle = GOLD; ctx.fillText(r.rankText, VX, y + 4);
+  y += 76; lab('소속', y); const zo = fit(r.org, 580, 38, 30, 700); ctx.fillStyle = INK; const O = wrap(r.org, 580); O.forEach((t, i) => ctx.fillText(t, VX, y + 1 + i * (zo + 8))); y += (O.length - 1) * (zo + 8);
+  const mem = Array.isArray(r.members) ? r.members.filter(Boolean) : String(r.members || '').split(/[,·、\n]+/).map(x => x.trim()).filter(Boolean);
+  if (mem.length) { /* 단체전·팀 경연·태권체조: 팀 이름은 크게, 팀원은 작은 글씨로 여러 줄 */
+    /* 팀 이름 줄 없음 — 소속(도장 이름) 바로 아래에 팀원 */
+    y += 80; lab('팀원', y); const zm = mem.length > 16 ? 26 : 30; ctx.font = `600 ${zm}px ${SERIF}`; ctx.fillStyle = INK;
+    ctx.font = `600 ${zm}px ${SERIF}`; const wmax = Math.max(...mem.map(n => ctx.measureText(n).width)); const cols = Math.max(3, Math.min(mem.length <= 8 ? 4 : 7, Math.floor(640 / (wmax + 22)))), cw = 640 / cols, rows = Math.ceil(mem.length / cols);
+    mem.forEach((nm, i) => { let z = zm; ctx.font = `600 ${z}px ${SERIF}`; while (z > 17 && ctx.measureText(nm).width > cw - 10) { z--; ctx.font = `600 ${z}px ${SERIF}`; }
+      ctx.fillText(nm, VX + (i % cols) * cw, y + Math.floor(i / cols) * (zm + 16)); });
+    const M = { length: rows }; y += (rows - 1) * (zm + 16) - 10;
+    y += 44; ctx.strokeStyle = GOLD; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(LX - 30, y); ctx.lineTo(CW - LX + 30, y); ctx.stroke();
+    var team = M.length; } else {
+  if (r.name) { y += 80; lab('성명', y); fit(r.name, 600, 56, 40, 900); ctx.fillStyle = INK; sp(r.name.length <= 4 ? '22px' : '4px'); ctx.fillText(r.name, VX, y + 6); sp('0px'); }
+  y += 44; ctx.strokeStyle = GOLD; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(LX - 30, y); ctx.lineTo(CW - LX + 30, y); ctx.stroke(); }
+  const tight = y > 900; /* 내용이 길면 아래 줄 간격을 줄임 */
+
+  /* 본문 */
+  y = Math.max(y + (tight ? 70 : 82), 922); ctx.textAlign = 'center'; ctx.font = `600 38px ${SERIF}`; ctx.fillStyle = INK;
+  const bw = ctx.measureText(String(cf.body || '')).width, B = wrap(cf.body, Math.min(940, bw / Math.max(1, Math.ceil(bw / 900)) + 60)); /* 줄 길이를 고르게 */ const lh = tight ? 56 : 62; B.forEach((t, i) => ctx.fillText(t, X, y + i * lh)); y += (B.length - 1) * lh;
+
+  /* 날짜 */
+  y = Math.max(y + (tight ? 84 : 96), 1148); ctx.font = `700 40px ${SERIF}`; ctx.fillText(cf.dateText, X, y);
+
+  /* 주최 · 직함 · 대표 + 직인 */
+  y = Math.max(y + (tight ? 112 : 128), 1290);
+  ctx.font = `900 58px ${SERIF}`; sp('24px'); const rw = ctx.measureText(cf.rep).width; sp('0px');
+  ctx.font = `700 36px ${SERIF}`; const ht = `${cf.host} ${cf.title}`.trim(), hw = ctx.measureText(ht).width, sx = X - (hw + 28 + rw) / 2 - 30;
+  ctx.textAlign = 'left'; ctx.fillStyle = INK; ctx.fillText(ht, sx, y);
+  /* 직인: 원래 양식처럼 마지막 글자(섭)가 직인 왼쪽 가운데에 걸치게 · 이름 글씨 아래에 찍어 글씨가 위로 보임 */
+  if (im.seal) { const S = 158, end = sx + hw + 28 + rw - 24, lastL = end - 58; ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = .95; ctx.drawImage(im.seal, lastL - S * .2, y - 17 - S * .47, S, S); ctx.restore(); }
+  ctx.fillStyle = INK; ctx.font = `900 58px ${SERIF}`; sp('24px'); ctx.fillText(cf.rep, sx + hw + 28, y + 4); sp('0px');
+  
+
+  if (cf.serial) { ctx.textAlign = 'right'; ctx.font = `500 22px ${F.serif}`; ctx.fillStyle = LAB; ctx.fillText(cf.serial, CW - 110, 300); }
+  ctx.restore();
+}
+
+/* ===== v1.7.38 협회 양식 상장 (세계태권도문화예술협회) =====
+   띠·로고·테두리가 미리 인쇄된 상장 종이 위에 「글씨와 직인만」 찍습니다. 「배경도 함께 인쇄」를 켜면 일반 종이용으로 띠·로고도 그립니다. */
+const ASSOC_SEAL='cert/wtcaa_seal.png',ASSOC_LOGO='cert/wtcaa_logo.jpg';
+const ASSOC_DEF={host:'세계태권도문화예술협회',title:'회장',rep:'김원섭',body:'위 사람은 제9회 세계태권도문화예술협회 태권도대회에서 위와 같은 성적을 거두었기에 상장을 주어 높이 칭찬합니다.'};
+function assocImg(u){const p=BGC.get(u);return p&&p.__img||null;}
+async function prepAssoc(){for(const u of [ASSOC_SEAL,ASSOC_LOGO]){const p=loadBg(u);const im=await p;if(im)p.__img=im;}}
+function assocCf(cf){cf=cf||{};return {host:cf.aHost||ASSOC_DEF.host,title:cf.aTitle||ASSOC_DEF.title,rep:cf.aRep||ASSOC_DEF.rep,body:cf.aBody||ASSOC_DEF.body,bg:!!cf.aBg,noSeal:!!cf.aNoSeal};}
+function drawAssocCert(ctx,r,comp,no,thumb){
+  const cf=comp.cert||{},a=assocCf(cf),F={serif:SERIF,sans:SANS,cin:'Cinzel,serif',lat:SERIF},team=r.kind==='team';
+  const d=/^\d{4}-\d{2}-\d{2}$/.test(cf.date||'')?new Date(cf.date+'T00:00:00'):new Date((comp.date||'2026-01-01')+'T00:00:00');
+  ctx.save();ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,CW,CH);
+  if(a.bg||thumb)drawAssoc(ctx,{},{},{logo:assocImg(ASSOC_LOGO)},CW,CH,{...F,bgOnly:true});
+  const rr={sport:team?'종합':(SPORTS[r.sport]?SPORTS[r.sport].n:''),div:team?'':(r.div||''),rankText:team?awardTitle(r):`${r.rank}위`,org:team?(r.name||''):(r.team||''),name:team?'':(r.name||''),members:team?'':(r.members||'')};
+  drawAssocText(ctx,rr,{host:a.host,title:a.title,rep:a.rep,dateText:`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`,body:a.body,serial:no?`제 ${no} 호`:''},{seal:a.noSeal?null:assocImg(ASSOC_SEAL)},CW,CH,F);
+  ctx.restore();}
+
+function drawCertStyled(ctx,r,comp,no){const cf=comp.cert||{};let st=cf.style||'wt';if(st==='assoc'){setCertSize('port');return drawAssocCert(ctx,r,comp,no,!!cf.__thumb);}setCertSize(cf.orient);if(st==='modern'&&LAND())st='wt';if(st==='wt')return drawWT(ctx,r,comp,no);
   if(st==='belt'||st==='night'){MAPF=LAND()?(q=>[q[0]*CW/1240,q[1]*CH/1754]):null;try{return st==='night'?drawNight(ctx,r,comp,no):drawBelt(ctx,r,comp,no);}finally{MAPF=null;}}
   if(st==='modern')return drawCert(ctx,r,comp,no);if(st==='satin')return drawSatin(ctx,r,comp,no);if(st==='knot')return drawKnot(ctx,r,comp,no);if(st==='photo')return drawPhoto(ctx,r,comp,no);return drawCloth(ctx,r,comp,no);}
 
@@ -4046,8 +4258,8 @@ async function uploadCertBg(F){const bmp=await new Promise((res,rej)=>{const im=
   try{const {error}=await sb.storage.from('comp-docs').upload(path,blob,{upsert:true,contentType:'image/jpeg'});if(error)throw error;return sb.storage.from('comp-docs').getPublicUrl(path).data.publicUrl;}
   catch(e){const z2=Math.min(1,1500/big),d=document.createElement('canvas');d.width=Math.round(bmp.width*z2);d.height=Math.round(bmp.height*z2);d.getContext('2d').drawImage(bmp,0,0,d.width,d.height);return d.toDataURL('image/jpeg',.72);}}
 async function certPdf(list,fname){if(!list.length)return;toast(`상장 ${list.length}장 만드는 중…`);
-  const lib=await loadJsPDF();await certFonts(list);await prepBg(list);await prepFlags(list);const cv=document.createElement('canvas');const ctx=cv.getContext('2d');
-  const land=c=>(c.cert||{}).orient==='land';const doc=new lib.jsPDF({orientation:land(list[0].comp)?'landscape':'portrait',unit:'mm',format:'a4',compress:true});
+  const lib=await loadJsPDF();await certFonts(list);await prepBg(list);if(list.some(x=>(x.comp.cert||{}).style==='assoc'))await prepAssoc();await prepFlags(list);const cv=document.createElement('canvas');const ctx=cv.getContext('2d');
+  const land=c=>(c.cert||{}).orient==='land'&&(c.cert||{}).style!=='assoc';const doc=new lib.jsPDF({orientation:land(list[0].comp)?'landscape':'portrait',unit:'mm',format:'a4',compress:true});
   for(let i=0;i<list.length;i++){const {r,comp}=list[i],L=land(comp);if(i)doc.addPage('a4',L?'landscape':'portrait');setCertSize(L?'land':'port');if(cv.width!==CW||cv.height!==CH){cv.width=CW;cv.height=CH;}
     const cf=comp.cert||{};drawCertStyled(ctx,r,comp,cf.serial?`${cf.serial}${String(i+1).padStart(3,'0')}`:'');
     doc.addImage(cv.toDataURL('image/jpeg',.88),'JPEG',0,0,L?297:210,L?210:297,undefined,'FAST');if(i%6===5){toast(`상장 만드는 중… ${i+1}/${list.length}`);await new Promise(x=>setTimeout(x,0));}}
@@ -4055,13 +4267,13 @@ async function certPdf(list,fname){if(!list.length)return;toast(`상장 ${list.l
 async function certPreview(){const cv=document.getElementById('certCv');if(!cv)return;const c=D().comps.find(x=>x.id===UI.adminComp);if(!c)return;
   const r=resultsOf(c).find(x=>x.kind==='medal')||{kind:'medal',sport:c.sports[0]||'poomsae',rank:1,div:'공인 남자 개인전 초등 5학년부',name:'김태권',team:'의정부태권도',coach:'',nat:'KOR',nameEn:'Kim Tae-kwon'};
   const cert=certForm(c);
-  const L1=[{r,comp:{...c,cert}}];await certFonts(L1);await prepBg(L1);await prepFlags(L1);const land=cert.orient==='land';
+  const L1=[{r,comp:{...c,cert}}];await certFonts(L1);await prepBg(L1);await prepAssoc();await prepFlags(L1);const land=cert.orient==='land';
   if(cv.width!==(land?877:620)){cv.width=land?877:620;cv.height=land?620:877;}
   const ctx=cv.getContext('2d');setCertSize(cert.orient);ctx.save();ctx.scale(cv.width/CW,cv.height/CH);drawCertStyled(ctx,r,{...c,cert},cert.serial?cert.serial+'001':'');ctx.restore();
-  document.querySelectorAll('canvas.spthumb').forEach(t=>{const key=t.dataset.style+cert.orient+(t.dataset.style==='photo'?cert.bg||'':'')+(t.dataset.style==='wt'?cert.lang+cert.flang:'');if(t.dataset.done===key)return;t.dataset.done=key;
-    if(t.width!==(land?175:124)){t.width=land?175:124;t.height=land?124:175;}const st=t.dataset.style==='modern'&&land?'wt':t.dataset.style;
-    const x=t.getContext('2d');setCertSize(cert.orient);x.save();x.scale(t.width/CW,t.height/CH);drawCertStyled(x,r,{...c,cert:{...cert,style:st}},'');x.restore();t.closest('.sp').classList.toggle('dis',t.dataset.style==='modern'&&land);});
-  const pz=document.getElementById('cePhoto');if(pz)pz.hidden=cert.style!=='photo';}
+  document.querySelectorAll('canvas.spthumb').forEach(t=>{const key=t.dataset.style+cert.orient+(t.dataset.style==='photo'?cert.bg||'':'')+(t.dataset.style==='wt'?cert.lang+cert.flang:'')+(t.dataset.style==='assoc'?JSON.stringify([cert.aHost,cert.aTitle,cert.aRep,cert.aBody,cert.aNoSeal]):'');if(t.dataset.done===key)return;t.dataset.done=key;
+    if(t.width!==(land?175:124)){t.width=land?175:124;t.height=land?124:175;}const st=(t.dataset.style==='modern'||t.dataset.style==='assoc')&&land?'wt':t.dataset.style;
+    const x=t.getContext('2d');setCertSize(cert.orient);x.save();x.scale(t.width/CW,t.height/CH);drawCertStyled(x,r,{...c,cert:{...cert,style:st,__thumb:true}},'');x.restore();t.closest('.sp').classList.toggle('dis',(t.dataset.style==='modern'||t.dataset.style==='assoc')&&land);});
+  const pz=document.getElementById('cePhoto');if(pz)pz.hidden=cert.style!=='photo';const az=document.getElementById('ceAssoc');if(az)az.hidden=cert.style!=='assoc';}
 
 /* ---------- 연락 (문자·카카오톡 복사·전화) ---------- */
 const SITE_URL=()=>location.origin+location.pathname;
@@ -4419,7 +4631,8 @@ document.addEventListener('change',e=>{
   else if(on==='ceBg'){const F=t.files&&t.files[0];if(!F)return;run(async()=>{UI.certBg=await uploadCertBg(F);toast('배경 사진을 올렸습니다. 「상장 설정 저장」을 눌러 주세요');certPreview();});}
   else if(on==='ceLang'){document.querySelectorAll('.seg2 label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const fx=document.getElementById('ceFx');if(fx)fx.hidden=t.value==='ko';certPreview();}
   else if(on==='ceFlang'){certPreview();}
-  else if(on==='ceStyle'){document.querySelectorAll('.stylepick .sp').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const pz=document.getElementById('cePhoto');if(pz)pz.hidden=t.value!=='photo';certPreview();}
+  else if(on==='ceStyle'){document.querySelectorAll('.stylepick .sp').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const pz=document.getElementById('cePhoto');if(pz)pz.hidden=t.value!=='photo';const az=document.getElementById('ceAssoc');if(az)az.hidden=t.value!=='assoc';certPreview();}
+  else if(on==='ceAOpt'){certPreview();}
   else if(on==='licDate'){const d=t.value;UI.licForm={...(UI.licForm||{kind:'event'}),date:d,starts:'',ends:'',holder:(document.getElementById('lcHolder')||{}).value||'',contact:(document.getElementById('lcContact')||{}).value||'',note:(document.getElementById('lcNote')||{}).value||''};render();}
   else if(on==='resOpen'){const c=UI.adminComp,v=t.checked;run(async()=>{await q(sb.from('comps').update({results_open:v}).eq('id',c));await reload();toast(v?'지도자에게 결과·상장을 공개했습니다':'결과·상장을 비공개로 바꿨습니다');});}
   else if(on==='resCoach'){const id=t.dataset.id,v=t.value||null;run(async()=>{await q(sb.from('results').update({coach_id:v}).eq('id',id));await reload();toast(v?'지도자를 연결했습니다':'연결을 풀었습니다');});}
