@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.45" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.46" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -516,6 +516,9 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 	}
 	ips := lanIPs()
 	isLocal := h == "localhost" || h == "127.0.0.1" || h == "::1"
+	if isLocal {
+		noteAdminApp(key) // 운영석(이 노트북)에서 연 종목
+	}
 	baseHost := host
 	if isLocal && len(ips) > 0 {
 		baseHost = fmt.Sprintf("%s:%d", ips[0], port)

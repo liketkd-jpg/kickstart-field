@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"regexp"
+	"sync"
 	"time"
 )
 
@@ -21,7 +22,7 @@ func courtActive() map[string]any {
 		At  int64 `json:"at"`
 	}
 	out := map[string]st{}
-	active, best, last, lastAt := "", int64(0), "", int64(0)
+	active, best, last, lastAt, anyApp, anyAt := "", int64(0), "", int64(0), "", int64(0)
 	nowMs := time.Now().UnixMilli()
 	for _, a := range apps {
 		s := stores[a.Key]
@@ -54,8 +55,15 @@ func courtActive() map[string]any {
 		if fresh && b.At > lastAt {
 			last, lastAt = a.Key, b.At
 		}
+		// v1.7.46 오래됐어도 이 노트북에서 가장 최근에 운영한 종목 (경기 호출 전·운영석 잠깐 닫힘 때 품새로 잘못 가지 않게)
+		if b.At > anyAt {
+			anyApp, anyAt = a.Key, b.At
+		}
 	}
-	return map[string]any{"active": active, "last": last, "apps": out, "time": nowMs}
+	if anyApp == "" {
+		anyApp = lastAdminApp()
+	}
+	return map[string]any{"active": active, "last": last, "any": anyApp, "apps": out, "time": nowMs}
 }
 
 func serveJudgeAuto(w http.ResponseWriter, n string) {
@@ -71,8 +79,29 @@ func serveJudgeAuto(w http.ResponseWriter, n string) {
 <script>
 try{sessionStorage.setItem('ks_jauto','1');}catch(e){}
 (async function(){let app='';
-  for(let i=0;i<3&&!app;i++){try{const j=await (await fetch('/api/court/active',{cache:'no-store'})).json();app=j.active||j.last||'';}catch(e){}if(!app)await new Promise(r=>setTimeout(r,700));}
+  for(let i=0;i<3&&!app;i++){try{const j=await (await fetch('/api/court/active',{cache:'no-store'})).json();app=j.active||j.last||j.any||'';}catch(e){}if(!app)await new Promise(r=>setTimeout(r,700));}
   if(!app){try{app=localStorage.getItem('ks_jauto_last')||'';}catch(e){}}
   location.replace('/'+(app||'poomsae')+'/#judge-` + n + `');})();
 </script></body></html>`))
+}
+
+// 이 노트북 운영석에서 마지막으로 연 종목 앱 (hq/board 가 아직 없을 때 대비)
+var lastAdmin struct {
+	mu  sync.Mutex
+	key string
+}
+
+func noteAdminApp(key string) {
+	if key == "" || key == "hq" {
+		return
+	}
+	lastAdmin.mu.Lock()
+	lastAdmin.key = key
+	lastAdmin.mu.Unlock()
+}
+
+func lastAdminApp() string {
+	lastAdmin.mu.Lock()
+	defer lastAdmin.mu.Unlock()
+	return lastAdmin.key
 }
