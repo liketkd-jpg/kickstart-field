@@ -717,8 +717,11 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
   .jwrap .jbar .jfsb::first-letter{font-size:17px}
 }
 .jbtn .jv{line-height:1.08}
-/* 전광판: 구령(준비·시작·바로·호출) 글씨는 띄우지 않고 소리만 냅니다 */
-.cmdov{display:none!important}
+/* v1.7.47 전광판 구령 큰 글씨: 소리와 함께 가운데에 잠깐 떴다가 사라짐 */
+.cmdov{position:fixed!important;inset:0!important;z-index:9000!important;display:grid!important;place-items:center!important;pointer-events:none!important;margin:0!important;transform:none;background:radial-gradient(ellipse at center,rgba(0,0,0,.62),rgba(0,0,0,.35))!important;animation:cmdlife 1.6s ease-out forwards}
+.cmdov span{position:static!important;font-size:min(30vw,52vh)!important;font-weight:900!important;line-height:1;opacity:1!important;background:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke:0!important;text-shadow:0 0 50px rgba(0,0,0,.6),0 0 90px rgba(226,194,122,.55)!important}
+.cmdov.cmdtop{z-index:2147483000!important}
+@keyframes cmdlife{0%{opacity:0;transform:scale(1.12)}10%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0}}
 .stageov{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;background:rgba(4,8,20,.78);z-index:99990}
 .stageov span{color:#fff;font-weight:900;font-family:"Noto Sans KR",sans-serif}
 .stageov span{font-size:min(7vw,12vh)!important;line-height:1.2;text-align:center;padding:4vh 5vw;border-top:4px solid #D4AF37;border-bottom:4px solid #D4AF37;text-shadow:none!important;word-break:keep-all}
@@ -1475,7 +1478,7 @@ function vDisplay(){
 /* ===================== 음성 구령 ===================== */
 /* ===== 경기 소리 (음성 없음): 경기 호출 = 자동차 경적 3초, 회전 종료 = 경기 종료 부저 3초 ===== */
 const SOUND_KEYS={horn:1,stop:1,start1:1}; /* 1번 소리(stop·start1): 경기 시작·종료 / 2번 소리(horn): 선수 호출·휴식 후 경기 호출 */
-const VOICE_BIG={horn:'선수 호출',start1:'시작',stop:'그만'};
+const VOICE_BIG={start1:'시작',stop:'그만'}; /* v1.7.47 「선수 호출」 큰 글씨는 빼고 시작·그만만 */
 let VOICE_SEEN=Date.now(),ACX=null;
 function actx(){try{if(!ACX)ACX=new (window.AudioContext||window.webkitAudioContext)();if(ACX.state==='suspended')ACX.resume();}catch(e){ACX=null;}return ACX;}
 function tone(c,dest,type,f,t0,t1,g){const o=c.createOscillator(),v=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t0);v.gain.setValueAtTime(g,t0);o.connect(v);v.connect(dest);o.start(t0);o.stop(t1);return o;}
@@ -5508,7 +5511,7 @@ function ctl(){
   const KIOSK=g('KIOSK'),vh=g('voiceHere'),VB=g('VOICE_BIG')||{},st=g('ST')(),vc=st.voice,vAge=vc?Date.now()-vc.at:1e9;
   if(vc&&vAge<1800)setTimeout(g('schedule'),1850-vAge);
   const needTap=vh&&vh('display')&&navigator.userActivation&&!navigator.userActivation.hasBeenActive;
-  return `<div class="dctl">${KIOSK?'':'<button data-act="back">← 운영석</button>'}<button data-act="fullscreen">전체 화면</button>${picker('kst-pick')}</div>${vc&&vAge<1800&&!['blue','red'].includes(vc.k)?`<div class="cmdov"><span>${VB[vc.k]||''}</span></div>`:''}${needTap?'<button class="tapv" data-act="testVoiceQuiet">🔊 화면을 한 번 눌러 음성을 켜 주세요</button>':''}`;
+  return `<div class="dctl">${KIOSK?'':'<button data-act="back">← 운영석</button>'}<button data-act="fullscreen">전체 화면</button>${picker('kst-pick')}</div>${vc&&vAge<1800&&!['blue','red'].includes(vc.k)&&VB[vc.k]?`<div class="cmdov"><span>${VB[vc.k]||''}</span></div>`:''}${needTap?'<button class="tapv" data-act="testVoiceQuiet">🔊 화면을 한 번 눌러 음성을 켜 주세요</button>':''}`;
 }
 function picker(cls){const t=themeOf();return `<select class="${cls}" data-kst-pick title="전광판 디자인">${LIST.map(([k,l])=>`<option value="${k}" ${k===t?'selected':''}>🎨 ${l}</option>`).join('')}</select>`;}
 function draw(th){
@@ -6047,3 +6050,10 @@ body:not(.disp):not(.jdg):not(.brdv) .ss-phead{top:var(--ss-navh,64px)}
 })();
 </script>
 <!--@@END-->
+<script>/* v1.7.47 전광판 구령 큰 글씨를 맨 위 층으로: 전광판(금빛·테마)이 앱 화면 위에 따로 떠 있어서, 화면 안의 큰 글씨가 그 밑에 깔리던 것 */
+(function(){const seen={t:'',at:0};
+  function lift(){document.querySelectorAll('.cmdov:not(.cmdtop)').forEach(o=>{o.style.visibility='hidden';const t=(o.textContent||'').trim();if(!t)return;
+    if(seen.t===t&&Date.now()-seen.at<1900)return;seen.t=t;seen.at=Date.now();
+    document.querySelectorAll('.cmdov.cmdtop').forEach(x=>x.remove());const c=o.cloneNode(true);c.classList.add('cmdtop');c.style.visibility='';document.body.appendChild(c);setTimeout(()=>c.remove(),1900);});}
+  try{new MutationObserver(lift).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
+})();</script>

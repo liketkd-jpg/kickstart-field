@@ -1276,8 +1276,11 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
   .jwrap .jbar .jfsb::first-letter{font-size:17px}
 }
 .jbtn .jv{line-height:1.08}
-/* 전광판: 구령(준비·시작·바로·호출) 글씨는 띄우지 않고 소리만 냅니다 */
-.cmdov{display:none!important}
+/* v1.7.47 전광판 구령 큰 글씨: 소리와 함께 가운데에 잠깐 떴다가 사라짐 */
+.cmdov{position:fixed!important;inset:0!important;z-index:9000!important;display:grid!important;place-items:center!important;pointer-events:none!important;margin:0!important;transform:none;background:radial-gradient(ellipse at center,rgba(0,0,0,.62),rgba(0,0,0,.35))!important;animation:cmdlife 1.8s ease-out forwards}
+.cmdov span{position:static!important;font-size:min(30vw,52vh)!important;font-weight:900!important;line-height:1;opacity:1!important;background:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke:0!important;text-shadow:0 0 50px rgba(0,0,0,.6),0 0 90px rgba(226,194,122,.55)!important}
+.cmdov.cmdtop{z-index:2147483000!important}
+@keyframes cmdlife{0%{opacity:0;transform:scale(1.12)}10%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0}}
 /* 전광판 소리 켜기 단추 */
 .ksaudio{position:fixed;left:max(14px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:50;border:2px solid #E2C27A;background:#14110B;color:#F3DFA8;border-radius:999px;padding:12px 20px;font:800 18px/1.2 "Noto Sans KR",system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:ksaudp 1.6s ease-in-out infinite}
 @keyframes ksaudp{50%{box-shadow:0 0 0 8px rgba(226,194,122,.25),0 8px 30px rgba(0,0,0,.5)}}
@@ -1923,7 +1926,7 @@ function render(){
   }catch(err){console.error(err);html=`<div class="banner bad">화면을 그리는 중 오류가 났습니다: ${esc(err&&err.message||err)}</div>`;}
   if(r==='display'&&!SOLO_ON){
     let ov='',tap='';
-    try{const vc=ST().voice,vAge=vc&&vc.at?Date.now()-vc.at:1e9;if(vc&&vAge<1800){setTimeout(schedule,1850-vAge);ov=`<div class="cmdov"><span>${({ready:'준비',start:'시작',stop:'바로',rest:'쉬어'})[vc.k]||''}</span></div>`;}
+    try{const vc=ST().voice,vAge=vc&&vc.at?Date.now()-vc.at:1e9;if(vc&&vAge<1800){setTimeout(schedule,1850-vAge);const tx=({ready:'준비',start:'시작',stop:'바로',attn:'차렷',bow:'경례'})[vc.k];if(tx)ov=`<div class="cmdov"><span>${tx}</span></div>`;}
       if(voiceHere('display')&&navigator.userActivation&&!navigator.userActivation.hasBeenActive)tap='<button class="tapv" data-act="testVoiceQuiet">🔊 화면을 한 번 눌러 음성을 켜 주세요</button>';}catch(e){}
     html=`<div class="dctl gdctl"><button data-act="back">← 운영석</button><button data-act="fullscreen">전체 화면</button></div>`+html+ov+tap;
   }
@@ -2305,7 +2308,7 @@ function runPanel(st,cur){
   const ra=st.readyAt,pend=ra&&!t.running&&Date.now()<ra+READY_SEC*1000+1500;
   const prepB=EV[cur.ev]?.prep?`<div class="prep"><span class="small">격파물 준비 ${EV[cur.ev].prep>=120?EV[cur.ev].prep/60+'분':EV[cur.ev].prep+'초'}</span>${st.prep&&st.prep.until?`<span class="timer sm" data-prep>${prepText(st)}</span><button class="btn sm" data-act="prepStop">준비 끝</button>`:`<button class="btn sm" data-act="prepStart" ${revealed?'disabled':''}>준비 시간 시작</button>`}<span class="small muted">초과 시 10초마다 감점 1</span></div>`:'';
   const timerB=`<div class="tbox"><div class="row between"><span class="timer" data-timer>${cdText(t)}</span><span class="small muted">제한 ${limitTxt(cur)}<br>경과 ${mmss(elapsed(t))}</span></div>
-    <div class="bcmd"><button class="btn big ${pend?'armed':'primary'}" data-act="cmdReady" ${revealed||t.running||pend?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>
+    <div class="bcmd"><button class="btn big ${pend?'armed':'primary'}" data-act="cmdReady" ${revealed||t.running||pend?'disabled':''}>${pend?`🔊 ${Date.now()<ra?'차렷 · 경례':'준비'} · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:bowFirst(curOf())?'🔊 차렷 · 경례 · 준비 · 시작':'🔊 준비 · 시작'}</button>
     <button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 (착지)</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>${prepB}</div>`;
   if(revealed&&r){
     const nx=d?callsOf(d).find(c=>!callDone(c)&&c.callId!==cur.callId):null;
@@ -2716,12 +2719,16 @@ function maybeAutoAdvance(){
 function maybeAutoReveal(){
   if(KIOSK||!(routeNow().startsWith('admin')||SOLO())||SET().autoReveal===false)return;
   const st=ST(),cur=curOf();if(!cur||st.status!=='open'||!JUDGED(cur.kind)||!entryReady(cur))return;
+  if(st.timer&&st.timer.running)return; /* v1.7.47 「바로」 전에는 심판이 먼저 눌러도 점수를 띄우지 않음 */
   const key=cur.callId+'#'+st.epoch;if(AUTO_KEY===key)return;AUTO_KEY=key;
-  clearTimeout(AUTO_T);AUTO_T=setTimeout(()=>{const s2=ST(),c2=curOf();if(c2&&c2.callId+'#'+s2.epoch===key&&s2.status==='open'&&entryReady(c2))doReveal(true).catch(()=>{});},1500);
+  clearTimeout(AUTO_T);AUTO_T=setTimeout(()=>{const s2=ST(),c2=curOf();if(c2&&c2.callId+'#'+s2.epoch===key&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&entryReady(c2))doReveal(true).catch(()=>{});else AUTO_KEY='';},1500);
 }
 /* ===================== 음성 구령 (제11조: 준비 · 시작 / 바로) ===================== */
-const VOICE_TXT={ready:['준비!'],start:['시작!'],stop:['바로!']};
+const VOICE_TXT={ready:['준비!'],start:['시작!'],stop:['바로!'],attn:['차렷!'],bow:['경례!']};
 const READY_SEC=5;
+/* v1.7.47 차렷·경례: 선수마다 「차렷 → 1초 → 경례 → 준비 → 5초 → 시작」 (대회 설정에서 끌 수 있음: SET().bow=false) */
+const BOW_AT=1600,BOW_READY=4300;
+function bowFirst(cur){return SET().bow!==false&&!!cur&&(cur.k||1)===1;}
 let VOICE_SEEN=Date.now(),READY_T=null;
 function koVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));return vs.find(v=>/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name))||vs.find(v=>/Natural|Online|Google/i.test(v.name))||vs[0]||null;}catch(e){return null;}}
 function koMale(v){return !!(v&&/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name));}
@@ -2944,9 +2951,17 @@ const ACT={
     const cur=curOf();if(window.LMUS)LMUS.setEntries(teamEntries);if(cur&&cur.kind==='team'&&SET().musicAuto!==false&&window.LMUS&&LMUS.has(cur.athleteId))LMUS.play(cur.athleteId);},
   timerStop:()=>{const st=ST(),t=st.timer;try{window.LMUS&&LMUS.stop();}catch(err){}if(!t||!t.running)return;if(voiceHere('admin'))sayCmd('stop');const vm=voiceMark('stop');VOICE_SEEN=Math.max(VOICE_SEEN,routeNow()==='display'?0:vm.at);
     patchState({voice:vm,timer:stopT(t)});},
-  cmdReady:()=>{const st=ST();if(st.timer&&st.timer.running)return;if(voiceHere('admin'))sayCmd('ready');const vm=voiceMark('ready');VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);
-    const ra=vm.at;patchState({voice:vm,readyAt:ra});clearTimeout(READY_T);
-    READY_T=setTimeout(()=>{const s2=ST();if(s2.readyAt===ra&&s2.status==='open'&&!(s2.timer&&s2.timer.running))ACT.timerStart();},READY_SEC*1000);},
+  cmdReady:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);
+    const cur=curOf(),cid=cur&&cur.callId,say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
+    const alive=ra=>{const s2=ST(),c2=curOf();return s2.readyAt===ra&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&c2&&c2.callId===cid;};
+    if(bowFirst(cur)){
+      const ra=Date.now()+BOW_READY;patchState({voice:say('attn'),readyAt:ra});
+      READY_T=setTimeout(()=>{if(!alive(ra))return;patchState({voice:say('bow')});
+        READY_T=setTimeout(()=>{if(!alive(ra))return;patchState({voice:say('ready')});
+          READY_T=setTimeout(()=>{if(alive(ra))ACT.timerStart();},READY_SEC*1000);},BOW_READY-BOW_AT);},BOW_AT);
+      return;}
+    const vm=say('ready'),ra=vm.at;patchState({voice:vm,readyAt:ra});
+    READY_T=setTimeout(()=>{if(alive(ra))ACT.timerStart();},READY_SEC*1000);},
   timerReset:()=>{clearTimeout(READY_T);try{window.LMUS&&LMUS.stop();}catch(err){}const st=ST();patchState({readyAt:null,timer:{...st.timer,running:false,elapsed:0,startedAt:0,stoppedAt:null}});},
   prepStart:()=>{const cur=curOf();if(!cur)return;const p=EV[cur.ev].prep||60;patchState({prep:{until:Date.now()+p*1000,len:p}});},
   prepStop:()=>{const st=ST(),p=st.prep;if(!p)return;const over=(Date.now()-p.until)/1000;
@@ -4856,7 +4871,7 @@ function hasLocalKo(){try{return speechSynthesis.getVoices().some(v=>/^ko/i.test
 
 
 /* ---------- 2) 노트북 「구령음성」 폴더의 녹음 파일 ---------- */
-const FILES={ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승']};
+const FILES={ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승'],attn:['차렷'],bow:['경례']};
 let LIST=null;   /* 폴더에 있는 파일 이름 → 주소 */
 async function loadList(){
   if(!F)return;
@@ -6874,3 +6889,26 @@ body:not(.disp):not(.jdg):not(.brdv) .ss-phead{top:var(--ss-navh,64px)}
 })();
 </script>
 <!--@@END-->
+<script>/* v1.7.47 전광판 구령 큰 글씨를 맨 위 층으로: 전광판(금빛·테마)이 앱 화면 위에 따로 떠 있어서, 화면 안의 큰 글씨가 그 밑에 깔리던 것 */
+(function(){const seen={t:'',at:0};
+  function lift(){document.querySelectorAll('.cmdov:not(.cmdtop)').forEach(o=>{o.style.visibility='hidden';const t=(o.textContent||'').trim();if(!t)return;
+    if(seen.t===t&&Date.now()-seen.at<1900)return;seen.t=t;seen.at=Date.now();
+    document.querySelectorAll('.cmdov.cmdtop').forEach(x=>x.remove());const c=o.cloneNode(true);c.classList.add('cmdtop');c.style.visibility='';document.body.appendChild(c);setTimeout(()=>c.remove(),1900);});}
+  try{new MutationObserver(lift).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
+})();</script>
+<style>/* v1.7.47 전광판 기본 화면(점수 나오기 전) 글씨를 멀리서도 보이게 크게 — 점수 화면은 그대로 */
+body.disp .ksb-top .ksb-div b{font-size:2.2em!important;line-height:1.1}
+body.disp .ksb-top .ksb-div small{font-size:1.2em!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbname:not(.nl1):not(.nl2):not(.nl3){font-size:min(9vw,14.5vh)!important;line-height:1.02}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .vname:not(.nl1):not(.nl2):not(.nl3){font-size:min(8.6vw,15vh)!important;line-height:1.02}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbname.nl1,body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .vname.nl1{font-size:min(6vw,11vh)!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbname.nl2,body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .vname.nl2{font-size:min(4.4vw,8vh)!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbteam,body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .vteam{font-size:min(3.4vw,6vh)!important;color:#E9E2D2!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .pnm{font-size:min(5.2vw,9vh)!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .clock{font-size:min(8vw,13.5vh)!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbjs{transform:scale(.66)!important;transform-origin:center top!important;margin-bottom:-8.5vh}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .plab{font-size:min(2.2vw,3.8vh)!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .lim{font-size:min(2.8vw,4.8vh)!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .dzt{font-size:min(2.1vw,3.7vh)!important}
+body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbstat{font-size:min(2vw,3.5vh)!important}
+</style>
