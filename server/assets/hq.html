@@ -1414,7 +1414,16 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&HSEL&&route()==='ad
 /* 글을 넣는 중(입력칸·고르기 칸에 커서)에는 화면을 새로 그리지 않음 → 입력칸이 닫히거나 글이 지워지지 않게. 칸을 벗어나면 그때 새로 그림 */
 let pend=false,deferred=false;
 const typing=()=>{const el=document.activeElement;return !!(el&&el.closest&&el.closest('#app')&&(/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==='INPUT'&&!/^(checkbox|radio|button|submit|range|color|file)$/i.test(el.type||''))));};
-function schedule(){if(pend)return;if(typing()){deferred=true;return;}pend=true;requestAnimationFrame(()=>{pend=false;render();});}
+/* v1.7.48 누르는 중·스크롤하는 중에는 다시 그리지 않음 (코트 옮기기 칸을 누르려는데 화면이 바뀌어 맨 위로 올라가던 것) */
+let PDOWN=false,LASTSC=0;
+const busyUI=()=>typing()||PDOWN||Date.now()-LASTSC<900;
+function flushLater(){setTimeout(()=>{if(deferred&&!busyUI()){deferred=false;schedule();}else if(deferred)flushLater();},400);}
+document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#app'))PDOWN=true;},true);
+document.addEventListener('pointerup',()=>{if(PDOWN){PDOWN=false;if(deferred)flushLater();}},true);
+document.addEventListener('pointercancel',()=>{PDOWN=false;},true);
+document.addEventListener('wheel',()=>{LASTSC=Date.now();},{capture:true,passive:true});
+document.addEventListener('scroll',e=>{if(e.target===document||(e.target.closest&&e.target.closest('#app')))LASTSC=Date.now();},true);
+function schedule(){if(pend)return;if(busyUI()){if(!deferred){deferred=true;flushLater();}return;}pend=true;requestAnimationFrame(()=>{pend=false;render();});}
 document.addEventListener('focusout',()=>setTimeout(()=>{if(deferred&&!typing()){deferred=false;schedule();}},200),true);
 function render(){
   const r=route();document.body.classList.toggle('mon',r==='board');
@@ -1424,10 +1433,16 @@ function render(){
   const mk=m=>((m.querySelector('.rmh h3')||m).textContent||'').slice(0,60),mods=[...document.querySelectorAll('#app .rmodal')].map(m=>({k:mk(m),sc:[...m.querySelectorAll('.rmc')].map(x=>x.scrollTop)}));
   const ovH=r==='admin'?roomOverlay():'';{const ov=$('#ovl');if(ov.__ov!==ovH){ov.innerHTML=ovH;ov.__ov=ovH;}}
   const keep={};document.querySelectorAll('#app input[id],#app textarea[id],#app select[id]').forEach(el=>keep[el.id]=el.value);const fid=document.activeElement&&document.activeElement.id;
+  /* v1.7.48 다시 그려도 보던 자리 그대로: 화면 전체와 안쪽 스크롤 칸(코트 옮기기 목록 등)의 위치를 기억 */
+  const sig=el=>el.tagName+'.'+String(el.className||'').trim().split(/\s+/).slice(0,2).join('.')+(el.dataset&&el.dataset.k?'['+el.dataset.k+']':'');
+  const scs=[],cnt={};document.querySelectorAll('#app *').forEach(el=>{const g=sig(el);const i=cnt[g]=(cnt[g]||0)+1;if(el.scrollTop>0||el.scrollLeft>0)scs.push([g,i-1,el.scrollTop,el.scrollLeft]);});
+  const wy=window.scrollY,wx=window.scrollX;
   document.body.classList.toggle('prtst',r==='print');document.body.classList.toggle('rmode',r.startsWith('room-')||r==='award'||r.startsWith('next'));document.body.classList.toggle('nxm',r.startsWith('next'));
   $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r.startsWith('room-')?vRoom(r.slice(5)):r.startsWith('next')?vNext(r.slice(5)):r==='award'?vAward():r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
   for(const [k,v] of Object.entries(keep)){const el=document.getElementById(k);if(el)el.value=v;}
-  if(fid){const el=document.getElementById(fid);if(el)el.focus();}
+  if(fid){const el=document.getElementById(fid);if(el)el.focus({preventScroll:true});}
+  if(scs.length){const by={};document.querySelectorAll('#app *').forEach(el=>{(by[sig(el)]=by[sig(el)]||[]).push(el);});scs.forEach(([g,i,t,l])=>{const el=(by[g]||[])[i];if(el){el.scrollTop=t;el.scrollLeft=l;}});}
+  if(wy||wx)window.scrollTo(wx,wy);
   document.querySelectorAll('#app .rmodal').forEach(m=>{const o=mods.find(x=>x.k===mk(m));if(o){m.classList.add('still');m.querySelectorAll('.rmc').forEach((x,i)=>{x.scrollTop=o.sc[i]||0;});}});
 }
 window.addEventListener('hashchange',render);
