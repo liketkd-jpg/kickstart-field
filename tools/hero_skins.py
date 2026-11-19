@@ -1,5 +1,5 @@
 """히어로 1·2: 디자인 형식 — 1타입 히어로(그대로) · 2타입 럭셔리. 1타입 CSS를 고친 뒤 다시 실행: python3 tools/hero_skins.py docs/hero/index.html docs/hero2/index.html (pip install tinycss2 필요)"""
-import sys, re, colorsys
+import sys, re, colorsys, os, base64
 import tinycss2
 
 PRE = ':root[data-skin="2"]'
@@ -201,8 +201,8 @@ LUX = r"""
 %(P)s .squad>div{background:var(--glass),rgba(14,15,18,.6)!important;border:1px solid var(--hair)!important;border-radius:1vw!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2.4vw 4vw -1.6vw rgba(0,0,0,.95)!important;position:relative;overflow:hidden}
 %(P)s .squad>div::before{content:"";position:absolute;left:15%%;right:15%%;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--c),transparent);box-shadow:0 0 1vw var(--c)}
 %(P)s .squad svg{filter:saturate(.25) contrast(1.05) drop-shadow(0 1.6vw 1.6vw rgba(0,0,0,.7))!important}
-%(P)s .squad b{font-family:"Saira",sans-serif!important;font-weight:300!important;letter-spacing:.3em;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;text-shadow:none!important}
-%(P)s .squad span{color:var(--muted)!important;letter-spacing:.08em}
+%(P)s .squad b{font-family:"Saira",sans-serif!important;font-weight:300!important;letter-spacing:.16em;white-space:nowrap;font-size:min(2.6vw,3.2vh)!important;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;text-shadow:none!important}
+%(P)s .squad span{color:var(--muted)!important;letter-spacing:.04em;white-space:nowrap;font-size:min(1.6vw,2.4vh)!important;font-weight:400!important}
 /* 우승 화면: 위에서 내려오는 조명 · 플래티넘 유리 시상대 · 1등은 샴페인 골드 */
 %(P)s .champwrap{position:relative}
 %(P)s .champwrap::before{content:"";position:absolute;left:50%%;top:-12vh;width:70vw;height:95vh;transform:translateX(-50%%);background:conic-gradient(from 180deg at 50%% 0%%,transparent 160deg,rgba(255,240,210,.09) 172deg,rgba(255,240,210,.16) 180deg,rgba(255,240,210,.09) 188deg,transparent 200deg);pointer-events:none;filter:blur(6px)}
@@ -256,6 +256,26 @@ LUX = r"""
 @media (prefers-reduced-motion:reduce){%(P)s .board.v3 .bl,%(P)s .podium.p1::after{animation:none!important}.lxscan{display:none}%(P)s .board.enter *,%(P)s .board.ignite *{animation:none!important}}
 """
 
+PHOTO_CSS = r"""
+/* 3타입 · 그림 히어로 — 2타입 럭셔리 위에 그림 캐릭터 */
+:root[data-photo="1"] .hf.photo{overflow:visible}
+:root[data-photo="1"] .hf.photo image{transform-box:fill-box;transform-origin:50% 100%}
+:root[data-photo="1"] .hf.photo[data-mode="ready"] image{animation:phbreath 6s ease-in-out infinite}
+:root[data-photo="1"] .hf.photo[data-mode="run"] image,:root[data-photo="1"] .hf.photo[data-mode="runx"] image{animation:phrun 1.1s ease-in-out infinite}
+:root[data-photo="1"] .hf.photo[data-mode="p1"],:root[data-photo="1"] .hf.photo[data-mode="p1x"]{filter:drop-shadow(0 0 1.6vw rgba(201,169,110,.55)) drop-shadow(0 1.4vh 2vh rgba(0,0,0,.6))!important}
+@keyframes phbreath{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-.6%) scale(1.008)}}
+@keyframes phrun{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-1.6%) rotate(1.2deg)}}
+:root[data-photo="1"] .board.v3 .bl .hero{opacity:1!important;filter:none!important;bottom:auto!important;top:6%!important;height:62%!important;-webkit-mask-image:linear-gradient(to bottom,#000 30%,rgba(0,0,0,.35) 62%,transparent 92%);mask-image:linear-gradient(to bottom,#000 30%,rgba(0,0,0,.35) 62%,transparent 92%)}
+:root[data-photo="1"] .squad svg,:root[data-photo="1"] .podium svg,:root[data-photo="1"] .lvc svg{filter:drop-shadow(0 1.4vw 1.4vw rgba(0,0,0,.7))!important}
+:root[data-photo="1"] .podium .fig{position:relative}
+:root[data-photo="1"] .podium .fig svg.photo{position:absolute;inset:0;width:100%!important;height:100%!important;max-height:none!important}
+:root[data-photo="1"] .podium.p1 svg{filter:drop-shadow(0 0 1.4vw rgba(201,169,110,.45)) drop-shadow(0 1.4vw 1.4vw rgba(0,0,0,.7))!important}
+:root[data-photo="1"] .board.v3 .bl .hero svg{filter:drop-shadow(0 1.2vh 1.6vh rgba(0,0,0,.55))!important}
+:root[data-photo="1"] .board.v3 .bl.emptyb .hero{opacity:.18!important;filter:grayscale(1)!important}
+:root[data-photo="1"] .board.v3 .bl .bn{text-shadow:0 .2vw 1.2vw rgba(0,0,0,.95),0 0 .3vw rgba(0,0,0,.9)}
+@media (prefers-reduced-motion: reduce){:root[data-photo="1"] .hf.photo image{animation:none!important}}
+"""
+
 UI_CSS = r"""
 .skinsw{display:inline-flex;border:1px solid rgba(255,255,255,.18);border-radius:999px;overflow:hidden;margin-left:6px}
 .skinsw::before{content:attr(data-l);padding:3px 2px 3px 8px;font-size:12px;opacity:.8}
@@ -265,23 +285,47 @@ UI_CSS = r"""
 
 SKINJS_A, SKINJS_B = '/* SKINJS:START */', '/* SKINJS:END */'
 
+ART_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hero_art')
+
+def art_list(app):
+    d = os.path.join(ART_DIR, app)
+    if not all(os.path.exists(os.path.join(d, f'{i}.webp')) for i in range(4)): return []
+    from PIL import Image
+    out = []
+    for i in range(4):
+        f = os.path.join(d, f'{i}.webp'); w, h = Image.open(f).size
+        out.append((w, h, base64.b64encode(open(f, 'rb').read()).decode()))
+    return out
+
+def art_js(app):
+    L = art_list(app)
+    if not L: return "const HERO_ART=[];\n"
+    # 그림은 한 번만 풀어서 짧은 blob 주소로 씁니다 (화면을 다시 그릴 때마다 긴 글자를 붙이지 않도록)
+    items = ','.join(f"['{b}',{w},{h}]" for w, h, b in L)
+    return ("const HERO_ART=[" + items + "].map(([b,w,h])=>{try{const s=atob(b),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);"
+            "return{u:URL.createObjectURL(new Blob([a],{type:'image/webp'})),w,h}}catch(e){return{u:'data:image/webp;base64,'+b,w,h}}});\n")
+
 def skin_js(app):
-    return (SKINJS_A + "\n/* 디자인 형식: 1타입 히어로(지금 그대로) · 2타입 럭셔리 — S.cfg.skin 에 저장 (예전 3타입은 2타입으로) */\n"
-            f"const SKIN_HEX={{'2':{HEX[app]!r}}};\n"
-            "function skinOf(){const v=S&&S.cfg&&S.cfg.skin;return v==='2'||v==='3'?'2':'1'}\n"
-            "function applySkin(){const k=skinOf(),el=document.documentElement;if(el.dataset.skin!==k)el.dataset.skin=k;"
+    return (SKINJS_A + "\n/* 디자인 형식: 1타입 히어로(지금 그대로) · 2타입 럭셔리 · 3타입 그림 히어로(럭셔리 바탕 + tools/hero_art 그림) — S.cfg.skin 에 저장 */\n"
+            f"const SKIN_HEX={{'2':{HEX[app]!r},'3':{HEX[app]!r}}};\n"
+            + art_js(app) +
+            "function skinOf(){const v=S&&S.cfg&&S.cfg.skin;return v==='3'&&HERO_ART.length?'3':v==='2'||v==='3'?'2':'1'}\n"
+            "function lux(){return skinOf()!=='1'}\n"
+            "function applySkin(){const k=skinOf(),el=document.documentElement,b=k==='3'?'2':k,ph=k==='3'?'1':'0';if(el.dataset.skin!==b)el.dataset.skin=b;if(el.dataset.photo!==ph)el.dataset.photo=ph;"
             "HEROES.forEach((h,i)=>{if(h.hex0==null)h.hex0=h.hex;h.hex=SKIN_HEX[k]?SKIN_HEX[k][i]:h.hex0})}\n"
+            "if(typeof heroFig==='function'&&HERO_ART.length){const _hf=heroFig;heroFig=function(i,cls='',mode='ready'){const a=skinOf()==='3'&&HERO_ART[i];if(!a)return _hf.apply(this,arguments);"
+            "return`<svg class=\"hf photo ${cls}\" data-mode=\"${mode}\" viewBox=\"0 0 ${a.w} ${a.h}\" preserveAspectRatio=\"xMidYMax meet\" role=\"img\" aria-label=\"${esc(heroName(i))}\"><image href=\"${a.u}\" width=\"${a.w}\" height=\"${a.h}\"/></svg>`}}\n"
             "let _skinK='',_skinPh='';\n"
-            "function lxSweep(){if(skinOf()!=='2'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxscan';document.body.appendChild(o);setTimeout(()=>o.remove(),1700)}\n"
+            "function lxSweep(){if(!lux()||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxscan';document.body.appendChild(o);setTimeout(()=>o.remove(),1700)}\n"
             "function skinEnter(){const b=document.getElementById('board');if(!b)return;"
             "const k=[S.board,S.dkey,S.cur&&S.cur.r,S.cur&&S.cur.h,typeof slideIx!=='undefined'?slideIx:''].join('|');if(k!==_skinK){_skinK=k;b.classList.add('enter')}"
             "const ph=typeof R!=='undefined'&&R?R.phase:'';if(ph==='running'&&_skinPh!=='running'&&S.board==='live'){b.classList.remove('enter');b.classList.add('ignite');lxSweep()}_skinPh=ph}\n"
-            "function lxGlitter(n){if(skinOf()!=='2'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxglit';"
+            "function lxGlitter(n){if(!lux()||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxglit';"
             "const K=['#e6cf9f','#c9a96e','#f3e2bd','#d7dbe0'];let h='';for(let i=0;i<Math.min(90,Math.max(24,n/3|0));i++){h+=`<i style=\"left:${(Math.random()*100).toFixed(1)}vw;--s:${(.25+Math.random()*.45).toFixed(2)}vw;--k:${K[i%4]};--d:${(3.2+Math.random()*2.6).toFixed(2)}s;--w:${(Math.random()*1.4).toFixed(2)}s\"></i>`}"
             "o.innerHTML=h;document.body.appendChild(o);setTimeout(()=>o.remove(),7200)}\n"
-            "if(typeof confetti==='function'){const _cf=confetti;confetti=function(n,lane){if(skinOf()==='2')return lxGlitter(n||100);return _cf.apply(this,arguments)}}\n"
-            "if(typeof runFx==='function'){const _rf=runFx;runFx=function(name,arg){if(skinOf()==='2'&&(name==='bolt'||name==='champion')){playLocal(name==='champion'?'fanfare':'thunder');if(!boardVisible())return;lxSweep();if(name==='champion'||(arg&&arg.big))lxGlitter(name==='champion'?260:110);return}return _rf.apply(this,arguments)}}\n"
-            "if(typeof powerUp==='function'){const _pu=powerUp;powerUp=function(){if(skinOf()!=='2')return _pu.apply(this,arguments);if(!boardVisible())return;playLocal('fanfare');"
+            "if(typeof confetti==='function'){const _cf=confetti;confetti=function(n,lane){if(lux())return lxGlitter(n||100);return _cf.apply(this,arguments)}}\n"
+            "if(typeof runFx==='function'){const _rf=runFx;runFx=function(name,arg){if(lux()&&(name==='bolt'||name==='champion')){playLocal(name==='champion'?'fanfare':'thunder');if(!boardVisible())return;lxSweep();if(name==='champion'||(arg&&arg.big))lxGlitter(name==='champion'?260:110);return}return _rf.apply(this,arguments)}}\n"
+            "if(typeof powerUp==='function'){const _pu=powerUp;powerUp=function(){if(!lux())return _pu.apply(this,arguments);if(!boardVisible())return;playLocal('fanfare');"
             "const o=document.createElement('div');o.className='pwov';o.innerHTML=`<div class=\"pwt\"><b>FINAL</b><span>${esc(t('final'))}</span></div>`;document.body.appendChild(o);setTimeout(()=>o.remove(),3300);lxSweep();lxGlitter(160)}}\n"
             + SKINJS_B + "\n")
 
@@ -301,7 +345,7 @@ def patch(path, app):
     styles = re.findall(r'<style>(.*?)</style>', s, flags=re.S)
     gen = [walk(tinycss2.parse_stylesheet(c, skip_whitespace=True, skip_comments=True)) for c in styles]
     block = (A + '\n/* 디자인 형식 2타입 · 럭셔리 — tools/hero_skins.py 가 만든 부분입니다 (아래 자동 규칙은 1타입 CSS에서 만듦). 1타입 CSS를 고친 뒤 다시 실행하세요. */\n'
-             + f'{PRE}{{{TOKENS[app]}}}\n' + '\n'.join(g for g in gen if g) + '\n' + (LUX % {'P': PRE}) + UI_CSS + B + '\n')
+             + f'{PRE}{{{TOKENS[app]}}}\n' + '\n'.join(g for g in gen if g) + '\n' + (LUX % {'P': PRE}) + PHOTO_CSS + UI_CSS + B + '\n')
     last = max(m.start() for m in re.finditer('</style>', s))
     s = s[:last] + block + s[last:]
     s = s.replace("function render(){applySkin();", skin_js(app) + "function render(){applySkin();", 1) if "function render(){applySkin();" in s else s.replace("function render(){", skin_js(app) + "function render(){applySkin();", 1)
@@ -309,11 +353,11 @@ def patch(path, app):
     if "\n  skinEnter();" not in s:
         i = s.index("function renderBoard(){applySkin();"); j = s.index("\n}\n", i)
         s = s[:j] + "\n  skinEnter();" + s[j:]
-    sw = ("<div class=\"skinsw\" role=\"group\" aria-label=\"${esc(S.lang==='en'?'Design type':'디자인 형식')}\" data-l=\"🎨\" title=\"${esc(S.lang==='en'?'Design type: 1 Hero · 2 Luxury':'디자인 형식: 1타입 히어로 · 2타입 럭셔리')}\">"
-          "${[['1','히어로 (지금 그대로)','Hero'],['2','럭셔리','Luxury']].map(([v,d,e])=>`<button data-act=\"skin\" data-v=\"${v}\" title=\"${esc(S.lang==='en'?e:d)}\" aria-pressed=\"${skinOf()===v}\">${v}</button>`).join('')}</div>")
+    sw = ("<div class=\"skinsw\" role=\"group\" aria-label=\"${esc(S.lang==='en'?'Design type':'디자인 형식')}\" data-l=\"🎨\" title=\"${esc(S.lang==='en'?'Design type: 1 Hero · 2 Luxury':'디자인 형식: 1타입 히어로 · 2타입 럭셔리 · 3타입 그림 히어로')}\">"
+          "${[['1','히어로 (지금 그대로)','Hero'],['2','럭셔리','Luxury']].concat(HERO_ART.length?[['3','그림 히어로 (럭셔리 + 그림 캐릭터)','Hero art']]:[]).map(([v,d,e])=>`<button data-act=\"skin\" data-v=\"${v}\" title=\"${esc(S.lang==='en'?e:d)}\" aria-pressed=\"${skinOf()===v}\">${v}</button>`).join('')}</div>")
     s, n = re.subn(r'<div class="skinsw".*?</div>(?=\n)', lambda m: sw, s, count=1, flags=re.S)
     assert n == 1, (path, 'skinsw')
-    s, n = re.subn(r"    case'skin':[^\n]*\n", "    case'skin':S.cfg.skin=v==='2'?'2':'1';applySkin();commit();break;\n", s, count=1)
+    s, n = re.subn(r"    case'skin':[^\n]*\n", "    case'skin':S.cfg.skin=v==='2'||v==='3'?v:'1';applySkin();commit();break;\n", s, count=1)
     assert n == 1, (path, 'case skin')
     open(path, 'w', encoding='utf-8').write(s)
     print('ok', path, 'lines', block.count('\n'))

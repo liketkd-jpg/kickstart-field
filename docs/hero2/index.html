@@ -1133,8 +1133,8 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 :root[data-skin="2"] .squad>div{background:var(--glass),rgba(14,15,18,.6)!important;border:1px solid var(--hair)!important;border-radius:1vw!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2.4vw 4vw -1.6vw rgba(0,0,0,.95)!important;position:relative;overflow:hidden}
 :root[data-skin="2"] .squad>div::before{content:"";position:absolute;left:15%;right:15%;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--c),transparent);box-shadow:0 0 1vw var(--c)}
 :root[data-skin="2"] .squad svg{filter:saturate(.25) contrast(1.05) drop-shadow(0 1.6vw 1.6vw rgba(0,0,0,.7))!important}
-:root[data-skin="2"] .squad b{font-family:"Saira",sans-serif!important;font-weight:300!important;letter-spacing:.3em;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;text-shadow:none!important}
-:root[data-skin="2"] .squad span{color:var(--muted)!important;letter-spacing:.08em}
+:root[data-skin="2"] .squad b{font-family:"Saira",sans-serif!important;font-weight:300!important;letter-spacing:.16em;white-space:nowrap;font-size:min(2.6vw,3.2vh)!important;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;text-shadow:none!important}
+:root[data-skin="2"] .squad span{color:var(--muted)!important;letter-spacing:.04em;white-space:nowrap;font-size:min(1.6vw,2.4vh)!important;font-weight:400!important}
 /* 우승 화면: 위에서 내려오는 조명 · 플래티넘 유리 시상대 · 1등은 샴페인 골드 */
 :root[data-skin="2"] .champwrap{position:relative}
 :root[data-skin="2"] .champwrap::before{content:"";position:absolute;left:50%;top:-12vh;width:70vw;height:95vh;transform:translateX(-50%);background:conic-gradient(from 180deg at 50% 0%,transparent 160deg,rgba(255,240,210,.09) 172deg,rgba(255,240,210,.16) 180deg,rgba(255,240,210,.09) 188deg,transparent 200deg);pointer-events:none;filter:blur(6px)}
@@ -1186,6 +1186,24 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .lxglit i{position:absolute;top:-4vh;width:var(--s);height:var(--s);background:var(--k);opacity:.0;transform:rotate(45deg);box-shadow:0 0 .6vw var(--k);animation:lxfall var(--d) cubic-bezier(.3,.2,.4,1) var(--w) forwards}
 @keyframes lxfall{0%{opacity:0;transform:translateY(0) rotate(45deg)}12%{opacity:.95}100%{opacity:0;transform:translateY(108vh) rotate(405deg)}}
 @media (prefers-reduced-motion:reduce){:root[data-skin="2"] .board.v3 .bl,:root[data-skin="2"] .podium.p1::after{animation:none!important}.lxscan{display:none}:root[data-skin="2"] .board.enter *,:root[data-skin="2"] .board.ignite *{animation:none!important}}
+
+/* 3타입 · 그림 히어로 — 2타입 럭셔리 위에 그림 캐릭터 */
+:root[data-photo="1"] .hf.photo{overflow:visible}
+:root[data-photo="1"] .hf.photo image{transform-box:fill-box;transform-origin:50% 100%}
+:root[data-photo="1"] .hf.photo[data-mode="ready"] image{animation:phbreath 6s ease-in-out infinite}
+:root[data-photo="1"] .hf.photo[data-mode="run"] image,:root[data-photo="1"] .hf.photo[data-mode="runx"] image{animation:phrun 1.1s ease-in-out infinite}
+:root[data-photo="1"] .hf.photo[data-mode="p1"],:root[data-photo="1"] .hf.photo[data-mode="p1x"]{filter:drop-shadow(0 0 1.6vw rgba(201,169,110,.55)) drop-shadow(0 1.4vh 2vh rgba(0,0,0,.6))!important}
+@keyframes phbreath{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-.6%) scale(1.008)}}
+@keyframes phrun{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-1.6%) rotate(1.2deg)}}
+:root[data-photo="1"] .board.v3 .bl .hero{opacity:1!important;filter:none!important;bottom:auto!important;top:6%!important;height:62%!important;-webkit-mask-image:linear-gradient(to bottom,#000 30%,rgba(0,0,0,.35) 62%,transparent 92%);mask-image:linear-gradient(to bottom,#000 30%,rgba(0,0,0,.35) 62%,transparent 92%)}
+:root[data-photo="1"] .squad svg,:root[data-photo="1"] .podium svg,:root[data-photo="1"] .lvc svg{filter:drop-shadow(0 1.4vw 1.4vw rgba(0,0,0,.7))!important}
+:root[data-photo="1"] .podium .fig{position:relative}
+:root[data-photo="1"] .podium .fig svg.photo{position:absolute;inset:0;width:100%!important;height:100%!important;max-height:none!important}
+:root[data-photo="1"] .podium.p1 svg{filter:drop-shadow(0 0 1.4vw rgba(201,169,110,.45)) drop-shadow(0 1.4vw 1.4vw rgba(0,0,0,.7))!important}
+:root[data-photo="1"] .board.v3 .bl .hero svg{filter:drop-shadow(0 1.2vh 1.6vh rgba(0,0,0,.55))!important}
+:root[data-photo="1"] .board.v3 .bl.emptyb .hero{opacity:.18!important;filter:grayscale(1)!important}
+:root[data-photo="1"] .board.v3 .bl .bn{text-shadow:0 .2vw 1.2vw rgba(0,0,0,.95),0 0 .3vw rgba(0,0,0,.9)}
+@media (prefers-reduced-motion: reduce){:root[data-photo="1"] .hf.photo image{animation:none!important}}
 
 .skinsw{display:inline-flex;border:1px solid rgba(255,255,255,.18);border-radius:999px;overflow:hidden;margin-left:6px}
 .skinsw::before{content:attr(data-l);padding:3px 2px 3px 8px;font-size:12px;opacity:.8}
@@ -2339,7 +2357,7 @@ function renderTop(){
     <div class="lang" role="group" aria-label="language">
       <button data-act="lang" data-v="ko" aria-pressed="${S.lang==='ko'}">KO</button><button data-act="lang" data-v="en" aria-pressed="${S.lang==='en'}">EN</button>
     </div>
-    <div class="skinsw" role="group" aria-label="${esc(S.lang==='en'?'Design type':'디자인 형식')}" data-l="🎨" title="${esc(S.lang==='en'?'Design type: 1 Hero · 2 Luxury':'디자인 형식: 1타입 히어로 · 2타입 럭셔리')}">${[['1','히어로 (지금 그대로)','Hero'],['2','럭셔리','Luxury']].map(([v,d,e])=>`<button data-act="skin" data-v="${v}" title="${esc(S.lang==='en'?e:d)}" aria-pressed="${skinOf()===v}">${v}</button>`).join('')}</div>
+    <div class="skinsw" role="group" aria-label="${esc(S.lang==='en'?'Design type':'디자인 형식')}" data-l="🎨" title="${esc(S.lang==='en'?'Design type: 1 Hero · 2 Luxury':'디자인 형식: 1타입 히어로 · 2타입 럭셔리 · 3타입 그림 히어로')}">${[['1','히어로 (지금 그대로)','Hero'],['2','럭셔리','Luxury']].concat(HERO_ART.length?[['3','그림 히어로 (럭셔리 + 그림 캐릭터)','Hero art']]:[]).map(([v,d,e])=>`<button data-act="skin" data-v="${v}" title="${esc(S.lang==='en'?e:d)}" aria-pressed="${skinOf()===v}">${v}</button>`).join('')}</div>
   </div>`;
   focusState();
 }
@@ -2349,17 +2367,20 @@ function goFull(){keepAwake();try{const el=document.documentElement;if(!document
 function camPreview(){const pv=document.getElementById('camPv');if(pv&&CAM.video&&!pv.contains(CAM.video)){CAM.video.className='camv';pv.prepend(CAM.video)}
   if(S.cfg.fx.cam&&!window.__camsAsked){window.__camsAsked=1;camList().then(l=>{window.__cams=l;if(tab==='setup')render()})}}
 /* SKINJS:START */
-/* 디자인 형식: 1타입 히어로(지금 그대로) · 2타입 럭셔리 — S.cfg.skin 에 저장 (예전 3타입은 2타입으로) */
-const SKIN_HEX={'2':['#8fb3d1', '#c98a8f', '#8fbf9f', '#d1b27a']};
-function skinOf(){const v=S&&S.cfg&&S.cfg.skin;return v==='2'||v==='3'?'2':'1'}
-function applySkin(){const k=skinOf(),el=document.documentElement;if(el.dataset.skin!==k)el.dataset.skin=k;HEROES.forEach((h,i)=>{if(h.hex0==null)h.hex0=h.hex;h.hex=SKIN_HEX[k]?SKIN_HEX[k][i]:h.hex0})}
+/* 디자인 형식: 1타입 히어로(지금 그대로) · 2타입 럭셔리 · 3타입 그림 히어로(럭셔리 바탕 + tools/hero_art 그림) — S.cfg.skin 에 저장 */
+const SKIN_HEX={'2':['#8fb3d1', '#c98a8f', '#8fbf9f', '#d1b27a'],'3':['#8fb3d1', '#c98a8f', '#8fbf9f', '#d1b27a']};
+const HERO_ART=[];
+function skinOf(){const v=S&&S.cfg&&S.cfg.skin;return v==='3'&&HERO_ART.length?'3':v==='2'||v==='3'?'2':'1'}
+function lux(){return skinOf()!=='1'}
+function applySkin(){const k=skinOf(),el=document.documentElement,b=k==='3'?'2':k,ph=k==='3'?'1':'0';if(el.dataset.skin!==b)el.dataset.skin=b;if(el.dataset.photo!==ph)el.dataset.photo=ph;HEROES.forEach((h,i)=>{if(h.hex0==null)h.hex0=h.hex;h.hex=SKIN_HEX[k]?SKIN_HEX[k][i]:h.hex0})}
+if(typeof heroFig==='function'&&HERO_ART.length){const _hf=heroFig;heroFig=function(i,cls='',mode='ready'){const a=skinOf()==='3'&&HERO_ART[i];if(!a)return _hf.apply(this,arguments);return`<svg class="hf photo ${cls}" data-mode="${mode}" viewBox="0 0 ${a.w} ${a.h}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${esc(heroName(i))}"><image href="${a.u}" width="${a.w}" height="${a.h}"/></svg>`}}
 let _skinK='',_skinPh='';
-function lxSweep(){if(skinOf()!=='2'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxscan';document.body.appendChild(o);setTimeout(()=>o.remove(),1700)}
+function lxSweep(){if(!lux()||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxscan';document.body.appendChild(o);setTimeout(()=>o.remove(),1700)}
 function skinEnter(){const b=document.getElementById('board');if(!b)return;const k=[S.board,S.dkey,S.cur&&S.cur.r,S.cur&&S.cur.h,typeof slideIx!=='undefined'?slideIx:''].join('|');if(k!==_skinK){_skinK=k;b.classList.add('enter')}const ph=typeof R!=='undefined'&&R?R.phase:'';if(ph==='running'&&_skinPh!=='running'&&S.board==='live'){b.classList.remove('enter');b.classList.add('ignite');lxSweep()}_skinPh=ph}
-function lxGlitter(n){if(skinOf()!=='2'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxglit';const K=['#e6cf9f','#c9a96e','#f3e2bd','#d7dbe0'];let h='';for(let i=0;i<Math.min(90,Math.max(24,n/3|0));i++){h+=`<i style="left:${(Math.random()*100).toFixed(1)}vw;--s:${(.25+Math.random()*.45).toFixed(2)}vw;--k:${K[i%4]};--d:${(3.2+Math.random()*2.6).toFixed(2)}s;--w:${(Math.random()*1.4).toFixed(2)}s"></i>`}o.innerHTML=h;document.body.appendChild(o);setTimeout(()=>o.remove(),7200)}
-if(typeof confetti==='function'){const _cf=confetti;confetti=function(n,lane){if(skinOf()==='2')return lxGlitter(n||100);return _cf.apply(this,arguments)}}
-if(typeof runFx==='function'){const _rf=runFx;runFx=function(name,arg){if(skinOf()==='2'&&(name==='bolt'||name==='champion')){playLocal(name==='champion'?'fanfare':'thunder');if(!boardVisible())return;lxSweep();if(name==='champion'||(arg&&arg.big))lxGlitter(name==='champion'?260:110);return}return _rf.apply(this,arguments)}}
-if(typeof powerUp==='function'){const _pu=powerUp;powerUp=function(){if(skinOf()!=='2')return _pu.apply(this,arguments);if(!boardVisible())return;playLocal('fanfare');const o=document.createElement('div');o.className='pwov';o.innerHTML=`<div class="pwt"><b>FINAL</b><span>${esc(t('final'))}</span></div>`;document.body.appendChild(o);setTimeout(()=>o.remove(),3300);lxSweep();lxGlitter(160)}}
+function lxGlitter(n){if(!lux()||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxglit';const K=['#e6cf9f','#c9a96e','#f3e2bd','#d7dbe0'];let h='';for(let i=0;i<Math.min(90,Math.max(24,n/3|0));i++){h+=`<i style="left:${(Math.random()*100).toFixed(1)}vw;--s:${(.25+Math.random()*.45).toFixed(2)}vw;--k:${K[i%4]};--d:${(3.2+Math.random()*2.6).toFixed(2)}s;--w:${(Math.random()*1.4).toFixed(2)}s"></i>`}o.innerHTML=h;document.body.appendChild(o);setTimeout(()=>o.remove(),7200)}
+if(typeof confetti==='function'){const _cf=confetti;confetti=function(n,lane){if(lux())return lxGlitter(n||100);return _cf.apply(this,arguments)}}
+if(typeof runFx==='function'){const _rf=runFx;runFx=function(name,arg){if(lux()&&(name==='bolt'||name==='champion')){playLocal(name==='champion'?'fanfare':'thunder');if(!boardVisible())return;lxSweep();if(name==='champion'||(arg&&arg.big))lxGlitter(name==='champion'?260:110);return}return _rf.apply(this,arguments)}}
+if(typeof powerUp==='function'){const _pu=powerUp;powerUp=function(){if(!lux())return _pu.apply(this,arguments);if(!boardVisible())return;playLocal('fanfare');const o=document.createElement('div');o.className='pwov';o.innerHTML=`<div class="pwt"><b>FINAL</b><span>${esc(t('final'))}</span></div>`;document.body.appendChild(o);setTimeout(()=>o.remove(),3300);lxSweep();lxGlitter(160)}}
 /* SKINJS:END */
 function render(){applySkin();
   if(ROLE==='judge'){renderJudge();return}
@@ -2851,7 +2872,7 @@ document.addEventListener('click',e=>{
     case'pickDiv':pickDiv(v);break;
     case'stopFlow':clearFlow();render();break;
     case'openBoard':{const t0=Date.now();setTimeout(()=>{if(boardSeen<t0){toast(t('noWin'));setTab('board')}},2500)}break;
-    case'skin':S.cfg.skin=v==='2'?'2':'1';applySkin();commit();break;
+    case'skin':S.cfg.skin=v==='2'||v==='3'?v:'1';applySkin();commit();break;
     case'lang':S.lang=v;commit();break;
     case'start':startHeat();break;
     case'fin':finishLane(+v);break;
