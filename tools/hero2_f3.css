@@ -1,0 +1,69 @@
+/* F3CSS:START — 결승 3라운드 전광판 (1타입) */
+.f3wrap{--u:min(1vw,1.7778vh);height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;gap:calc(1.4*var(--u));padding:calc(.6*var(--u)) calc(2*var(--u)) calc(1.2*var(--u));text-align:center}
+.f3kick{font-weight:900;letter-spacing:.32em;font-size:calc(1.5*var(--u));color:var(--gold);display:flex;align-items:baseline;gap:calc(.8*var(--u));justify-content:center}
+.f3kick small{font-size:.7em;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.f3steps{display:flex;align-items:center;gap:calc(.8*var(--u))}
+.f3steps em{width:calc(4*var(--u));height:2px;background:rgba(255,255,255,.18)}
+.f3steps span{display:flex;align-items:center;gap:calc(.6*var(--u));font-weight:800;letter-spacing:.12em;font-size:calc(1.2*var(--u));color:rgba(255,255,255,.4)}
+.f3steps i{font-style:normal;width:calc(2.6*var(--u));height:calc(2.6*var(--u));border-radius:50%;display:grid;place-items:center;border:2px solid currentColor;font-size:calc(1.3*var(--u))}
+.f3steps .d{color:var(--gold)}.f3steps .d i{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.f3steps .c{color:#fff}.f3steps .c i{background:var(--red);border-color:#fff;box-shadow:0 0 calc(1.6*var(--u)) var(--red)}
+.f3main{display:flex;align-items:center;gap:calc(3*var(--u));margin-top:calc(.6*var(--u))}
+.f3ic{width:calc(15*var(--u));color:var(--gold);filter:drop-shadow(0 0 calc(1.2*var(--u)) color-mix(in srgb,var(--gold) 60%,transparent));animation:f3pop 1s cubic-bezier(.2,1.4,.4,1) both}
+.f3ic svg{width:100%;height:auto;display:block}
+.f3tt{text-align:left;display:flex;flex-direction:column;gap:calc(.4*var(--u));animation:f3up .9s .15s cubic-bezier(.2,.8,.2,1) both}
+.f3tt small{font-weight:900;letter-spacing:.3em;color:var(--red);font-size:calc(1.6*var(--u))}
+.f3tt b{font-weight:900;font-size:calc(6.4*var(--u));line-height:.95;letter-spacing:.01em;color:#fff;text-shadow:0 .35vw 0 rgba(0,0,0,.45)}
+.f3tt em{font-style:normal;font-weight:800;font-size:calc(2.4*var(--u));color:var(--gold)}
+.f3tt p{margin:0;font-size:calc(1.5*var(--u));color:rgba(255,255,255,.75);font-weight:600}
+.f3lead{font-weight:900;letter-spacing:.18em;font-size:calc(1.4*var(--u));color:var(--gold);display:flex;gap:calc(.8*var(--u));align-items:baseline}
+.f3lead small{letter-spacing:.04em;color:var(--muted)}
+.f3cards{flex:1;min-height:0;width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:calc(1.4*var(--u));max-width:calc(110*var(--u))}
+.f3c{position:relative;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto auto auto;justify-items:center;padding:calc(1*var(--u)) calc(1*var(--u)) calc(1.2*var(--u));border-radius:calc(1.4*var(--u));background:linear-gradient(180deg,color-mix(in srgb,var(--c) 30%,transparent),rgba(0,0,0,.35)),var(--panel);border:2px solid color-mix(in srgb,var(--c) 70%,#fff);box-shadow:0 calc(.8*var(--u)) calc(2*var(--u)) rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.2);animation:f3up .8s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}
+.f3c.top{border-color:var(--gold);box-shadow:0 0 calc(2.4*var(--u)) color-mix(in srgb,var(--gold) 55%,transparent),inset 0 1px 0 rgba(255,255,255,.25)}
+.f3fig{min-height:0;height:100%;width:100%;display:grid;place-items:end center}
+.f3fig svg{height:100%;max-height:calc(20*var(--u));width:auto}
+.f3c b{font-weight:900;font-size:calc(2.6*var(--u));color:#fff;line-height:1.1;margin-top:calc(.4*var(--u))}
+.f3c small{font-size:calc(1.1*var(--u));color:rgba(255,255,255,.7);font-weight:600}
+.f3pos{position:absolute;left:calc(.8*var(--u));top:calc(.6*var(--u));font-weight:900;font-size:calc(2.6*var(--u));color:var(--gold);text-shadow:0 2px 0 rgba(0,0,0,.5)}
+.f3pt{margin-top:calc(.5*var(--u));font-weight:900;font-size:calc(2.6*var(--u));color:var(--gold);font-variant-numeric:tabular-nums}
+.f3pt i{font-style:normal;font-size:.5em;margin-left:.2em;color:rgba(255,255,255,.7)}
+.f3ln{margin-top:calc(.5*var(--u));font-weight:900;letter-spacing:.16em;font-size:calc(1*var(--u));padding:calc(.2*var(--u)) calc(.9*var(--u));border-radius:99px;background:var(--c);color:var(--ink)}
+.f3title{font-weight:900;font-size:calc(3.2*var(--u));white-space:nowrap;color:#fff;display:flex;align-items:baseline;gap:calc(1*var(--u));animation:f3up .8s cubic-bezier(.2,.8,.2,1) both}
+.f3title small{font-size:.42em;color:var(--gold);font-weight:800}
+.f3tbl{width:100%;max-width:calc(118*var(--u));display:flex;flex-direction:column;gap:calc(.9*var(--u));flex:1;min-height:0;justify-content:center}
+.f3row{position:relative;display:grid;grid-template-columns:calc(5*var(--u)) minmax(0,2.2fr) repeat(3,minmax(0,1fr)) minmax(0,1.6fr);align-items:center;gap:calc(1*var(--u));padding:calc(1*var(--u)) calc(1.4*var(--u));border-radius:calc(1.2*var(--u));background:linear-gradient(90deg,color-mix(in srgb,var(--c) 28%,transparent),rgba(0,0,0,.25) 60%),var(--panel);border:2px solid color-mix(in srgb,var(--c) 55%,rgba(255,255,255,.1));animation:f3row .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}
+.f3row.f3hd{background:none;border:0;padding-top:0;padding-bottom:0;animation:none}
+.f3row.f3hd span{font-weight:900;letter-spacing:.1em;font-size:calc(1.3*var(--u));color:rgba(255,255,255,.55);display:flex;flex-direction:column;align-items:center}
+.f3row.f3hd span small{font-size:.75em;letter-spacing:0;font-weight:700}
+.f3row.f3hd span.cur{color:var(--gold)}
+.f3row.lead{border-color:var(--gold);box-shadow:0 0 calc(2*var(--u)) color-mix(in srgb,var(--gold) 45%,transparent)}
+.f3row .f3pos{position:static;font-size:calc(3*var(--u))}
+.f3nm{display:flex;align-items:center;gap:calc(1*var(--u));min-width:0}
+.f3nm svg{width:calc(3.4*var(--u));height:calc(3.4*var(--u));flex:none}
+.f3nm b{font-weight:900;font-size:calc(2.8*var(--u));color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f3v{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.f3v b{font-weight:900;font-size:calc(2.3*var(--u));color:rgba(255,255,255,.85);font-variant-numeric:tabular-nums}
+.f3v small{font-size:calc(1*var(--u));color:rgba(255,255,255,.55);font-weight:600}
+.f3v i{font-style:normal;color:rgba(255,255,255,.3);font-size:calc(2*var(--u))}
+.f3v.cur b{color:var(--gold)}
+.f3t{position:relative;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:calc(.4*var(--u))}
+.f3row:not(.f3hd) .f3t b{font-weight:900;font-size:calc(3.6*var(--u));color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.f3row.lead .f3t b{color:var(--gold)}
+.f3bar{display:block;width:100%;height:calc(.6*var(--u));border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}
+.f3bar::after{content:"";position:absolute;inset:0;width:var(--w,0%);background:linear-gradient(90deg,var(--c),color-mix(in srgb,var(--c) 40%,#fff));border-radius:inherit;animation:f3bar 1.4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0ms) + 300ms);transform-origin:left}
+.f3strip{display:flex;align-items:center;justify-content:center;gap:calc(1*var(--u));margin-top:calc(.4*var(--u))}
+.f3strip b{font-weight:900;letter-spacing:.2em;font-size:calc(1.3*var(--u));padding:calc(.2*var(--u)) calc(1*var(--u));border-radius:99px;background:var(--red);color:#fff}
+.f3strip span{font-weight:900;font-size:calc(1.6*var(--u));color:var(--gold);display:flex;gap:calc(.6*var(--u));align-items:baseline}
+.f3strip span small{font-size:.7em;color:rgba(255,255,255,.7)}
+.f3chip{display:inline-block;margin-left:calc(.5*var(--u));padding:calc(.15*var(--u)) calc(.8*var(--u));border-radius:99px;background:rgba(0,0,0,.45);border:1px solid var(--gold);color:var(--gold);font-weight:900;font-size:calc(1.2*var(--u));font-variant-numeric:tabular-nums}
+.f3ban{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.f3dots{display:inline-flex;gap:6px;margin-left:auto}
+.f3dots i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:13px}
+.f3dots i.d{background:var(--gold);border-color:var(--gold);color:var(--ink)}.f3dots i.c{background:var(--red);border-color:#fff}
+@keyframes f3up{from{opacity:0;transform:translateY(calc(3*var(--u)))}to{opacity:1;transform:none}}
+@keyframes f3pop{0%{opacity:0;transform:scale(.4) rotate(-8deg)}100%{opacity:1;transform:none}}
+@keyframes f3row{from{opacity:0;transform:translateX(calc(-4*var(--u)))}to{opacity:1;transform:none}}
+@keyframes f3bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion: reduce){.f3wrap *{animation:none!important}}
+/* F3CSS:END */

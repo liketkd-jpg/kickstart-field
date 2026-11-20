@@ -883,6 +883,75 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 .board.v3 .bossslide .bline b{font-family:var(--bt);font-weight:900;font-size:calc(2.2*var(--u))}
 .board.v3 .bossslide .bline .villain{height:calc(20*var(--u))}.board.v3 .bossslide .bline>div:nth-of-type(3) .villain{height:calc(26*var(--u))}
 .board.v3 .bossslide p{font-size:calc(1.6*var(--u));max-width:calc(70*var(--u))}
+/* F3CSS:START — 결승 3라운드 전광판 (1타입) */
+.f3wrap{--u:min(1vw,1.7778vh);height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;gap:calc(1.4*var(--u));padding:calc(.6*var(--u)) calc(2*var(--u)) calc(1.2*var(--u));text-align:center}
+.f3kick{font-weight:900;letter-spacing:.32em;font-size:calc(1.5*var(--u));color:var(--gold);display:flex;align-items:baseline;gap:calc(.8*var(--u));justify-content:center}
+.f3kick small{font-size:.7em;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.f3steps{display:flex;align-items:center;gap:calc(.8*var(--u))}
+.f3steps em{width:calc(4*var(--u));height:2px;background:rgba(255,255,255,.18)}
+.f3steps span{display:flex;align-items:center;gap:calc(.6*var(--u));font-weight:800;letter-spacing:.12em;font-size:calc(1.2*var(--u));color:rgba(255,255,255,.4)}
+.f3steps i{font-style:normal;width:calc(2.6*var(--u));height:calc(2.6*var(--u));border-radius:50%;display:grid;place-items:center;border:2px solid currentColor;font-size:calc(1.3*var(--u))}
+.f3steps .d{color:var(--gold)}.f3steps .d i{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.f3steps .c{color:#fff}.f3steps .c i{background:var(--red);border-color:#fff;box-shadow:0 0 calc(1.6*var(--u)) var(--red)}
+.f3main{display:flex;align-items:center;gap:calc(3*var(--u));margin-top:calc(.6*var(--u))}
+.f3ic{width:calc(15*var(--u));color:var(--gold);filter:drop-shadow(0 0 calc(1.2*var(--u)) color-mix(in srgb,var(--gold) 60%,transparent));animation:f3pop 1s cubic-bezier(.2,1.4,.4,1) both}
+.f3ic svg{width:100%;height:auto;display:block}
+.f3tt{text-align:left;display:flex;flex-direction:column;gap:calc(.4*var(--u));animation:f3up .9s .15s cubic-bezier(.2,.8,.2,1) both}
+.f3tt small{font-weight:900;letter-spacing:.3em;color:var(--red);font-size:calc(1.6*var(--u))}
+.f3tt b{font-weight:900;font-size:calc(6.4*var(--u));line-height:.95;letter-spacing:.01em;color:#fff;text-shadow:0 .35vw 0 rgba(0,0,0,.45)}
+.f3tt em{font-style:normal;font-weight:800;font-size:calc(2.4*var(--u));color:var(--gold)}
+.f3tt p{margin:0;font-size:calc(1.5*var(--u));color:rgba(255,255,255,.75);font-weight:600}
+.f3lead{font-weight:900;letter-spacing:.18em;font-size:calc(1.4*var(--u));color:var(--gold);display:flex;gap:calc(.8*var(--u));align-items:baseline}
+.f3lead small{letter-spacing:.04em;color:var(--muted)}
+.f3cards{flex:1;min-height:0;width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:calc(1.4*var(--u));max-width:calc(110*var(--u))}
+.f3c{position:relative;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto auto auto;justify-items:center;padding:calc(1*var(--u)) calc(1*var(--u)) calc(1.2*var(--u));border-radius:calc(1.4*var(--u));background:linear-gradient(180deg,color-mix(in srgb,var(--c) 30%,transparent),rgba(0,0,0,.35)),var(--panel);border:2px solid color-mix(in srgb,var(--c) 70%,#fff);box-shadow:0 calc(.8*var(--u)) calc(2*var(--u)) rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.2);animation:f3up .8s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}
+.f3c.top{border-color:var(--gold);box-shadow:0 0 calc(2.4*var(--u)) color-mix(in srgb,var(--gold) 55%,transparent),inset 0 1px 0 rgba(255,255,255,.25)}
+.f3fig{min-height:0;height:100%;width:100%;display:grid;place-items:end center}
+.f3fig svg{height:100%;max-height:calc(20*var(--u));width:auto}
+.f3c b{font-weight:900;font-size:calc(2.6*var(--u));color:#fff;line-height:1.1;margin-top:calc(.4*var(--u))}
+.f3c small{font-size:calc(1.1*var(--u));color:rgba(255,255,255,.7);font-weight:600}
+.f3pos{position:absolute;left:calc(.8*var(--u));top:calc(.6*var(--u));font-weight:900;font-size:calc(2.6*var(--u));color:var(--gold);text-shadow:0 2px 0 rgba(0,0,0,.5)}
+.f3pt{margin-top:calc(.5*var(--u));font-weight:900;font-size:calc(2.6*var(--u));color:var(--gold);font-variant-numeric:tabular-nums}
+.f3pt i{font-style:normal;font-size:.5em;margin-left:.2em;color:rgba(255,255,255,.7)}
+.f3ln{margin-top:calc(.5*var(--u));font-weight:900;letter-spacing:.16em;font-size:calc(1*var(--u));padding:calc(.2*var(--u)) calc(.9*var(--u));border-radius:99px;background:var(--c);color:var(--ink)}
+.f3title{font-weight:900;font-size:calc(3.2*var(--u));white-space:nowrap;color:#fff;display:flex;align-items:baseline;gap:calc(1*var(--u));animation:f3up .8s cubic-bezier(.2,.8,.2,1) both}
+.f3title small{font-size:.42em;color:var(--gold);font-weight:800}
+.f3tbl{width:100%;max-width:calc(118*var(--u));display:flex;flex-direction:column;gap:calc(.9*var(--u));flex:1;min-height:0;justify-content:center}
+.f3row{position:relative;display:grid;grid-template-columns:calc(5*var(--u)) minmax(0,2.2fr) repeat(3,minmax(0,1fr)) minmax(0,1.6fr);align-items:center;gap:calc(1*var(--u));padding:calc(1*var(--u)) calc(1.4*var(--u));border-radius:calc(1.2*var(--u));background:linear-gradient(90deg,color-mix(in srgb,var(--c) 28%,transparent),rgba(0,0,0,.25) 60%),var(--panel);border:2px solid color-mix(in srgb,var(--c) 55%,rgba(255,255,255,.1));animation:f3row .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}
+.f3row.f3hd{background:none;border:0;padding-top:0;padding-bottom:0;animation:none}
+.f3row.f3hd span{font-weight:900;letter-spacing:.1em;font-size:calc(1.3*var(--u));color:rgba(255,255,255,.55);display:flex;flex-direction:column;align-items:center}
+.f3row.f3hd span small{font-size:.75em;letter-spacing:0;font-weight:700}
+.f3row.f3hd span.cur{color:var(--gold)}
+.f3row.lead{border-color:var(--gold);box-shadow:0 0 calc(2*var(--u)) color-mix(in srgb,var(--gold) 45%,transparent)}
+.f3row .f3pos{position:static;font-size:calc(3*var(--u))}
+.f3nm{display:flex;align-items:center;gap:calc(1*var(--u));min-width:0}
+.f3nm svg{width:calc(3.4*var(--u));height:calc(3.4*var(--u));flex:none}
+.f3nm b{font-weight:900;font-size:calc(2.8*var(--u));color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f3v{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.f3v b{font-weight:900;font-size:calc(2.3*var(--u));color:rgba(255,255,255,.85);font-variant-numeric:tabular-nums}
+.f3v small{font-size:calc(1*var(--u));color:rgba(255,255,255,.55);font-weight:600}
+.f3v i{font-style:normal;color:rgba(255,255,255,.3);font-size:calc(2*var(--u))}
+.f3v.cur b{color:var(--gold)}
+.f3t{position:relative;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:calc(.4*var(--u))}
+.f3row:not(.f3hd) .f3t b{font-weight:900;font-size:calc(3.6*var(--u));color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.f3row.lead .f3t b{color:var(--gold)}
+.f3bar{display:block;width:100%;height:calc(.6*var(--u));border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}
+.f3bar::after{content:"";position:absolute;inset:0;width:var(--w,0%);background:linear-gradient(90deg,var(--c),color-mix(in srgb,var(--c) 40%,#fff));border-radius:inherit;animation:f3bar 1.4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0ms) + 300ms);transform-origin:left}
+.f3strip{display:flex;align-items:center;justify-content:center;gap:calc(1*var(--u));margin-top:calc(.4*var(--u))}
+.f3strip b{font-weight:900;letter-spacing:.2em;font-size:calc(1.3*var(--u));padding:calc(.2*var(--u)) calc(1*var(--u));border-radius:99px;background:var(--red);color:#fff}
+.f3strip span{font-weight:900;font-size:calc(1.6*var(--u));color:var(--gold);display:flex;gap:calc(.6*var(--u));align-items:baseline}
+.f3strip span small{font-size:.7em;color:rgba(255,255,255,.7)}
+.f3chip{display:inline-block;margin-left:calc(.5*var(--u));padding:calc(.15*var(--u)) calc(.8*var(--u));border-radius:99px;background:rgba(0,0,0,.45);border:1px solid var(--gold);color:var(--gold);font-weight:900;font-size:calc(1.2*var(--u));font-variant-numeric:tabular-nums}
+.f3ban{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.f3dots{display:inline-flex;gap:6px;margin-left:auto}
+.f3dots i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:13px}
+.f3dots i.d{background:var(--gold);border-color:var(--gold);color:var(--ink)}.f3dots i.c{background:var(--red);border-color:#fff}
+@keyframes f3up{from{opacity:0;transform:translateY(calc(3*var(--u)))}to{opacity:1;transform:none}}
+@keyframes f3pop{0%{opacity:0;transform:scale(.4) rotate(-8deg)}100%{opacity:1;transform:none}}
+@keyframes f3row{from{opacity:0;transform:translateX(calc(-4*var(--u)))}to{opacity:1;transform:none}}
+@keyframes f3bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion: reduce){.f3wrap *{animation:none!important}}
+/* F3CSS:END */
 /* LFX:START — 전광판 빛·흔들림 효과 */
 .board .bl{isolation:isolate;--fxc:color-mix(in srgb,var(--c) 70%,#fff)}
 .board .bl .lfx{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none;z-index:-1}
@@ -1133,6 +1202,43 @@ main.wrap.runmode{max-width:none;padding-block:10px;display:flex;flex-direction:
 :root[data-skin="2"] .board.v3 .bl .hero svg{height:100%;width:auto;filter:none!important}
 :root[data-skin="2"] .board.v3 .bl>*:not(.hero):not(.bplace):not(.lfx){position:relative;z-index:1}
 :root[data-skin="2"] .board .bl{--fxc:#e3c98f}
+:root[data-skin="2"] .f3kick{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.6em;color:var(--gold)}
+:root[data-skin="2"] .f3steps span{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.24em;color:rgba(215,219,224,.35)}
+:root[data-skin="2"] .f3steps i{border-width:1px}
+:root[data-skin="2"] .f3steps em{height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,110,.5),transparent)}
+:root[data-skin="2"] .f3steps .d{color:var(--gold)}:root[data-skin="2"] .f3steps .d i{background:rgba(201,169,110,.18);color:var(--gold);border-color:var(--gold)}
+:root[data-skin="2"] .f3steps .c{color:var(--paper)}:root[data-skin="2"] .f3steps .c i{background:transparent;border-color:var(--gold);color:var(--gold);box-shadow:0 0 calc(1.4*var(--u)) rgba(201,169,110,.55),inset 0 0 calc(.8*var(--u)) rgba(201,169,110,.35)}
+:root[data-skin="2"] .f3ic{color:var(--gold);filter:drop-shadow(0 0 calc(1*var(--u)) rgba(201,169,110,.45));animation:lxin 1.6s cubic-bezier(.2,.7,.2,1) both}
+:root[data-skin="2"] .f3ic svg *{stroke-width:1.4}
+:root[data-skin="2"] .f3tt{animation:lxin 1.6s .2s cubic-bezier(.2,.7,.2,1) both}
+:root[data-skin="2"] .f3tt small{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.5em;color:var(--gold)}
+:root[data-skin="2"] .f3tt b{font-family:"Saira",sans-serif;font-weight:200;letter-spacing:.06em;background:var(--metal);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+:root[data-skin="2"] .f3tt em{font-weight:300;color:var(--silver);letter-spacing:.1em}
+:root[data-skin="2"] .f3tt p{font-weight:300;color:var(--muted);letter-spacing:.04em}
+:root[data-skin="2"] .f3lead{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.4em}
+:root[data-skin="2"] .f3c{background:var(--glass),rgba(14,15,18,.55);border:1px solid var(--hair);border-top-color:color-mix(in srgb,var(--c) 70%,transparent);border-radius:calc(.8*var(--u));box-shadow:0 calc(1.6*var(--u)) calc(3*var(--u)) rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(10px);animation:lxin 1.4s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0ms)}
+:root[data-skin="2"] .f3c.top{border-color:rgba(201,169,110,.55);box-shadow:0 0 calc(2.4*var(--u)) rgba(201,169,110,.25),0 calc(1.6*var(--u)) calc(3*var(--u)) rgba(0,0,0,.6)}
+:root[data-skin="2"] .f3c b{font-weight:500;color:var(--paper)}
+:root[data-skin="2"] .f3c small{font-weight:300;color:var(--muted);letter-spacing:.06em}
+:root[data-skin="2"] .f3pos{font-family:"Saira",sans-serif;font-weight:200;color:var(--gold);text-shadow:none}
+:root[data-skin="2"] .f3pt{font-family:"Saira",sans-serif;font-weight:300;color:var(--gold)}
+:root[data-skin="2"] .f3ln{background:transparent;border:1px solid color-mix(in srgb,var(--c) 70%,transparent);color:var(--silver);font-family:"Saira",sans-serif;font-weight:400;letter-spacing:.3em}
+:root[data-skin="2"] .f3title{font-family:"Saira","Noto Sans KR",sans-serif;font-weight:200;letter-spacing:.08em;background:var(--metal);-webkit-background-clip:text;background-clip:text;color:transparent;animation:lxin 1.4s cubic-bezier(.2,.7,.2,1) both}
+:root[data-skin="2"] .f3title small{-webkit-text-fill-color:var(--gold);font-weight:300}
+:root[data-skin="2"] .f3row{background:var(--glass),rgba(14,15,18,.55);border:1px solid var(--hair);border-left:2px solid color-mix(in srgb,var(--c) 75%,transparent);border-radius:calc(.6*var(--u));backdrop-filter:blur(10px);animation:lxin 1.2s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0ms)}
+:root[data-skin="2"] .f3row.f3hd{background:none;border:0;backdrop-filter:none}
+:root[data-skin="2"] .f3row.f3hd span{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.3em;color:rgba(215,219,224,.45)}
+:root[data-skin="2"] .f3row.lead{border-color:rgba(201,169,110,.5);border-left-color:var(--gold);box-shadow:0 0 calc(2*var(--u)) rgba(201,169,110,.18)}
+:root[data-skin="2"] .f3nm b{font-weight:500;color:var(--paper)}
+:root[data-skin="2"] .f3v b{font-family:"Saira",sans-serif;font-weight:300;color:var(--silver)}
+:root[data-skin="2"] .f3v small{font-weight:300;color:var(--muted)}
+:root[data-skin="2"] .f3row:not(.f3hd) .f3t b{font-family:"Saira",sans-serif;font-weight:300;color:var(--paper)}
+:root[data-skin="2"] .f3row.lead .f3t b{color:var(--gold)}
+:root[data-skin="2"] .f3bar{height:2px;background:rgba(255,255,255,.08)}
+:root[data-skin="2"] .f3bar::after{background:linear-gradient(90deg,rgba(201,169,110,.35),var(--gold),#f3e3bd);box-shadow:0 0 calc(.8*var(--u)) rgba(201,169,110,.6);animation-duration:2s}
+:root[data-skin="2"] .f3strip b{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:"Saira",sans-serif;font-weight:400;letter-spacing:.3em}
+:root[data-skin="2"] .f3strip span{font-weight:300;color:var(--silver);letter-spacing:.08em}
+:root[data-skin="2"] .f3chip{background:rgba(255,255,255,.04);border:1px solid rgba(201,169,110,.45);color:var(--gold);font-family:"Saira",sans-serif;font-weight:400}
 :root[data-skin="2"] .board .bl.fx-chg .lfx .lflash{background:linear-gradient(105deg,transparent 40%,rgba(255,236,200,.42) 50%,transparent 60%);animation-duration:1.4s}
 :root[data-skin="2"] .board .bl[data-m^="run"] .lfx .ls{height:2px;background:linear-gradient(90deg,transparent,rgba(227,201,143,1) 65%,#fffaf0);box-shadow:0 0 1.2vh rgba(227,201,143,.9);animation-duration:1.1s}
 :root[data-skin="2"] .board .bl.fx-hit .lfx .lwave,:root[data-skin="2"] .board .bl.fx-win .lfx .lwave{border-width:1px;box-shadow:0 0 1.4vh rgba(227,201,143,.6),inset 0 0 1.4vh rgba(227,201,143,.35);animation-duration:1.4s}
@@ -1289,7 +1395,7 @@ const T={
   startKey:'시작 버튼',learn:'등록',learning:'버튼을 누르세요…',lastKey:'마지막 입력',countdown:'3·2·1 카운트다운',sound:'효과음',soundAt:'소리 재생 위치',atCtrl:'운영 화면',atBoard:'전광판 새 창',
   data:'데이터',newEv:'새 대회 시작',newEvD:'「새 대회 시작」을 두 번 누르면 출전 명단과 모든 경기 기록이 지워집니다. 허가 코드·대회 이름·코스·버튼 설정은 그대로 남습니다. 지우기 전에 「결과 복사」나 「결과 보내기」로 결과를 챙겨 두세요.',newEvDone:'새 대회를 시작합니다. 명단을 불러와 주세요',copy:'결과 복사',copied:'결과를 복사했습니다',reset:'모든 기록 초기화',sure:'한 번 더 누르면 실행',applied:'부문 {n}개로 대진을 만들었습니다',
   lane:'레인',empty:'빈 레인',finish:'도착!',undo:'도착 취소',dnf:'기권',dnfOff:'기권 취소',start:'시작',running:'경기 중',
-  confirm:'결과 확정',redo:'이 조 다시 하기',nextHeat:'다음 조로',heat:'조',round:'라운드',cutoff:'컷오프',final:'결승',semi:'준결승',
+  confirm:'결과 확정',redo:'이 조 다시 하기',nextHeat:'다음 조로',heat:'조',round:'라운드',cutoff:'컷오프',final:'결승',semi:'준결승',f3:'결승 3라운드 (달리기 · 스피드 발차기 · 격파)',f3D:'결승을 세 라운드로 치릅니다. 라운드마다 1등이 100점, 나머지는 기록에 비례한 점수를 받고, 세 라운드를 더한 점수(300점 만점)로 우승을 정합니다. 2라운드는 발차기 센서로 셀 수 있습니다.',f3No:'달리기 경기에서 결승이 있는 방식(토너먼트·컷오프 후 토너먼트·생활체육)일 때 쓸 수 있습니다.',f3Sec:'2라운드 발차기 시간(초)',f3R1:'장애물 달리기',f3R1D:'통과 · 점프 · 돌아오기 — 빠를수록 높은 점수',f3R2:'스피드 발차기',f3R2D:'{s}초 동안 연속 발차기 — 많이 찰수록 높은 점수',f3R3:'격파',f3R3D:'깨뜨린 송판 수 — 많을수록 높은 점수',f3RoundN:'{n}라운드',f3ResN:'{n}라운드 결과',f3Lead:'마지막 라운드 전 순위',f3Tot:'합계',f3Next:'{n}라운드 확정 → 다음 라운드',f3Fin:'3라운드 확정 · 우승 발표',f3End:'격파 기록 마감',brkBtn:'격파 +1',boards:'장',ptsU:'점',sF3Res:'라운드 점수',flow_f3next:'{s}초 뒤 다음 라운드 소개',f3Ban:'결승 3라운드',
   boardScreen:'전광판 화면',sIntro:'오프닝',sLive:'현재 경기',sStand:'순위표',sBracket:'대진표',sChamp:'챔피언',
   nextRound:'다음 라운드 대진 만들기',startTour:'상위 {n}명으로 토너먼트 시작',roundDone:'이 라운드의 모든 조가 끝났습니다.',allDone:'이 부문 경기가 끝났습니다. 챔피언이 정해졌어요!',nextDiv:'다음 부문: {d}',order:'진행 순서',oDiv:'부별로 결승까지',oDivD:'한 부문을 결승까지 끝내고 다음 부문으로 넘어갑니다.',oRound:'라운드별로 모든 부 돌리기',oRoundD:'모든 부문의 1라운드를 먼저 돌리고 다음 라운드로 넘어갑니다. 인원이 적은 부는 그 라운드를 건너뛰고, 결승은 모든 부가 마지막에 함께 치릅니다.',nextGo:'다음 경기: {d}',nextBuild:'다음 라운드 대진 만들기: {d}',allDivDone:'모든 부문 경기가 끝났습니다!',stageLeft:'결승까지 {n}라운드',stageFin:'모든 부 결승',
   waitAll:'모든 선수가 도착하거나 기권해야 확정할 수 있습니다.',noDraw:'아직 대진이 없습니다. 설정에서 명단을 적용해 주세요.',
@@ -1323,7 +1429,7 @@ const T={
   startKey:'Start button',learn:'Learn',learning:'Press a button…',lastKey:'Last input',countdown:'3·2·1 countdown',sound:'Sound effects',soundAt:'Play sound on',atCtrl:'Operator screen',atBoard:'Scoreboard window',
   data:'Data',newEv:'Start a new event',newEvD:'Press “Start a new event” twice to clear the runner list and every result. The license code, event name, course and button settings stay. Copy or send your results first.',newEvDone:'New event started. Load a runner list',copy:'Copy results',copied:'Results copied',reset:'Clear all results',sure:'Press again to confirm',applied:'Built {n} divisions',
   lane:'Lane',empty:'Empty lane',finish:'FINISH!',undo:'Undo finish',dnf:'DNF',dnfOff:'Undo DNF',start:'START',running:'Running',
-  confirm:'Confirm results',redo:'Rerun this heat',nextHeat:'Next heat',heat:'Heat',round:'Round',cutoff:'Cut-off',final:'Final',semi:'Semifinal',
+  confirm:'Confirm results',redo:'Rerun this heat',nextHeat:'Next heat',heat:'Heat',round:'Round',cutoff:'Cut-off',final:'Final',semi:'Semifinal',f3:'3-round final (run · speed kicks · board break)',f3D:'The final is played over three rounds. In each round the winner gets 100 points and the others get points in proportion to their record. The best total (out of 300) wins. Round 2 can be counted with the kick sensors.',f3No:'Available for race finals (tournament, cut-off + tournament, community groups).',f3Sec:'Round 2 kick time (sec)',f3R1:'Obstacle Run',f3R1D:'Crawl · jump · come back — faster scores more',f3R2:'Speed Kicks',f3R2D:'Kick as many as you can in {s} sec',f3R3:'Board Break',f3R3D:'Boards broken — more scores more',f3RoundN:'Round {n}',f3ResN:'Round {n} result',f3Lead:'Standings before the last round',f3Tot:'Total',f3Next:'Confirm round {n} → next round',f3Fin:'Confirm round 3 · crown the champion',f3End:'Close break scores',brkBtn:'Break +1',boards:'boards',ptsU:'pts',sF3Res:'Round scores',flow_f3next:'Next round intro in {s}s',f3Ban:'3-round final',
   boardScreen:'Scoreboard shows',sIntro:'Opening',sLive:'Live heat',sStand:'Standings',sBracket:'Bracket',sChamp:'Champion',
   nextRound:'Build next round',startTour:'Start tournament with top {n}',roundDone:'Every heat in this round is finished.',allDone:'This division is done. We have a champion!',nextDiv:'Next: {d}',order:'Running order',oDiv:'Division by division',oDivD:'Finish one division through its final, then move to the next.',oRound:'Round by round',oRoundD:'Run round 1 for every division, then round 2, and so on. Small divisions skip early rounds, so every final runs together at the end.',nextGo:'Next: {d}',nextBuild:'Build next round: {d}',allDivDone:'Every division is finished!',stageLeft:'{n} rounds to the final',stageFin:'Finals for every division',
   waitAll:'Every runner must finish or be marked DNF before confirming.',noDraw:'No draw yet. Apply the runner list in Setup.',
@@ -1367,7 +1473,7 @@ function defaults(){return{
     {id:'s4',ko:'발 격파',en:'Kick Break',pen:5,ic:'kick'},
     {id:'s5',ko:'링 점프',en:'Ring Hop',pen:2,ic:'ring'},
     {id:'s6',ko:'주먹 격파',en:'Punch Break',pen:5,ic:'punch'}],
-  cfg:{keys:['1','2','3','4'],startKey:' ',countdown:true,sound:true,soundAt:'ctrl',auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,bossHP:60,bossTeam:false,bossStory:'first',xp:true},
+  cfg:{keys:['1','2','3','4'],startKey:' ',countdown:true,sound:true,soundAt:'ctrl',auto:true,confirmSec:4,medalSec:5,standSec:8,relayN:4,mixG:true,bossSec:20,f3:false,f3Sec:20,bossHP:60,bossTeam:false,bossStory:'first',xp:true},
   roster:SAMPLE_ROSTER(),shuffle:false,sampleRoster:true,
   divs:{},dkey:'',players:[],rounds:[],cur:{r:0,h:0},board:'intro',champ:null};}
 
@@ -1504,6 +1610,38 @@ function boardKok(){
   return`<div class="kokwrap">${title}<div class="kokbr" style="--cols:${cols.length}">${cols.join('')}</div></div>`}
 /* ---- 경기 종류: 개인 런 · 팀 릴레이 · 보스전 ---- */
 const isBoss=()=>S.game==='boss',isFamily=()=>S.game==='family',isRelay=()=>S.game==='relay'||S.game==='family';
+
+/* F3:START — 결승 3라운드: 1라운드 장애물 달리기(시간) → 2라운드 스피드 발차기(횟수, 센서) → 3라운드 격파(장 수)
+   라운드마다 1등 100점, 나머지는 기록에 비례. 세 라운드 합계(300점 만점)로 우승. 합계는 h.time 에 -(1e9+점수*1000) 으로 넣어
+   기존 순위·메달·우승 화면이 그대로 돌아가게 함 (fmt 가 '점'으로 보여 줌) */
+const f3Race=()=>!S.game||S.game==='race';
+function isFinalRound(r){return !!r&&(((r.kind==='tour'||r.kind==='kok')&&!!r.final)||(r.kind==='grp'&&r.heats.length===1))}
+function f3Of(h){if(!h)return null;if(h.f3)return h.f3;if(!S.cfg.f3||!f3Race()||h.done||h.time.some(x=>x!=null))return null;
+  const r=curRound();if(!r||!isFinalRound(r)||r.heats.indexOf(h)<0)return null;h.f3={st:1,raw:[[],[],[]]};return h.f3}
+function f3Now(){const f=f3Of(curHeat());return f&&!f.done?f.st:0}
+const kickNow=()=>isBoss()||f3Now()>=2,kTimed=()=>isBoss()||f3Now()===2,sensNow=()=>isBoss()||f3Now()===2;
+const kSec=()=>Math.max(5,+(f3Now()===2?S.cfg.f3Sec:S.cfg.bossSec)||20);
+const F3EV=['f3R1','f3R2','f3R3'];
+function f3Scores(f){const I=[0,1,2,3],sc=[[],[],[]];
+  const t0=I.map(i=>f.raw[0][i]).filter(x=>x!=null&&isFinite(x)&&x>0),best=t0.length?Math.min(...t0):0;
+  I.forEach(i=>{const x=f.raw[0][i];sc[0][i]=x===undefined?null:(x!=null&&isFinite(x)&&x>0&&best?100*best/x:0)});
+  [1,2].forEach(k=>{const v=I.map(i=>f.raw[k][i]).filter(x=>x!=null),mx=v.length?Math.max(...v):0;
+    I.forEach(i=>{const x=f.raw[k][i];sc[k][i]=x===undefined?null:(x!=null&&mx>0?100*x/mx:0)})});
+  const tot=I.map(i=>{let a=0,any=false;sc.forEach(r=>{if(r[i]!=null){a+=r[i];any=true}});return any?Math.round(a*10)/10:null});
+  return{sc,tot}}
+function f3Rank(h){const f=f3Of(h),X=f3Scores(f);return[0,1,2,3].filter(i=>h.lanes[i]!=null).map(i=>({i,tot:X.tot[i],sc:X.sc.map(r=>r[i]),raw:f.raw.map(r=>r[i])}))
+  .sort((a,b)=>(b.tot??-1)-(a.tot??-1)||a.i-b.i)}
+function f3Reset(h){const n=newHeat(h.lanes);h.time=n.time;h.pen=n.pen;h.dnf=n.dnf;h.kicks=[0,0,0,0];delete h.legs}
+function f3Advance(){ // 라운드 확정. 1·2라운드면 다음 라운드로 넘어가고 true, 3라운드면 합계를 넣고 false (그다음은 원래 확정 흐름)
+  const h=ensureHeat(),f=f3Of(h);if(!f||f.done)return false;const k=f.st-1;
+  [0,1,2,3].forEach(i=>{if(h.lanes[i]==null)return;f.raw[k][i]=h.dnf[i]?null:(k===0?(h.time[i]!=null?total(h,i):null):((h.kicks||[])[i]||0))});
+  if(f.st<3){f.st++;f3Reset(h);R={phase:'idle',count:0,start:0,go:0};clearFlow();S.board='f3res';commit();sfx('whoosh');
+    schedule(Math.max(6,(+S.cfg.medalSec||5)+4),'f3next',()=>{if(S.board==='f3res'){S.board='live';commit()}});return true}
+  const X=f3Scores(f);f.done=true;f.tot=X.tot;
+  [0,1,2,3].forEach(i=>{if(h.lanes[i]==null)return;if(X.tot[i]==null){h.dnf[i]=true;h.time[i]=null}else{h.dnf[i]=false;h.time[i]=-(1e9+Math.round(X.tot[i]*10)*100)}});
+  return false}
+const f3U=(r,v)=>v==null?t('dnf'):r===0?fmt(v)+(S.lang==='en'?'s':'초'):v+(r===1?(S.lang==='en'?' kicks':'회'):(S.lang==='en'?' boards':'장'));
+/* F3:END */
 const isTeamGame=()=>isRelay()||(isBoss()&&!!S.cfg.bossTeam);
 const divMix=a=>`${String(a.div||'부별 미정').replace(/부$/,'')} 혼성부`;
 /* 도장(소속)별로 relayN명씩 팀. 남는 아이들은 연합팀으로 */
@@ -1545,7 +1683,7 @@ function buildDraw(){
 }
 const curRound=()=>S.rounds[S.cur.r];
 const curHeat=()=>curRound()?.heats[S.cur.h];
-function penSec(h,i){if(isBoss())return 0;let s=0;const pp=h.pen[i]||{};for(const k in pp){const st=S.st.find(x=>x.id===k);if(st)s+=st.pen*pp[k]}return s}
+function penSec(h,i){if(kickNow())return 0;let s=0;const pp=h.pen[i]||{};for(const k in pp){const st=S.st.find(x=>x.id===k);if(st)s+=st.pen*pp[k]}return s}
 function total(h,i){if(h.dnf[i])return Infinity;if(h.time[i]==null)return null;return h.time[i]+penSec(h,i)*1000}
 function heatOrder(h){return [0,1,2,3].filter(i=>h.lanes[i]!=null&&total(h,i)!=null).sort((a,b)=>total(h,a)-total(h,b))}
 function placeOf(h,i){if(h.pair){if(h.lanes[i]==null||total(h,i)==null)return null;const w=pairWin(h,i);return w==null?null:w?1:2}
@@ -1622,7 +1760,7 @@ function realStart(){
     setTimeout(tick,1000);setTimeout(tick,2000);setTimeout(tick,3000);
   }else goNow();
 }
-function goNow(){MP.live={k:0,s:0};const now=Date.now();R={phase:'running',count:0,start:now,go:now,end:isBoss()?now+Math.max(5,+S.cfg.bossSec||20)*1000:0,stage:1,dmg:0,beep:0};commit();sfx('go')}
+function goNow(){MP.live={k:0,s:0};const now=Date.now();R={phase:'running',count:0,start:now,go:now,end:kTimed()?now+kSec()*1000:0,stage:1,dmg:0,beep:0};commit();sfx('go')}
 function finishLane(i){laneHit(i,Date.now()-R.start)}
 const relayN=(h,i)=>{const p=h&&h.lanes[i]!=null?P(h.lanes[i]):null;return p&&p.members?p.members.length:1};
 const legOf=(h,i)=>{h.legs=h.legs||[[],[],[],[]];return h.legs[i]=h.legs[i]||[]};
@@ -1631,7 +1769,7 @@ function curRunner(h,i){const p=P(h.lanes[i]);if(!p||!p.members)return p;const L
 function laneHit(i,el){
   const h=ensureHeat();if(!h||R.phase!=='running')return;
   if(h.lanes[i]==null||h.time[i]!=null||h.dnf[i])return;
-  if(isBoss()){kick(i,1);return}
+  if(kickNow()){kick(i,1);return}
   if(el<800)return;
   if(isRelay()){const L=legOf(h,i),n=relayN(h,i),lastT=L.length?L[L.length-1]:0;if(el-lastT<800)return;
     if(L.length<n-1){L.push(el);sfx('touch',i);commit();fx('touch',{lane:i,leg:L.length+1,n});return}}
@@ -1647,28 +1785,30 @@ function kick(i,d){const h=ensureHeat();if(!h||h.lanes[i]==null||h.dnf[i])return
   if(R.phase!=='running'&&!(d<0&&R.phase==='done'))return;
   h.kicks=h.kicks||[0,0,0,0];const before=h.kicks[i]||0;h.kicks[i]=Math.max(0,before+d);if(h.kicks[i]===before)return;
   if(R.phase==='done'){h.time[i]=kickTime(h.kicks[i]);commit();return}
+  if(!isBoss()){if(d>0)sfx('kick',i);commit();if(d>0)fx('hit',{lane:i,n:h.kicks[i]});return}
   if(d>0){R.dmg=(R.dmg||0)+d;let down=false;if(R.dmg>=bossMax(R.stage)){R.dmg=0;R.stage=(R.stage||1)+1;down=true}
     sfx('kick',i);commit();fx('hit',{lane:i,n:h.kicks[i]});if(down)fx('bossdown',{stage:R.stage})}
   else{R.dmg=Math.max(0,(R.dmg||0)+d);commit()}}
 const kickTime=n=>-(n*1000)-.5;
-const kU=n=>S.lang==='en'?(n===1?'kick':'kicks'):'회';
+const kU=n=>f3Now()===3?(S.lang==='en'?(n===1?'board':'boards'):'장'):S.lang==='en'?(n===1?'kick':'kicks'):'회';
 function endBoss(){const h=ensureHeat();if(!h||R.phase!=='running')return;
   [0,1,2,3].forEach(i=>{if(h.lanes[i]!=null&&!h.dnf[i])h.time[i]=kickTime((h.kicks||[])[i]||0)});
-  R.phase='done';commit();sfx('gong');fx('timeup');const o=heatOrder(h).filter(i=>!h.dnf[i]);if(o.length)setTimeout(()=>fx('bolt',{lane:o[0]}),900);maybeAutoConfirm()}
-setInterval(()=>{if(ROLE!=='ctrl'||!isBoss()||R.phase!=='running'||!R.end)return;const left=R.end-Date.now();
+  R.phase='done';commit();sfx('gong');if(f3Now()!==3)fx('timeup');const o=heatOrder(h).filter(i=>!h.dnf[i]);if(o.length)setTimeout(()=>fx('bolt',{lane:o[0]}),900);maybeAutoConfirm()}
+setInterval(()=>{if(ROLE!=='ctrl'||!kTimed()||R.phase!=='running'||!R.end)return;const left=R.end-Date.now();
   if(left<=0){endBoss();return}const s=Math.ceil(left/1000);if(s<=3&&R.beep!==s){R.beep=s;sfx('beep')}},100);
 /* 전자 미트 연동 자리: 미트 프로그램이 HERO2_MITT.hit(레인번호 1~4) 를 부르면 발차기 1회로 들어갑니다 */
-window.HERO2_MITT={hit(lane){if(ROLE==='ctrl'&&isBoss())kick((+lane||1)-1,1)}};
+window.HERO2_MITT={hit(lane){if(ROLE==='ctrl'&&sensNow())kick((+lane||1)-1,1)}};
 function undoLane(i){const h=ensureHeat();if(!h)return;
-  if(isBoss()){kick(i,-1);return}
+  if(kickNow()){kick(i,-1);return}
   if(isRelay()&&h.time[i]==null){const L=legOf(h,i);if(L.length){L.pop();commit()}return}
   h.time[i]=null;if(R.phase==='done')R.phase='running';commit();maybeAutoConfirm()}
-function toggleDnf(i){const h=ensureHeat();if(!h||h.lanes[i]==null)return;h.dnf[i]=!h.dnf[i];if(h.dnf[i])h.time[i]=null;else if(isBoss()&&R.phase==='done')h.time[i]=kickTime((h.kicks||[])[i]||0);
+function toggleDnf(i){const h=ensureHeat();if(!h||h.lanes[i]==null)return;h.dnf[i]=!h.dnf[i];if(h.dnf[i])h.time[i]=null;else if(kickNow()&&R.phase==='done')h.time[i]=kickTime((h.kicks||[])[i]||0);
   if(R.phase!=='idle'&&R.phase!=='countdown')R.phase=heatComplete(h)?'done':'running';commit();maybeAutoConfirm()}
 function addPen(i,sid,d){const h=ensureHeat();if(!h||h.lanes[i]==null)return;const c=(h.pen[i][sid]||0)+d;if(c<=0)delete h.pen[i][sid];else h.pen[i][sid]=c;if(d>0)sfx('pen');commit();if(flowInfo&&flowInfo.label==='confirm')maybeAutoConfirm()}
-function editTime(i,v){const h=ensureHeat();if(!h)return;if(isBoss()){const n=Math.max(0,parseInt(v,10)||0);h.kicks=h.kicks||[0,0,0,0];h.kicks[i]=n;h.time[i]=kickTime(n);h.dnf[i]=false;commit();if(flowInfo&&flowInfo.label==='confirm')maybeAutoConfirm();return}const x=parseFloat(v);if(isFinite(x)&&x>0){h.time[i]=Math.round(x*1000);h.dnf[i]=false}commit();if(flowInfo&&flowInfo.label==='confirm')maybeAutoConfirm()}
+function editTime(i,v){const h=ensureHeat();if(!h)return;if(kickNow()){const n=Math.max(0,parseInt(v,10)||0);h.kicks=h.kicks||[0,0,0,0];h.kicks[i]=n;h.time[i]=kickTime(n);h.dnf[i]=false;commit();if(flowInfo&&flowInfo.label==='confirm')maybeAutoConfirm();return}const x=parseFloat(v);if(isFinite(x)&&x>0){h.time[i]=Math.round(x*1000);h.dnf[i]=false}commit();if(flowInfo&&flowInfo.label==='confirm')maybeAutoConfirm()}
 function confirmHeat(){
   const h=ensureHeat();if(!h||!heatComplete(h))return;
+  if(f3Now()){if(R.phase==='running'||R.phase==='countdown')return;if(f3Advance())return}
   if(CLIP_PEND&&CLIP_PEND===heatKey()){setTimeout(confirmHeat,300);return}
   if(R.phase==='running'||R.phase==='countdown')return;
   h.done=true;R={phase:'idle',count:0,start:0,go:0};
@@ -1683,7 +1823,7 @@ function confirmHeat(){
     if(r.kind==='cut'&&S.mode==='cut'){const e=entries(r).filter(x=>isFinite(x.tot));S.champ={order:e.map(x=>x.pid),lanes:e.map(x=>x.lane),times:e.map(x=>x.tot)};champ=true}
   }
   clearFlow();
-  const rec=o.length?checkRecord(h,o[0]):null;
+  const rec=o.length&&!h.f3?checkRecord(h,o[0]):null;
   const ups=awardXP(h,rec);if(ups.length)setTimeout(()=>fx('levelup',ups),clipWait()+(champ?5200:2600));
   const clip=CLIP&&CLIP.heat===heatKey()?CLIP:null;CLIP=null;
   if(champ){S.board='champion';commit();if(clip){playReplay(clip,()=>{fx('champion');if(rec)fx('record',rec)})}else{fx('champion');if(rec)setTimeout(()=>fx('record',rec),1800)}return}
@@ -1707,13 +1847,13 @@ function clearFlow(){clearTimeout(flowT);flowT=null;flowInfo=null}
 function schedule(sec,label,fn){clearTimeout(flowT);sec=Math.max(0,+sec||0);flowInfo={label,until:Date.now()+sec*1000};flowT=setTimeout(()=>{flowT=null;flowInfo=null;fn();if(ROLE==='ctrl'&&tab==='run')render()},sec*1000)}
 function nextOpenHeat(){const r=curRound();return r?r.heats.findIndex((x,ix)=>!x.done&&ix!==S.cur.h):-1}
 function maybeAutoConfirm(){
-  const h=curHeat();
+  const h=curHeat();if(f3Now())return;
   if(S.cfg.auto&&h&&!h.done&&R.phase==='done'&&heatComplete(h)){schedule(S.cfg.confirmSec,'confirm',confirmHeat);render()}
   else if(flowInfo&&flowInfo.label==='confirm'){clearFlow();render()}
 }
 function medalSvg(pl){const col=pl===1?'var(--gold)':pl===2?'var(--silver)':'var(--bronze)';
   return`<svg class="medalsvg" viewBox="0 0 40 50" aria-label="${pl}"><path d="M9 0h9l5 16h-9zM31 0h-9l-5 16h9z" fill="var(--red)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/><circle cx="20" cy="32" r="16" fill="${col}" stroke="var(--ink)" stroke-width="3"/><circle cx="20" cy="32" r="11" fill="none" stroke="var(--ink)" stroke-width="1.5" opacity=".35"/><text x="20" y="38.5" text-anchor="middle" font-family="Bangers,Impact,sans-serif" font-size="18" fill="var(--ink)">${pl}</text></svg>`}
-function redoHeat(){clearFlow();const h=curHeat();if(!h)return;Object.assign(h,newHeat(h.lanes));R={phase:'idle',count:0,start:0,go:0};
+function redoHeat(){clearFlow();const h=curHeat();if(!h)return;if(f3Now()){f3Reset(h);R={phase:'idle',count:0,start:0,go:0};commit();return}Object.assign(h,newHeat(h.lanes));R={phase:'idle',count:0,start:0,go:0};
   const r=curRound();if(S.champ&&r.kind==='tour'&&r.final)S.champ=null;commit()}
 function nextHeat(){clearFlow();const r=curRound();if(!r)return;const i=r.heats.findIndex((h,ix)=>!h.done&&ix!==S.cur.h);if(i>=0){S.cur.h=i;R={phase:'idle',count:0,start:0,go:0};S.board='live';commit()}}
 function pickHeat(ri,hi){if(R.phase==='running'||R.phase==='countdown')return;clearFlow();S.cur={r:ri,h:hi};R={phase:'idle',count:0,start:0,go:0};S.board='live';commit()}
@@ -1938,7 +2078,7 @@ function renderJudge(){const host=document.getElementById('boardHost');document.
   if(!linked)body=`<div class="jwait">${esc(NETX.ready?t('lkWaitOp'):t('lkConnecting'))}</div>`;
   else if(!p)body=`<div class="jwait">${esc(t('lkRest'))}</div>`;
   else body=`<div class="jkid ${isRelay()?'rel':''}"><div class="jfig">${heroFig(k,'',heroMode(h,k),undefined,lvLane(h,k))}</div><div>${isRelay()&&tm==null?`<b>${esc(pn(curRunner(h,k)))}</b><small>${esc(pn(p))}</small>`:`<b>${esc(pn(p))}</b><small>${esc(p.team||'')}</small>`}</div></div>
-    ${isBoss()?`<div class="jtime jk"><span>${dnf?esc(t('dnf')):((h.kicks||[])[k]||0)}<em>${esc(kU((h.kicks||[])[k]||0))}</em></span>${tm!=null&&!dnf?`<i class="jpl">${medalSvg(placeOf(h,k)||1)}</i>`:''}</div>
+    ${kickNow()?`<div class="jtime jk"><span>${dnf?esc(t('dnf')):((h.kicks||[])[k]||0)}<em>${esc(kU((h.kicks||[])[k]||0))}</em></span>${tm!=null&&!dnf?`<i class="jpl">${medalSvg(placeOf(h,k)||1)}</i>`:''}</div>
     <button class="jfin jkick" data-act="jKick" ${R.phase!=='running'||dnf||done?'disabled':''}>${R.phase==='countdown'?R.count:'👊 '+esc(t('kickBtn'))}</button>
     <button class="btn ghost jundo" data-act="jKickM" ${R.phase!=='running'||!((h.kicks||[])[k])||done?'disabled':''}>−1</button>`:`
     ${isRelay()?legDots(h,k,true):''}
@@ -1946,7 +2086,7 @@ function renderJudge(){const host=document.getElementById('boardHost');document.
     <button class="jfin" data-act="jFin" ${R.phase!=='running'||tm!=null||dnf||done?'disabled':''}>${R.phase==='countdown'?R.count:esc(finLabel(h,k))}</button>
     <div class="jpens">${S.st.map(st=>{const c=(h.pen[k]||{})[st.id]||0;return`<div class="jpen ${c?'has':''}"><button data-act="jPen" data-s="${st.id}" data-d="-1" ${!c||done?'disabled':''} aria-label="−">−</button><span><i class="jn">${esc(stName(st))}</i><i class="jv"><em>+${st.pen}${esc(t('sec'))}</em>${c?`<b>×${c}</b>`:''}</i></span><button class="plus" data-act="jPen" data-s="${st.id}" data-d="1" ${done?'disabled':''} aria-label="+">+</button></div>`}).join('')}</div>
     <button class="btn ghost jundo" data-act="jUndo" ${(tm==null&&!(isRelay()&&legOf(h,k).length))||done?'disabled':''}>${esc(t('undo'))}</button>`}`;
-  host.innerHTML=`<div class="judge ${p&&linked?(isBoss()?'boss':isRelay()?'rel':''):''}" style="--c:var(${H.v})"><div class="jtop">${emSvg(k,22)}<b>${k+1}${S.lang==='en'?' ':''}${esc(t('lane'))} · ${esc(heroName(k))}</b><span class="jsub">${esc(t('judge'))}${S.dkey?' · '+esc(divLabel(S.dkey)):''}${S.rounds&&S.rounds.length?' · '+esc(roundLabel(S.cur.r))+' '+esc(heatLabel(S.cur.h)):''}</span><i class="dot ${conn?'on':''}"></i></div>${body}</div>`;
+  host.innerHTML=`<div class="judge ${p&&linked?(kickNow()?'boss':isRelay()?'rel':''):''}" style="--c:var(${H.v})"><div class="jtop">${emSvg(k,22)}<b>${k+1}${S.lang==='en'?' ':''}${esc(t('lane'))} · ${esc(heroName(k))}</b><span class="jsub">${esc(t('judge'))}${S.dkey?' · '+esc(divLabel(S.dkey)):''}${S.rounds&&S.rounds.length?' · '+esc(roundLabel(S.cur.r))+' '+esc(heatLabel(S.cur.h)):''}</span><i class="dot ${conn?'on':''}"></i></div>${body}</div>`;
   tickClocks();}
 function judgeClick(a,b){ac();if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}
   if(a==='jFin')netAct0({k:'fin'});if(a==='jKick')netAct0({k:'kick',d:1});if(a==='jKickM')netAct0({k:'kick',d:-1});if(a==='jPen')netAct0({k:'pen',sid:b.dataset.s,d:+b.dataset.d});if(a==='jUndo')netAct0({k:'undo'});}
@@ -2145,7 +2285,7 @@ function mpStep(L,now){const vis=i=>L[i]&&(L[i].visibility==null||L[i].visibilit
 function mpSpun(){const F=MP.face.filter(f=>f.w>MP.maxW*.35);let ch=0;for(let i=1;i<F.length;i++)if(F[i].s!==F[i-1].s)ch++;
   const back=MP.face.some(f=>f.nv<.3),front=MP.face.length&&MP.face[MP.face.length-1].nv>.5;return ch>=1||(back&&front)}
 function mpHit(spin){MP.face=[];const lane=Math.max(0,Math.min(3,(+S.cfg.mpLane||1)-1)),pts=spin?Math.max(1,+S.cfg.mpSpin||3):1;MP.flash=performance.now();
-  const h=curHeat();const live=ROLE==='ctrl'&&isBoss()&&R.phase==='running'&&h&&h.lanes[lane]!=null&&h.time[lane]==null&&!h.dnf[lane];
+  const h=curHeat();const live=ROLE==='ctrl'&&sensNow()&&R.phase==='running'&&h&&h.lanes[lane]!=null&&h.time[lane]==null&&!h.dnf[lane];
   if(live){MP.live[spin?'s':'k']++;kick(lane,pts);if(spin)fx('spin',{lane,pts})}else{MP.test[spin?'s':'k']++;playLocal('kick',lane)}
   mpDraw(true)}
 function mpPaint(){const cv=document.getElementById('mpCv');if(!cv||!MP.video)return;const g=cv.getContext('2d'),W=cv.width,H=cv.height;
@@ -2156,7 +2296,7 @@ function mpPaint(){const cv=document.getElementById('mpCv');if(!cv||!MP.video)re
   if(MP.thr!=null){g.strokeStyle='#ffd23f';g.setLineDash([8,6]);g.lineWidth=2;g.beginPath();g.moveTo(0,MP.thr*H);g.lineTo(W,MP.thr*H);g.stroke();g.setLineDash([])}
   if(performance.now()-MP.flash<220){g.fillStyle='rgba(255,210,63,.35)';g.fillRect(0,0,W,H)}}
 let MPBOX=null;
-function mpDraw(onlyNums){const want=ROLE==='ctrl'&&S.cfg.mpOn&&isBoss();
+function mpDraw(onlyNums){const want=ROLE==='ctrl'&&S.cfg.mpOn&&sensNow();
   if(!want){if(MPBOX){if(MP.st!=='off')mpStop();MPBOX.remove();MPBOX=null}return}
   if(!MPBOX){MPBOX=document.createElement('div');MPBOX.className='mpbox';MPBOX.innerHTML='<div class="mph"></div><canvas id="mpCv" width="320" height="240"></canvas><div class="mpb"></div>';document.body.appendChild(MPBOX)}
   MPBOX.classList.toggle('min',MP.min);
@@ -2193,7 +2333,7 @@ function btData(k,v){const L=BT.lanes[k];if(!L)return;const now=performance.now(
   let n=1;
   if(S.cfg.btMode==='count'){const c=v.byteLength?v.getUint8(0):0;n=L.prev==null?0:((c-L.prev+256)%256);L.prev=c;if(n>20)n=0}
   else if(now-L.last<(+S.cfg.btGap||0))n=0;
-  if(n>0){L.last=now;const h=curHeat(),live=ROLE==='ctrl'&&isBoss()&&R.phase==='running'&&h&&h.lanes[k]!=null&&h.time[k]==null&&!h.dnf[k];
+  if(n>0){L.last=now;const h=curHeat(),live=ROLE==='ctrl'&&sensNow()&&R.phase==='running'&&h&&h.lanes[k]!=null&&h.time[k]==null&&!h.dnf[k];
     if(live){L.n+=n;kick(k,n)}else{L.test+=n;playLocal('kick',k)}}
   btDraw()}
 let BTBOX=null;
@@ -2261,7 +2401,7 @@ function villainBlock(){const st=R.stage||1,B=bossOf(st),mx=bossMax(st),left=Mat
   return`<div class="vbox st${Math.min(st,3)}"><div class="vname">${esc(B.en)}${B.bonus?' +'+B.bonus:''}${S.lang==='en'?'':' · <span class="vk">'+esc(bossKo(B))+'</span>'} <b>${esc(t('bossStage',{n:Math.min(st,3)}))}${B.bonus?' ★':''}</b></div>${villainSvg(st)}<div class="vhp"><i style="--v:${pct}"></i><b>${left} / ${mx}</b></div></div>`}
 function heroMode(h,i){ // which motion a lane hero shows right now
   if(h.lanes[i]==null||h.dnf[i])return'ready';
-  if(isBoss()&&R.phase==='running'&&h.time[i]==null)return'p2';
+  if(kickNow()&&R.phase==='running'&&h.time[i]==null)return'p2';
   if(h.time[i]!=null){const pl=placeOf(h,i)||4;return'p'+Math.min(pl,4)}
   return R.phase==='running'?'run':'ready';
 }
@@ -2380,7 +2520,7 @@ const heroLogo=(cls='')=>`<div class="hlogo ${cls}">${LOGO}<div><b class="shine"
 const LOGO=`<svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38f2ff"/><stop offset="1" stop-color="#ff3fd1"/></linearGradient></defs><circle cx="20" cy="20" r="14" fill="url(#lg2)" stroke="#020010" stroke-width="3"/><ellipse cx="20" cy="21" rx="19" ry="5.5" fill="none" stroke="#ffd23f" stroke-width="2.5" transform="rotate(-18 20 21)"/><path d="M22 8 13 22h6l-3 10 11-15h-6z" fill="#fff" stroke="#020010" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
 
 /* ================= render: top + tabs ================= */
-function fmt(ms){if(ms==null)return'—';if(!isFinite(ms))return t('dnf');if(ms<0){const n=Math.floor(-ms/1000);return S.lang==='en'?n+(n===1?' kick':' kicks'):n+'회'}const s=ms/1000;if(s<60)return s.toFixed(2);const m=Math.floor(s/60);return m+':'+(s-m*60).toFixed(2).padStart(5,'0')}
+function fmt(ms){if(ms==null)return'—';if(!isFinite(ms))return t('dnf');if(ms<=-1e9){const v=(-ms-1e9)/1000;return v.toFixed(1)+(S.lang==='en'?' pts':'점')}if(ms<0){const n=Math.floor(-ms/1000);return S.lang==='en'?n+(n===1?' kick':' kicks'):n+'회'}const s=ms/1000;if(s<60)return s.toFixed(2);const m=Math.floor(s/60);return m+':'+(s-m*60).toFixed(2).padStart(5,'0')}
 function boardHref(){try{return location.href.split('#')[0]+'#board'}catch(e){return'#board'}}
 function renderTop(){
   document.getElementById('top').innerHTML=`
@@ -2467,6 +2607,8 @@ function viewSetup(){
      <label class="f" style="width:11rem">${esc(t('advN'))}<input type="number" id="advN" min="2" max="64" data-in="advN" value="${S.advN}" ${S.mode!=='both'?'disabled':''}></label>
      <label class="f" style="width:11rem">${esc(t('perHeat'))}<select id="perHeat" data-in="perHeat" ${isComm()?'disabled':''}><option value="1" ${S.perHeat==1?'selected':''}>1</option><option value="2" ${S.perHeat==2?'selected':''}>2</option></select></label>
     </div>
+    <label class="chk" style="margin-top:10px"><input type="checkbox" id="f3" data-in="cfg.f3" ${S.cfg.f3?'checked':''} ${f3Race()&&S.mode!=='cut'?'':'disabled'}>🏆 ${esc(t('f3'))}</label><p class="note">${esc(t(f3Race()&&S.mode!=='cut'?'f3D':'f3No'))}</p>
+    ${S.cfg.f3&&f3Race()?`<label class="f" style="width:13rem">${esc(t('f3Sec'))}<input type="number" id="f3Sec" min="5" max="60" data-in="cfg.f3Sec" value="${+S.cfg.f3Sec||20}"></label>`:''}
     ${isComm()?`<label class="f" style="width:11rem;margin-top:8px">${esc(t('grpN'))}<select id="grpN" data-in="cfg.grpN" ${commAnyRes()?'disabled':''}>${[2,3,4].map(n=>`<option value="${n}" ${grpN()===n?'selected':''}>${esc(t('grpNn',{n}))}</option>`).join('')}</select></label><p class="note">${esc(t('grpND'))}</p>`:''}
     ${isComm()?`<label class="chk" style="margin-top:8px"><input type="checkbox" id="sepT" data-in="cfg.sepT" ${S.cfg.sepT!==false?'checked':''}>${esc(t('sepT'))}</label><p class="note">${esc(t('sepTD'))}</p>`:''}
     <h2 style="margin-top:16px"><span class="tag">2</span>${esc(t('order'))}</h2>
@@ -2568,7 +2710,7 @@ function legDots(h,i,big){if(!isRelay()||h.lanes[i]==null)return'';const n=relay
   return`<span class="legs ${big?'big':''}" aria-label="${L.length+(fin?1:0)}/${n}">${Array.from({length:n},(_,k)=>`<i class="${k<L.length||fin?'d':k===L.length&&R.phase==='running'?'c':''}"></i>`).join('')}</span>`}
 function finLabel(h,i){if(isRelay()){const L=legOf(h,i),n=relayN(h,i);if(L.length<n-1)return `${t('touch')} ${L.length+1}→${L.length+2}`}return t('finish')}
 const gameIc=()=>({race:'🏃',relay:'🤝',family:'👨‍👧',boss:'👾'}[S.game]||'🏃');
-function clockVal(h){if(isBoss()){if(R.phase==='running')return fmt(Math.max(0,R.end-nowT()));if(R.phase==='countdown'||R.phase==='idle'&&!h.time.some(x=>x!=null))return fmt(Math.max(5,+S.cfg.bossSec||20)*1000);return fmt(0)}
+function clockVal(h){if(kTimed()){if(R.phase==='running')return fmt(Math.max(0,R.end-nowT()));if(R.phase==='countdown'||R.phase==='idle'&&!h.time.some(x=>x!=null))return fmt(kSec()*1000);return fmt(0)}
   return fmt(h.time.some(x=>x!=null&&x>0)?Math.max(...h.time.filter(x=>x!=null)):0)}
 /* ================= run view ================= */
 function viewRun(){
@@ -2586,6 +2728,7 @@ function viewRun(){
     const canNext=(r.kind==='cut'&&S.mode==='both')||(r.kind==='tour'&&!r.final)||(r.kind==='kok'&&!r.final);
     banner=`<div class="banner">${esc(t('roundDone'))} ${canNext?`<button class="btn red" data-act="nextRound">${esc(r.kind==='cut'?t('startTour',{n:Math.min(S.advN,S.players.length)}):t('nextRound'))}</button>`:''}</div>`;
   }
+  const f3=f3Of(h);if(f3&&!f3.done)banner=`<div class="banner f3ban">🏆 <b>${esc(t('f3Ban'))}</b> · ${esc(t('f3RoundN',{n:f3.st}))} ${esc(t(F3EV[f3.st-1]))} — ${esc(t(F3EV[f3.st-1]+'D',{s:+S.cfg.f3Sec||20}))}<span class="f3dots">${[1,2,3].map(n=>`<i class="${n<f3.st?'d':n===f3.st?'c':''}">${n}</i>`).join('')}</span></div>`+banner;
   return`<div class="runview">
   ${banner}
   <section class="card runbar">
@@ -2598,16 +2741,17 @@ function viewRun(){
   <div class="lanes">${[0,1,2,3].map(i=>laneCard(h,i)).join('')}</div>
   <section class="card runfoot">
    <div class="row">
-    <button class="btn gold" data-act="confirm" ${h.done||live||!complete||R.phase==='idle'&&!h.time.some(x=>x!=null)&&!h.dnf.some(Boolean)?'disabled':''}>${esc(t('confirm'))}</button>
+    ${f3Now()===3&&R.phase==='running'?`<button class="btn red" data-act="f3End">${esc(t('f3End'))}</button>`:''}
+    <button class="btn gold" data-act="confirm" ${h.done||live||!complete||R.phase==='idle'&&!h.time.some(x=>x!=null)&&!h.dnf.some(Boolean)?'disabled':''}>${esc(f3Now()?(f3Now()<3?t('f3Next',{n:f3Now()}):t('f3Fin')):t('confirm'))}</button>
     ${confirmBtn('redo',t('redo'))}
     <button class="btn" data-act="nextHeat" ${live||r.heats.every((x,ix)=>x.done||ix===S.cur.h)?'disabled':''}>${esc(t('nextHeat'))} →</button>
     ${!complete&&!h.done&&R.phase!=='idle'?`<span class="note">${esc(t('waitAll'))}</span>`:''}
     <div class="sp">${nextPreview(r)}</div>
     <span class="note">${esc(t('boardScreen'))}</span>
-    <div class="screens">${[['intro','sIntro'],['live','sLive'],['standings','sStand'],['bracket','sBracket'],['champion','sChamp'],['cards','sCards']].map(([v,k])=>`<button data-act="screen" data-v="${v}" aria-pressed="${S.board===v}">${esc(t(k))}</button>`).join('')}</div>
+    <div class="screens">${[['intro','sIntro'],['live','sLive'],['standings','sStand'],['bracket','sBracket'],['champion','sChamp'],['cards','sCards']].concat(f3Of(h)?[['f3res','sF3Res']]:[]).map(([v,k])=>`<button data-act="screen" data-v="${v}" aria-pressed="${S.board===v}">${esc(t(k))}</button>`).join('')}</div>
     <button class="btn ghost" data-act="tab" data-v="board">⛶ ${esc(t('tBoard'))}</button>
     <button class="btn" data-act="linkOpen">📱 ${esc(t('lkBtn'))}</button>
-    ${isBoss()?`<button class="btn" data-act="btOpen">🦶 ${esc(t('btBtn'))}${BT.lanes.some(l=>l&&l.st==='on')?` <b style="color:#b6ff3b">${BT.lanes.filter(l=>l&&l.st==='on').length}</b>`:''}</button>`:''}
+    ${sensNow()?`<button class="btn" data-act="btOpen">🦶 ${esc(t('btBtn'))}${BT.lanes.some(l=>l&&l.st==='on')?` <b style="color:#b6ff3b">${BT.lanes.filter(l=>l&&l.st==='on').length}</b>`:''}</button>`:''}
     ${S.cfg.fx.cheer?`<button class="btn" data-act="cheerOpen">📣 ${esc(t('cheerT'))}</button>`:''}
     ${r.kind==='tour'&&r.final?`<button class="btn gold" data-act="pwup">⚡ ${esc(t('pwBtn'))}</button>`:''}
    </div>
@@ -2630,12 +2774,12 @@ function laneCard(h,i){
    <div class="lane-body">
     <div class="pwho ${isRelay()?'rel':''}"><div class="lhero">${heroFig(i,'',heroMode(h,i),undefined,lvLane(h,i))}</div><div class="pname">${isRelay()&&tm==null?`${esc(pn(curRunner(h,i)))}<small>${esc(pn(p))} ${legDots(h,i)}</small>`:`${esc(pn(p))}<small>${esc(p.members?p.members.map(m=>pn(m)).join('·'):p.team)}${legDots(h,i)}</small>`}</div></div>
     <div class="ltime">${pl&&!dnf?`<span class="medal">${medalSvg(pl)}</span>`:''}
-      ${isBoss()?(editable&&!dnf?`<input type="number" step="1" min="0" id="edit-${i}" data-edit="${i}" value="${(h.kicks||[])[i]||0}" aria-label="${esc(t('kicks'))}"><span class="kunit">${esc(t('kicks'))}</span>`:`<span class="kcount">${dnf?esc(t('dnf')):((h.kicks||[])[i]||0)+'<small>'+esc(kU((h.kicks||[])[i]||0))+'</small>'}</span>`):editable&&!dnf?`<input type="number" step="0.01" min="0" id="edit-${i}" data-edit="${i}" value="${(tm/1000).toFixed(2)}" aria-label="${esc(t('raw'))}">`:`<span data-lt="${i}">${dnf?esc(t('dnf')):fmt(tm??(R.phase==='running'?0:null))}</span>`}
+      ${kickNow()?(editable&&!dnf?`<input type="number" step="1" min="0" id="edit-${i}" data-edit="${i}" value="${(h.kicks||[])[i]||0}" aria-label="${esc(t(f3Now()===3?'boards':'kicks'))}"><span class="kunit">${esc(t(f3Now()===3?'boards':'kicks'))}</span>`:`<span class="kcount">${dnf?esc(t('dnf')):((h.kicks||[])[i]||0)+'<small>'+esc(kU((h.kicks||[])[i]||0))+'</small>'}</span>`):editable&&!dnf?`<input type="number" step="0.01" min="0" id="edit-${i}" data-edit="${i}" value="${(tm/1000).toFixed(2)}" aria-label="${esc(t('raw'))}">`:`<span data-lt="${i}">${dnf?esc(t('dnf')):fmt(tm??(R.phase==='running'?0:null))}</span>`}
       ${ps&&tm!=null?`<span class="tot">+${ps}${esc(t('sec'))} = ${fmt(total(h,i))}</span>`:''}</div>
-    ${isBoss()?`<button class="finish kickb" data-act="fin" data-v="${i}" ${R.phase!=='running'||tm!=null||dnf||h.done?'disabled':''}>👊 ${esc(t('kickBtn'))}</button>`:`<button class="finish" data-act="fin" data-v="${i}" ${R.phase!=='running'||tm!=null||dnf||h.done?'disabled':''}>${esc(finLabel(h,i))}</button>`}
-    ${isBoss()?'':`<div class="pens">${S.st.map(st=>{const c=h.pen[i][st.id]||0;return`<div class="pen ${c?'has':''}"><button data-act="pen" data-v="${i}" data-s="${st.id}" data-d="-1" ${!c||h.done?'disabled':''} aria-label="−">−</button><span><i>${esc(stName(st))}</i><em>+${st.pen}</em>${c?`<b>×${c}</b>`:''}</span><button class="plus" data-act="pen" data-v="${i}" data-s="${st.id}" data-d="1" ${h.done?'disabled':''} aria-label="+">+</button></div>`}).join('')}</div>`}
+    ${kickNow()?`<button class="finish kickb" data-act="fin" data-v="${i}" ${R.phase!=='running'||tm!=null||dnf||h.done?'disabled':''}>${f3Now()===3?'🧱 '+esc(t('brkBtn')):'👊 '+esc(t('kickBtn'))}</button>`:`<button class="finish" data-act="fin" data-v="${i}" ${R.phase!=='running'||tm!=null||dnf||h.done?'disabled':''}>${esc(finLabel(h,i))}</button>`}
+    ${kickNow()?'':`<div class="pens">${S.st.map(st=>{const c=h.pen[i][st.id]||0;return`<div class="pen ${c?'has':''}"><button data-act="pen" data-v="${i}" data-s="${st.id}" data-d="-1" ${!c||h.done?'disabled':''} aria-label="−">−</button><span><i>${esc(stName(st))}</i><em>+${st.pen}</em>${c?`<b>×${c}</b>`:''}</span><button class="plus" data-act="pen" data-v="${i}" data-s="${st.id}" data-d="1" ${h.done?'disabled':''} aria-label="+">+</button></div>`}).join('')}</div>`}
     <div class="lane-actions">
-     <button class="btn ghost" data-act="undo" data-v="${i}" ${isBoss()?(R.phase!=='running'||!((h.kicks||[])[i])?'disabled':''):(tm==null&&!(isRelay()&&legOf(h,i).length))||h.done?'disabled':''}>${esc(isBoss()?'−1':t('undo'))}</button>
+     <button class="btn ghost" data-act="undo" data-v="${i}" ${kickNow()?(R.phase!=='running'||!((h.kicks||[])[i])?'disabled':''):(tm==null&&!(isRelay()&&legOf(h,i).length))||h.done?'disabled':''}>${esc(kickNow()?'−1':t('undo'))}</button>
      <button class="btn ghost" data-act="dnf" data-v="${i}" ${h.done?'disabled':''}>${esc(dnf?t('dnfOff'):t('dnf'))}</button>
     </div>
    </div></div>`;
@@ -2658,7 +2802,8 @@ function renderBoard(){applySkin();
     <div class="bround">${rd?`<b>${esc(rd.a.toUpperCase())}</b>${rd.b?`<small>${esc(rd.b)}</small>`:''}`:'<b>—</b>'}</div></div>`;
   let body='';
   if(!linked)body=`<div class="empty">${esc(t('waitCtrl'))}</div>`;
-  else if(S.board==='live'&&h)body=boardLive(h);
+  else if(S.board==='f3res'&&h&&f3Of(h))body=boardF3Res(h);
+  else if(S.board==='live'&&h)body=f3Now()&&R.phase==='idle'?boardF3Intro(h):boardLive(h);
   else if(S.board==='standings')body=boardStand();
   else if(S.board==='bracket')body=isComm()?boardKok():boardBracket();
   else if(S.board==='champion')body=boardChamp();
@@ -2695,22 +2840,22 @@ function boardLive(h){
     if(pid==null)return`<div class="bl emptyb" style="--c:var(${H.v})"><div class="hero">${heroFig(i,'','ready')}</div><div class="htag">${esc(heroEn(i))}</div><div class="bn">—</div><div class="bt"></div><div class="btime"></div><div class="bpen"></div></div>`;
     const p=P(pid)||{name:'?'},tm=h.time[i],dnf=h.dnf[i],pl=placeOf(h,i);
     const kk=(h.kicks||[])[i]||0,rel=isRelay()&&tm==null&&!dnf,cr=rel?curRunner(h,i):null;
-    const pens=isBoss()?[]:S.st.filter(st=>h.pen[i][st.id]).map(st=>`<span>${esc(stName(st))} +${st.pen*h.pen[i][st.id]}${esc(t('sec'))}</span>`).join('');
+    const pens=kickNow()?[]:S.st.filter(st=>h.pen[i][st.id]).map(st=>`<span>${esc(stName(st))} +${st.pen*h.pen[i][st.id]}${esc(t('sec'))}</span>`).join('');
     const win=pl===1&&(h.done||heatComplete(h));
     const mode=heroMode(h,i),fx=lfxOf(h,i,mode);
     return`<div class="bl ${tm!=null?'fin':''} ${dnf?'dnf':''} ${win?'win':''}${fx.c}" data-m="${mode}" style="--c:var(${H.v});--fxd:-${fx.d}ms">${LFX_EL}
       ${pl&&!dnf?`<div class="bplace ${pl===1?'p1':''}">${medalSvg(pl)}</div>`:''}
       <div class="hero">${heroFig(i,'',mode,undefined,lvLane(h,i))}</div><div class="htag">${esc(heroEn(i))}</div>
       <div class="bn" style="--bnu:${bnFs(pn(cr||p))}">${esc(pn(cr||p))}</div><div class="bt">${esc(rel?pn(p):p.members?p.members.map(m=>pn(m)).join(' · '):p.team)}${legDots(h,i)}</div>
-      ${isBoss()?`<div class="btime kick">${dnf?esc(t('dnf')):`${kk}<small>${esc(kU(kk))}</small>`}</div>`:`<div class="btime" data-lt="${i}">${dnf?esc(t('dnf')):(tm!=null?fmt(h.pen[i]&&penSec(h,i)?total(h,i):tm):fmt(0))}</div>`}
-      <div class="bpen">${pens}</div></div>`;
+      ${kickNow()?`<div class="btime kick">${dnf?esc(t('dnf')):`${kk}<small>${esc(kU(kk))}</small>`}</div>`:`<div class="btime" data-lt="${i}">${dnf?esc(t('dnf')):(tm!=null?fmt(h.pen[i]&&penSec(h,i)?total(h,i):tm):fmt(0))}</div>`}
+      <div class="bpen">${pens}${f3Chip(h,i)}</div></div>`;
   }).join('');
   if(R.phase==='intro')return introHTML(h);
   const cd=R.phase==='countdown'?`<div class="cd"><b>${R.count}</b></div>`:(R.phase==='running'&&nowT()-R.go<900?`<div class="cd"><b class="gotxt">${esc(t('go'))}</b></div>`:'');
   const last=Math.max(0,...h.time.filter(x=>x!=null));
   if(isBoss()){const left=R.phase==='running'?Math.max(0,R.end-nowT()):null;
     return`<div class="blive boss"><div class="bosshd"><div class="bclock ${left!=null&&left<5000?'low':''}" data-clock>${R.phase==='countdown'?fmt(Math.max(5,+S.cfg.bossSec||20)*1000):clockVal(h)}<small>${esc(bil(()=>t('timeLeft')).a.toUpperCase())}</small></div>${villainBlock()}<div class="bossinfo">${bestLine()}</div></div><div class="blanes">${lanes}</div>${cd}</div>`}
-  return`<div class="blive"><div class="bclockw"><div class="bclock" data-clock>${R.phase==='countdown'?'0.00':fmt(R.phase==='running'?0:last)}</div>${bestLine()}</div><div class="blanes">${lanes}</div>${cd}</div>`;
+  return`<div class="blive"><div class="bclockw"><div class="bclock" data-clock>${R.phase==='countdown'?'0.00':fmt(R.phase==='running'?0:last)}</div>${f3Now()?f3Strip():bestLine()}</div><div class="blanes">${lanes}</div>${cd}</div>`;
 }
 const s0=sl=>sl[slideIx%sl.length];
 function boardIntro(){
@@ -2779,6 +2924,24 @@ function boardHeatRes(){
   const rest=[0,1,2,3].filter(i=>h.lanes[i]!=null&&h.dnf[i]).map(i=>`${esc(pn(P(h.lanes[i])))} ${esc(t('dnf'))}`);
   return`<div class="champwrap"><div class="champtitle">${stt(()=>roundLabel(L.r)+' · '+t('heatRes',{h:heatLabel(L.h)}))}</div><div></div>${podiumRow(list)}${rest.length?`<div class="restline">${rest.join(' &nbsp;·&nbsp; ')}</div>`:''}</div>`;
 }
+/* F3 전광판: 라운드 소개 · 라운드 점수표 */
+function f3Icon(n){const a='fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';
+  if(n===1)return`<svg viewBox="0 0 120 80" ${a}><circle cx="44" cy="14" r="7"/><path d="M42 22l-6 22 14 10-4 18M36 44l-14 8M40 30l16 6 8-8M30 30l10-8"/><path d="M78 72V46h30v26M78 54h30" opacity=".7"/><path d="M8 72h108" opacity=".5"/></svg>`;
+  if(n===2)return`<svg viewBox="0 0 120 80" ${a}><circle cx="34" cy="16" r="7"/><path d="M36 24l4 22-8 26M38 34l-14 6M40 46l38-12M62 26l8-4"/><path d="M84 22a26 26 0 0 1 0 28M94 16a36 36 0 0 1 0 40M104 10a46 46 0 0 1 0 52" opacity=".6"/></svg>`;
+  return`<svg viewBox="0 0 120 80" ${a}><path d="M18 30h38l4 10-4 10H18zM102 30H64l-4 10 4 10h38z"/><path d="M60 8v14M48 12l6 12M72 12l-6 12" opacity=".7"/><path d="M30 64l6-8M90 64l-6-8M60 70v-10" opacity=".5"/></svg>`}
+function f3Strip(){const f=f3Of(curHeat());if(!f)return'';const n=f.st;return`<div class="f3strip"><b>${esc(inLang('en',()=>t('f3RoundN',{n})).toUpperCase())} / 3</b><span>${stt(()=>t(F3EV[n-1]))}</span></div>`}
+function f3Chip(h,i){const f=h.f3;if(!f||f.done||f.st<2||h.lanes[i]==null)return'';const x=f3Scores(f).tot[i];return`<span class="f3chip">Σ ${x==null?'—':x.toFixed(1)}</span>`}
+function boardF3Intro(h){const f=f3Of(h),n=f.st,rk=f3Rank(h);
+  const ev=bil(()=>t(F3EV[n-1])),ds=bil(()=>t(F3EV[n-1]+'D',{s:+S.cfg.f3Sec||20}));
+  return`<div class="f3wrap f3in"><div class="f3kick">${stt(()=>t('final'))}</div>
+   <div class="f3steps">${[1,2,3].map(k=>`<span class="${k<n?'d':k===n?'c':''}"><i>${k}</i>${esc(inLang('en',()=>t(F3EV[k-1])).toUpperCase())}</span>`).join('<em></em>')}</div>
+   <div class="f3main"><div class="f3ic">${f3Icon(n)}</div><div class="f3tt"><small>${esc(inLang('en',()=>t('f3RoundN',{n})).toUpperCase())}</small><b>${esc(ev.a.toUpperCase())}</b>${ev.b?`<em>${esc(ev.b)}</em>`:''}<p>${esc(ds.b||ds.a)}</p></div></div>
+   ${n>1?`<div class="f3lead">${stt(()=>n===3?t('f3Lead'):t('f3ResN',{n:1}))}</div>`:''}
+   <div class="f3cards">${rk.map((x,k)=>{const p=P(h.lanes[x.i])||{};return`<div class="f3c ${n>1&&k===0?'top':''}" style="--c:var(${HEROES[x.i].v});--d:${k*140}ms">${n>1?`<span class="f3pos">${k+1}</span>`:''}<div class="f3fig">${heroFig(x.i,'',n>1&&k===0?'p1':'ready',undefined,lvLane(h,x.i))}</div><b>${esc(pn(p))}</b><small>${esc(p.team||'')}</small>${n>1?`<span class="f3pt">${x.tot==null?'—':x.tot.toFixed(1)}<i>${esc(t('ptsU'))}</i></span>`:`<span class="f3ln">${esc(heroEn(x.i))}</span>`}</div>`}).join('')}</div></div>`}
+function boardF3Res(h){const f=f3Of(h),dn=f.done?3:f.st-1,rk=f3Rank(h);
+  return`<div class="f3wrap f3rs"><div class="f3kick">${stt(()=>t('final'))}</div><div class="f3title">${stt(()=>dn>=2&&!f.done?t('f3Lead'):t('f3ResN',{n:Math.max(1,dn)}))}</div>
+   <div class="f3tbl"><div class="f3row f3hd"><span></span><span></span>${[1,2,3].map(k=>`<span class="${k===dn?'cur':''}">R${k}<small>${esc(t(F3EV[k-1]))}</small></span>`).join('')}<span class="f3t">${stt(()=>t('f3Tot'))}</span></div>
+   ${rk.map((x,k)=>`<div class="f3row ${k===0?'lead':''}" style="--c:var(${HEROES[x.i].v});--w:${((x.tot||0)/3).toFixed(1)}%;--d:${k*150}ms"><span class="f3pos">${k+1}</span><span class="f3nm">${emSvg(x.i,30)}<b>${esc(pn(P(h.lanes[x.i])||{}))}</b></span>${[0,1,2].map(r=>`<span class="f3v ${r===dn-1?'cur':''}">${x.sc[r]==null?'<i>—</i>':`<b>${x.sc[r].toFixed(1)}</b><small>${esc(f3U(r,x.raw[r]))}</small>`}</span>`).join('')}<span class="f3t"><b>${x.tot==null?'—':x.tot.toFixed(1)}</b><i class="f3bar"></i></span></div>`).join('')}</div></div>`}
 function boardChamp(){
   const c=S.champ;
   if(!c)return`<div class="empty">${esc(t('noChamp'))}</div>`;
@@ -2791,9 +2954,9 @@ function tickClocks(){
   document.querySelectorAll('.flowpill').forEach(x=>{x.hidden=!flowInfo});
   if(flowInfo)document.querySelectorAll('[data-flow]').forEach(x=>{x.textContent=t('flow_'+flowInfo.label,{s:Math.max(0,Math.ceil((flowInfo.until-Date.now())/1000))})});
   const h=curHeat();
-  const el=R.phase==='running'?(isBoss()?Math.max(0,R.end-nowT()):nowT()-R.start):null;
-  document.querySelectorAll('[data-clock]').forEach(x=>{if(R.phase==='running'){const sm=x.querySelector('small');x.firstChild&&x.firstChild.nodeType===3?x.firstChild.nodeValue=fmt(el):x.textContent=fmt(el);if(sm&&!x.contains(sm))x.appendChild(sm);if(isBoss())x.classList.toggle('low',el<5000)}else if(R.phase==='countdown'&&!isBoss())x.textContent=x.closest('.board')?'0.00':String(R.count)});
-  if(h&&R.phase==='running'&&!isBoss())document.querySelectorAll('[data-lt]').forEach(x=>{const i=+x.dataset.lt;if(h.time[i]==null&&!h.dnf[i]&&h.lanes[i]!=null)x.textContent=fmt(el)});
+  const el=R.phase==='running'?(kTimed()?Math.max(0,R.end-nowT()):nowT()-R.start):null;
+  document.querySelectorAll('[data-clock]').forEach(x=>{if(R.phase==='running'){const sm=x.querySelector('small');x.firstChild&&x.firstChild.nodeType===3?x.firstChild.nodeValue=fmt(el):x.textContent=fmt(el);if(sm&&!x.contains(sm))x.appendChild(sm);if(kTimed())x.classList.toggle('low',el<5000)}else if(R.phase==='countdown'&&!kTimed())x.textContent=x.closest('.board')?'0.00':String(R.count)});
+  if(h&&R.phase==='running'&&!kickNow())document.querySelectorAll('[data-lt]').forEach(x=>{const i=+x.dataset.lt;if(h.time[i]==null&&!h.dnf[i]&&h.lanes[i]!=null)x.textContent=fmt(el)});
 }
 let lastGo=0;
 function loop(){
@@ -2923,6 +3086,7 @@ document.addEventListener('click',e=>{
     case'skin':S.cfg.skin=v==='2'||v==='3'?v:'1';applySkin();commit();break;
     case'lang':S.lang=v;commit();break;
     case'start':startHeat();break;
+    case'f3End':if(f3Now()===3)endBoss();break;
     case'fin':finishLane(+v);break;
     case'undo':undoLane(+v);break;
     case'dnf':toggleDnf(+v);break;
@@ -3219,7 +3383,7 @@ async function refresh(){if(!code())return;
 async function act(fn){UI.busy=fn.name||'x';UI.err='';draw();try{await fn()}catch(e){UI.err=e.message||String(e)}UI.busy='';draw();try{render()}catch(e){}}
 /* ---------- 기록 대기열 ---------- */
 const uid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});
-function queueHeat(h,hk){const c=official();if(!c||!isRace()||!approved()||!code())return;
+function queueHeat(h,hk){const c=official();if(!c||!isRace()||!approved()||!code()||h.f3)return;
   [0,1,2,3].forEach(i=>{const pid=h.lanes[i];if(pid==null||h.dnf[i]||h.time[i]==null)return;const p=P(pid);if(!p)return;
     const e=W.kids[kkey(p)];if(!e||!e.hid||e.st!=='given')return;
     const k=[APP,S.ev.name,hk,i,h.time[i]].join('|');if(W.seen[k])return;W.seen[k]=1;

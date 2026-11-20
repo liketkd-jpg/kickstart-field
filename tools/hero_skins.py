@@ -175,6 +175,43 @@ LUX = r"""
 %(P)s .board.v3 .bl .hero svg{height:100%%;width:auto;filter:none!important}
 %(P)s .board.v3 .bl>*:not(.hero):not(.bplace):not(.lfx){position:relative;z-index:1}
 %(P)s .board .bl{--fxc:#e3c98f}
+%(P)s .f3kick{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.6em;color:var(--gold)}
+%(P)s .f3steps span{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.24em;color:rgba(215,219,224,.35)}
+%(P)s .f3steps i{border-width:1px}
+%(P)s .f3steps em{height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,110,.5),transparent)}
+%(P)s .f3steps .d{color:var(--gold)}%(P)s .f3steps .d i{background:rgba(201,169,110,.18);color:var(--gold);border-color:var(--gold)}
+%(P)s .f3steps .c{color:var(--paper)}%(P)s .f3steps .c i{background:transparent;border-color:var(--gold);color:var(--gold);box-shadow:0 0 calc(1.4*var(--u)) rgba(201,169,110,.55),inset 0 0 calc(.8*var(--u)) rgba(201,169,110,.35)}
+%(P)s .f3ic{color:var(--gold);filter:drop-shadow(0 0 calc(1*var(--u)) rgba(201,169,110,.45));animation:lxin 1.6s cubic-bezier(.2,.7,.2,1) both}
+%(P)s .f3ic svg *{stroke-width:1.4}
+%(P)s .f3tt{animation:lxin 1.6s .2s cubic-bezier(.2,.7,.2,1) both}
+%(P)s .f3tt small{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.5em;color:var(--gold)}
+%(P)s .f3tt b{font-family:"Saira",sans-serif;font-weight:200;letter-spacing:.06em;background:var(--metal);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+%(P)s .f3tt em{font-weight:300;color:var(--silver);letter-spacing:.1em}
+%(P)s .f3tt p{font-weight:300;color:var(--muted);letter-spacing:.04em}
+%(P)s .f3lead{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.4em}
+%(P)s .f3c{background:var(--glass),rgba(14,15,18,.55);border:1px solid var(--hair);border-top-color:color-mix(in srgb,var(--c) 70%%,transparent);border-radius:calc(.8*var(--u));box-shadow:0 calc(1.6*var(--u)) calc(3*var(--u)) rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(10px);animation:lxin 1.4s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0ms)}
+%(P)s .f3c.top{border-color:rgba(201,169,110,.55);box-shadow:0 0 calc(2.4*var(--u)) rgba(201,169,110,.25),0 calc(1.6*var(--u)) calc(3*var(--u)) rgba(0,0,0,.6)}
+%(P)s .f3c b{font-weight:500;color:var(--paper)}
+%(P)s .f3c small{font-weight:300;color:var(--muted);letter-spacing:.06em}
+%(P)s .f3pos{font-family:"Saira",sans-serif;font-weight:200;color:var(--gold);text-shadow:none}
+%(P)s .f3pt{font-family:"Saira",sans-serif;font-weight:300;color:var(--gold)}
+%(P)s .f3ln{background:transparent;border:1px solid color-mix(in srgb,var(--c) 70%%,transparent);color:var(--silver);font-family:"Saira",sans-serif;font-weight:400;letter-spacing:.3em}
+%(P)s .f3title{font-family:"Saira","Noto Sans KR",sans-serif;font-weight:200;letter-spacing:.08em;background:var(--metal);-webkit-background-clip:text;background-clip:text;color:transparent;animation:lxin 1.4s cubic-bezier(.2,.7,.2,1) both}
+%(P)s .f3title small{-webkit-text-fill-color:var(--gold);font-weight:300}
+%(P)s .f3row{background:var(--glass),rgba(14,15,18,.55);border:1px solid var(--hair);border-left:2px solid color-mix(in srgb,var(--c) 75%%,transparent);border-radius:calc(.6*var(--u));backdrop-filter:blur(10px);animation:lxin 1.2s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0ms)}
+%(P)s .f3row.f3hd{background:none;border:0;backdrop-filter:none}
+%(P)s .f3row.f3hd span{font-family:"Saira",sans-serif;font-weight:300;letter-spacing:.3em;color:rgba(215,219,224,.45)}
+%(P)s .f3row.lead{border-color:rgba(201,169,110,.5);border-left-color:var(--gold);box-shadow:0 0 calc(2*var(--u)) rgba(201,169,110,.18)}
+%(P)s .f3nm b{font-weight:500;color:var(--paper)}
+%(P)s .f3v b{font-family:"Saira",sans-serif;font-weight:300;color:var(--silver)}
+%(P)s .f3v small{font-weight:300;color:var(--muted)}
+%(P)s .f3row:not(.f3hd) .f3t b{font-family:"Saira",sans-serif;font-weight:300;color:var(--paper)}
+%(P)s .f3row.lead .f3t b{color:var(--gold)}
+%(P)s .f3bar{height:2px;background:rgba(255,255,255,.08)}
+%(P)s .f3bar::after{background:linear-gradient(90deg,rgba(201,169,110,.35),var(--gold),#f3e3bd);box-shadow:0 0 calc(.8*var(--u)) rgba(201,169,110,.6);animation-duration:2s}
+%(P)s .f3strip b{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:"Saira",sans-serif;font-weight:400;letter-spacing:.3em}
+%(P)s .f3strip span{font-weight:300;color:var(--silver);letter-spacing:.08em}
+%(P)s .f3chip{background:rgba(255,255,255,.04);border:1px solid rgba(201,169,110,.45);color:var(--gold);font-family:"Saira",sans-serif;font-weight:400}
 %(P)s .board .bl.fx-chg .lfx .lflash{background:linear-gradient(105deg,transparent 40%%,rgba(255,236,200,.42) 50%%,transparent 60%%);animation-duration:1.4s}
 %(P)s .board .bl[data-m^="run"] .lfx .ls{height:2px;background:linear-gradient(90deg,transparent,rgba(227,201,143,1) 65%%,#fffaf0);box-shadow:0 0 1.2vh rgba(227,201,143,.9);animation-duration:1.1s}
 %(P)s .board .bl.fx-hit .lfx .lwave,%(P)s .board .bl.fx-win .lfx .lwave{border-width:1px;box-shadow:0 0 1.4vh rgba(227,201,143,.6),inset 0 0 1.4vh rgba(227,201,143,.35);animation-duration:1.4s}
