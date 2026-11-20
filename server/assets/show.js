@@ -28,9 +28,9 @@
     const logo=C.logo?`<div class="kss-logo"><img src="${esc(C.logo)}" alt=""><i></i></div>`:'';
     /* v1.7.24 글씨 로고 모드: 대회 이름 글자 대신 협회 글씨 로고를 크게 (빛이 글자 위를 지나감 · 반짝이) */
     const wm=(C.titleMode||(C.word?'word':'text'))==='word'&&C.word?C.word:'';
-    if(p.k==='comp'&&wm)return `<div class="kss-comp word"><div class="kss-rays"></div><div class="kss-spk">${Array.from({length:22},(_,k)=>`<i style="--x:${(k*37)%100}%;--y:${(k*53)%96}%;--k:${k}"></i>`).join('')}</div>
+    if(p.k==='comp'&&wm)return `<div class="kss-wave"><i></i><i class="w2"></i><b></b></div><div class="kss-comp word"><div class="kss-spk">${Array.from({length:22},(_,k)=>`<i style="--x:${(k*37)%100}%;--y:${(k*53)%96}%;--k:${k}"></i>`).join('')}</div>
       <div class="kss-wm"><img src="${esc(wm)}" alt=""><i class="kss-wsw" style="-webkit-mask-image:url('${esc(wm)}');mask-image:url('${esc(wm)}')"></i></div><div class="kss-gl"></div>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
-    if(p.k==='comp')return `<div class="kss-comp"><div class="kss-rays"></div>${logo}<span class="kss-l">${esc(C.label||'KICKSTART UP')}</span><h1 class="kss-shine">${esc(C.title||'태권도 대회').replace(/\n/g,'<br>')}</h1>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
+    if(p.k==='comp')return `<div class="kss-wave"><i></i><i class="w2"></i><b></b></div><div class="kss-comp">${logo}<span class="kss-l">${esc(C.label||'KICKSTART UP')}</span><h1 class="kss-shine">${esc(C.title||'태권도 대회').replace(/\n/g,'<br>')}</h1>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
     if(p.k==='spon')return `<div class="kss-spon"><span class="kss-l">${esc(C.sponLabel||'OFFICIAL SPONSOR · 후원')}</span><div class="kss-card"><img src="${p.img}" alt=""></div>${p.name?`<b>${esc(p.name)}</b>`:''}</div>`;
     return `<div class="kss-court"><div class="kss-flash"></div><div class="kss-ring"></div><div class="kss-ring r2"></div><div class="kss-big kss-shine">${esc(court||'—')}</div><span class="kss-n"><b>${esc(court)}</b> 코트 <small>COURT</small></span></div>`;}  /* v1.7.25 코트 화면은 코트만 크게 */
   function tick(){
@@ -54,9 +54,9 @@
 #ksShow .kss-comp.word{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:0}
 #ksShow .kss-wm{position:relative;width:min(76vw,62vh*2.15,1500px);animation:kssWm 1.3s cubic-bezier(.2,1.2,.3,1) both}
 #ksShow .kss-wm img{display:block;width:100%;height:auto;filter:drop-shadow(0 0 28px rgba(242,210,122,.35)) drop-shadow(0 10px 30px rgba(0,0,0,.6));animation:kssGlow 3.2s ease-in-out infinite 1.3s}
-#ksShow .kss-wsw{position:absolute;inset:0;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;background:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%,transparent 100%);background-size:300% 100%;background-position:120% 0;animation:kssWsw 3.4s ease-in-out infinite 1s;mix-blend-mode:screen}
+#ksShow .kss-wsw{position:absolute;inset:0;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;background:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%,transparent 100%);background-size:300% 100%;background-position:120% 0;animation:kssWsw 4s cubic-bezier(.55,.05,.35,1) infinite 1s;mix-blend-mode:screen}
 @keyframes kssWm{from{opacity:0;transform:scale(.82);filter:blur(16px)}to{opacity:1;transform:none;filter:none}}
-@keyframes kssWsw{0%{background-position:120% 0}60%,100%{background-position:-20% 0}}
+@keyframes kssWsw{0%{background-position:150% 0}42%,100%{background-position:-50% 0}}
 @keyframes kssGlow{50%{filter:drop-shadow(0 0 48px rgba(242,210,122,.6)) drop-shadow(0 10px 30px rgba(0,0,0,.6))}}
 #ksShow .kss-gl{width:0;height:4px;margin:5vh 0 2.6vh;border-radius:2px;background:linear-gradient(90deg,transparent,#F2D27A,#FFF3C4,#F2D27A,transparent);animation:kssGl 1.2s ease-out forwards .9s}
 @keyframes kssGl{to{width:min(60vw,1100px)}}
@@ -67,8 +67,14 @@
 #ksShow .kss-wmsm{position:absolute;top:3vh;left:50%;transform:translateX(-50%);width:min(46vw,860px);z-index:2}#ksShow .kss-wmsm img{display:block;width:100%;filter:drop-shadow(0 0 18px rgba(242,210,122,.3))}
 #ksShow .kss-comp h1{margin:2vh 0 1.5vh;font-weight:900;font-size:clamp(40px,6.4vw,140px);line-height:1.15;word-break:keep-all;filter:drop-shadow(0 6px 30px rgba(242,210,122,.25))}
 #ksShow .kss-comp p{margin:0;font-size:clamp(18px,2.2vw,44px);color:#D9CFBC;font-weight:700}
-#ksShow .kss-rays{position:absolute;left:50%;top:50%;width:160vmax;height:160vmax;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(242,210,122,.07) 0 6deg,transparent 6deg 18deg);animation:kssRot 40s linear infinite;z-index:-1;mask:radial-gradient(circle,#000 0 25%,transparent 60%);-webkit-mask:radial-gradient(circle,#000 0 25%,transparent 60%)}
-@keyframes kssRot{to{transform:translate(-50%,-50%) rotate(360deg)}}
+/* v1.7.52 빛줄기 대신: 밝은 빛이 파도처럼 화면을 비스듬히 「샥」 지나감 (로고 위로도 지나감) + 지나갈 때 화면이 한 번 환해짐 */
+#ksShow .kss-wave{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:3;mix-blend-mode:screen}
+#ksShow .kss-wave i{position:absolute;top:-20%;bottom:-20%;left:-60%;width:46%;transform:skewX(-22deg);background:linear-gradient(90deg,rgba(242,210,122,0) 0%,rgba(242,210,122,.22) 26%,rgba(255,240,200,.7) 42%,#fff 50%,rgba(255,240,200,.7) 58%,rgba(242,210,122,.22) 74%,rgba(242,210,122,0) 100%);-webkit-mask:linear-gradient(180deg,transparent,#000 22%,#000 78%,transparent);mask:linear-gradient(180deg,transparent,#000 22%,#000 78%,transparent);animation:kssWave 4s cubic-bezier(.55,.05,.35,1) infinite 1s}
+#ksShow .kss-wave i.w2{width:16%;opacity:.7;animation-delay:1.25s}
+#ksShow .kss-wave b{position:absolute;inset:0;background:radial-gradient(75% 65% at 50% 48%,rgba(255,246,220,.42),transparent 72%);opacity:0;animation:kssWaveF 4s ease-out infinite 1s}
+@keyframes kssWave{0%{left:-60%}42%,100%{left:125%}}
+@keyframes kssWaveF{0%,12%{opacity:0}22%{opacity:1}42%,100%{opacity:0}}
+#ksShow .kss-comp{z-index:1}
 #ksShow .kss-spon{display:flex;flex-direction:column;align-items:center;gap:3vh;width:100%}
 #ksShow .kss-card{width:min(70vw,1300px);height:58vh;background:#fff;border-radius:28px;display:grid;place-items:center;padding:4vh 4vw;box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 0 4px rgba(201,162,98,.6)}
 #ksShow .kss-card img{max-width:100%;max-height:100%;object-fit:contain}
@@ -76,8 +82,8 @@
 #ksShow .kss-court{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%}
 #ksShow .kss-logo{position:relative;display:inline-block;background:linear-gradient(180deg,#fff,#EEF1F6);border-radius:22px;padding:1.4vh 2vw;box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 0 3px rgba(201,162,98,.75),0 0 60px rgba(242,210,122,.25);overflow:hidden;margin-bottom:3vh;animation:kssPop .9s cubic-bezier(.2,1.4,.4,1) both}
 #ksShow .kss-logo img{display:block;height:clamp(90px,17vh,240px);width:auto;max-width:78vw;object-fit:contain}
-#ksShow .kss-logo i{position:absolute;top:0;bottom:0;width:35%;left:-40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.85),transparent);transform:skewX(-20deg);animation:kssSweep 3.6s ease-in-out infinite 1s}
-@keyframes kssSweep{0%{left:-40%}55%,100%{left:120%}}
+#ksShow .kss-logo i{position:absolute;top:0;bottom:0;width:35%;left:-40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.85),transparent);transform:skewX(-20deg);animation:kssSweep 4s cubic-bezier(.55,.05,.35,1) infinite 1s}
+@keyframes kssSweep{0%{left:-60%}42%,100%{left:130%}}
 #ksShow .kss-logo.sm{position:absolute;top:2.4vh;left:50%;transform:translateX(-50%);padding:.8vh 1.2vw;margin:0;border-radius:14px;animation:none;z-index:2}
 #ksShow .kss-logo.sm img{height:clamp(56px,11vh,150px)}
 #ksShow .kss-big{font:900 clamp(300px,74vh,1100px) Archivo,"Noto Sans KR",sans-serif;line-height:.86;margin-top:0;-webkit-text-stroke:2px rgba(255,240,200,.35);animation:kssShine 3.2s linear infinite,kssPop .9s cubic-bezier(.2,1.5,.4,1) both;filter:drop-shadow(0 0 40px rgba(242,210,122,.45))}
