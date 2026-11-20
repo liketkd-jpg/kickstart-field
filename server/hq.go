@@ -36,6 +36,10 @@ type nodeConfig struct {
 	ModeAt int64  `json:"modeAt,omitempty"`
 	// v1.4.82 전체 초기화 시각 (본부: 마지막으로 누른 때 · 코트: 마지막으로 받은 때) → 그때 꺼져 있던 코트는 다시 연결되면 저절로 초기화
 	WipeAt int64 `json:"wipeAt,omitempty"`
+	// v1.7.50 본부 잠금: 운영자 로그인 기억 · 업데이트 전부터 본부였던 노트북 표시
+	HQAuth     *hqAuth `json:"hqAuth,omitempty"`
+	HQOld      bool    `json:"hqOld,omitempty"`
+	HQLockSeen bool    `json:"hqLockSeen,omitempty"`
 }
 
 func (c nodeConfig) autoUpdate() bool {
@@ -110,6 +114,13 @@ func handleNode(w http.ResponseWriter, r *http.Request) {
 			req.Court = ""
 		}
 		old := getConfig()
+		// v1.7.50 본부 잠금: 운영자 로그인을 한 노트북만 본부로
+		req.HQAuth, req.HQLockSeen = old.HQAuth, true
+		req.HQOld = old.HQOld && old.Role == "hq" && req.Role == "hq"
+		if req.Role == "hq" && !hqAllowed(req) {
+			writeJSON(w, 403, map[string]any{"error": "본부는 운영자 계정으로 로그인한 노트북만 쓸 수 있습니다", "needLogin": true})
+			return
+		}
 		req.AutoUpdate = old.AutoUpdate // 업데이트 설정은 그대로 둠
 		req.LiveKey, req.LiveURL = old.LiveKey, old.LiveURL
 		req.Mode, req.ModeAt = old.Mode, old.ModeAt
@@ -121,7 +132,7 @@ func handleNode(w http.ResponseWriter, r *http.Request) {
 	for _, a := range apps {
 		appKeys = append(appKeys, a.Key)
 	}
-	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "ips": lanIPs(), "apps": appKeys, "label": roleLabel(c)})
+	writeJSON(w, 200, map[string]any{"sig": "KICKSTART", "version": version, "role": c.Role, "court": c.Court, "port": port, "ips": lanIPs(), "apps": appKeys, "label": roleLabel(c), "hqLock": hqLockState()})
 }
 
 func roleLabel(c nodeConfig) string {

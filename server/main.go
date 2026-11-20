@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.49" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.50" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -87,6 +87,7 @@ func main() {
 	apps = avail
 	stores["hq"] = openStore("hq")
 	loadConfig()
+	initHQLock()
 
 	if checkForUpdate(exe) {
 		return // 새 버전이 이어서 실행됩니다
@@ -247,6 +248,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/node":
 		handleNode(w, r)
+		return
+	case p == "/api/node/hqlock":
+		handleHQLock(w, r)
 		return
 	case p == "/view" || p == "/view/":
 		serveAsset(w, "assets/view.html", "text/html; charset=utf-8")
@@ -451,6 +455,12 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if parts[1] == "" {
+		if c := getConfig(); key == "hq" && (c.Role != "hq" || !hqAllowed(c)) { // v1.7.50 본부 잠금
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Header().Set("Cache-Control", "no-store")
+			w.Write([]byte(hqLockedPage))
+			return
+		}
 		serveApp(w, r, key)
 		return
 	}

@@ -37,6 +37,10 @@ main{max-width:1100px;margin:0 auto;padding:22px 16px 40px;display:flex;flex-dir
 .lk{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;font-size:14px}
 ol{margin:6px 0 0;padding-left:20px}li{margin:3px 0}
 a.lnk{color:inherit}
+.hql .dlg{max-width:440px;color:#F6F2E9}.hql .dlg h2{color:#F6E7C4}.hql label{color:#EBD5A3!important}.hql label{display:block;font-weight:800;font-size:14px;margin:12px 0 4px}.hql input{width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #DADDE3;border-radius:12px;font:inherit;font-size:16px}
+.hql .go{margin-top:16px;width:100%;padding:14px;border:0;border-radius:14px;background:linear-gradient(160deg,#E6CD97,#B8904E);color:#14110B;font:inherit;font-weight:900;font-size:17px;cursor:pointer}.hql .go:disabled{opacity:.6}
+.hql .er{margin-top:10px;color:#B42318;font-weight:700;font-size:14px;min-height:1em}.hql p{color:#C9C3B6;font-size:14px;margin:6px 0 0}.hql p b{color:#F6E7C4}.hql .er{color:#FF8A80!important}
+.hqop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:14px;color:#A39D91}.hqop b{color:#EBD5A3}.hqop .warn{color:#F5B76B;font-weight:800}
 </style><link rel="stylesheet" href="/vendor/ks-lux.css">
 <style>/* v1.4.49 첫 화면을 스크롤 없이 한 화면에: 제목을 한 줄로 줄이고, 상태 칸 3개를 나란히, 사용법은 접어 둠 (글씨 크기는 그대로) */
 main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding-top:14px;padding-bottom:16px;max-width:1240px}
@@ -206,18 +210,45 @@ function vCourt(){const r=window.KS_SEQ&&PLAN?KS_SEQ.seq(PLAN):{B:[],cur:null},b
       <a class="sp" href="/view" target="_blank" rel="noopener">관람객 화면</a><a class="sp" href="/guide">사용 설명서</a><a class="sp" href="/emergency" target="_blank" rel="noopener">🆘 비상 안내</a><button class="sp" data-fromhq title="이 노트북이 고장 난 코트 노트북 대신일 때">🛟 본부에서 이 코트 백업 받기</button><button class="sp" data-hqpick>본부로 바꾸기</button></div></div>`;}
 /* 3) 본부 노트북 */
 function vHq(){return `<div class="ct"><div class="ct-top"><span class="ct-badge hq">${glyph('hq','pk-g')}</span><div class="ct-t"><b>대회 본부 노트북</b><span>같은 와이파이의 코트 노트북을 자동으로 찾아 모읍니다 · 종목 설정 → 대회 운영표 → 코트로 보내기 순서로 준비하세요</span></div><button class="lk" data-repick>코트로 바꾸기</button></div>
+    ${hqOpLine()}
     <div class="ct-main"><button class="now ev-hq" data-hqopen><span class="now-k">대회 본부</span>${glyph('hq','now-g')}<span class="now-n"><em>Headquarters</em><b>본부 운영 열기</b><span>종목별 경기 규칙 · 대회 운영표(관제탑) · 시작 전 점검 · 호출·방송 · 통합 결과</span></span><span class="now-go">본부 열기 →</span></button>
       <div class="sq"><h3>바로 가기</h3><ol><li data-hqopen>${glyph('hq','sq-g')}<span><b>본부 운영</b><small>코트 연결 · 점검 · 운영표</small></span><em>→</em></li>
         <li data-link="/hq/#board">${glyph('hq','sq-g')}<span><b>본부 모니터</b><small>전광판 · 방송</small></span><em>→</em></li>
         <li data-link="/view">${glyph('recognized','sq-g')}<span><b>관람객 화면</b><small>실시간 결과</small></span><em>→</em></li></ol></div></div>
     <div class="spare"><span class="sp-k">예비 모드 · 종목 직접 열기</span>${APPS.map(a=>`<button class="sp" data-open="${a.key}">${glyph(a.key,'sp-g')}${esc(a.title.replace(' 대회',''))}</button>`).join('')}<a class="sp" href="/guide">사용 설명서</a><a class="sp" href="/emergency" target="_blank" rel="noopener">🆘 비상 안내</a></div></div>`;}
+/* v1.7.50 본부 잠금: 운영자(대표·관리자) 계정으로 로그인한 노트북만 본부로 */
+const HQL=()=>(NODE&&NODE.hqLock)||{};
+function hqOpLine(){const L=HQL();
+  if(L.email)return `<div class="hqop">🔐 본부 운영자 <b>${esc(L.name||'')} ${esc(L.email)}</b> 로그인됨 · 인터넷이 없어도 본부로 씁니다 <button class="lk" data-hqlogout>본부 잠그기(로그아웃)</button></div>`;
+  if(L.old)return `<div class="hqop"><span class="warn">⚠ 아직 운영자 로그인을 하지 않은 본부입니다</span> · 지금은 그대로 쓸 수 있지만, 인터넷이 될 때 한 번 로그인해 두세요 <button class="lk" data-hqlogin>운영자 로그인</button></div>`;
+  return '';}
+function hqLoginDlg(then){const box=document.getElementById('dlg');
+  box.innerHTML=`<div class="ov hql"><form class="dlg" autocomplete="on"><h2>🔐 본부 운영자 로그인</h2>
+    <p>본부는 접수 홈페이지 <b>대표·관리자 계정</b>으로 로그인한 노트북만 쓸 수 있습니다. 인터넷이 될 때 한 번만 로그인하면 이 노트북이 기억합니다.</p>
+    <label>이메일 (아이디)</label><input name="email" type="email" required autocomplete="username">
+    <label>비밀번호</label><input name="pw" type="password" required autocomplete="current-password">
+    <div class="er"></div><button class="go" type="submit">로그인하고 본부로 쓰기</button>
+    <div style="text-align:center;margin-top:10px"><button class="lk" type="button" data-x>취소</button></div></form></div>`;
+  const f=box.querySelector('form'),er=f.querySelector('.er'),bt=f.querySelector('.go');setTimeout(()=>f.email.focus(),50);
+  f.querySelector('[data-x]').onclick=()=>{box.innerHTML='';};
+  f.onsubmit=async ev=>{ev.preventDefault();er.textContent='';bt.disabled=true;bt.textContent='확인하는 중…';const w=then?openNew():null;
+    try{const j=await (await fetch('/api/node/hqlock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'login',email:f.email.value.trim(),password:f.pw.value})})).json();
+      if(!j.ok)throw new Error(j.error||'로그인하지 못했습니다');box.innerHTML='';if(NODE)NODE.hqLock=j;if(then)await then(w);else draw();}
+    catch(e){if(w)w.close();er.textContent=e.message||String(e);bt.disabled=false;bt.textContent='로그인하고 본부로 쓰기';}};}
+async function becomeHq(w){if(!(await setRole('hq'))){if(w)w.close();return;}PICK=false;draw();go(w,'/hq/#admin');}
 let PICK=false;
 function draw(){stat();const el=document.getElementById('stage');
   if(!NODE){el.innerHTML='<div class="now none"><span class="now-k">현장 서버에 연결하지 못했습니다</span><span class="now-n"><b>검은 창(현장 모드 프로그램)이 켜져 있는지 확인해 주세요</b></span></div>';return;}
   el.innerHTML=PICK||!NODE.role||NODE.role===''||NODE.role==='none'?vPick():NODE.role==='hq'?vHq():vCourt();}
+document.addEventListener('click',async e=>{const h=e.target.closest('[data-hqlogin],[data-hqlogout]');if(h){
+    if(h.hasAttribute('data-hqlogin')){hqLoginDlg(null);return;}
+    if(!confirm('본부 잠그기: 이 노트북의 운영자 로그인을 지우고 본부에서 나옵니다. 다시 본부로 쓰려면 인터넷이 될 때 운영자 계정으로 로그인해야 합니다. 잠글까요?'))return;
+    await fetch('/api/node/hqlock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'logout'})});await load();return;}});
 document.addEventListener('click',async e=>{const t=e.target.closest('[data-court],[data-hqpick],[data-more],[data-cancel],[data-repick],[data-open],[data-hqopen],[data-link]');if(!t)return;
   if(t.dataset.court){if(!LOCAL&&!confirm('다른 기기에서 이 노트북의 코트를 바꿀까요?'))return;if(await setRole('court',t.dataset.court)){PICK=false;await load();}return;}
-  if(t.hasAttribute('data-hqpick')){if(NODE&&NODE.role==='court'&&!confirm('이 노트북을 「본부」로 바꿀까요? 코트 운영은 다른 노트북에서 해 주세요.'))return;const w=openNew();if(!(await setRole('hq'))){if(w)w.close();return;}PICK=false;draw();go(w,'/hq/#admin');return;}
+  if(t.hasAttribute('data-hqpick')){if(NODE&&NODE.role==='court'&&!confirm('이 노트북을 「본부」로 바꿀까요? 코트 운영은 다른 노트북에서 해 주세요.'))return;
+    if(!HQL().allowed){if(!LOCAL){alert('본부로 바꾸려면 그 노트북 화면에서 운영자 계정으로 로그인해야 합니다.');return;}hqLoginDlg(becomeHq);return;}
+    await becomeHq(openNew());return;}
   if(t.hasAttribute('data-more')){MORE=true;draw();return;}
   if(t.hasAttribute('data-cancel')){PICK=false;draw();return;}
   if(t.hasAttribute('data-repick')){PICK=true;draw();return;}
