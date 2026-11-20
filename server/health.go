@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -327,4 +328,96 @@ func handleBackupFromHQ(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.Strings(got)
 	writeJSON(w, 200, map[string]any{"ok": true, "files": got, "dir": autoDir()})
+}
+
+// v1.7.49 예비 노트북으로 코트 이어받기
+// GET /api/backup/hqlatest?app=poomsae[&meta=1] — 본부가 모아 둔 이 코트(같은 코트 글자)의 가장 최근 백업을 바로 돌려줍니다.
+// 경기 앱의 「본부에서 이 코트 이어받기」가 이것을 받아 「복구 실행」 칸에 올립니다.
+var appKo = map[string]string{"poomsae": "품새", "gyeokpa": "격파", "kyorugi": "겨루기"}
+
+func handleBackupHQLatest(w http.ResponseWriter, r *http.Request) {
+	if !isLocalReq(r) {
+		writeJSON(w, 403, map[string]any{"error": "local_only"})
+		return
+	}
+	c := getConfig()
+	if c.Court == "" {
+		writeJSON(w, 400, map[string]any{"error": "먼저 첫 화면에서 이 노트북의 코트를 골라 주세요"})
+		return
+	}
+	ko := appKo[r.URL.Query().Get("app")]
+	if ko == "" {
+		writeJSON(w, 400, map[string]any{"error": "app"})
+		return
+	}
+	hqSeenMu.Lock()
+	h := hqSeen
+	hqSeenMu.Unlock()
+	if q := r.URL.Query().Get("hq"); q != "" {
+		h = q
+	}
+	if h == "" {
+		writeJSON(w, 404, map[string]any{"error": "아직 본부 노트북과 연결되지 않았습니다. 같은 공유기에 연결하고 30초쯤 기다린 뒤 다시 눌러 주세요", "nohq": true})
+		return
+	}
+	hp := port
+	if v, err := strconv.Atoi(os.Getenv("KS_HQ_PORT")); err == nil && v > 0 { // 시험용: 한 컴퓨터에서 여러 대를 돌릴 때
+		hp = v
+	}
+	base := fmt.Sprintf("http://%s:%d", h, hp)
+	cli := &http.Client{Timeout: 20 * time.Second}
+	resp, err := cli.Get(base + "/api/hq/collected")
+	if err != nil {
+		writeJSON(w, 502, map[string]any{"error": "본부 노트북에 연결하지 못했습니다"})
+		return
+	}
+	var lst struct {
+		Courts map[string][]fileInfo `json:"courts"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&lst)
+	resp.Body.Close()
+	folder := c.Court + "코트"
+	var best fileInfo
+	for _, f := range lst.Courts[folder] {
+		if strings.HasSuffix(f.Name, "_백업(자동저장).json") && strings.Contains(f.Name, "_"+ko+"_백업") && f.At > best.At {
+			best = f
+		}
+	}
+	if best.Name == "" {
+		writeJSON(w, 404, map[string]any{"error": "본부에 " + folder + " " + ko + " 진행 기록이 아직 없습니다", "none": true})
+		return
+	}
+	rr, err := cli.Get(base + "/api/hq/cfile?court=" + url.QueryEscape(folder) + "&name=" + url.QueryEscape(best.Name))
+	if err != nil {
+		writeJSON(w, 502, map[string]any{"error": "본부에서 기록을 받지 못했습니다"})
+		return
+	}
+	b, err := io.ReadAll(io.LimitReader(rr.Body, 40<<20))
+	rr.Body.Close()
+	if err != nil || rr.StatusCode != 200 || len(b) == 0 {
+		writeJSON(w, 502, map[string]any{"error": "본부에서 기록을 받지 못했습니다"})
+		return
+	}
+	var d struct {
+		App       string            `json:"app"`
+		SavedAt   int64             `json:"savedAt"`
+		Roster    []json.RawMessage `json:"roster"`
+		Divisions []json.RawMessage `json:"divisions"`
+		Results   []json.RawMessage `json:"results"`
+	}
+	if json.Unmarshal(b, &d) != nil {
+		writeJSON(w, 502, map[string]any{"error": "본부의 기록 파일이 깨져 있습니다"})
+		return
+	}
+	at := d.SavedAt
+	if at == 0 {
+		at = best.At
+	}
+	out := map[string]any{"ok": true, "court": c.Court, "name": best.Name, "at": at, "roster": len(d.Roster), "divs": len(d.Divisions), "results": len(d.Results)}
+	if r.URL.Query().Get("meta") != "1" {
+		out["data"] = json.RawMessage(b)
+		// 받은 기록은 이 노트북 「자동저장」에도 남겨 둠
+		_, _ = writeOver(autoDir(), strings.TrimSuffix(best.Name, "_백업(자동저장).json")+"_본부에서 받은 백업.json", b)
+	}
+	writeJSON(w, 200, out)
 }

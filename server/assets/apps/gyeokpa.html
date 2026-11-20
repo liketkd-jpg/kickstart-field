@@ -6456,6 +6456,7 @@ async function post(name,blob){const r=await fetch(`/api/results/auto?name=${enc
 async function backup(){
   if(Date.now()-ST.bat<60000)return; /* 1분에 한 번까지 */
   const bd=g('backupData');if(typeof bd!=='function')return;const d=bd();
+  if(!Array.isArray(d.roster)||!d.roster.length)return; /* v1.7.49 선수가 없는 빈 노트북은 보내지 않음 (본부에 모아 둔 이 코트 기록을 빈 것으로 덮지 않게) */
   const sig=JSON.stringify({...d,savedAt:0});if(sig===ST.bsig)return;if(sig.length>12e6){ST.bsig=sig;ST.bat=Date.now();return;}
   await post(`${base()}_백업(자동저장).json`,new Blob([JSON.stringify(d)],{type:'application/json'}));ST.bsig=sig;ST.bat=Date.now();
 }
@@ -6912,3 +6913,58 @@ body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .lim{font-size:
 body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .dzt{font-size:min(2.1vw,3.7vh)!important}
 body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbstat{font-size:min(2vw,3.5vh)!important}
 </style>
+<script>/* v1.7.49 예비 노트북으로 코트 이어받기 — 코트 노트북이 고장 나면 새 노트북에서 같은 코트를 고르고
+   「본부에서 이 코트 이어받기」를 누르면, 본부가 모아 둔 그 코트의 가장 최근 진행 기록(선수·부문·점수)을 불러옵니다. */
+(function(){
+if(window.KS_TAKE)return;
+const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
+const COURT=()=>!!(window.KS_FIELD&&window.KS_FIELD.role==='court');
+const APPK=typeof g('SHEETS')!=='undefined'?'poomsae':typeof g('KINDS')!=='undefined'?'kyorugi':'gyeokpa';
+const KO={poomsae:'품새',gyeokpa:'격파',kyorugi:'겨루기'}[APPK];
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hm=t=>{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+const ago=t=>{const m=Math.max(0,Math.round((Date.now()-t)/60000));return m<1?'방금':m<60?m+'분 전':Math.floor(m/60)+'시간 '+(m%60)+'분 전';};
+let META=null,BUSY=false,HIDE=false;
+async function meta(){try{const r=await fetch('/api/backup/hqlatest?meta=1&app='+APPK,{cache:'no-store'});const j=await r.json().catch(()=>({}));META=r.ok?j:{err:j.error||('HTTP '+r.status),none:!!j.none,nohq:!!j.nohq};}catch(e){META={err:'본부 노트북에 연결하지 못했습니다'};}return META;}
+async function take(){
+  if(BUSY)return;BUSY=true;const t=window.toast||(m=>alert(m));
+  try{t(`본부에서 ${KO} 진행 기록을 받는 중입니다…`);
+    const r=await fetch('/api/backup/hqlatest?app='+APPK,{cache:'no-store'});const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.data){t(j.error||'본부에서 기록을 받지 못했습니다');return;}
+    /* 허가 코드가 없는 연습 모드 노트북은 선수 20명까지만 들어가므로, 먼저 허가 코드를 넣게 함 */
+    const LIM=window.KS_LIC&&(typeof KS_LIC.limit==='number'?KS_LIC.limit:20);
+    if(window.KS_LIC&&!KS_LIC.ok()&&j.roster>LIM){t(`이 노트북은 아직 「연습 모드」라 선수 ${LIM}명까지만 들어갑니다. 왼쪽 아래 「허가 코드 넣기」로 허가 코드를 먼저 넣은 뒤 다시 「이어받기」를 눌러 주세요 (본부 기록 선수 ${j.roster}명)`,9000);try{KS_LIC.open&&KS_LIC.open();}catch(e){}return;}
+    const rb=g('readBackup');if(typeof rb!=='function'){t('이 화면에서는 이어받을 수 없습니다');return;}
+    await rb(new Blob([JSON.stringify(j.data)],{type:'application/json'}));
+    if(!/^#?admin-settings/.test(location.hash))location.hash='#admin-settings';
+    await new Promise(r=>setTimeout(r,350));
+    try{const A=g('ACT');if(A&&typeof A.wzClose==='function')A.wzClose();}catch(e){} /* 새 노트북의 「시작 마법사」는 닫음 */
+    try{if(typeof window.ssOpen==='function')window.ssOpen('backup');else{const r=g('render');if(typeof r==='function')r();}}catch(e){}
+    t(`${j.court}코트 ${KO} 기록(${hm(j.at)} 저장 · 선수 ${j.roster} · 점수 ${j.results}건)을 불러왔습니다. 「복구 실행」을 눌러야 바뀝니다`);
+    setTimeout(()=>{const el=document.querySelector('[data-do="restoreRun"]');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400);
+  }finally{BUSY=false;}}
+/* 1) 대회 설정 화면: 이어받기 칸 */
+try{const as4=g('aSettings');if(typeof as4==='function'&&COURT()){(0,eval)('aSettings=function(){return window.KS_TAKE.wrap.apply(this,arguments);}');}
+  window.KS_TAKE={take,meta,wrap:function(){const h=as4.apply(this,arguments);const m=META;
+    const info=m&&m.ok?`본부에 저장된 <b>${esc(m.court)}코트 ${KO}</b> 기록: <b>${hm(m.at)}</b> (${ago(m.at)}) · 선수 ${m.roster} · 부문 ${m.divs} · 점수 ${m.results}건`:m&&m.err?esc(m.err):'본부에 저장된 기록을 확인하는 중…';
+    return h+`<div style="margin-top:14px"><div class="panel ops"><h2>🔁 예비 노트북으로 코트 이어받기</h2>
+      <span class="small muted">이 코트 노트북이 고장 나서 다른 노트북으로 바꿨을 때 씁니다. 첫 화면에서 <b>고장 난 노트북과 같은 코트</b>를 고른 뒤 아래 단추를 누르면, 본부가 모아 둔 그 코트의 진행 기록(선수·부문·점수)을 가져옵니다. 본부에는 1분쯤마다 저장되므로 고장 직전 1~2명 점수는 다시 넣어야 할 수 있습니다.</span>
+      <span class="small">${info}</span>
+      <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn primary" data-take="go" ${m&&m.ok?'':'disabled'}>🔁 본부에서 이 코트 이어받기</button><button class="btn" data-take="check">다시 확인</button></div></div></div>`;}};
+}catch(e){window.KS_TAKE={take,meta};}
+/* 2) 선수가 하나도 없는 새 노트북이면 화면 위에 알림 */
+function banner(){
+  let el=document.getElementById('ksTakeBar');const h=(location.hash||'').replace('#','');
+  const S=g('S');const empty=S&&Array.isArray(S.roster)&&S.roster.length===0;
+  const show=COURT()&&!HIDE&&empty&&(h===''||/^admin/.test(h))&&META&&META.ok&&META.roster>0;
+  if(!show){if(el)el.remove();return;}
+  if(!el){el=document.createElement('div');el.id='ksTakeBar';el.style.cssText='position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:99999;max-width:min(860px,94vw);background:#1E1A12;color:#F6F1E6;border:2px solid #E2C27A;border-radius:14px;padding:12px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:15px';document.body.appendChild(el);}
+  const html=`<span style="flex:1;min-width:260px">🔁 이 노트북에는 아직 선수가 없습니다. 본부에 <b>${esc(META.court)}코트 ${KO}</b> 진행 기록이 있습니다 — ${hm(META.at)} 저장 (${ago(META.at)}) · 선수 ${META.roster} · 점수 ${META.results}건</span><button class="btn primary" data-take="go">이어받기</button><button class="btn sm ghost" data-take="hide">닫기</button>`;
+  if(el.__h!==html){el.innerHTML=html;el.__h=html;}}
+async function tick(){if(!COURT())return;const S=g('S');const h=(location.hash||'').replace('#','');
+  const need=(S&&Array.isArray(S.roster)&&S.roster.length===0&&(h===''||/^admin/.test(h)))||/^admin-settings/.test(h);
+  if(need){await meta();banner();try{const sc=g('schedule')||g('render');if(/^admin-settings/.test(h)&&typeof sc==='function'&&!document.activeElement.closest?.('input,textarea,select'))sc();}catch(e){}}else banner();}
+setTimeout(tick,2500);(function loop(){setTimeout(async()=>{await tick();loop();},META&&META.ok?15000:5000);})(); /* 본부와 아직 연결 전이면 5초마다 다시 확인 */window.addEventListener('hashchange',()=>setTimeout(tick,300));
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-take]');if(!b||b.disabled)return;const k=b.dataset.take;
+  if(k==='go')take();else if(k==='hide'){HIDE=true;banner();}else if(k==='check'){meta().then(()=>{try{(g('schedule')||g('render'))();}catch(e){}banner();});}});
+})();</script>

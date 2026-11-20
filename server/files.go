@@ -293,6 +293,14 @@ func collectSaves(addr, court string, saves []fileInfo) {
 			if resp.StatusCode != 200 || len(b) == 0 {
 				return
 			}
+			if strings.HasSuffix(f.Name, "_백업(자동저장).json") && backupRoster(b) == 0 && backupRoster(readSmall(filepath.Join(resultsDir, "본부수집", court+"코트", f.Name))) > 0 {
+				// v1.7.49 빈 노트북(예비 노트북 등)의 빈 백업으로 이 코트의 진행 기록을 덮지 않음
+				collectMu.Lock()
+				collected[key] = f.At
+				collectMu.Unlock()
+				log.Printf("결과 모으기: %s코트 %s — 선수가 없는 백업이라 기존 기록을 지킴", court, f.Name)
+				return
+			}
 			if _, err := writeOver(filepath.Join(resultsDir, "본부수집", court+"코트"), f.Name, b); err == nil {
 				collectMu.Lock()
 				collected[key] = f.At
@@ -326,4 +334,26 @@ func handleHQFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	serveFile(w, r, filepath.Join(resultsDir, "본부수집", court), r.URL.Query().Get("name"))
+}
+
+// 백업 파일의 선수 수 (읽지 못하면 -1)
+func backupRoster(b []byte) int {
+	if len(b) == 0 {
+		return -1
+	}
+	var d struct {
+		Roster []json.RawMessage `json:"roster"`
+	}
+	if json.Unmarshal(b, &d) != nil {
+		return -1
+	}
+	return len(d.Roster)
+}
+
+func readSmall(p string) []byte {
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return nil
+	}
+	return b
 }
