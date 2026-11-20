@@ -116,7 +116,7 @@ func handleNode(w http.ResponseWriter, r *http.Request) {
 		old := getConfig()
 		// v1.7.50 본부 잠금: 운영자 로그인을 한 노트북만 본부로
 		req.HQAuth, req.HQLockSeen = old.HQAuth, true
-		req.HQOld = old.HQOld && old.Role == "hq" && req.Role == "hq"
+		req.HQOld = false
 		if req.Role == "hq" && !hqAllowed(req) {
 			writeJSON(w, 403, map[string]any{"error": "본부는 운영자 계정으로 로그인한 노트북만 쓸 수 있습니다", "needLogin": true})
 			return

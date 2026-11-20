@@ -4,8 +4,7 @@ package main
 //   - 접수 홈페이지 「운영자」 계정(대표·관리자)으로 한 번 로그인한 노트북만 「대회 본부」로 쓸 수 있습니다.
 //   - 로그인은 인터넷이 될 때 한 번만 하면 이 노트북이 기억합니다. 그 뒤에는 인터넷이 없어도 본부로 씁니다.
 //   - 기억한 로그인은 이 노트북 이름과 묶여 있어, 설정.json을 다른 노트북에 복사해도 통하지 않습니다.
-//   - 이 판으로 업데이트하기 전부터 본부였던 노트북은 그대로 본부로 쓸 수 있습니다(대회 날 갑자기 잠기지 않게).
-//     코트로 바꿨다가 다시 본부로 바꿀 때는 로그인이 필요합니다.
+//   - v1.7.51: 예전부터 본부였던 노트북도 예외 없이 로그인해야 본부가 열립니다.
 
 import (
 	"bytes"
@@ -69,31 +68,28 @@ func hqAllowed(c nodeConfig) bool {
 	if hqAuthValid(c.HQAuth) {
 		return true
 	}
-	if c.Role == "hq" && c.HQOld { // 업데이트 전부터 본부였던 노트북
-		return true
-	}
 	return os.Getenv("KS_ROLE") == "hq" // 시험용
 }
 
-// 처음 켤 때: 예전부터 본부였던 노트북은 그대로 쓰게 표시
+// 켤 때: 운영자 로그인이 없는 본부는 열지 않음 (v1.7.51부터 예외 없음 — 예전부터 본부였던 노트북도 로그인 필요)
 func initHQLock() {
 	c := getConfig()
-	if c.Role == "hq" && !c.HQLockSeen && !hqAuthValid(c.HQAuth) {
-		c.HQOld = true
+	ch := false
+	if !c.HQLockSeen || c.HQOld {
+		c.HQLockSeen, c.HQOld, ch = true, false, true
 	}
-	if !c.HQLockSeen {
-		c.HQLockSeen = true
+	if c.Role == "hq" && !hqAllowed(c) {
+		c.Role, c.Court, ch = "", "", true
+		fmt.Println("\n  본부 잠금: 운영자 로그인이 없어 본부로 열지 않았습니다. 첫 화면에서 「대회 본부」를 누르고 운영자 계정으로 로그인해 주세요.")
+	}
+	if ch {
 		setConfig(c)
-	} else if c.Role == "hq" && !hqAllowed(c) { // 설정 파일을 손으로 고쳐 본부로 만든 경우
-		c.Role, c.Court = "", ""
-		setConfig(c)
-		fmt.Println("\n  본부 잠금: 운영자 로그인이 없어 본부로 열지 않았습니다. 첫 화면에서 다시 골라 주세요.")
 	}
 }
 
 func hqLockState() map[string]any {
 	c := getConfig()
-	v := map[string]any{"allowed": hqAllowed(c), "old": c.Role == "hq" && c.HQOld && !hqAuthValid(c.HQAuth)}
+	v := map[string]any{"allowed": hqAllowed(c), "old": false}
 	if hqAuthValid(c.HQAuth) {
 		v["email"], v["name"], v["role"], v["at"] = c.HQAuth.Email, c.HQAuth.Name, c.HQAuth.Role, c.HQAuth.At
 	}
