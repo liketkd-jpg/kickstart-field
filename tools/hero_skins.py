@@ -173,7 +173,14 @@ LUX = r"""
 %(P)s .board.v3 .bl::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 35%%,rgba(255,255,255,.07) 48%%,transparent 60%%);pointer-events:none}
 %(P)s .board.v3 .bl .hero{position:absolute;left:0;right:0;bottom:18%%;height:62%%;display:grid;place-items:center;opacity:.13;filter:grayscale(1) brightness(2.2) contrast(.8);pointer-events:none;z-index:0}
 %(P)s .board.v3 .bl .hero svg{height:100%%;width:auto;filter:none!important}
-%(P)s .board.v3 .bl>*:not(.hero):not(.bplace){position:relative;z-index:1}%(P)s .board.v3 .bl .bplace{z-index:2}
+%(P)s .board.v3 .bl>*:not(.hero):not(.bplace):not(.lfx){position:relative;z-index:1}
+%(P)s .board .bl{--fxc:#e3c98f}
+%(P)s .board .bl.fx-chg .lfx .lflash{background:linear-gradient(105deg,transparent 40%%,rgba(255,236,200,.42) 50%%,transparent 60%%);animation-duration:1.4s}
+%(P)s .board .bl[data-m^="run"] .lfx .ls{height:2px;background:linear-gradient(90deg,transparent,rgba(227,201,143,1) 65%%,#fffaf0);box-shadow:0 0 1.2vh rgba(227,201,143,.9);animation-duration:1.1s}
+%(P)s .board .bl.fx-hit .lfx .lwave,%(P)s .board .bl.fx-win .lfx .lwave{border-width:1px;box-shadow:0 0 1.4vh rgba(227,201,143,.6),inset 0 0 1.4vh rgba(227,201,143,.35);animation-duration:1.4s}
+%(P)s .board .bl.fx-hit>.bn{animation-duration:.7s}
+%(P)s .board .bl.win .lfx .lrays{background:linear-gradient(180deg,rgba(240,216,160,.85),transparent 80%%)}
+%(P)s .podium.p1 .fig::before{background:linear-gradient(180deg,rgba(240,216,160,.85),transparent 80%%)}%(P)s .board.v3 .bl .bplace{z-index:2}
 %(P)s .board.v3 .bl .htag{background:transparent!important;color:var(--muted)!important;font-family:"Saira",sans-serif;font-weight:500!important;letter-spacing:.22em!important;box-shadow:none!important;padding:0!important;display:flex;align-items:center;gap:calc(.6*var(--u,1vw))}
 %(P)s .board.v3 .bl .htag::before{content:"";width:calc(.55*var(--u,1vw));height:calc(.55*var(--u,1vw));border-radius:50%%;background:var(--c);box-shadow:0 0 calc(.8*var(--u,1vw)) var(--c)}
 %(P)s .board.v3 .bl .bn{font-weight:600!important;letter-spacing:.01em;color:#fbfbfa;text-shadow:none!important;align-self:center;font-size:calc(var(--bnu,4)*1.25*var(--u,1vw))!important}
