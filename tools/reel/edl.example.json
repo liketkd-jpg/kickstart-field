@@ -1,0 +1,23 @@
+{
+  "source_dir": "영상 원본/야외 시범",
+  "output": "완성본/아리랑시범단_릴스.mp4",
+  "segments": [
+    {"label": "오프닝 격파", "kind": "impact", "src": "시범.mp4", "impact": 125.40,
+     "pre": 0.5, "post": 0.5, "zoom": 1.5, "cx": 0.5, "cy": 0.45, "crop_x": 0.5},
+    {"label": "제목", "src": "시범.mp4", "start": 126.0, "end": 128.2, "speed": 1.0,
+     "title": ["국가대표 용인대 태권도", "아리랑 시범단"], "title_size": 96},
+    {"label": "아리랑", "src": "시범.mp4", "start": 10.0, "end": 13.0, "speed": 0.5,
+     "zoom_from": 1.0, "zoom": 1.15, "fade_in": 0.3, "caption": "아리랑의 멋"},
+    {"label": "발차기1", "kind": "impact", "src": "시범.mp4", "impact": 60.83,
+     "pre": 0.4, "post": 0.3, "slow": 0.4, "zoom": 1.45, "cx": 0.55, "cy": 0.4,
+     "caption": "빠른 발차기"},
+    {"label": "격파1", "kind": "impact", "src": "시범.mp4", "impact": 98.12,
+     "pre": 0.9, "post": 0.6, "slow": 0.3, "zoom": 1.5, "caption": "강인한 격파"},
+    {"label": "케이팝 댄스", "src": "시범.mp4", "start": 200.0, "end": 202.0,
+     "zoom_from": 1.0, "zoom": 1.25, "cx": 0.4, "cy": 0.35, "caption": "케이팝 댄스"},
+    {"label": "시민 환호", "src": "시범.mp4", "start": 240.0, "end": 241.6,
+     "caption": "자랑스러운 대한민국 태권도"},
+    {"label": "단체 인사", "src": "시범.mp4", "start": 250.0, "end": 251.5, "speed": 0.5,
+     "fade_out": 0.6, "ending": ["함께해 주신 시민 여러분,", "감사합니다"]}
+  ]
+}
