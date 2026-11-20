@@ -158,7 +158,7 @@ LUX = r"""
 %(P)s .board.v3 .bev b small{-webkit-text-fill-color:var(--muted);color:var(--muted);letter-spacing:.06em;font-weight:300}
 %(P)s .board.v3 .bround b{background:transparent!important;color:var(--acc)!important;border:1px solid rgba(201,169,110,.7);border-radius:999px!important;font-family:"Saira",sans-serif;font-weight:400!important;letter-spacing:.3em;box-shadow:none!important}
 %(P)s .board.v3 .bround small{letter-spacing:.06em}
-%(P)s .board.v3 .bclock{font-family:"Saira",sans-serif!important;font-weight:200!important;letter-spacing:.02em;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;background:var(--glass)!important;border:1px solid var(--hair2)!important;border-radius:calc(1*var(--u,1vw))!important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+%(P)s .board.v3 .bclock{font-family:"Saira",sans-serif!important;font-weight:300!important;letter-spacing:.02em;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;background:var(--glass)!important;border:1px solid var(--hair2)!important;border-radius:calc(1*var(--u,1vw))!important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 calc(2*var(--u,1vw)) calc(4*var(--u,1vw)) calc(-1.6*var(--u,1vw)) rgba(0,0,0,.95)!important;text-shadow:0 0 calc(2.4*var(--u,1vw)) rgba(255,255,255,.18)!important;font-variant-numeric:tabular-nums}
 %(P)s .board.v3 .bbest span{color:var(--acc);letter-spacing:.3em;font-weight:400}
 %(P)s .board.v3 .bbest b{font-family:"Saira",sans-serif;font-weight:300}
@@ -174,11 +174,11 @@ LUX = r"""
 %(P)s .board.v3 .bl .hero{position:absolute;left:0;right:0;bottom:18%%;height:62%%;display:grid;place-items:center;opacity:.13;filter:grayscale(1) brightness(2.2) contrast(.8);pointer-events:none;z-index:0}
 %(P)s .board.v3 .bl .hero svg{height:100%%;width:auto;filter:none!important}
 %(P)s .board.v3 .bl>*:not(.hero):not(.bplace){position:relative;z-index:1}%(P)s .board.v3 .bl .bplace{z-index:2}
-%(P)s .board.v3 .bl .htag{background:transparent!important;color:var(--muted)!important;font-family:"Saira",sans-serif;font-weight:400!important;letter-spacing:.42em!important;box-shadow:none!important;padding:0!important;display:flex;align-items:center;gap:calc(.6*var(--u,1vw))}
+%(P)s .board.v3 .bl .htag{background:transparent!important;color:var(--muted)!important;font-family:"Saira",sans-serif;font-weight:500!important;letter-spacing:.22em!important;box-shadow:none!important;padding:0!important;display:flex;align-items:center;gap:calc(.6*var(--u,1vw))}
 %(P)s .board.v3 .bl .htag::before{content:"";width:calc(.55*var(--u,1vw));height:calc(.55*var(--u,1vw));border-radius:50%%;background:var(--c);box-shadow:0 0 calc(.8*var(--u,1vw)) var(--c)}
-%(P)s .board.v3 .bl .bn{font-weight:300!important;letter-spacing:.02em;color:#fbfbfa;text-shadow:none!important;align-self:center;font-size:calc(var(--bnu,4)*1.25*var(--u,1vw))!important}
-%(P)s .board.v3 .bl .bt{color:var(--muted);letter-spacing:.14em;font-weight:300}
-%(P)s .board.v3 .bl .btime{width:86%%;justify-self:center;background:rgba(0,0,0,.35)!important;border:1px solid var(--hair)!important;border-radius:calc(.7*var(--u,1vw))!important;font-family:"Saira",sans-serif!important;font-weight:200!important;font-size:calc(5.6*var(--u,1vw))!important;color:#f6f6f4!important;text-shadow:none!important;font-variant-numeric:tabular-nums;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+%(P)s .board.v3 .bl .bn{font-weight:600!important;letter-spacing:.01em;color:#fbfbfa;text-shadow:none!important;align-self:center;font-size:calc(var(--bnu,4)*1.25*var(--u,1vw))!important}
+%(P)s .board.v3 .bl .bt{color:#b9bec6!important;letter-spacing:.06em;font-weight:400!important}
+%(P)s .board.v3 .bl .btime{width:86%%;justify-self:center;background:rgba(0,0,0,.35)!important;border:1px solid var(--hair)!important;border-radius:calc(.7*var(--u,1vw))!important;font-family:"Saira",sans-serif!important;font-weight:400!important;font-size:calc(5.6*var(--u,1vw))!important;color:#f6f6f4!important;text-shadow:none!important;font-variant-numeric:tabular-nums;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 %(P)s .board.v3 .bl .bpen span{background:transparent!important;border:1px solid rgba(201,138,143,.7)!important;color:#e8b9bd!important;font-weight:400}
 %(P)s .board.v3 .bl .bplace{filter:saturate(.75) drop-shadow(0 .6vw 1vw rgba(0,0,0,.6))}
 /* 화면이 바뀔 때: 느리게 떠오름 · 출발할 때: 빛줄기가 지나가며 화면이 켜짐 */
@@ -201,7 +201,7 @@ LUX = r"""
 %(P)s .squad>div{background:var(--glass),rgba(14,15,18,.6)!important;border:1px solid var(--hair)!important;border-radius:1vw!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2.4vw 4vw -1.6vw rgba(0,0,0,.95)!important;position:relative;overflow:hidden}
 %(P)s .squad>div::before{content:"";position:absolute;left:15%%;right:15%%;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--c),transparent);box-shadow:0 0 1vw var(--c)}
 %(P)s .squad svg{filter:saturate(.25) contrast(1.05) drop-shadow(0 1.6vw 1.6vw rgba(0,0,0,.7))!important}
-%(P)s .squad b{font-family:"Saira",sans-serif!important;font-weight:300!important;letter-spacing:.16em;white-space:nowrap;font-size:min(2.6vw,3.2vh)!important;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;text-shadow:none!important}
+%(P)s .squad b{font-family:"Saira",sans-serif!important;font-weight:500!important;letter-spacing:.16em;white-space:nowrap;font-size:min(2.6vw,3.2vh)!important;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;text-shadow:none!important}
 %(P)s .squad span{color:var(--muted)!important;letter-spacing:.04em;white-space:nowrap;font-size:min(1.6vw,2.4vh)!important;font-weight:400!important}
 /* 우승 화면: 위에서 내려오는 조명 · 플래티넘 유리 시상대 · 1등은 샴페인 골드 */
 %(P)s .champwrap{position:relative}
@@ -209,7 +209,7 @@ LUX = r"""
 %(P)s .board.v3 .champtitle{font-family:"Saira","Noto Sans KR",sans-serif!important;font-weight:200!important;letter-spacing:.42em!important;background:var(--champ)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}
 %(P)s .podium{background:var(--glass),rgba(14,15,18,.6);border:1px solid var(--hair);border-radius:1vw;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2.4vw 4vw -1.6vw rgba(0,0,0,.95);padding:1vh .6vw;position:relative;overflow:hidden}
 %(P)s .podium svg{filter:saturate(.25) drop-shadow(0 1.4vw 1.4vw rgba(0,0,0,.7))!important}
-%(P)s .podium b{font-family:"Noto Sans KR",sans-serif!important;font-weight:300!important;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;text-shadow:none!important}
+%(P)s .podium b{font-family:"Noto Sans KR",sans-serif!important;font-weight:600!important;color:#f6f6f4!important;-webkit-text-fill-color:#f6f6f4;text-shadow:none!important}
 %(P)s .podium .tm{font-family:"Saira",sans-serif!important;font-weight:300!important}
 %(P)s .podium .blk{background:transparent!important;border-top:1px solid var(--hair)!important;box-shadow:none!important;color:var(--muted)!important}
 %(P)s .podium.p1{border-color:rgba(201,169,110,.75);box-shadow:inset 0 1px 0 rgba(255,236,200,.4),0 0 0 1px rgba(201,169,110,.25),0 3vw 6vw -2vw rgba(201,169,110,.35)}
@@ -268,6 +268,7 @@ PHOTO_CSS = r"""
 :root[data-photo="1"] .board.v3 .bl .hero{opacity:1!important;filter:none!important;bottom:auto!important;top:6%!important;height:62%!important;-webkit-mask-image:linear-gradient(to bottom,#000 30%,rgba(0,0,0,.35) 62%,transparent 92%);mask-image:linear-gradient(to bottom,#000 30%,rgba(0,0,0,.35) 62%,transparent 92%)}
 :root[data-photo="1"] .squad svg,:root[data-photo="1"] .podium svg,:root[data-photo="1"] .lvc svg{filter:drop-shadow(0 1.4vw 1.4vw rgba(0,0,0,.7))!important}
 :root[data-photo="1"] .podium .fig{position:relative}
+:root[data-photo="1"] .podium.p1 .blk{height:10vh!important}
 :root[data-photo="1"] .podium .fig svg.photo{position:absolute;inset:0;width:100%!important;height:100%!important;max-height:none!important}
 :root[data-photo="1"] .podium.p1 svg{filter:drop-shadow(0 0 1.4vw rgba(201,169,110,.45)) drop-shadow(0 1.4vw 1.4vw rgba(0,0,0,.7))!important}
 :root[data-photo="1"] .board.v3 .bl .hero{display:block!important;overflow:hidden}
@@ -289,23 +290,33 @@ SKINJS_A, SKINJS_B = '/* SKINJS:START */', '/* SKINJS:END */'
 
 ART_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hero_art')
 
+POSES = ('ready', 'run', 'kick', 'win')
+
 def art_list(app):
+    """tools/hero_art/<app>/<레인>.webp (차렷) 가 네 장 다 있어야 켜짐.
+    <레인>_run / _kick / _win .webp 는 있으면 쓰고, 없으면 차렷 그림으로 대신함."""
     d = os.path.join(ART_DIR, app)
     if not all(os.path.exists(os.path.join(d, f'{i}.webp')) for i in range(4)): return []
     from PIL import Image
     out = []
     for i in range(4):
-        f = os.path.join(d, f'{i}.webp'); w, h = Image.open(f).size
-        out.append((w, h, base64.b64encode(open(f, 'rb').read()).decode()))
+        lane = {}
+        for pose in POSES:
+            f = os.path.join(d, f'{i}.webp' if pose == 'ready' else f'{i}_{pose}.webp')
+            if os.path.exists(f):
+                w, h = Image.open(f).size
+                lane[pose] = (w, h, base64.b64encode(open(f, 'rb').read()).decode())
+        out.append(lane)
     return out
 
 def art_js(app):
     L = art_list(app)
     if not L: return "const HERO_ART=[];\n"
     # 그림은 한 번만 풀어서 짧은 blob 주소로 씁니다 (화면을 다시 그릴 때마다 긴 글자를 붙이지 않도록)
-    items = ','.join(f"['{b}',{w},{h}]" for w, h, b in L)
-    return ("const HERO_ART=[" + items + "].map(([b,w,h])=>{try{const s=atob(b),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);"
-            "return{u:URL.createObjectURL(new Blob([a],{type:'image/webp'})),w,h}}catch(e){return{u:'data:image/webp;base64,'+b,w,h}}});\n")
+    lanes = ','.join('{' + ','.join(f"{k}:['{b}',{w},{h}]" for k, (w, h, b) in lane.items()) + '}' for lane in L)
+    return ("const HERO_ART=[" + lanes + "].map(o=>{const r={};for(const k in o){const[b,w,h]=o[k];try{const s=atob(b),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);"
+            "r[k]={u:URL.createObjectURL(new Blob([a],{type:'image/webp'})),w,h}}catch(e){r[k]={u:'data:image/webp;base64,'+b,w,h}}}return r});\n"
+            "const POSE_OF={run:'run',runx:'run',p1:'win',p1x:'win',p2:'kick',p3:'kick',kiai:'kick',p4:'ready',ready:'ready'};\n")
 
 def skin_js(app):
     return (SKINJS_A + "\n/* 디자인 형식: 1타입 히어로(지금 그대로) · 2타입 럭셔리 · 3타입 그림 히어로(럭셔리 바탕 + tools/hero_art 그림) — S.cfg.skin 에 저장 */\n"
@@ -315,8 +326,8 @@ def skin_js(app):
             "function lux(){return skinOf()!=='1'}\n"
             "function applySkin(){const k=skinOf(),el=document.documentElement,b=k==='3'?'2':k,ph=k==='3'?'1':'0';if(el.dataset.skin!==b)el.dataset.skin=b;if(el.dataset.photo!==ph)el.dataset.photo=ph;"
             "HEROES.forEach((h,i)=>{if(h.hex0==null)h.hex0=h.hex;h.hex=SKIN_HEX[k]?SKIN_HEX[k][i]:h.hex0})}\n"
-            "if(typeof heroFig==='function'&&HERO_ART.length){const _hf=heroFig;heroFig=function(i,cls='',mode='ready'){const a=skinOf()==='3'&&HERO_ART[i];if(!a)return _hf.apply(this,arguments);"
-            "return`<svg class=\"hf photo ${cls}\" data-mode=\"${mode}\" viewBox=\"0 0 ${a.w} ${a.h}\" preserveAspectRatio=\"xMidYMax meet\" role=\"img\" aria-label=\"${esc(heroName(i))}\"><image href=\"${a.u}\" width=\"${a.w}\" height=\"${a.h}\"/></svg>`}}\n"
+            "if(typeof heroFig==='function'&&HERO_ART.length){const _hf=heroFig;heroFig=function(i,cls='',mode='ready'){const L=skinOf()==='3'&&HERO_ART[i];if(!L)return _hf.apply(this,arguments);const ps=POSE_OF[mode]||'ready',a=L[ps]||L.ready;"
+            "return`<svg class=\"hf photo ${cls}\" data-mode=\"${mode}\" data-pose=\"${L[ps]?ps:'ready'}\" viewBox=\"0 0 ${a.w} ${a.h}\" preserveAspectRatio=\"xMidYMax meet\" role=\"img\" aria-label=\"${esc(heroName(i))}\"><image href=\"${a.u}\" width=\"${a.w}\" height=\"${a.h}\"/></svg>`}}\n"
             "let _skinK='',_skinPh='';\n"
             "function lxSweep(){if(!lux()||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const o=document.createElement('div');o.className='lxscan';document.body.appendChild(o);setTimeout(()=>o.remove(),1700)}\n"
             "function skinEnter(){const b=document.getElementById('board');if(!b)return;"
