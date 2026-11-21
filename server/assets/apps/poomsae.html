@@ -2658,6 +2658,9 @@ function pbanHtml(cur){
    ② 전원 입력 → 공개: 심판별 항목 점수와 합계·최종 점수
    ③ 몇 초 뒤: "이름 ○점 · 현재 ○위"와 지금까지 연기한 선수 전원의 순위표(순위가 바뀌는 모습) */
 const CB_SCORE_MS=7000;
+/* v1.7.55 메달(금·은·동)은 그 조·단계의 모든 선수가 끝난 뒤에만 보여 줌 (예선처럼 다음 단계가 있으면 메달 없이 순위·진출선만) */
+function medalOn(d,st){try{if(!d)return false;st=st||curStage(d);const p=advancePlan(d);if(p&&!p.final)return false;const r=stageRanking(d,st);return r.length>0&&r.every(x=>x.agg);}catch(e){return false;}}
+const medalMax=()=>COMM()?4:3;
 function stageRanked(d,st){const sr=stageRanking(d,st).filter(x=>x.agg);let rank=0;sr.forEach((x,j)=>{const t=j?rowCmp(d,st,sr[j-1],x):null;if(j===0||t.c!==0)rank=j+1;x.rank=rank;});return sr;}
 function cbRanking(d,st,cur,revAt){
   const rows=stageRanked(d,st),me=rows.find(x=>x.id===cur.athleteId||x.id===(cur.entries&&cur.entries[0]&&cur.entries[0].athleteId));
@@ -2665,9 +2668,9 @@ function cbRanking(d,st,cur,revAt){
   const from=new Map();prev.forEach((x,i)=>from.set(x.id,i));if(meId)from.set(meId,rows.length);
   const p=advancePlan(d),quota=p&&p.quota&&!p.final?p.quota:3,isPre=!p.final;
   const t0=(revAt||Date.now())+CB_SCORE_MS+500,dl=t0-Date.now();
-  const unit=d.event&&d.event!=='ind'?'팀':'명',big=rows.length>12;
+  const unit=d.event&&d.event!=='ind'?'팀':'명',big=rows.length>12,mOn=medalOn(d,st);
   const list=rows.map((x,i)=>{const a=athlete(x.id)||{},f=from.get(x.id)??i;
-    return `<div class="cbr ${x.id===meId?'me':''} ${x.rank<=quota?'in':''}" style="--from:${f-i};--dl:${dl}ms"><span class="cbrk ${COMM()&&x.rank<=4?"md m"+Math.min(3,x.rank):""}">${COMM()&&x.rank<=4?["","금","은","동","동"][x.rank]:x.rank}</span><span class="cbnm"><b>${esc(a.name||'')}</b><small>${esc(a.team||'')}</small></span><span class="cbsc">${fmt3(x.agg.final)}</span></div>${isPre&&i===quota-1&&rows.length>quota?`<div class="cbcut" style="--dl:${dl}ms"><span>${STAGES[p.next]||'결선'} 진출선 (상위 ${quota}${unit})</span></div>`:''}`;}).join('');
+    return `<div class="cbr ${x.id===meId?'me':''} ${x.rank<=quota?'in':''}" style="--from:${f-i};--dl:${dl}ms"><span class="cbrk ${mOn&&x.rank<=medalMax()?"md m"+Math.min(3,x.rank):""}">${mOn&&x.rank<=medalMax()?["","금","은","동","동"][x.rank]:x.rank}</span><span class="cbnm"><b>${esc(a.name||'')}</b><small>${esc(a.team||'')}</small></span><span class="cbsc">${fmt3(x.agg.final)}</span></div>${isPre&&i===quota-1&&rows.length>quota?`<div class="cbcut" style="--dl:${dl}ms"><span>${STAGES[p.next]||'결선'} 진출선 (상위 ${quota}${unit})</span></div>`:''}`;}).join('');
   const meTxt=me?`<div class="cbnow"><span class="cbnn">${esc((athlete(meId)||{}).name||'')}</span><span class="cbns">${fmt3(me.agg.final)}</span><span class="cbnr">현재 <b>${me.rank}위</b></span><span class="cbnt">${rows.length}${unit} 중</span></div>`:'';
   return `${meTxt}<div class="cbrank ${big?'many':''}" style="--n:${Math.max(rows.length,6)}">${list}</div>`;
 }
@@ -2842,9 +2845,11 @@ function flowNextDiv(d){const L=flowOrder(),i=L.findIndex(x=>x.id===d.id);return
 function flowInfo(){const st=ST(),cur=curOf();if(!cur||st.status!=='revealed')return null;const d=S.divs.find(x=>x.id===cur.divId);if(!d||!flowEnded(d))return null;
   const n=flowNextDiv(d);if(!n)return {end:true,d};return {d,n,c:callsOf(n).find(x=>!callDone(x)),key:cur.callId+'#'+(st.epoch||0)};}
 let FLOW_STOP='';
+/* v1.7.55 조가 끝나면 전광판에 점수(7초) → 최종 순위·메달(약 8초)을 다 보여 준 뒤에 다음 조를 부름 */
+function flowSec(){const ra=ST().revealedAt||Date.now();return Math.max(5,Math.ceil((ra+(typeof CB_SCORE_MS==='number'?CB_SCORE_MS:7000)+8000-Date.now())/1000));}
 function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;if(window.KS_SIM&&KS_SIM.running){if(KSFLOW.key)KSFLOW.hide();return;} /* 가상 경기가 돌 때는 가상 경기가 호출 */const inf=flowInfo();
   if(!inf||inf.end||SET().autoDiv==='manual'||FLOW_STOP===inf.key){if(KSFLOW.key&&(!inf||KSFLOW.key!==(inf&&inf.key)))KSFLOW.hide();return;}
-  const n=inf.n,cs=callsOf(n);KSFLOW.show({key:inf.key,title:n.name.replace(/^\d{1,3}\s+/,''),sub:`${cs.length}경기 · 첫 경기 ${inf.c.entries.map(e=>aName(e.athleteId)).join(' vs ')}`,sec:5,
+  const n=inf.n,cs=callsOf(n);KSFLOW.show({key:inf.key,title:n.name.replace(/^\d{1,3}\s+/,''),sub:`${cs.length}경기 · 첫 경기 ${inf.c.entries.map(e=>aName(e.athleteId)).join(' vs ')}`,sec:flowSec(),
     go:()=>{const c2=callsOf(n).find(x=>!callDone(x));if(!c2)return;ui.div=n.id;callIt(c2.callId);},stop:()=>{FLOW_STOP=inf.key;render();}});}
 function flowStrip(div,cur){if(!window.KSFLOW||!div)return '';const calls=callsOf(div),st=div.format==='tournament'?null:curStage(div);
   const items=calls.map((c,i)=>{const done=callDone(c),on=cur&&cur.callId===c.callId;
@@ -6996,7 +7001,7 @@ function model(){
   const p=g('advancePlan')(d),quota=p&&p.quota&&!p.final?p.quota:3,ST_=g('STAGES')||{};
   m.unit=d.event&&d.event!=='ind'?'팀':'명';m.quota=quota;m.pre=!p.final;m.cutLab=`${ST_[p.next]||'결선'} 진출선 · 상위 ${quota}${m.unit}`;
   m.rows=rows.map(x=>{const a=ath(x.id);return {rank:x.rank,name:a.name,team:a.team,final:x.agg.final,a:x.agg.a,b:x.agg.b,me:x.id===e.athleteId,inq:x.rank<=quota};});
-  m.scr='rank';m.key='rank'+cur.callId+'#'+st.epoch;m.el2=el-CBM;return m;
+  m.medal=g('medalOn')(d,stg);m.scr='rank';m.key='rank'+cur.callId+'#'+st.epoch;m.el2=el-CBM;return m;
 }
 function ath(id){const a=(g('athlete')||(()=>null))(id)||{};return {name:a.name||'',team:a.team||''};}
 

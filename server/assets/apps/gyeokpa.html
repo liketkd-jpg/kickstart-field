@@ -2579,11 +2579,13 @@ function itemCols(cur){
 function cbRank(d,cur,revAt){
   const stKey=cur.stage,st=stagesOf(d).find(x=>x.key===stKey)||curStage(d);
   const ids=st.groups&&cur.group!=null?st.groups[cur.group]||[]:stIds(st);
-  const rows=rankList(d,st.key,ids).filter(r=>r.ok),meId=cur.athleteId,me=rows.find(r=>r.id===meId);
+  const all=rankList(d,st.key,ids),rows=all.filter(r=>r.ok),meId=cur.athleteId,me=rows.find(r=>r.id===meId);
+  /* v1.7.55 메달은 그 조·단계 선수가 모두 끝난 뒤에만 (예선은 메달 없이 순위·진출선) */
+  const mOn=st.key!=='pre'&&all.length>0&&all.every(r=>r.r),mMax=COMM()?4:3;
   const from=new Map();rows.filter(r=>r.id!==meId).forEach((r,i)=>from.set(r.id,i));if(me)from.set(meId,rows.length);
   const p=planOf(d),isPre=st.key==='pre',quota=isPre?p.adv:3,dl=(revAt||Date.now())+CB_SCORE_MS+500-Date.now();
   const list=rows.map((r,i)=>{const a=athlete(r.id)||{},f=from.get(r.id)??i;
-    return `<div class="cbr ${r.id===meId?'me':''} ${r.rank<=quota?'in':''}" style="--from:${f-i};--dl:${dl}ms"><span class="cbrk ${COMM()&&r.rank<=4?"md m"+Math.min(3,r.rank):""}">${COMM()&&r.rank<=4?["","금","은","동","동"][r.rank]:r.rank}</span><span class="cbnm"><b>${esc(a.name||'')}</b><small>${esc(a.team||'')}</small></span><span class="cbsc">${resultText(r.r)}</span></div>${isPre&&i===quota-1&&rows.length>quota?`<div class="cbcut" style="--dl:${dl}ms"><span>결선 진출선 (상위 ${quota}명)</span></div>`:''}`;}).join('');
+    return `<div class="cbr ${r.id===meId?'me':''} ${r.rank<=quota?'in':''}" style="--from:${f-i};--dl:${dl}ms"><span class="cbrk ${mOn&&r.rank<=mMax?"md m"+Math.min(3,r.rank):""}">${mOn&&r.rank<=mMax?["","금","은","동","동"][r.rank]:r.rank}</span><span class="cbnm"><b>${esc(a.name||'')}</b><small>${esc(a.team||'')}</small></span><span class="cbsc">${resultText(r.r)}</span></div>${isPre&&i===quota-1&&rows.length>quota?`<div class="cbcut" style="--dl:${dl}ms"><span>결선 진출선 (상위 ${quota}명)</span></div>`:''}`;}).join('');
   const r0=S.results[cur.perfId];
   const meTxt=me?`<div class="cbnow"><span class="cbnn">${esc(cur.name)}</span><span class="cbns">${resultText(me.r)}</span><span class="cbnr">현재 <b>${me.rank}위</b></span><span class="cbnt">${rows.length}명 중</span></div>`
     :r0?`<div class="cbnow"><span class="cbnn">${esc(cur.name)}</span><span class="cbns">${resultText(r0)}</span><span class="cbnt">${r0.zero?'순위 제외':''}</span></div>`:'';
@@ -2703,9 +2705,11 @@ function flowInfo(){const st=ST(),cur=curOf();if(!cur||st.status!=='revealed'||!
   if(rest)return {d,n:d,c:rest,key,title:flowTitle(d,rest),cnt:flowUnit(d,rest).length};
   if(!flowEnded(d))return null;const n=flowNextDiv(d);if(!n)return {end:true,d};const c=callsOf(n).find(x=>!callDone(x));return {d,n,c,key,title:flowTitle(n,c),cnt:flowUnit(n,c).length};}
 let FLOW_STOP='';
+/* v1.7.55 조가 끝나면 전광판에 점수(7초) → 최종 순위·메달(약 8초)을 다 보여 준 뒤에 다음 조를 부름 */
+function flowSec(){const ra=ST().revealedAt||Date.now();return Math.max(5,Math.ceil((ra+(typeof CB_SCORE_MS==='number'?CB_SCORE_MS:7000)+8000-Date.now())/1000));}
 function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))return;if(window.KS_SIM&&KS_SIM.running){if(KSFLOW.key)KSFLOW.hide();return;} /* 가상 경기가 돌 때는 가상 경기가 호출 */const inf=flowInfo();
   if(!inf||inf.end||SET().autoDiv==='manual'||FLOW_STOP===inf.key){if(KSFLOW.key&&(!inf||KSFLOW.key!==(inf&&inf.key)))KSFLOW.hide();return;}
-  KSFLOW.show({key:inf.key,title:inf.title,sub:`${inf.cnt}명 · 첫 선수 ${aName(inf.c.athleteId)}`,sec:5,
+  KSFLOW.show({key:inf.key,title:inf.title,sub:`${inf.cnt}명 · 첫 선수 ${aName(inf.c.athleteId)}`,sec:flowSec(),
     go:()=>{const n=divById(inf.n.id);if(!n)return;const c2=callsOf(n).find(x=>!callDone(x));if(!c2)return;ui.div=n.id;callIt(c2.callId);},stop:()=>{FLOW_STOP=inf.key;render();}});}
 function flowStrip(d,cur){if(!window.KSFLOW||!d)return '';const calls=callsOf(d);if(!calls.length)return '';
   const ref=(cur&&cur.divId===d.id&&calls.find(c=>c.callId===cur.callId))||calls.find(c=>!callDone(c))||calls[calls.length-1],unit=flowUnit(d,ref);
