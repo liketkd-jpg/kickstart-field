@@ -29,20 +29,16 @@
     clearTimeout(restT);show(t);
     if(vc.k==='stop'&&APPK!=='kyorugi')restT=setTimeout(()=>{if(last===key&&isDisp()&&enabled())show('쉬어');},REST_AT);
   }
-  /* v1.7.54 또렷하고 고급스럽게: 빛 번짐·흐림 없앰 → 진한 띠 위에 금빛 글씨 + 굵은 테두리 + 금색 가는 선 */
+  /* v1.7.56 바탕 없이 흰 글씨만 시원하게: 띠·어두운 막 없앰 → 흰 글씨 + 얇은 검은 테두리 + 또렷한 그림자 (빛 번짐·흐림 없음) */
   try{if(!document.querySelector('link[href="/vendor/fonts/themes.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/vendor/fonts/themes.css';document.head.appendChild(l);}}catch(e){}
-  const css=`#ksCmdBig{position:fixed;inset:0;z-index:2147483100;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;visibility:hidden;background:rgba(3,4,8,.55);transition:opacity .15s ease,visibility 0s linear .15s}
+  const css=`#ksCmdBig{position:fixed;inset:0;z-index:2147483100;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;visibility:hidden;background:none;transition:opacity .15s ease,visibility 0s linear .15s}
 #ksCmdBig.on{opacity:1;visibility:visible;transition:opacity .06s ease}
-#ksCmdBig::before{content:"";position:absolute;left:0;right:0;top:50%;height:min(62vh,46vw);transform:translateY(-50%);background:linear-gradient(180deg,rgba(6,7,12,.96),rgba(14,13,10,.97) 50%,rgba(6,7,12,.96));box-shadow:0 -3px 0 #D9B45F,0 3px 0 #D9B45F,0 0 0 1px rgba(0,0,0,.6),0 30px 80px rgba(0,0,0,.6)}
-#ksCmdBig span{position:relative;font:400 min(30vw,50vh)/1 "Black Han Sans","Malgun Gothic","Noto Sans KR",sans-serif;letter-spacing:.06em;white-space:nowrap;padding:0 .08em;
-  background:linear-gradient(180deg,#FFFFFF 0%,#FFF6DA 30%,#F6D27A 58%,#D9A441 78%,#B8862E 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
-  -webkit-text-stroke:3px #2A1E08;paint-order:stroke fill;filter:drop-shadow(0 8px 0 rgba(0,0,0,.55))}
+#ksCmdBig span{position:relative;font:400 min(32vw,56vh)/1 "Black Han Sans","Malgun Gothic","Noto Sans KR",sans-serif;letter-spacing:.06em;white-space:nowrap;color:#fff;-webkit-text-fill-color:#fff;
+  -webkit-text-stroke:min(.5vw,.9vh) #05070C;paint-order:stroke fill;text-shadow:0 .03em 0 rgba(0,0,0,.55),.02em .05em 0 rgba(0,0,0,.35)}
 #ksCmdBig.on span{animation:ksCmdIn .22s cubic-bezier(.2,1.3,.4,1) both}
 @keyframes ksCmdIn{from{transform:scale(1.18);opacity:0}to{transform:none;opacity:1}}
-#ksCmdBig.on::before{animation:ksCmdBand .2s ease-out both}
-@keyframes ksCmdBand{from{transform:translateY(-50%) scaleY(.2)}to{transform:translateY(-50%) scaleY(1)}}
 /* 예전 전광판별 구령 글씨는 이 모듈로 대신합니다 */
-.cmdov{display:none!important}`;
+html body .cmdov,html body .cmdov.cmdtop,html body div.cmdov{display:none!important;visibility:hidden!important}`;
   const st=document.createElement('style');st.textContent=css;(document.head||document.documentElement).appendChild(st);
   setInterval(tick,120);
   window.KS_CMDBIG={show,hide};
