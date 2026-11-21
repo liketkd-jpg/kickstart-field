@@ -29,11 +29,18 @@
     clearTimeout(restT);show(t);
     if(vc.k==='stop'&&APPK!=='kyorugi')restT=setTimeout(()=>{if(last===key&&isDisp()&&enabled())show('쉬어');},REST_AT);
   }
-  const css=`#ksCmdBig{position:fixed;inset:0;z-index:2147483100;display:grid;place-items:center;pointer-events:none;opacity:0;visibility:hidden;background:radial-gradient(ellipse at center,rgba(0,0,0,.66),rgba(0,0,0,.28) 70%);transition:opacity .18s ease,visibility 0s linear .18s}
-#ksCmdBig.on{opacity:1;visibility:visible;transition:opacity .08s ease}
-#ksCmdBig span{font:900 min(30vw,52vh)/1 "Noto Sans KR","Malgun Gothic",sans-serif;color:#fff;letter-spacing:.04em;text-shadow:0 0 50px rgba(255,214,120,.75),0 0 12px rgba(255,255,255,.6),0 8px 30px rgba(0,0,0,.8);white-space:nowrap}
-#ksCmdBig.on span{animation:ksCmdIn .28s cubic-bezier(.2,1.4,.4,1) both}
-@keyframes ksCmdIn{from{transform:scale(1.35);opacity:0;filter:blur(8px)}to{transform:none;opacity:1;filter:none}}
+  /* v1.7.54 또렷하고 고급스럽게: 빛 번짐·흐림 없앰 → 진한 띠 위에 금빛 글씨 + 굵은 테두리 + 금색 가는 선 */
+  try{if(!document.querySelector('link[href="/vendor/fonts/themes.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/vendor/fonts/themes.css';document.head.appendChild(l);}}catch(e){}
+  const css=`#ksCmdBig{position:fixed;inset:0;z-index:2147483100;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;visibility:hidden;background:rgba(3,4,8,.55);transition:opacity .15s ease,visibility 0s linear .15s}
+#ksCmdBig.on{opacity:1;visibility:visible;transition:opacity .06s ease}
+#ksCmdBig::before{content:"";position:absolute;left:0;right:0;top:50%;height:min(62vh,46vw);transform:translateY(-50%);background:linear-gradient(180deg,rgba(6,7,12,.96),rgba(14,13,10,.97) 50%,rgba(6,7,12,.96));box-shadow:0 -3px 0 #D9B45F,0 3px 0 #D9B45F,0 0 0 1px rgba(0,0,0,.6),0 30px 80px rgba(0,0,0,.6)}
+#ksCmdBig span{position:relative;font:400 min(30vw,50vh)/1 "Black Han Sans","Malgun Gothic","Noto Sans KR",sans-serif;letter-spacing:.06em;white-space:nowrap;padding:0 .08em;
+  background:linear-gradient(180deg,#FFFFFF 0%,#FFF6DA 30%,#F6D27A 58%,#D9A441 78%,#B8862E 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  -webkit-text-stroke:3px #2A1E08;paint-order:stroke fill;filter:drop-shadow(0 8px 0 rgba(0,0,0,.55))}
+#ksCmdBig.on span{animation:ksCmdIn .22s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes ksCmdIn{from{transform:scale(1.18);opacity:0}to{transform:none;opacity:1}}
+#ksCmdBig.on::before{animation:ksCmdBand .2s ease-out both}
+@keyframes ksCmdBand{from{transform:translateY(-50%) scaleY(.2)}to{transform:translateY(-50%) scaleY(1)}}
 /* 예전 전광판별 구령 글씨는 이 모듈로 대신합니다 */
 .cmdov{display:none!important}`;
   const st=document.createElement('style');st.textContent=css;(document.head||document.documentElement).appendChild(st);
