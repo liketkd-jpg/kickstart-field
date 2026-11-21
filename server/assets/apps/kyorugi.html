@@ -3234,7 +3234,7 @@ let VAUD=null;
 window.KS_VOICE=function(key){const seq=SEQ[key];if(!seq)return false;const ds=seq.map(k=>VDOCS[k]);if(!ds[0])return false;
   if(VAUD){try{VAUD.pause();}catch(err){}VAUD=null;}
   try{window.KS_AUDIO&&KS_AUDIO.stopAll();}catch(err){}
-  const playOne=(i)=>{const d=ds[i];if(!d)return;srcOf(d).then(src=>{const nx=()=>{if(i+1<ds.length)setTimeout(()=>playOne(i+1),key==='stop'?4000:200);};
+  const playOne=(i)=>{const d=ds[i];if(!d)return;srcOf(d).then(src=>{const nx=()=>{if(i+1<ds.length)setTimeout(()=>playOne(i+1),key==='stop'?3000:200);};
       if(window.KS_AUDIO&&KS_AUDIO.play(src,{onended:nx}))return;
       const a=new Audio(src);VAUD=a;a.volume=1;a.onended=nx;a.play().catch(()=>{});}).catch(()=>{});};
   playOne(0);return true;};
@@ -3742,7 +3742,7 @@ let PLAY=null;
 function playSeq(urls,key){
   if(PLAY){try{PLAY.pause();}catch(e){}PLAY=null;}
   try{window.KS_AUDIO&&KS_AUDIO.stopAll();}catch(e){}
-  const one=i=>{if(i>=urls.length)return;const nx=()=>setTimeout(()=>one(i+1),key==='stop'?4000:200);
+  const one=i=>{if(i>=urls.length)return;const nx=()=>setTimeout(()=>one(i+1),key==='stop'?3000:200);
     if(window.KS_AUDIO&&KS_AUDIO.play(urls[i],{onended:nx}))return;
     const a=new Audio(urls[i]);PLAY=a;a.volume=1;a.onended=nx;a.play().catch(()=>{});};
   one(0);
@@ -5702,7 +5702,7 @@ function info(){
     const AS=G('AGE_SCHEMES');o.age=AS&&AS[s.ageScheme]?AS[s.ageScheme].label:'';o.pf=G('pfRows')?G('pfRows')().length:0;o.pdraw=s.pdraw==='pre'?'당일 일괄 추첨':'매 경기 추첨';}
   else if(APP==='kyorugi'){o.fmt=`${s.system==='sum'?'3회전 점수 합산':'3전 다승제'} · ${Math.floor((s.roundSec||120)/60)}분${(s.roundSec||120)%60?' 30초':''}`;o.ref=`부심 ${s.refs||3}명 · ${s.hogu==='pss'?'전자호구':'일반호구'}`;}
   else{o.fmt=`예선 ${s.preMin||16}명 이상 · 결선 ${s.finalN||8}명`;o.ref=`심판 ${s.judges||5}명`;}
-  const v={admin:'운영석',display:'전광판',both:'둘 다',off:'끔'}[s.voice||'admin'];o.voice=`${APP==='kyorugi'?'소리':'음성 구령'}: ${v}`;
+  const v={admin:'운영석',display:'전광판',both:'둘 다',off:'끔'}[s.voice||'admin'];o.voice=`${APP==='kyorugi'?'소리':'음성 구령'}: ${v}${s.bigCmd===false?' · 큰 글씨 끔':''}`;
   o.aw=s.aw||{};o.nR=(S.roster||[]).length;o.nD=(S.divs||[]).length;
   return o;
 }

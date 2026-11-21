@@ -765,6 +765,7 @@ body.disp .board.one .pban:empty + .who-row{}
 
 .bcmd{display:grid;grid-template-columns:1.7fr 1fr .7fr;gap:8px}
 .bcmd .btn{padding:12px 8px;font-size:18px}
+.bcmd.b4{grid-template-columns:1fr 1.2fr 1fr .6fr}@media (max-width:600px){.bcmd.b4{grid-template-columns:1fr 1fr}}
 body.bmax .bcmd .btn{font-size:clamp(18px,2.6vh,28px);padding:clamp(10px,1.6vh,18px) 8px}
 @media (min-width:1000px) and (max-height:820px){.bcmd .btn{padding:7px 6px;font-size:16px}.bcmd{gap:6px}}
 
@@ -2000,8 +2001,11 @@ function aSettings(){
     <div class="field"><span class="label">단체전 음악</span>${seg('setMusicAuto',[[true,'시작과 함께 자동 재생'],[false,'운영석에서 눌러 재생']],s.musicAuto!==false)}</div>
     <div class="field"><span class="label">초등부 남녀</span>${seg('setElemMix',[[false,'남녀 따로'],[true,'남녀 통합']],!!s.elemMix)}
       <span class="small muted">제7조 2.1: 초등부는 종목별로 경기가 성립하지 않으면 대표자 회의에서 남녀를 통합할 수 있습니다. 바꾼 뒤 「부문·조 편성」에서 「부문 다시 편성」을 눌러 주세요.</span></div>
-    <div class="field"><span class="label">음성 구령 (준비 · 시작 / 바로)</span>${seg('setVoice',[['admin','운영석 컴퓨터'],['display','전광판 컴퓨터'],['both','둘 다'],['off','끄기']],s.voice||'admin')}
-      <span class="small muted">경기장 스피커가 연결된 컴퓨터를 고르세요. 「준비 · 시작」을 누르면 "준비" 구령 5초 뒤 "시작" 구령과 함께 시간이 흐릅니다. <button class="btn sm" data-act="testVoice">🔊 소리 확인</button></span></div>
+    <div class="field"><span class="label">음성 구령 (차렷 · 경례 / 준비 · 시작 / 바로 · 쉬어)</span>${seg('setVoice',[['admin','운영석 컴퓨터'],['display','전광판 컴퓨터'],['both','둘 다'],['off','끄기']],s.voice||'admin')}
+      <span class="small muted">경기장 스피커가 연결된 컴퓨터를 고르세요. 「준비 · 시작」을 누르면 "준비" 구령 5초 뒤 "시작" 구령과 함께 시간이 흐릅니다. <button class="btn sm" data-act="testVoice">🔊 소리 확인</button></span>
+      <span class="label" style="margin-top:10px">전광판 구령 큰 글씨 (차렷 · 경례 · 준비 · 시작 · 바로 · 쉬어)</span>${seg('setBigCmd',[['1','켜기'],['0','끄기']],s.bigCmd===false?'0':'1')}
+      <span class="small muted">구령을 낼 때 전광판 맨 앞에 큰 글씨가 1.6초 동안 뜹니다. 모든 전광판 디자인에 똑같이 나옵니다.</span>
+    </div>
   </div>
   <div class="panel">
     <h2>컷오프 방식 (제8조)</h2>
@@ -2308,8 +2312,8 @@ function runPanel(st,cur){
   const ra=st.readyAt,pend=ra&&!t.running&&Date.now()<ra+READY_SEC*1000+1500;
   const prepB=EV[cur.ev]?.prep?`<div class="prep"><span class="small">격파물 준비 ${EV[cur.ev].prep>=120?EV[cur.ev].prep/60+'분':EV[cur.ev].prep+'초'}</span>${st.prep&&st.prep.until?`<span class="timer sm" data-prep>${prepText(st)}</span><button class="btn sm" data-act="prepStop">준비 끝</button>`:`<button class="btn sm" data-act="prepStart" ${revealed?'disabled':''}>준비 시간 시작</button>`}<span class="small muted">초과 시 10초마다 감점 1</span></div>`:'';
   const timerB=`<div class="tbox"><div class="row between"><span class="timer" data-timer>${cdText(t)}</span><span class="small muted">제한 ${limitTxt(cur)}<br>경과 ${mmss(elapsed(t))}</span></div>
-    <div class="bcmd"><button class="btn big ${pend?'armed':'primary'}" data-act="cmdReady" ${revealed||t.running||pend?'disabled':''}>${pend?`🔊 ${Date.now()<ra?'차렷 · 경례':'준비'} · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:bowFirst(curOf())?'🔊 차렷 · 경례 · 준비 · 시작':'🔊 준비 · 시작'}</button>
-    <button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 (착지)</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>${prepB}</div>`;
+    <div class="bcmd${SET().bow!==false?' b4':''}">${cmdBtns(pend,revealed||t.running,ra)}
+    <button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 · 쉬어</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>${prepB}</div>`;
   if(revealed&&r){
     const nx=d?callsOf(d).find(c=>!callDone(c)&&c.callId!==cur.callId):null;
     return `<div class="panel">${head}${miniBoard(cur,st,r,d)}${resultCard(r,cur)}
@@ -2729,6 +2733,9 @@ const READY_SEC=5;
 /* v1.7.47 차렷·경례: 선수마다 「차렷 → 1초 → 경례 → 준비 → 5초 → 시작」 (대회 설정에서 끌 수 있음: SET().bow=false) */
 const BOW_AT=1600,BOW_READY=4300;
 function bowFirst(cur){return SET().bow!==false&&!!cur&&(cur.k||1)===1;}
+const BOWED={};let BOWING=0;   /* v1.7.53 차렷·경례를 이미 한 선수 · 경례 중 */
+function cmdBtns(pend,dis,ra){const cur=curOf(),bw=SET().bow!==false,first=bowFirst(cur)&&!(cur&&BOWED[cur.callId]),bz=Date.now()<BOWING;
+  return (bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;}
 let VOICE_SEEN=Date.now(),READY_T=null;
 function koVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));return vs.find(v=>/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name))||vs.find(v=>/Natural|Online|Google/i.test(v.name))||vs[0]||null;}catch(e){return null;}}
 function koMale(v){return !!(v&&/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name));}
@@ -2908,6 +2915,7 @@ const ACT={
   toggleAutoDiv:()=>{setS({autoDiv:SET().autoDiv==='manual'?'auto':'manual'});FLOW_STOP='';},
   setElemMix:b=>setS({elemMix:b.dataset.v==='true'}),
   setVoice:b=>setS({voice:b.dataset.v}),
+  setBigCmd:b=>setS({bigCmd:b.dataset.v!=='0'}),
   setAdv:b=>setS({adv:b.dataset.v==='auto'?'auto':Number(b.dataset.v)}),
   testVoice:()=>sayCmd('ready'),
   testVoiceQuiet:()=>{try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}catch(e){}render();},
@@ -2951,15 +2959,14 @@ const ACT={
     const cur=curOf();if(window.LMUS)LMUS.setEntries(teamEntries);if(cur&&cur.kind==='team'&&SET().musicAuto!==false&&window.LMUS&&LMUS.has(cur.athleteId))LMUS.play(cur.athleteId);},
   timerStop:()=>{const st=ST(),t=st.timer;try{window.LMUS&&LMUS.stop();}catch(err){}if(!t||!t.running)return;if(voiceHere('admin'))sayCmd('stop');const vm=voiceMark('stop');VOICE_SEEN=Math.max(VOICE_SEEN,routeNow()==='display'?0:vm.at);
     patchState({voice:vm,timer:stopT(t)});},
-  cmdReady:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);
+  /* v1.7.53 구령 단추를 둘로: 「차렷 · 경례」(차렷 → 1초 → 경례) · 「준비 · 시작」(준비 → 5초 → 시작) */
+  cmdBow:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);
+    const cur=curOf(),say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
+    if(cur&&cur.callId)BOWED[cur.callId]=1;BOWING=Date.now()+BOW_AT+400;patchState({voice:say('attn'),readyAt:null});
+    READY_T=setTimeout(()=>{patchState({voice:say('bow')});setTimeout(()=>{try{render();}catch(e){}},500);},BOW_AT);},
+  cmdReady:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);BOWING=0;
     const cur=curOf(),cid=cur&&cur.callId,say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
     const alive=ra=>{const s2=ST(),c2=curOf();return s2.readyAt===ra&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&c2&&c2.callId===cid;};
-    if(bowFirst(cur)){
-      const ra=Date.now()+BOW_READY;patchState({voice:say('attn'),readyAt:ra});
-      READY_T=setTimeout(()=>{if(!alive(ra))return;patchState({voice:say('bow')});
-        READY_T=setTimeout(()=>{if(!alive(ra))return;patchState({voice:say('ready')});
-          READY_T=setTimeout(()=>{if(alive(ra))ACT.timerStart();},READY_SEC*1000);},BOW_READY-BOW_AT);},BOW_AT);
-      return;}
     const vm=say('ready'),ra=vm.at;patchState({voice:vm,readyAt:ra});
     READY_T=setTimeout(()=>{if(alive(ra))ACT.timerStart();},READY_SEC*1000);},
   timerReset:()=>{clearTimeout(READY_T);try{window.LMUS&&LMUS.stop();}catch(err){}const st=ST();patchState({readyAt:null,timer:{...st.timer,running:false,elapsed:0,startedAt:0,stoppedAt:null}});},
@@ -4383,7 +4390,7 @@ let VAUD=null;
 window.KS_VOICE=function(key){const seq=SEQ[key];if(!seq)return false;const ds=seq.map(k=>VDOCS[k]);if(!ds[0])return false;
   if(VAUD){try{VAUD.pause();}catch(err){}VAUD=null;}
   try{window.KS_AUDIO&&KS_AUDIO.stopAll();}catch(err){}
-  const playOne=(i)=>{const d=ds[i];if(!d)return;srcOf(d).then(src=>{const nx=()=>{if(i+1<ds.length)setTimeout(()=>playOne(i+1),key==='stop'?4000:200);};
+  const playOne=(i)=>{const d=ds[i];if(!d)return;srcOf(d).then(src=>{const nx=()=>{if(i+1<ds.length)setTimeout(()=>playOne(i+1),key==='stop'?3000:200);};
       if(window.KS_AUDIO&&KS_AUDIO.play(src,{onended:nx}))return;
       const a=new Audio(src);VAUD=a;a.volume=1;a.onended=nx;a.play().catch(()=>{});}).catch(()=>{});};
   playOne(0);return true;};
@@ -4891,7 +4898,7 @@ let PLAY=null;
 function playSeq(urls,key){
   if(PLAY){try{PLAY.pause();}catch(e){}PLAY=null;}
   try{window.KS_AUDIO&&KS_AUDIO.stopAll();}catch(e){}
-  const one=i=>{if(i>=urls.length)return;const nx=()=>setTimeout(()=>one(i+1),key==='stop'?4000:200);
+  const one=i=>{if(i>=urls.length)return;const nx=()=>setTimeout(()=>one(i+1),key==='stop'?3000:200);
     if(window.KS_AUDIO&&KS_AUDIO.play(urls[i],{onended:nx}))return;
     const a=new Audio(urls[i]);PLAY=a;a.volume=1;a.onended=nx;a.play().catch(()=>{});};
   one(0);
@@ -6541,7 +6548,7 @@ function info(){
     const AS=G('AGE_SCHEMES');o.age=AS&&AS[s.ageScheme]?AS[s.ageScheme].label:'';o.pf=G('pfRows')?G('pfRows')().length:0;o.pdraw=s.pdraw==='pre'?'당일 일괄 추첨':'매 경기 추첨';}
   else if(APP==='kyorugi'){o.fmt=`${s.system==='sum'?'3회전 점수 합산':'3전 다승제'} · ${Math.floor((s.roundSec||120)/60)}분${(s.roundSec||120)%60?' 30초':''}`;o.ref=`부심 ${s.refs||3}명 · ${s.hogu==='pss'?'전자호구':'일반호구'}`;}
   else{o.fmt=`예선 ${s.preMin||16}명 이상 · 결선 ${s.finalN||8}명`;o.ref=`심판 ${s.judges||5}명`;}
-  const v={admin:'운영석',display:'전광판',both:'둘 다',off:'끔'}[s.voice||'admin'];o.voice=`${APP==='kyorugi'?'소리':'음성 구령'}: ${v}`;
+  const v={admin:'운영석',display:'전광판',both:'둘 다',off:'끔'}[s.voice||'admin'];o.voice=`${APP==='kyorugi'?'소리':'음성 구령'}: ${v}${s.bigCmd===false?' · 큰 글씨 끔':''}`;
   o.aw=s.aw||{};o.nR=(S.roster||[]).length;o.nD=(S.divs||[]).length;
   return o;
 }
