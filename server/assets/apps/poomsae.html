@@ -7282,7 +7282,7 @@ function leader(){const k='ks_hqsend_lead_'+APPK;try{const v=JSON.parse(localSto
   if(!v||v.t<now-30000||v.id===TAB){localStorage.setItem(k,JSON.stringify({id:TAB,t:now}));return true;}return false;}catch(e){return true;}}
 const opRoute=()=>{const h=(location.hash||'').replace('#','');return h===''||/^admin/.test(h);};
 const APPK=typeof g('SHEETS')!=='undefined'?'poomsae':typeof g('KINDS')!=='undefined'?'kyorugi':'gyeokpa';
-const ST={bsig:'',bat:0,cat:0,cn:0,busy:false,err:''};
+const ST={bsig:'',rsig:'',bat:0,cat:0,cn:0,busy:false,err:''};
 const comp=()=>((g('SET')||(()=>({})))()||{}).name||'';
 const LSK=()=>'ks_certsent_'+APPK+'_'+comp();
 let SENT={},SENTK='';
@@ -7292,11 +7292,14 @@ const safe=s=>String(s||'').replace(/[\\/:*?"<>|]/g,'_').replace(/\s+/g,' ').tri
 const base=()=>{try{return window.KS_AUTOSAVE.fname().replace(/_결과\(자동저장\)\.xlsx$/,'');}catch(e){return safe(comp()||APPK);}};
 async function post(name,blob){const r=await fetch(`/api/results/auto?name=${encodeURIComponent(name)}`,{method:'POST',body:blob});if(!r.ok)throw new Error('HTTP '+r.status);}
 async function backup(){
-  if(Date.now()-ST.bat<60000)return; /* 1분에 한 번까지 */
   const bd=g('backupData');if(typeof bd!=='function')return;const d=bd();
   if(!Array.isArray(d.roster)||!d.roster.length)return; /* v1.7.49 선수가 없는 빈 노트북은 보내지 않음 (본부에 모아 둔 이 코트 기록을 빈 것으로 덮지 않게) */
-  const sig=JSON.stringify({...d,savedAt:0});if(sig===ST.bsig)return;if(sig.length>12e6){ST.bsig=sig;ST.bat=Date.now();return;}
-  await post(`${base()}_백업(자동저장).json`,new Blob([JSON.stringify(d)],{type:'application/json'}));ST.bsig=sig;ST.bat=Date.now();
+  /* v1.7.57 경기 결과가 새로 생기거나 바뀌면 곧바로(5초 안에) 보냄 — 그 밖의 변경(설정 등)은 1분에 한 번.
+     예전에는 1분에 한 번만 보내서, 종목을 바꾸거나 노트북이 꺼지기 직전 1분 동안의 결과가 본부에 빠질 수 있었음 */
+  const rsig=JSON.stringify(d.results||[]);
+  if(rsig===ST.rsig&&Date.now()-ST.bat<60000)return;
+  const sig=JSON.stringify({...d,savedAt:0});if(sig===ST.bsig){ST.rsig=rsig;return;}if(sig.length>12e6){ST.bsig=sig;ST.rsig=rsig;ST.bat=Date.now();return;}
+  await post(`${base()}_백업(자동저장).json`,new Blob([JSON.stringify(d)],{type:'application/json'}));ST.bsig=sig;ST.rsig=rsig;ST.bat=Date.now();
 }
 /* 부문이 끝났는지: 남은 경기가 없고, 마지막 단계(결선·결승)까지 끝남 */
 function finished(d){
@@ -7335,7 +7338,7 @@ async function certs(){
 }
 async function tick(){if(!COURT()||ST.busy||!opRoute()||!leader())return;const S=g('S');if(!S||!S.divs)return;ST.busy=true;
   try{await backup();await certs();ST.err='';}catch(e){ST.err=String(e&&e.message||e);}finally{ST.busy=false;}}
-setInterval(tick,10000);setTimeout(tick,8000);
+setInterval(tick,5000);setTimeout(tick,4000);
 window.KS_HQSEND={tick,state:ST};
 })();
 </script><script>/*@@SETSHELL*//* ===================== 설정·백업 화면 정리 (카드 · 요약판 · 대회 전 확인) =====================
