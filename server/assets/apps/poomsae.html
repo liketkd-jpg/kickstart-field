@@ -363,6 +363,33 @@ body.jfit .brand{font-size:14px}
 .jlong .lro{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:3px}
 .jlong .lro .opt{min-height:40px;padding:0;font-size:15px;border-radius:8px;border-width:1px}
 .jsheet.long .jfoot{position:sticky;bottom:0;padding:8px 0 4px;background:linear-gradient(transparent,var(--bg) 30%);z-index:2}
+/* v1.7.66 태권체조·팀 경연 한 종목씩 채점판 */
+body.jdg main:has(.jsheet.stp){max-width:1180px}
+.jsheet.stp{min-height:calc(100dvh - 86px);display:flex;flex-direction:column;gap:8px}
+body.jmax .jsheet.stp{min-height:calc(100dvh - 20px)}
+.sp-tabs{display:flex;gap:6px;overflow-x:auto;flex:none}
+.sp-t{flex:1 1 0;min-width:62px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px;border-radius:12px;border:2px solid var(--line);background:transparent;color:inherit;font:inherit;cursor:pointer}
+.sp-t b{font-size:19px;font-family:var(--f-num)}.sp-t small{font-size:12px;opacity:.8;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-t.on{border-color:#D6B67C;background:rgba(214,182,124,.18)}.sp-t.ok b{color:#5CD69A}
+.sp-body{flex:1;min-height:0;display:flex;flex-direction:column}
+.sp-card{flex:1;display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.sp-h{display:flex;align-items:baseline;gap:10px}.sp-h b{font-size:clamp(20px,3.4vh,28px);flex:1}.sp-h span{color:var(--muted);font-size:14px}.sp-h .sp-n{font-family:var(--f-num);font-size:14px;letter-spacing:.08em}
+.sp-h em{font-style:normal;font-family:var(--f-num);font-weight:900;font-size:clamp(26px,5vh,40px)}.sp-h em small{font-size:14px;color:var(--muted);font-weight:600}
+.sp-it{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
+.sp-l{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:clamp(16px,2.6vh,22px)}.sp-l b{font-family:var(--f-num);font-size:clamp(22px,4.4vh,36px)}.sp-it.nv .sp-l b{color:var(--warn);font-size:18px}
+.sp-o{flex:1;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-auto-rows:minmax(56px,1fr);gap:8px;min-height:56px}
+.sp-o .opt{min-height:56px;height:100%;font-family:var(--f-num);font-size:clamp(20px,4.4vh,38px);font-weight:800;border-radius:14px;border-width:2px;padding:0}
+.sp-o.sp-half{flex:none;grid-template-columns:130px 130px 1fr;align-items:center;min-height:52px}.sp-o.sp-half .opt{min-height:52px}.sp-hint{font-size:13px;color:var(--muted);padding-left:6px}
+.sp-o.sp-ded .opt{font-size:clamp(20px,6vh,34px)!important}.sp-o.sp-ded .opt small{display:block;font-size:13px;font-family:var(--f-body)}
+.sp-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px;align-content:start}
+.sp-r{display:flex;align-items:center;gap:10px;padding:14px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.sp-r .sp-n{width:30px;height:30px;border-radius:50%;background:#EDE7DA;color:#111;display:grid;place-items:center;font-weight:900;flex:none}
+.sp-r b{flex:1;font-size:18px}.sp-r em{font-style:normal;font-family:var(--f-num);font-weight:900;font-size:24px}.sp-r .sp-e{font-size:12px;opacity:.6}.sp-r.miss{border-color:#E5484D}
+.sp-foot{flex:none;display:flex;gap:10px;position:sticky;bottom:0;padding:6px 0 4px;background:linear-gradient(transparent,var(--bg) 30%);z-index:2}.sp-foot .btn{flex:1;min-height:56px;font-size:20px}
+@media (max-width:620px){.sp-t{min-width:0}.sp-foot{padding-right:76px}.sp-o{flex:none}.sp-it{flex:none}.sp-card{justify-content:space-around}.sp-o.sp-int[style]{grid-template-columns:repeat(6,minmax(0,1fr))}.sp-o[style*="--n:10"],.sp-o[style*="--n:11"]{grid-template-columns:repeat(5,minmax(0,1fr))}.sp-t small{display:none}.sp-o.sp-half{grid-template-columns:1fr 1fr}.sp-hint{display:none}}
+@media (orientation:landscape) and (max-height:520px){body.jdg .bar{display:none}.sp-foot{padding-right:128px}.sp-o.sp-ded{flex:.7}.sp-o{grid-auto-rows:minmax(40px,1fr)}.jsheet.stp{min-height:calc(100dvh - 12px);gap:5px}.sp-t{flex-direction:row;justify-content:center;gap:6px;padding:4px}.sp-t b{font-size:16px}.sp-t small{font-size:13px}
+  .sp-card{gap:6px;padding:8px 10px}.sp-o{gap:5px;min-height:40px}.sp-o .opt{min-height:40px;font-size:clamp(17px,5.4vh,28px)}.sp-o.sp-half{min-height:40px;grid-template-columns:110px 110px 1fr}.sp-o.sp-half .opt{min-height:40px}.sp-foot .btn{min-height:44px;font-size:18px}.jsheet.stp .jwho{padding:4px 10px}}
+
 @media (min-width:820px){.jlong{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 .jsheet .banner{padding:7px 10px;font-size:12px}
 .jtop{display:flex;align-items:center;gap:8px;min-width:0}
@@ -2570,6 +2597,39 @@ function vJudge(){
   const e=cur.entries[ti],d=draftFor(e.perfId,cur.type),sc=draftScore(cur.type,d),miss=missing(cur.type,d);
   const totalMiss=sum(cur.entries.map(x=>missing(cur.type,draftFor(x.perfId,cur.type))));
   const otherMiss=two?missing(cur.type,draftFor(cur.entries[1-ti].perfId,cur.type)):0;
+  /* v1.7.66 태권체조·팀 경연: 한 종목(묶음)씩 크게 — 위 단계 단추 · 큰 점수 단추(0.5 단위는 정수 + .0/.5) · 앞/다음 · 마지막에 모아 보고 보내기 */
+  if(isTeamType(cur.type)&&SET().jView!=='all'){
+    const steps=[];
+    if(sh.long){allItems(cur.type).forEach(it=>{let x=steps.find(q=>q.g===it.g);if(!x)steps.push(x={g:it.g,items:[]});x.items.push(it);});}
+    else{if(sh.aMode==='ded')steps.push({g:sh.A.label,ded:true,items:[]});else if(sh.A.items)sh.A.items.forEach(it=>steps.push({g:it.s||it.label,items:[it]}));
+      sh.B.items.forEach(it=>steps.push({g:it.s||it.label,items:[it]}));}
+    const key=e.perfId+'#'+myJudge;if(ui.jsK!==key){ui.jsK=key;ui.jsI=0;}
+    const nS=steps.length,si=Math.min(ui.jsI||0,nS);
+    const done=st=>st.ded||st.items.every(it=>d.items[it.k]!=null);
+    const stVal=st=>st.ded?fmt1(sc.a):st.items.some(it=>d.items[it.k]!=null)?optTxt(r1(sum(st.items.map(it=>d.items[it.k]||0)))):'—';
+    const btn=(it,v,lab,on,dis)=>`<button class="opt ${on?'on':''}" data-act="pick" data-p="${e.perfId}" data-k="${it.k}" data-v="${v}" ${dis?'disabled':''}>${lab}</button>`;
+    const picker=it=>{const v=d.items[it.k],O=it.opts,half=O.some(o=>o%1!==0)&&O.length>12;
+      let body;
+      if(half){const mn=Math.min(...O),mx=Math.max(...O),fl=v==null?null:Math.floor(v),h=v==null?0:Math.round((v-fl)*10)/10;
+        const fixv=x=>{x=Math.round(x*2)/2;if(x<mn)x=mn;if(x>mx)x=mx;return x;};
+        const ints=[];for(let n=Math.floor(mn);n<=Math.floor(mx);n++)ints.push(n);
+        body=`<div class="sp-o sp-int" style="--n:${ints.length}">${ints.map(n=>btn(it,fixv(n+h),n,fl===n,false)).join('')}</div>
+          <div class="sp-o sp-half">${btn(it,fl==null?mn:fixv(fl),'.0',v!=null&&h===0,fl==null)}${btn(it,fl==null?mn:fixv(fl+0.5),'.5',v!=null&&h===0.5,fl==null)}<span class="sp-hint">정수를 먼저 누르고, 0.5가 필요하면 「.5」</span></div>`;}
+      else body=`<div class="sp-o" style="--n:${O.length}">${O.map(o=>btn(it,o,optTxt(o),v===o,false)).join('')}</div>`;
+      return `<div class="sp-it ${v==null?'nv':''}"><div class="sp-l"><span>${esc(it.s||it.label)}</span><b>${v==null?'선택':optTxt(v)}</b></div>${body}</div>`;};
+    const tabs=`<div class="sp-tabs">${steps.map((st,c)=>`<button class="sp-t ${c===si?'on':''} ${done(st)?'ok':''}" data-act="jsStep" data-i="${c}"><b>${c+1}</b><small>${esc(st.g)}</small></button>`).join('')}<button class="sp-t ${si===nS?'on':''} ${miss?'':'ok'}" data-act="jsStep" data-i="${nS}"><b>✓</b><small>확인</small></button></div>`;
+    let body;
+    if(si<nS){const st=steps[si];
+      body=st.ded?`<div class="sp-card"><div class="sp-h"><b>${esc(sh.A.label)}</b><span>${fmt1(sh.A.max)}에서 감점</span><em>${fmt1(sc.a)}</em></div>
+          <div class="sp-o sp-ded" style="--n:${(sh.dedOpts||[]).length+1}">${(sh.dedOpts||[]).map(o=>`<button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="${o.v}">−${fmt1(o.v)}<small>${o.s} ${d.ded.filter(x=>x===o.v).length}</small></button>`).join('')}<button class="opt ded undo" data-act="accUndo" data-p="${e.perfId}" ${d.ded.length?'':'disabled'}>되돌리기</button></div>${sh.skills?skillBox(sh,d,e):''}</div>`
+        :`<div class="sp-card"><div class="sp-h"><span class="sp-n">${String(si+1).padStart(2,'0')}</span><b>${esc(st.g)}</b><em>${stVal(st)}<small> / ${optTxt(sum(st.items.map(it=>Math.max(...it.opts))))}</small></em></div>${st.items.map(picker).join('')}</div>`;}
+    else body=`<div class="sp-sum">${steps.map((st,c)=>`<button class="sp-r ${done(st)?'':'miss'}" data-act="jsStep" data-i="${c}"><span class="sp-n">${c+1}</span><b>${esc(st.g)}</b><em>${st.ded?fmt1(sc.a):st.items.map(it=>d.items[it.k]==null?'—':optTxt(d.items[it.k])).join(' · ')}</em><span class="sp-e">고치기</span></button>`).join('')}</div>`;
+    const foot=si<nS?`<button class="btn big" data-act="jsStep" data-i="${Math.max(0,si-1)}" ${si?'':'disabled'}>← 앞</button><button class="btn primary big" data-act="jsStep" data-i="${si+1}">${si===nS-1?'모아 보기 ✓':'다음 →'}</button>`
+      :`<button class="btn primary big" data-act="submitScore" ${totalMiss?'disabled':''}>${totalMiss?`선택하지 않은 항목 ${totalMiss}개`:'점수 보내기'}</button>`;
+    const jtopS=`<div class="jwho"><div class="jname"><b>${esc(e.name)}</b> <span class="small muted">${esc(e.team||'')}</span></div>
+      <div class="jtot">${fsBtn()}<span class="jx chip live">${myJudge}심</span><span class="jx timer" data-timer>${cdText(ST().timer)}</span><span>${sh.A.label} <b>${fmt1(sc.a)}</b></span><span>${sh.B.label} <b>${fmt1(sc.b)}</b></span><span class="big">합계 <b>${fmt1(sc.a+sc.b)}</b></span></div></div>`;
+    return `<div class="jsheet stp">${banner}${jtopS}${tabs}<div class="sp-body">${body}</div><div class="sp-foot">${foot}</div></div>`;
+  }
   const row=it=>{const v=d.items[it.k];return `<div class="ji"><div class="jl"><span>${it.label}</span><b class="${v==null?'nv':''}">${v==null?'선택':fmt1(v)}</b></div>
     <div class="jo" style="--n:${it.opts.length}">${it.opts.map(o=>`<button class="opt ${v===o?'on':''}" data-act="pick" data-p="${e.perfId}" data-k="${it.k}" data-v="${o}">${fmt1(o)}</button>`).join('')}</div></div>`;};
   let colA,colB;
@@ -3419,6 +3479,7 @@ const ACT={
   testAlert:()=>{unlockAudio();pushAlert('warn','알림 시험입니다. 소리와 표시가 정상인지 확인하세요.');},
   fullscreen:()=>{try{const el=document.documentElement;(document.fullscreenElement?document.exitFullscreen():el.requestFullscreen()).catch(()=>toast('이 화면에서는 전체 화면을 쓸 수 없습니다. 브라우저의 F11 키를 눌러 주세요'));}catch(e){toast('이 화면에서는 전체 화면을 쓸 수 없습니다. 브라우저의 F11 키를 눌러 주세요');}},
   jTab:b=>{ui.jTab=Number(b.dataset.i);render();window.scrollTo(0,0);},
+  jsStep:b=>{ui.jsI=Number(b.dataset.i);render();window.scrollTo(0,0);},
   copyLink:b=>{
     const u=b.dataset.u,label=b.dataset.label;
     const fallback=()=>{ui.copyFallback=u;render();const el=document.getElementById('copyFallback');if(el){el.focus();el.select();}};
