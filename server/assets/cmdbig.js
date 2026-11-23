@@ -9,7 +9,7 @@
   const APPK=location.pathname.split('/').filter(Boolean)[0]||'';
   if(!/^(poomsae|gyeokpa|kyorugi)$/.test(APPK))return;
   const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
-  const BIG=APPK==='kyorugi'?{start1:'시작',stop:'그만'}:{attn:'차렷',bow:'경례',ready:'준비',start:'시작',stop:'바로'};
+  const BIG=APPK==='kyorugi'?{start1:'시작',stop:'그만'}:{enter:'출전',attn:'차렷',bow:'경례',ready:'준비',start:'시작',stop:'바로'};
   const SHOW_MS=1600,REST_AT=3600;   /* 「바로」 소리(약 0.6초) + 3초 쉬고 「쉬어」 */
   const isDisp=()=>{try{const r=g('routeNow');return typeof r==='function'&&r()==='display';}catch(e){return false;}};
   const enabled=()=>{try{const S=g('S');return !(S&&S.settings&&S.settings.bigCmd===false);}catch(e){return true;}};

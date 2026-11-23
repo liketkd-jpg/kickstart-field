@@ -842,7 +842,7 @@ body.disp .board.one .pban:empty + .who-row{}
 
 .bcmd{display:grid;grid-template-columns:1.7fr 1fr .7fr;gap:8px}
 .bcmd .btn{padding:12px 8px;font-size:18px}
-.bcmd.b4{grid-template-columns:1fr 1.2fr 1fr .6fr}@media (max-width:600px){.bcmd.b4{grid-template-columns:1fr 1fr}}
+.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
 body.bmax .bcmd .btn{font-size:clamp(18px,2.6vh,28px);padding:clamp(10px,1.6vh,18px) 8px}
 @media (min-width:1000px) and (max-height:820px){.bcmd .btn{padding:7px 6px;font-size:16px}.bcmd{gap:6px}}
 
@@ -2827,7 +2827,7 @@ function vDisplay(){
 
 /* ===================== 음성 구령 =====================
    차렷·준비 / 시작 / 바로. 설정에 따라 운영석이나 전광판 컴퓨터(또는 둘 다)에서 소리를 냅니다 */
-const VOICE_TXT={ready:['준비!'],start:['시작!'],stop:['바로!','쉬어!'],blue:['청','승!'],red:['홍','승!'],attn:['차렷!'],bow:['경례!']};
+const VOICE_TXT={enter:['출전!'],ready:['준비!'],start:['시작!'],stop:['바로!','쉬어!'],blue:['청','승!'],red:['홍','승!'],attn:['차렷!'],bow:['경례!']};
 const READY_SEC=4; /* v1.7.58 준비→시작 5초→4초 (대회 운영 요청) */ /* 준비 구령 뒤 자동 시작까지 */
 const VOICE_BIG={ready:'준비',start:'시작',stop:'바로',blue:'청 승',red:'홍 승',attn:'차렷',bow:'경례'};
 /* v1.7.47 차렷·경례: 첫 품새(격파는 매번)만 「차렷 → 1초 → 경례 → 준비」, 2품새는 「준비 · 시작」만. 인사는 시작할 때만 */
@@ -2835,7 +2835,7 @@ const BOW_AT=2600,BOW_READY=5300; /* v1.7.58 차렷→경례 1.6초→2.6초 */
 function bowFirst(cur){return SET().bow!==false&&!!cur&&(cur.k||1)===1;}
 const BOWED={};let BOWING=0;   /* v1.7.53 차렷·경례를 이미 한 선수 · 경례 중 */
 function cmdBtns(pend,dis,ra){const cur=curOf(),bw=SET().bow!==false,first=bowFirst(cur)&&!(cur&&BOWED[cur.callId]),bz=Date.now()<BOWING;
-  return (bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;}
+  return `<button class="btn big" data-act="cmdEnter" ${dis||pend||bz?'disabled':''}>🔊 출전</button>`+(bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;}
 let VOICE_SEEN=Date.now(),READY_T=null;
 /* 진행요원 구령 목소리: 남성 한국어 목소리를 먼저 찾고, 빠르고 씩씩하게 */
 function koVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));return vs.find(v=>/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name))||vs.find(v=>/Natural|Online|Google/i.test(v.name))||vs[0]||null;}catch(e){return null;}}
@@ -3406,6 +3406,7 @@ const ACT={
   timerStop:()=>{const st=ST(),t=st.timer;if(voiceHere('admin'))sayCmd('stop');const vm=voiceMark('stop');VOICE_SEEN=Math.max(VOICE_SEEN,routeNow()==='display'?0:vm.at);
     saveState({...st,voice:vm,timer:{...t,running:false,elapsed:elapsed(t),startedAt:0,stoppedAt:Date.now()}});},
   /* v1.7.53 구령 단추를 둘로: 「차렷 · 경례」(차렷 → 1초 → 경례) · 「준비 · 시작」(준비 → 5초 → 시작) */
+  cmdEnter:()=>{const st=ST();if(st.timer&&st.timer.running)return;if(voiceHere('admin'))sayCmd('enter');const vm=voiceMark('enter');VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);saveState({...st,voice:vm});},
   cmdBow:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);
     const cur=curOf(),say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
     if(cur&&cur.callId)BOWED[cur.callId]=1;BOWING=Date.now()+BOW_AT+400;saveState({...st,voice:say('attn'),readyAt:null});
