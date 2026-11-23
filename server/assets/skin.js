@@ -20,7 +20,7 @@ function skinFor(cur){const B=by();if(APP==='gyeokpa')return B.gyeokpa||'';if(AP
   if(!cur){const v=ROWS.filter(r=>r[0]!=='tour').map(r=>B[r[0]]).filter(Boolean);return v[0]||'';}
   if((cur.entries||[]).length===2)return B.tour==='arena'||B.tour==='duel'||isNew(B.tour)?B.tour:'';   /* 토너먼트(청·홍)는 「경기장」만 · 아니면 기존 화면 */
   return B[cur.type||'recognized']||'';}
-const fit=(s,base,max)=>{const n=String(s||'').length;return n<=max?base:Math.max(base*0.45,base*max/n);};
+const fit=(s,base,max)=>{const n=String(s||'').length;return n<=max?base:Math.max(base*0.25,base*max/n);};
 const U=n=>`calc(${n}*var(--u))`;
 
 /* ---------- 앱마다 화면 자료 ---------- */
@@ -58,7 +58,7 @@ function divLine(m){return m.div?`<div class="sk-div"><b>${E(m.div)}</b>${m.labe
 function idle(m,th){return `${top(m,th)}<div class="sk-center sk-idle"><div class="sk-kick">${th==='fire'?'GET READY':'OFFICIAL COMPETITION'}</div><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="sk-clock" data-now></span>${m.court?`<div class="sk-ic">${E(m.court)} 코트</div>`:''}</div>`;}
 function live(m,th){const js=(m.judges||[]).map((ok,i)=>`<i class="${ok?'on':''}">${i+1}심</i>`).join('');
   return `${top(m,th)}${divLine(m)}<div class="sk-center sk-live"><div class="sk-kick">${th==='fire'?'NOW ON THE MAT':'NOW PERFORMING'}</div>
-    <div class="sk-name" style="font-size:${U(fit(m.name||m.team,190,5))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="sk-team">${E(m.team)}</div>`:''}${m.members?`<div class="sk-mem">${E(m.members)}</div>`:''}
+    <div class="sk-name" style="font-size:${U(fit(m.name||m.team,230,3))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="sk-team">${E(m.team)}</div>`:''}${m.members?`<div class="sk-mem">${E(m.members)}</div>`:''}
     ${m.liveCount?`<div class="sk-cnt dzlive"><small>${E(m.liveCount.l)}</small>${E(m.liveCount.v)}<small>${E(m.liveCount.u)}</small></div>`:''}
     <div class="sk-timer timer" data-timer>${E(m.timer||'')}</div>${js?`<div class="sk-js">${js}</div>`:''}</div>${foot(m)}`;}
 /* v1.7.29 왕실·불꽃: 심판별 세부 점수 (들어간 점수 파랑 · 빠진 점수 빨강) */
@@ -133,7 +133,7 @@ const arStage=m=>m.label||'';
 function arJudges(js){if(!js||!js.length)return '';return `<div class="ar-js" style="--n:${js.length}">${js.map(j=>j.t!=null?`<div class="ar-j rv ${j.drop?'drop':j.per?'':'in'}"><span class="ar-jn">${j.n}</span><b>${E(j.t)}</b>${j.items?`<div class="ar-ji">${j.items.map(it=>`<span class="${it.x?'jx':'jk'}"><i>${E(it.l)}</i>${E(it.v)}</span>`).join('')}</div>`:`<small>${j.sub}</small>`}${j.drop&&j.why?`<em class="ar-why">${E(j.why)}</em>`:''}</div>`
   :`<div class="ar-j ${j.ok?'ok':'wait'}"><span class="ar-jn">${j.n}</span><b>${j.ok?'입력':'—'}</b><small>${j.ok?'Judge '+j.n:'채점 중'}</small></div>`).join('')}</div>`;}
 function aIdle(m){return `<div class="ar-idle"><span class="ar-en">Official Competition</span><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="ar-clock" data-now></span>${m.court?`<div class="ar-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
-function aWho(m){const team=!m.name||m.isTeam;return `<div class="ar-who"><span class="ar-en">${team?'Team':'Athlete'}</span><div class="ar-nm" style="font-size:${U(fit(m.name||m.team,team?200:300,team?7:3))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ar-tm">${E(m.team)}</div>`:''}${m.members?`<div class="ar-mem">${E(m.members)}</div>`:''}</div>`;}
+function aWho(m){const team=!m.name||m.isTeam;return `<div class="ar-who"><span class="ar-en">${team?'Team':'Athlete'}</span><div class="ar-nm" style="font-size:${U(fit(m.name||m.team,300,3))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ar-tm">${E(m.team)}</div>`:''}${m.members?`<div class="ar-mem">${E(m.members)}</div>`:''}</div>`;}
 function aLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
   const right=m.liveCount?`<div class="ar-sc"><span class="ar-en">${E(m.liveCount.l)}</span><div class="ar-big dzlive">${E(m.liveCount.v)}<small>${E(m.liveCount.u)}</small></div><div class="ar-sub">경기 시간 <span class="timer" data-timer>${E(m.timer||'')}</span></div></div>`
     :`<div class="ar-sc"><span class="ar-en">Time</span><div class="ar-big ar-time timer" data-timer>${E(m.timer||'')}</div><div class="ar-sub">${m.name?'경기 시간':'연기 시간'}</div></div>`;
@@ -307,7 +307,7 @@ function nStand(m){const t=(m.top||[]).slice(0,3);
   const cells=t.length?t.map(r=>`<div class="n-sc ${r.me?'me':''}"><i>${r.rank}</i><span><b>${E(r.name||r.team)}</b><small>${E(r.name?r.team:'')}</small></span><em>${E(r.score)}</em></div>`).join(''):`<div class="n-sc mute"><span><b>아직 순위 없음</b></span></div>`;
   return `<div class="n-bot"><div class="n-bl">${nEn('Standings')}<b>현재 순위</b></div><div class="n-scs">${cells}</div>${nNext(m)}</div>`;}
 function nWho(m,big){const team=!m.name||m.isTeam,nm=m.name||m.team;
-  return `<div class="n-who">${nEn(team?'Team':'Athlete')}<div class="n-nm" style="font-size:${U(fit(nm,big||(team?240:320),team?5:3))}">${E(nm)}</div>${m.name&&m.team?`<div class="n-tm">${E(m.team)}</div>`:''}${m.members?`<div class="n-mem">${E(m.members)}</div>`:''}</div>`;}
+  return `<div class="n-who">${nEn(team?'Team':'Athlete')}<div class="n-nm" style="font-size:${U(fit(nm,big||320,3))}">${E(nm)}</div>${m.name&&m.team?`<div class="n-tm">${E(m.team)}</div>`:''}${m.members?`<div class="n-mem">${E(m.members)}</div>`:''}</div>`;}
 function nJs(js,live){if(!js||!js.length)return '';
   return `<div class="n-js" style="--n:${js.length}">${js.map(j=>live?`<div class="n-j ${j.ok?'ok':'wait'}"><small>J${j.n}</small><b>${j.ok?'✓':'···'}</b></div>`
     :`<div class="n-j rv ${j.drop?'drop':''}"><small>J${j.n}${j.drop?' · 제외':''}</small><b>${E(j.t)}</b>${j.items&&j.items.length?`<span class="n-ji">${j.items.map(it=>`<i class="${it.x?'x':''}">${E(it.l)} ${E(it.v)}</i>`).join('')}</span>`:''}</div>`).join('')}</div>`;}
@@ -566,8 +566,8 @@ body.disp .board.sk-arena .cbres b{font-size:inherit}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-band{flex:1;min-height:0;padding:${U(20)} ${U(50)}}
 .board.sk-arena.sk-score .ar-band{grid-template-columns:minmax(0,max-content) minmax(0,1fr)}.board.sk-arena.sk-score .ar-sc{min-width:0}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-who>.ar-en{font-size:${U(28)}}
-.board.sk-arena:is(.sk-live,.sk-score) .ar-tm{font-size:${U(76)};margin-top:${U(8)}}.board.sk-arena:is(.sk-live,.sk-score) .ar-mem{font-size:${U(40)}}
-.board.sk-arena.sk-live .ar-big{font-size:${U(360)};line-height:.86}.board.sk-arena.sk-live .ar-sc{min-width:${U(620)};padding-left:${U(50)}}
+.board.sk-arena:is(.sk-live,.sk-score) .ar-tm{font-size:${U(76)};margin-top:${U(8)}}.board.sk-arena:is(.sk-live,.sk-score) .ar-mem{font-size:${U(38)};white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
+.board.sk-arena.sk-live .ar-big{font-size:${U(360)};line-height:.86;white-space:nowrap}.board.sk-arena.sk-live .ar-sc{min-width:${U(620)};padding-left:${U(50)};overflow:hidden}.board.sk-arena.sk-live .ar-band{grid-template-columns:minmax(55%,1fr) minmax(0,auto)}.board.sk-arena.sk-live .ar-big:is([data-over],.over){font-size:${U(280)}}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-sc>.ar-en{font-size:${U(30)}}.board.sk-arena:is(.sk-live,.sk-score) .ar-sub{font-size:${U(38)}}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-j{padding:${U(18)} ${U(26)}}.board.sk-arena:is(.sk-live,.sk-score) .ar-jn{width:${U(72)};height:${U(72)};font-size:${U(34)}}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-j:not(.rv) b{font-size:${U(78)}}.board.sk-arena:is(.sk-live,.sk-score) .ar-j:not(.rv) small{font-size:${U(30)};color:#C9D3EA}
