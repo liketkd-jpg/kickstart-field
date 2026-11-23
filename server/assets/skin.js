@@ -55,7 +55,7 @@ function modelGp(){const st=g('ST')(),cur=g('curOf')(),S=g('S'),s=SET();
 const brand=th=>th==='fire'?'KICKSTART UP':'KICKSTART UP';
 function top(m,th){return `<div class="sk-top"><span class="sk-brand">${brand(th)}</span><span class="sk-comp" style="font-size:${U(fit(m.comp,34,26))}">${E(m.comp)}</span>${m.court?`<span class="sk-court">${E(m.court)} 코트</span>`:'<span></span>'}</div>`;}
 function divLine(m){return m.div?`<div class="sk-div"><b>${E(m.div)}</b>${m.label?` · ${E(m.label)}`:''}</div>`:'';}
-function idle(m,th){return `${top(m,th)}<div class="sk-center sk-idle"><div class="sk-kick">${th==='fire'?'GET READY':'OFFICIAL COMPETITION'}</div><h1 style="font-size:${U(fit(m.comp,96,18))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="sk-clock" data-now></span></div>`;}
+function idle(m,th){return `${top(m,th)}<div class="sk-center sk-idle"><div class="sk-kick">${th==='fire'?'GET READY':'OFFICIAL COMPETITION'}</div><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="sk-clock" data-now></span>${m.court?`<div class="sk-ic">${E(m.court)} 코트</div>`:''}</div>`;}
 function live(m,th){const js=(m.judges||[]).map((ok,i)=>`<i class="${ok?'on':''}">${i+1}심</i>`).join('');
   return `${top(m,th)}${divLine(m)}<div class="sk-center sk-live"><div class="sk-kick">${th==='fire'?'NOW ON THE MAT':'NOW PERFORMING'}</div>
     <div class="sk-name" style="font-size:${U(fit(m.name||m.team,190,5))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="sk-team">${E(m.team)}</div>`:''}${m.members?`<div class="sk-mem">${E(m.members)}</div>`:''}
@@ -307,7 +307,7 @@ function nWho(m,big){const team=!m.name||m.isTeam,nm=m.name||m.team;
 function nJs(js,live){if(!js||!js.length)return '';
   return `<div class="n-js" style="--n:${js.length}">${js.map(j=>live?`<div class="n-j ${j.ok?'ok':'wait'}"><small>J${j.n}</small><b>${j.ok?'✓':'···'}</b></div>`
     :`<div class="n-j rv ${j.drop?'drop':''}"><small>J${j.n}${j.drop?' · 제외':''}</small><b>${E(j.t)}</b>${j.items&&j.items.length?`<span class="n-ji">${j.items.map(it=>`<i class="${it.x?'x':''}">${E(it.l)} ${E(it.v)}</i>`).join('')}</span>`:''}</div>`).join('')}</div>`;}
-function nIdle(m){return `<div class="n-idle">${nEn('Official Competition')}<h1 style="font-size:${U(fit(m.comp,130,14))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><b class="n-now" data-now></b>${m.court?`<div class="n-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
+function nIdle(m){return `<div class="n-idle">${nEn('Official Competition')}<h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><b class="n-now" data-now></b>${m.court?`<div class="n-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
 function nLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
   const right=m.liveCount?`<div class="n-clk">${nEn(m.liveCount.l)}<b class="dzlive">${E(m.liveCount.v)}<small>${E(m.liveCount.u)}</small></b><span class="n-sub">경기 시간 <i class="timer" data-timer>${E(m.timer||'')}</i></span></div>`
     :`<div class="n-clk">${nEn('Time')}<b class="timer" data-timer>${E(m.timer||'')}</b><span class="n-sub">${m.name?'경기 시간':'연기 시간'}</span></div>`;
@@ -351,6 +351,9 @@ const NSCR={idle:nIdle,live:nLive,score:nScore,rank:nRank,duel:nDuel,duelres:nDr
 function install(){const cur=window.vDisplay;if(typeof cur!=='function')return false;if(cur.__sk)return true;
   if(!cur.__ksb)return false;if(APP==='poomsae'&&!cur.__kst)return false;   /* 금빛 전광판·테마를 감싼 다음에 */
   const w=function(){try{let c=null;try{c=g('curOf')();}catch(e){}const th=skinFor(c);
+      /* v1.7.65 「기존 디자인」 대기 화면도 다른 디자인과 같은 글씨 크기 (프레스티지 금빛 대기 화면) */
+      if(!th){let idle=false;try{idle=APP==='kyorugi'?!g('live')():!c;}catch(e){}if(idle&&SET().board!=='classic'){const F=window.KS_FIELD,court=(F&&F.court)||(window.KS_HOST&&KS_HOST.court)||'';
+        const nm=SET().name||(APP==='kyorugi'?'겨루기 대회':APP==='gyeokpa'?'태권도 격파 대회':'품새 대회');const h=draw('pr',{scr:'idle',comp:nm,court,key:'idle'});if(h){const kb=(()=>{try{return g('KIOSK')?'':'<button data-act="go" data-r="admin-run">← 운영석</button>';}catch(e){return '';}})();return h.replace('<div class="sk-bg">','<div class="dctl" style="position:fixed;top:8px;right:10px;z-index:30">'+kb+'<button data-act="fullscreen">전체 화면</button></div><div class="sk-bg">');}}}
       if(!isNew(th)){const h=layDraw(th,c);if(h)return h;}
       if(th==='arena'&&APP==='kyorugi'){const h=arKy(cur);if(h)return h;}
       else if((th==='arena'||th==='duel'||isNew(th))&&c&&(c.entries||[]).length===2){const m=arTourModel();if(m){const h=draw(th,m);if(h)return h;}}
@@ -392,7 +395,8 @@ body.disp .board.sk{position:fixed;inset:0;margin:0;padding:0;border:0;border-ra
 .sk-div{position:absolute;left:0;right:0;top:${U(150)};text-align:center;font:700 ${U(38)} "Noto Sans KR";opacity:.85}
 .sk-center{position:absolute;left:${U(100)};right:${U(100)};top:${U(230)};bottom:${U(120)};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 .sk-kick{font:800 ${U(26)} Cinzel,"Noto Sans KR";letter-spacing:.5em;margin-bottom:${U(18)}}
-.sk-idle h1{font-weight:900;line-height:1.2;margin:0 0 ${U(24)}}.sk-idle p{font-size:${U(40)};opacity:.8;margin:0}.sk-clock{margin-top:${U(30)};font:900 ${U(64)} Cinzel,"Noto Sans KR"}
+.sk-idle h1{font-weight:900;line-height:1.12;margin:0 0 ${U(24)};max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sk-idle p{font-size:${U(64)};opacity:.85;margin:0}.sk-clock{margin-top:${U(26)};font:800 ${U(190)}/1 Archivo,sans-serif;font-stretch:80%}
+.sk-idle .sk-kick{font-size:${U(40)};letter-spacing:.3em}.sk-ic{margin-top:${U(14)};font-size:${U(64)};font-weight:800}
 .sk-name{font-weight:900;line-height:1.05;letter-spacing:-.02em;animation:skrise .9s cubic-bezier(.2,1.2,.3,1) both;animation-delay:var(--t)}
 .sk-team{font:700 ${U(50)} "Noto Sans KR";margin-top:${U(14)};opacity:.85}
 .sk-mem{font-size:${U(28)};opacity:.7;margin-top:${U(10)};max-width:${U(1500)}}
@@ -879,7 +883,8 @@ const css3=`
 .n-cut{display:flex;justify-content:space-between;align-items:center;border-top:${U(3)} dashed;padding:${U(6)} ${U(10)} 0;font-weight:800;font-size:${U(24)};flex:none}
 .n-gap{text-align:center;opacity:.5;font-size:${U(30)};line-height:1;flex:none}
 .n-idle{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 ${U(120)};z-index:1}
-.n-idle h1{font-weight:900;line-height:1.15;margin:${U(20)} 0}.n-idle p{font-size:${U(40)};opacity:.8;margin:0}.n-now{font:700 ${U(96)} "Barlow Condensed",Archivo,sans-serif;margin-top:${U(30)}}.n-ic{margin-top:${U(16)};font-size:${U(34)}}.n-ic b{font:700 ${U(60)} "Barlow Condensed",sans-serif}
+.n-idle h1{font-weight:900;line-height:1.12;margin:${U(16)} 0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.n-idle p{font-size:${U(64)};opacity:.85;margin:0}.n-now{font:800 ${U(190)}/1 Archivo,sans-serif;font-stretch:80%;margin-top:${U(26)}}.n-ic{margin-top:${U(14)};font-size:${U(64)};font-weight:800}.n-ic b{font:800 ${U(64)} Archivo,sans-serif}
+.n-idle .n-en{font-size:${U(40)}!important}
 /* 청·홍 */
 .n-duel{position:absolute;left:0;right:0;top:${U(120)};bottom:${U(110)};display:grid;grid-template-columns:minmax(0,1fr) ${U(440)} minmax(0,1fr);z-index:1}
 .n-side{position:relative;overflow:hidden;padding:${U(46)} ${U(60)} ${U(30)};display:flex;flex-direction:column;min-width:0}
