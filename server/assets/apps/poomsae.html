@@ -2866,17 +2866,21 @@ function maybeAutoNext(){
 let AUTO_KEY='',AUTO_T=null;
 /* 운영석 창이 다른 창 뒤에 가려지면 브라우저가 타이머를 늦춥니다. 그래서 점수가 다 모이고 4초가 지나도 공개가 안 되면 전광판이 대신 공개합니다 */
 let DAUTO_KEY='';
-setInterval(()=>{try{if(KIOSK||routeNow()!=='display'||SET().autoReveal===false)return;const st=ST(),cur=curOf();if(!cur||st.status!=='open'||(st.timer&&st.timer.running)||!cur.entries.every(e=>entryReady(cur,e))){DAUTO_KEY='';return;}
+setInterval(()=>{try{if(KIOSK||routeNow()!=='display'||SET().autoReveal===false)return;const st=ST(),cur=curOf();if(!cur||st.status!=='open'||(st.timer&&st.timer.running)||restWait(st)>0||!cur.entries.every(e=>entryReady(cur,e))){DAUTO_KEY='';return;}
   const key=cur.callId+'#'+st.epoch;if(!DAUTO_KEY.startsWith(key)){DAUTO_KEY=key+'@'+Date.now();return;}
   if(Date.now()-Number(DAUTO_KEY.split('@')[1])>4000&&!DAUTO_KEY.endsWith('!')){DAUTO_KEY+='!';doReveal(true).catch(()=>{});}}catch(e){}},700);
+/* v1.7.63 「바로」 뒤 「쉬어」 구령(3.6초 뒤 · 1.6초 표시)이 끝난 다음(바로 뒤 약 5.5초)에 점수 자동 공개 */
+const REST_DONE=4000;function restWait(st){const v=st&&st.voice;return v&&v.k==='stop'&&v.at?v.at+REST_DONE-Date.now():0;}
+let AUTO_RW=null;
 function maybeAutoReveal(){
   if(KIOSK||!(routeNow().startsWith('admin')||SOLO())||SET().autoReveal===false)return;
   const st=ST(),cur=curOf();if(!cur||st.status!=='open')return;
   if(st.timer&&st.timer.running)return; /* v1.7.47 「바로」 전에는 심판이 먼저 눌러도 점수를 띄우지 않음 */
+  {const rw=restWait(st);if(rw>0){clearTimeout(AUTO_RW);AUTO_RW=setTimeout(maybeAutoReveal,Math.min(rw,6000)+60);return;}}
   if(!cur.entries.every(e=>entryReady(cur,e)))return;
   const key=cur.callId+'#'+st.epoch;if(AUTO_KEY===key)return;AUTO_KEY=key;
   clearTimeout(AUTO_T);AUTO_T=setTimeout(()=>{const s2=ST(),c2=curOf();
-    if(c2&&c2.callId+'#'+s2.epoch===key&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&c2.entries.every(e=>entryReady(c2,e)))doReveal(true).catch(()=>{});else AUTO_KEY='';},1500);
+    if(c2&&c2.callId+'#'+s2.epoch===key&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&restWait(s2)<=0&&c2.entries.every(e=>entryReady(c2,e)))doReveal(true).catch(()=>{});else AUTO_KEY='';},1500);
 }
 
 /* ===================== 피라미드 대진표 (화면 SVG · PDF 공용) =====================

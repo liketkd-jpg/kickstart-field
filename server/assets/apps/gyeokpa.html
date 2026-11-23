@@ -2741,12 +2741,16 @@ function maybeAutoAdvance(){
     setTimeout(()=>{const d2=divById(d.id);if(!d2)return;const s2=stagesOf(d2);if(s2.length>1||s2[0].key!=='pre')return;const a2=advancePlan(d2);
       if(!a2||!a2.done||(a2.tie&&a2.need)||!a2.adv.length){ADV_SEEN[k]=0;return;}advanceTo(d2,a2,true).catch(()=>{ADV_SEEN[k]=0;});},4000);}
 }
+/* v1.7.63 「바로」 뒤 「쉬어」 구령(3.6초 뒤 · 1.6초 표시)이 끝난 다음(바로 뒤 약 5.5초)에 점수 자동 공개 */
+const REST_DONE=4000;function restWait(st){const v=st&&st.voice;return v&&v.k==='stop'&&v.at?v.at+REST_DONE-Date.now():0;}
+let AUTO_RW=null;
 function maybeAutoReveal(){
   if(KIOSK||!(routeNow().startsWith('admin')||SOLO())||SET().autoReveal===false)return;
   const st=ST(),cur=curOf();if(!cur||st.status!=='open'||!JUDGED(cur.kind)||!entryReady(cur))return;
   if(st.timer&&st.timer.running)return; /* v1.7.47 「바로」 전에는 심판이 먼저 눌러도 점수를 띄우지 않음 */
+  {const rw=restWait(st);if(rw>0){clearTimeout(AUTO_RW);AUTO_RW=setTimeout(maybeAutoReveal,Math.min(rw,6000)+60);return;}}
   const key=cur.callId+'#'+st.epoch;if(AUTO_KEY===key)return;AUTO_KEY=key;
-  clearTimeout(AUTO_T);AUTO_T=setTimeout(()=>{const s2=ST(),c2=curOf();if(c2&&c2.callId+'#'+s2.epoch===key&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&entryReady(c2))doReveal(true).catch(()=>{});else AUTO_KEY='';},1500);
+  clearTimeout(AUTO_T);AUTO_T=setTimeout(()=>{const s2=ST(),c2=curOf();if(c2&&c2.callId+'#'+s2.epoch===key&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&restWait(s2)<=0&&entryReady(c2))doReveal(true).catch(()=>{});else AUTO_KEY='';},1500);
 }
 /* ===================== 음성 구령 (제11조: 준비 · 시작 / 바로) ===================== */
 const VOICE_TXT={ready:['준비!'],start:['시작!'],stop:['바로!'],attn:['차렷!'],bow:['경례!']};
