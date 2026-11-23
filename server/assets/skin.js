@@ -71,16 +71,20 @@ function score(m,th){const parts=(m.parts||[]).map(p=>`<span class="sk-part ${p.
 /* v1.7.9 생활체육(4명 1조): 순위 대신 금·은·동·동 */
 const SK_COMM=()=>{try{const f=(0,eval)('COMM');return typeof f==='function'&&!!f();}catch(e){return false;}};
 const SK_MED={1:'금',2:'은',3:'동',4:'동'};
+/* v1.7.68 메달: 동그라미 대신 리본 달린 메달 그림 안에 금·은·동 (4위 공동 동) — 모든 디자인·기존 전광판 공통 */
+const KMD_C={1:['#FFF7D6','#E6B94C','#8E6618'],2:['#FFFFFF','#C9CFD8','#76808F'],3:['#FFE6CC','#CD8A4E','#76431C']};
+const ksMedal=(r,lab)=>{const k=Math.min(3,r),c=KMD_C[k];return `<span class="kmd km${k}"><svg viewBox="0 0 100 128" aria-hidden="true"><defs><radialGradient id="kmg${k}" cx="36%" cy="30%" r="75%"><stop offset="0" stop-color="${c[0]}"/><stop offset=".55" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></radialGradient></defs><path d="M18 0h28l16 58-26 5z" fill="#1E4FD8"/><path d="M82 0H54L38 58l26 5z" fill="#D7263D"/><path d="M30 0h8l15 55-6 1z" fill="#fff" opacity=".35"/><path d="M70 0h-8L47 55l6 1z" fill="#fff" opacity=".25"/><rect x="34" y="50" width="32" height="12" rx="3" fill="${c[2]}"/><circle cx="50" cy="86" r="40" fill="url(#kmg${k})"/><circle cx="50" cy="86" r="40" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="2"/><circle cx="50" cy="86" r="31" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="2.5"/></svg><b>${lab}</b></span>`;};
+window.KS_MEDAL=ksMedal;
 /* v1.7.55 메달(금·은·동)은 그 조·단계 경기가 모두 끝난 뒤에만 (m.medal) — 진행 중에는 순위 숫자 · 생활체육은 4위까지 동 */
 const medOk=(r,m)=>!!(m&&m.medal)&&r>=1&&r<=(SK_COMM()?4:3);
-const skRk=(r,m)=>medOk(r,m)?SK_MED[r]:r;const skMc=(r,m)=>medOk(r,m)?' md m'+Math.min(3,r):'';
+const skRk=(r,m)=>medOk(r,m)?ksMedal(r,SK_MED[r]):r;const skRkT=(r,m)=>medOk(r,m)?SK_MED[r]+'메달':r;const skMc=(r,m)=>medOk(r,m)?' md m'+Math.min(3,r):'';
 /* v1.7.17 순위: 위에서 아래로 한 줄씩 (금 → 은 → 동 → 동 …) 크게 — 시상대처럼 좌우로 엇갈리지 않게 */
 function rank(m,th){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,8);if(me&&!show.includes(me)){const k=R.indexOf(me);show=R.slice(0,5).concat(R.slice(Math.max(5,k-1),k+2));}
   const rh=Math.max(64,Math.min(124,Math.floor((690-(show.length-1)*12)/Math.max(1,show.length))));
   let list='';show.forEach((r,i,a)=>{const prev=a[i-1];if(prev&&prev.rank<r.rank-1&&!(m.pre&&prev.rank<=m.quota&&r.rank>m.quota))list+=`<div class="sk-gap">⋯</div>`;
     if(m.pre&&m.quota&&prev&&prev.rank<=m.quota&&r.rank>m.quota)list+=`<div class="sk-cut1"><span>${E(m.cut)}</span></div>`;
     list+=`<div class="sk-r1 p${Math.min(r.rank,5)} ${r.me?'me':''} ${m.pre&&r.inq?'in':''}${skMc(r.rank,m)}" style="--i:${i};--rh:${rh}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<span class="sk-medal">${skRk(r.rank,m)}</span><span class="sk-r1n"><b>${E(r.name||r.team)}</b><small>${E(r.name?r.team||'':'')}</small></span><em>${E(r.score)}</em></div>`;});
-  const meTxt=me?`<div class="sk-me1">${E(me.name||me.team)} · 현재 <b>${skRk(me.rank,m)}${medOk(me.rank,m)?'':'위'}</b> <small>${R.length}${m.unit||'명'} 중</small></div>`:'';
+  const meTxt=me?`<div class="sk-me1">${E(me.name||me.team)} · 현재 <b>${skRkT(me.rank,m)}${medOk(me.rank,m)?'':'위'}</b> <small>${R.length}${m.unit||'명'} 중</small></div>`:'';
   return `${top(m,th)}<div class="sk-rkh"><span>${th==='fire'?'RESULTS':'STANDINGS'}</span><b>${E(m.div||'')}${m.label?` · ${E(m.label)}`:''}</b></div>
     <div class="sk-one">${list}</div>${meTxt}`;}
 function foot(m){return m.next&&m.next.who?`<div class="sk-next"><span>NEXT</span>${E(m.next.who)}${m.next.team?' · '+E(m.next.team):''}</div>`:'';}
@@ -320,7 +324,7 @@ function nRank(m){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,8);if
     else if(prev&&prev.rank<r.rank-1)list+=`<div class="n-gap">⋯</div>`;
     const md=skMc(r.rank,m);list+=`<div class="n-r ${r.me?'me':''} ${m.pre&&r.inq?'in':''} ${m.pre&&!r.inq?'out':''} ${md}" style="--i:${i};height:${U(rh)}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<span class="n-rk">${skRk(r.rank,m)}</span><span class="n-rn"><b>${E(r.name||r.team)}${r.me?'<em>지금</em>':''}</b><small>${E(r.name?r.team:'')}</small></span><span class="n-rs">${E(r.score)}</span></div>`;});
   const st=String(m.label||'').replace(/\s*\d+\s*번$/,'');
-  return `${nTop(m,st+' 순위','Standings')}<div class="n-rank">${list}</div><div class="n-bot"><div class="n-bl">${nEn(m.medal?'Final':'Progress')}<b>${m.medal?'최종 순위':'진행'}</b></div><div class="n-scs"><div class="n-sc wide"><span><b>${me?`${E(me.name||me.team)} · 현재 ${skRk(me.rank,m)}${m.medal&&me.rank<=(SK_COMM()?4:3)?'':'위'}`:'순위'}</b><small>${R.length}${E(m.unit||'명')} 경기 마침${m.pre&&m.quota?` · 상위 ${m.quota}${E(m.unit||'명')} 진출`:''}${m.medal?' · 메달 확정':''}</small></span></div></div>${nNext(m)}</div>`;}
+  return `${nTop(m,st+' 순위','Standings')}<div class="n-rank">${list}</div><div class="n-bot"><div class="n-bl">${nEn(m.medal?'Final':'Progress')}<b>${m.medal?'최종 순위':'진행'}</b></div><div class="n-scs"><div class="n-sc wide"><span><b>${me?`${E(me.name||me.team)} · 현재 ${skRkT(me.rank,m)}${m.medal&&me.rank<=(SK_COMM()?4:3)?'':'위'}`:'순위'}</b><small>${R.length}${E(m.unit||'명')} 경기 마침${m.pre&&m.quota?` · 상위 ${m.quota}${E(m.unit||'명')} 진출`:''}${m.medal?' · 메달 확정':''}</small></span></div></div>${nNext(m)}</div>`;}
 /* ---------- 청·홍 (품새 토너먼트) ---------- */
 const nf2=v=>v==null?'—':(+v).toFixed(2),nf1=v=>v==null?'—':(+v).toFixed(1);
 function nSide(s,m,res){const b=s.side==='blue',r=s.res;
@@ -1034,6 +1038,14 @@ const css3=`
 .sk-pr .n-idle h1{background:linear-gradient(180deg,#FFF6D8,#E6C27A 60%,#B8862E);-webkit-background-clip:text;background-clip:text;color:transparent}.sk-pr .n-now{color:#F2D27A;font-family:Archivo,sans-serif}
 `;
 
-const st=document.createElement('style');st.id='ks-skin-css';st.textContent=css+css3;(document.head||document.documentElement).appendChild(st);
+const cssMd=`
+.kmd{position:relative;display:inline-block;width:1.15em;height:1.47em;vertical-align:middle;line-height:0;font-size:1.25em;flex:none}
+.kmd svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 .04em .07em rgba(0,0,0,.5))}
+.kmd b{position:absolute;left:0;right:0;top:67.2%;transform:translateY(-50%);text-align:center;font:900 .5em/1 "Noto Sans KR",sans-serif;color:#2c1c00;letter-spacing:0}
+.kmd.km2 b{color:#2a313d}.kmd.km3 b{color:#2e1504}
+:is(.sk-medal,.n-rk,.cbrk,.ar-rk):has(.kmd){background:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;overflow:visible}
+.cbrk.md:has(.kmd){width:auto;height:auto}.ar-rr.md .ar-rk .kmd{font-size:1em}
+`;
+const st=document.createElement('style');st.id='ks-skin-css';st.textContent=css+css3+cssMd;(document.head||document.documentElement).appendChild(st);
 window.KS_SKIN={skinFor,modelPm,modelGp,draw,NEW:NEWS};
 })();
