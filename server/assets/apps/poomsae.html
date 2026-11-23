@@ -405,6 +405,24 @@ body.jmax .jsheet.stp{min-height:calc(100dvh - 20px)}
   .sp-card .jskill .jo .opt{font-size:clamp(16px,4.8vh,24px);min-height:clamp(40px,11vh,64px);font-weight:800}
 }
 
+/* v1.7.73 가로 화면: 화면 너비 기준으로 글씨 더 크게 */
+@media (orientation:landscape){
+  .jsheet.stp .jwho .jname b{font-size:clamp(26px,3.6vw,40px)!important}
+  .jsheet.stp .jtot>span{font-size:clamp(17px,2.3vw,24px)!important}.jsheet.stp .jtot>span b{font-size:clamp(26px,3.6vw,40px)!important}.jsheet.stp .jtot>span.big b{font-size:clamp(34px,4.8vw,54px)!important}
+  .jsheet.stp .jtot .jx{font-size:clamp(18px,2.5vw,26px)!important}
+  .sp-t b{font-size:clamp(20px,2.8vw,30px)!important}.sp-t small{font-size:clamp(17px,2.4vw,26px)!important}
+  .sp-h b{font-size:clamp(28px,3.8vw,42px)!important}.sp-h em{font-size:clamp(34px,4.8vw,54px)!important}.sp-h span{font-size:clamp(16px,2.2vw,22px)!important}
+  .sp-l{font-size:clamp(24px,3.3vw,36px)!important}.sp-l b{font-size:clamp(30px,4.2vw,48px)!important}.sp-it.nv .sp-l b{font-size:clamp(26px,3.4vw,38px)!important}
+  .sp-hint{font-size:clamp(14px,1.9vw,19px)!important}
+  .sp-o.sp-ded .opt small{font-size:clamp(17px,2.4vw,24px)!important;font-weight:700}
+  .sp-card .jskill .jl{font-size:clamp(20px,2.8vw,30px)!important}.sp-card .jskill .jl small{font-size:clamp(16px,2.2vw,22px)!important}.sp-card .jskill .jl b{font-size:clamp(22px,3vw,32px)!important}
+  .sp-card .jskill .jo .opt{font-size:clamp(20px,2.8vw,32px)!important}
+  .sp-o .opt{font-size:clamp(30px,4.6vw,60px)!important}
+  .sp-o.sp-half{flex:none!important;min-height:0!important;grid-auto-rows:clamp(38px,11vh,60px)!important}.sp-o.sp-half .opt{min-height:0!important;font-size:clamp(22px,3vw,36px)!important}
+  .sp-o.sp-int{flex:1.6 1 0!important}
+  .sp-foot .btn{font-size:clamp(20px,2.8vw,30px)!important}
+}
+
 
 @media (min-width:820px){.jlong{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 .jsheet .banner{padding:7px 10px;font-size:12px}
@@ -2489,7 +2507,7 @@ let myJudge=FIXED0?0:(Number(ssGet('pj_judge'))||0);
 let DRAFTS=lsJSON('pj_drafts',{});
 const saveDrafts=()=>{const mine='|'+myJudge,all=lsJSON('pj_drafts',{});for(const k of Object.keys(all))if(k.endsWith(mine))delete all[k];for(const [k,v] of Object.entries(DRAFTS))if(k.endsWith(mine))all[k]=v;lsSet('pj_drafts',JSON.stringify(all));};
 /* 태권체조 지정 기술 동작: 한 것은 그대로 두고, 빠진 기술만 눌러 「누락」(−0.3). 다시 누르면 취소 */
-function skillBox(sh,d,e){const m=d.miss||[];return `<div class="ji jskill"><div class="jl"><span>지정 기술 동작 <small>빠진 기술만 누르세요 · 1개당 −0.3</small></span><b>${m.length?'누락 '+m.length:'모두 함'}</b></div>
+function skillBox(sh,d,e){const m=d.miss||[];return `<div class="ji jskill"><div class="jl"><span>지정 기술 동작 <small>빠진 기술만 누르세요 · 1개당 −0.3</small></span><b>${m.length?'기술 칸 누락 '+m.length:'모두 함'}</b></div>
   <div class="jo" style="--n:4">${sh.skills.map(x=>`<button class="opt ${m.includes(x.k)?'miss':''}" data-act="skillMiss" data-p="${e.perfId}" data-k="${x.k}">${m.includes(x.k)?'✕ ':''}${x.s}</button>`).join('')}</div></div>`;}
 function allItems(type){const sh=SHEETS[type];return [...(sh.A.items||[]),...sh.B.items];}
 function draftFor(perfId,type){
@@ -2637,7 +2655,7 @@ function vJudge(){
     let body;
     if(si<nS){const st=steps[si];
       body=st.ded?`<div class="sp-card"><div class="sp-h"><b>${esc(sh.A.label)}</b><span>${fmt1(sh.A.max)}에서 감점</span><em>${fmt1(sc.a)}</em></div>
-          <div class="sp-o sp-ded" style="--n:${(sh.dedOpts||[]).length+1}">${(sh.dedOpts||[]).map(o=>`<button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="${o.v}">−${fmt1(o.v)}<small>${o.s} ${d.ded.filter(x=>x===o.v).length}</small></button>`).join('')}<button class="opt ded undo" data-act="accUndo" data-p="${e.perfId}" ${d.ded.length?'':'disabled'}>되돌리기</button></div>${sh.skills?skillBox(sh,d,e):''}</div>`
+          <div class="sp-o sp-ded" style="--n:${(sh.dedOpts||[]).length+1}">${(sh.dedOpts||[]).map(o=>`<button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="${o.v}">−${fmt1(o.v)}<small>${o.s} ${o.v===0.3&&sh.skills?'합계 ':''}${d.ded.filter(x=>x===o.v).length}</small></button>`).join('')}<button class="opt ded undo" data-act="accUndo" data-p="${e.perfId}" ${d.ded.length?'':'disabled'}>되돌리기</button></div>${sh.skills?skillBox(sh,d,e):''}</div>`
         :`<div class="sp-card"><div class="sp-h"><span class="sp-n">${String(si+1).padStart(2,'0')}</span><b>${esc(st.g)}</b><em>${stVal(st)}<small> / ${optTxt(sum(st.items.map(it=>Math.max(...it.opts))))}</small></em></div>${st.items.map(picker).join('')}</div>`;}
     else body=`<div class="sp-sum">${steps.map((st,c)=>`<button class="sp-r ${done(st)?'':'miss'}" data-act="jsStep" data-i="${c}"><span class="sp-n">${c+1}</span><b>${esc(st.g)}</b><em>${st.ded?fmt1(sc.a):st.items.map(it=>d.items[it.k]==null?'—':optTxt(d.items[it.k])).join(' · ')}</em><span class="sp-e">고치기</span></button>`).join('')}</div>`;
     const foot=si<nS?`<button class="btn big" data-act="jsStep" data-i="${Math.max(0,si-1)}" ${si?'':'disabled'}>← 앞</button><button class="btn primary big" data-act="jsStep" data-i="${si+1}">${si===nS-1?'모아 보기 ✓':'다음 →'}</button>`
