@@ -2734,10 +2734,10 @@ function vDisplay(){
 /* ===================== 음성 구령 =====================
    차렷·준비 / 시작 / 바로. 설정에 따라 운영석이나 전광판 컴퓨터(또는 둘 다)에서 소리를 냅니다 */
 const VOICE_TXT={ready:['준비!'],start:['시작!'],stop:['바로!','쉬어!'],blue:['청','승!'],red:['홍','승!'],attn:['차렷!'],bow:['경례!']};
-const READY_SEC=5; /* 준비 구령 뒤 자동 시작까지 */
+const READY_SEC=4; /* v1.7.58 준비→시작 5초→4초 (대회 운영 요청) */ /* 준비 구령 뒤 자동 시작까지 */
 const VOICE_BIG={ready:'준비',start:'시작',stop:'바로',blue:'청 승',red:'홍 승',attn:'차렷',bow:'경례'};
 /* v1.7.47 차렷·경례: 첫 품새(격파는 매번)만 「차렷 → 1초 → 경례 → 준비」, 2품새는 「준비 · 시작」만. 인사는 시작할 때만 */
-const BOW_AT=1600,BOW_READY=4300;
+const BOW_AT=2600,BOW_READY=5300; /* v1.7.58 차렷→경례 1.6초→2.6초 */
 function bowFirst(cur){return SET().bow!==false&&!!cur&&(cur.k||1)===1;}
 const BOWED={};let BOWING=0;   /* v1.7.53 차렷·경례를 이미 한 선수 · 경례 중 */
 function cmdBtns(pend,dis,ra){const cur=curOf(),bw=SET().bow!==false,first=bowFirst(cur)&&!(cur&&BOWED[cur.callId]),bz=Date.now()<BOWING;

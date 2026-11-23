@@ -2733,9 +2733,9 @@ function maybeAutoReveal(){
 }
 /* ===================== 음성 구령 (제11조: 준비 · 시작 / 바로) ===================== */
 const VOICE_TXT={ready:['준비!'],start:['시작!'],stop:['바로!'],attn:['차렷!'],bow:['경례!']};
-const READY_SEC=5;
+const READY_SEC=4; /* v1.7.58 준비→시작 5초→4초 (대회 운영 요청) */
 /* v1.7.47 차렷·경례: 선수마다 「차렷 → 1초 → 경례 → 준비 → 5초 → 시작」 (대회 설정에서 끌 수 있음: SET().bow=false) */
-const BOW_AT=1600,BOW_READY=4300;
+const BOW_AT=2600,BOW_READY=5300; /* v1.7.58 차렷→경례 1.6초→2.6초 */
 function bowFirst(cur){return SET().bow!==false&&!!cur&&(cur.k||1)===1;}
 const BOWED={};let BOWING=0;   /* v1.7.53 차렷·경례를 이미 한 선수 · 경례 중 */
 function cmdBtns(pend,dis,ra){const cur=curOf(),bw=SET().bow!==false,first=bowFirst(cur)&&!(cur&&BOWED[cur.callId]),bz=Date.now()<BOWING;
