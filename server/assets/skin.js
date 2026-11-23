@@ -128,7 +128,7 @@ function arExtra(m){try{m.top=[];m.js=null;const cur=g('curOf')(),S=g('S');if(!c
 const arStage=m=>m.label||'';
 function arJudges(js){if(!js||!js.length)return '';return `<div class="ar-js" style="--n:${js.length}">${js.map(j=>j.t!=null?`<div class="ar-j rv ${j.drop?'drop':j.per?'':'in'}"><span class="ar-jn">${j.n}</span><b>${E(j.t)}</b>${j.items?`<div class="ar-ji">${j.items.map(it=>`<span class="${it.x?'jx':'jk'}"><i>${E(it.l)}</i>${E(it.v)}</span>`).join('')}</div>`:`<small>${j.sub}</small>`}${j.drop&&j.why?`<em class="ar-why">${E(j.why)}</em>`:''}</div>`
   :`<div class="ar-j ${j.ok?'ok':'wait'}"><span class="ar-jn">${j.n}</span><b>${j.ok?'입력':'—'}</b><small>${j.ok?'Judge '+j.n:'채점 중'}</small></div>`).join('')}</div>`;}
-function aIdle(m){return `<div class="ar-idle"><span class="ar-en">Official Competition</span><h1 style="font-size:${U(fit(m.comp,120,14))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="ar-clock" data-now></span>${m.court?`<div class="ar-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
+function aIdle(m){return `<div class="ar-idle"><span class="ar-en">Official Competition</span><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="ar-clock" data-now></span>${m.court?`<div class="ar-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
 function aWho(m){const team=!m.name||m.isTeam;return `<div class="ar-who"><span class="ar-en">${team?'Team':'Athlete'}</span><div class="ar-nm" style="font-size:${U(m.scr==='score'?fit(m.name||m.team,team?170:220,team?7:3):fit(m.name||m.team,team?200:300,team?7:3))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ar-tm">${E(m.team)}</div>`:''}${m.members?`<div class="ar-mem">${E(m.members)}</div>`:''}</div>`;}
 function aLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
   const right=m.liveCount?`<div class="ar-sc"><span class="ar-en">${E(m.liveCount.l)}</span><div class="ar-big dzlive">${E(m.liveCount.v)}<small>${E(m.liveCount.u)}</small></div><div class="ar-sub">경기 시간 <span class="timer" data-timer>${E(m.timer||'')}</span></div></div>`
@@ -566,7 +566,11 @@ body.disp .board.sk-arena .cbres b{font-size:inherit}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-j.wait b{color:#7F8DB0}.board.sk-arena:is(.sk-live,.sk-score) .ar-j.ok b{font-size:${U(60)}}
 .board.sk-arena .ar-idle{position:absolute;inset:${U(150)} ${U(100)};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:${U(20)}}
 .board.sk-arena .ar-idle .ar-en{font-size:${U(28)};color:#E2C27F}.board.sk-arena .ar-idle h1{margin:0;font-weight:900;line-height:1.15}.board.sk-arena .ar-idle p{margin:0;font-size:${U(44)};color:#D6DEEF}
-.board.sk-arena .ar-clock{font:800 ${U(90)} Archivo,sans-serif;font-stretch:80%}.board.sk-arena .ar-ic{font-size:${U(36)};font-weight:800;padding:${U(10)} ${U(30)};border-radius:${U(14)};background:var(--cc)}.board.sk-arena .ar-ic b{font-family:Archivo,sans-serif}
+.board.sk-arena .ar-clock{font:800 ${U(90)} Archivo,sans-serif;font-stretch:80%}.board.sk-arena .ar-ic{font-size:${U(36)};font-weight:800;padding:${U(10)} ${U(30)};border-radius:${U(14)};background:var(--cc)}
+/* v1.7.61 기다림 화면도 꽉 차게 */
+.board.sk-arena .ar-idle{inset:${U(60)} ${U(80)};gap:${U(30)}}.board.sk-arena .ar-idle .ar-en{font-size:${U(40)};letter-spacing:.2em}
+.board.sk-arena .ar-idle h1{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}.board.sk-arena .ar-idle p{font-size:${U(64)}}
+.board.sk-arena .ar-idle .ar-clock{font-size:${U(190)};line-height:1}.board.sk-arena .ar-idle .ar-ic{font-size:${U(64)};padding:${U(14)} ${U(56)};border-radius:${U(20)}}.board.sk-arena .ar-ic b{font-family:Archivo,sans-serif}
 /* 순위 */
 .board.sk-arena .ar-rank{display:grid;grid-auto-flow:column;grid-template-columns:1fr 1fr;gap:${U(14)} ${U(40)}}
 .board.sk-arena .ar-rr{position:relative;display:grid;grid-template-columns:${U(90)} minmax(0,1fr) auto;align-items:center;gap:${U(20)};padding:0 ${U(28)};border-radius:${U(14)};background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);animation:arin .45s ease both;animation-delay:calc(var(--t,0s) + var(--i)*.06s)}
