@@ -4930,9 +4930,14 @@ let PRE='';setInterval(()=>{let st;try{st=ST();}catch(err){return;}const c=st&&s
   (c.entries||[]).forEach(en=>{const d=docOf(en.athleteId);if(d)srcOf(d).catch(()=>{});});},1500);
 /* 경기 버튼과 연결: 시작하면 재생, 바로·리셋·다음 호출이면 정지 */
 const auto=()=>(SET()||{}).musicAuto!==false;
+/* v1.7.70 태권체조·팀 경연: 「시작」 구령 뒤 몇 초(기본 3초) 있다가 음악 — 설정에서 0~6초 */
+const isTeamMus=t=>{try{return isTeamType(t);}catch(err){return t==='gym'||t==='team100';}};
+const mDelay=()=>{const v=(SET()||{}).musicDelay;return v==null?3:Math.max(0,Math.min(6,Number(v)||0));};
+let MTMR=null;const mCancel=()=>{if(MTMR){clearTimeout(MTMR);MTMR=null;}};
 try{const o=ACT.timerStart;ACT.timerStart=function(){const r=o.apply(this,arguments);try{const c=ST().current;
-  if(auto()&&c&&UMUS(c.type)){const ens=(c.entries||[]).filter(en=>docOf(en.athleteId));if(ens.length===1||(c.entries||[]).length===1){if(ens[0])command(true,ens[0].athleteId);}}}catch(err){}return r;};}catch(err){}
-['timerStop','timerReset'].forEach(k=>{try{const o=ACT[k];ACT[k]=function(){const r=o.apply(this,arguments);try{if(NOW||(MST&&MST.play))command(false);}catch(err){}return r;};}catch(err){}});
+  if(auto()&&c&&UMUS(c.type)){const ens=(c.entries||[]).filter(en=>docOf(en.athleteId));if(ens.length===1||(c.entries||[]).length===1){if(ens[0]){const id=ens[0].athleteId,ms=isTeamMus(c.type)?mDelay()*1000:0;mCancel();
+    if(ms>0)MTMR=setTimeout(()=>{MTMR=null;try{const t=ST().timer;if(t&&t.running)command(true,id);}catch(err){}},ms);else command(true,id);}}}}catch(err){}return r;};}catch(err){}
+['timerStop','timerReset'].forEach(k=>{try{const o=ACT[k];ACT[k]=function(){mCancel();const r=o.apply(this,arguments);try{if(NOW||(MST&&MST.play))command(false);}catch(err){}return r;};}catch(err){}});
 try{const oc=callIt;callIt=async function(){if(NOW||(MST&&MST.play))command(false);return oc.apply(this,arguments);};}catch(err){}
 /* ---------- 화면 ---------- */
 let LASTERR='',CHECK='';
@@ -4945,7 +4950,7 @@ function rowCtl(id,compact){const d=docOf(id),playing=NOW&&d&&NOW.aid===d.aid;
 
     ${d&&AS&&!compact?`<button class="btn sm danger" data-mu="del" data-id="${e(id)}">지우기</button>`:''}</span>`;}
 function runHtml(){let st;try{st=ST();}catch(err){return '';}const c=st&&st.current;if(!c||!UMUS(c.type))return '';
-  return `<div class="mu-run"><div class="row between"><b>🎵 ${c.type==='freestyle'||typeof SH!=='function'?'자유품새':SH(c.type).label} 음악</b><button class="btn sm ${auto()?'on':''}" data-mu="auto">${auto()?'시작과 함께 자동 재생: 켬':'시작과 함께 자동 재생: 끔'}</button></div>
+  return `<div class="mu-run"><div class="row between"><b>🎵 ${c.type==='freestyle'||typeof SH!=='function'?'자유품새':SH(c.type).label} 음악</b><span class="row" style="gap:6px">${isTeamMus(c.type)&&auto()?`<label class="small">「시작」 뒤 <select data-mudelay>${[0,1,2,3,4,5,6].map(n=>`<option value="${n}" ${mDelay()===n?'selected':''}>${n}초</option>`).join('')}</select> 뒤 재생</label>`:''}<button class="btn sm ${auto()?'on':''}" data-mu="auto">${auto()?'시작과 함께 자동 재생: 켬':'시작과 함께 자동 재생: 끔'}</button></span></div>
     ${(c.entries||[]).map(en=>{const a=athlete(en.athleteId)||{},d=docOf(en.athleteId);return `<div class="mu-row ${en.side||''}"><span class="mu-who"><b>${e(a.name||en.name||'')}</b><span class="small muted">${d?e(d.name):''}</span></span>${rowCtl(en.athleteId,true)}</div>`;}).join('')}
     ${(c.entries||[]).length>1?'<span class="small muted">청·홍이 함께 나오는 경기는 연기 순서에 맞춰 음악 버튼을 눌러 주세요.</span>':''}</div>`;}
 function playersPanel(){
@@ -4963,6 +4968,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('[data-mu]');if
   else if(k==='del'){if(b.dataset.armed){removeMusic(b.dataset.id);}else{b.dataset.armed='1';b.textContent='한 번 더 누르면 지웁니다';setTimeout(()=>{delete b.dataset.armed;schedule();},2500);}}
   else if(k==='selftest')selfTest();
   else if(k==='auto')saveSettings({...SET(),musicAuto:!auto()});});
+document.addEventListener('change',ev=>{const el=ev.target.closest('[data-mudelay]');if(!el)return;saveSettings({...SET(),musicDelay:Number(el.value)});toast(`태권체조·팀 경연 음악은 「시작」 뒤 ${el.value}초에 나옵니다`);});
 /* 파일 고르기: 화면이 다시 그려져도 사라지지 않는 입력 칸 하나를 씁니다 */
 const PICK=document.createElement('input');PICK.type='file';PICK.accept='audio/*,.mp3,.m4a,.wav,.aac,.ogg,video/mp4,video/webm';PICK.setAttribute('aria-hidden','true');PICK.tabIndex=-1;
 PICK.style.cssText='position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0';document.body.appendChild(PICK);
