@@ -4373,7 +4373,7 @@ function panel(entries,opt){
     return `<tr><td><b>${e(en.name)}</b><div class="small muted">${e(en.team||'')}</div></td>
       <td><select data-lmsel="${e(en.id)}" aria-label="${e(en.name)} 음악"><option value="">${f&&!manual?'(자동) ':''}${f&&!manual?e(f.name):'— 자동 연결 —'}</option><option value="none" ${MAP[en.id]==='none'?'selected':''}>음악 없음</option>${FILES.map(x=>`<option value="${e(x.k)}" ${manual&&MAP[en.id]===x.k?'selected':''}>${e(x.name)}</option>`).join('')}</select></td>
       <td>${f?`<span class="chip ${manual?'live':'ok'}">${manual?'직접 지정':'자동 연결'}</span>`:'<span class="chip warn">없음</span>'}</td>
-      <td>${f?`<button class="btn sm ${playing?'stopb':''}" data-lm="${playing?'stop':'play'}" data-id="${e(en.id)}">${playing?'■ 정지':'▶ 듣기'}</button>`:''}</td></tr>`;}).join('');
+      <td style="white-space:nowrap">${f?`<button class="btn sm ${playing?'stopb':''}" data-lm="${playing?'stop':'play'}" data-id="${e(en.id)}">${playing?'■ 정지':'▶ 듣기'}</button> `:''}<label class="btn sm ${f?'':'primary'}" title="이 팀(선수)의 음악 파일을 바로 골라 넣습니다">🎵 ${f?'바꾸기':'파일 넣기'}<input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac" data-lmone="${e(en.id)}" data-lmname="${e(en.name||en.team||'팀')}" hidden></label></td></tr>`;}).join('');
   const has=entries.filter(en=>fileOf(en.id)).length;
   return `<div class="panel mu-panel lm"><div class="row between"><h2>${opt.title||'음악 (노트북 폴더)'}</h2><span class="chip ${has===entries.length&&entries.length?'ok':'warn'}">${has}/${entries.length} 연결</span></div>
     <span class="small muted">운영석 노트북의 음악 폴더를 고르면, <b>파일 이름에 들어 있는 팀명(이름)</b>으로 자동 연결됩니다. 예: "경민대A팀.mp3". 음악은 서버에 올리지 않고 <b>이 컴퓨터에만</b> 담아 두므로 용량 걱정이 없고, 새로고침해도 남아 있습니다. 대회 당일에는 음악을 담은 이 노트북으로 운영해 주세요.</span>
@@ -4397,6 +4397,11 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('[data-lm]');if
       toast(`대회 음악 ${n+up}곡을 지웠습니다. 컴퓨터 폴더의 원본 파일은 그대로 있습니다`);loadList();})();}
     else{b.dataset.armed='1';b.textContent='한 번 더 누르면 모두 지웁니다 (원본 파일은 그대로)';setTimeout(()=>{delete b.dataset.armed;schedule();},3500);}}
 });
+/* v1.7.69 팀(선수) 줄마다 「🎵 파일 넣기」: 고른 파일을 팀 이름으로 담고 그 팀에 바로 연결 */
+document.addEventListener('change',async ev=>{const one=ev.target.closest('[data-lmone]');if(!one||!one.files||!one.files[0])return;const f=one.files[0],id=one.dataset.lmone;
+  const ext=((f.name||'').match(/\.[A-Za-z0-9]{2,4}$/)||['.mp3'])[0].toLowerCase(),nm=(one.dataset.lmname||'팀').replace(/[\\/:*?"<>|]/g,'_').trim()+ext;
+  let nf=f;try{nf=new File([f],nm,{type:f.type||''});}catch(err){}
+  await addFiles([nf]);MAP[id]=APPK+'|'+nf.name;saveMap();schedule();toast(`${one.dataset.lmname||'팀'} 음악을 연결했습니다`);one.value='';});
 document.addEventListener('change',ev=>{const el=ev.target.closest('[data-lmsel]');if(!el)return;const id=el.dataset.lmsel;if(el.value)MAP[id]=el.value;else delete MAP[id];saveMap();schedule();});
 window.LMUS={panel,runCtl,play,stop,has:id=>!!fileOf(id),fileOf,urlOfId:id=>{const f=fileOf(id);return f?urlOf(f.k):Promise.reject(new Error('none'));},
   playing:()=>NOW,setEntries:fn=>{ENTRIES=fn;},files:()=>FILES,addFiles,reload:loadList,syncFolder,
