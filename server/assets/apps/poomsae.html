@@ -6594,6 +6594,27 @@ body.disp .board.ksb{display:grid!important;grid-template-rows:1fr!important;gri
 .ky .ks-log{position:absolute;left:50%;bottom:4.2em;transform:translateX(-50%);display:flex;gap:.6em;font-size:1em;font-weight:800;z-index:2}
 .ky .ks-log span{white-space:nowrap;padding:.15em .6em;border-radius:.4em;background:rgba(255,255,255,.07);color:#D7D9DE}.ky .ks-log span.blue{color:#9DB8FF}.ky .ks-log span.red{color:#FFA3B1}
 .ky .ks-side.flash{animation:none}
+/* v1.7.59 겨루기 전광판 크게: 위 게이지 띠 없애고 상자·이름·점수·감점 키움 */
+.ky .kg,.ky .kg-t{display:none!important}
+.ky .ks-lead{top:5.3em;left:0!important;right:0!important;margin:0 auto;width:max-content;font-size:1.7em}
+.ky .ks-side{top:7.4em;width:37em;height:41.6em}.ky .ks-side.blue{left:3.6em}.ky .ks-side.red{right:3.6em}
+.ky .ks-who{top:1.6em;left:2.6em;right:2.6em}.ky .ks-side.blue .ks-who{left:5.6em}
+.ky .ks-cl{font-size:1.4em}
+.ky .ks-nm{font-size:6.4em;line-height:1.08;margin-top:.04em}
+.ky .ks-tm{font-size:2.4em;margin-top:.12em}
+.ky .ks-sco{bottom:5.6em;left:0!important;right:0!important;text-align:center}
+.ky .ks-sco b{font-size:27em;line-height:.8}
+.ky .ks-gj{bottom:1.6em;left:0!important;right:0!important;justify-content:center;font-size:1.9em;gap:.38em}
+.ky .ks-gj i{width:.95em;height:.95em;border-width:.12em}
+.ky .ks-rw{top:2em}.ky .ks-rw i{width:2.3em;height:2.3em;border-width:.14em}
+.ky .ks-vs{top:24em}.ky .ks-vs b{font-size:5.4em}
+.ky .ks-mid{top:30em;width:17em;gap:.8em}
+.ky .ks-ph{font-size:2.3em}.ky .ks-ph.win{font-size:2.6em}
+.ky .ks-jd span{font-size:1.5em;padding:.12em .5em}
+.ky .ks-log{bottom:3.4em;font-size:1.3em}
+.ksfx-pop.grow{animation:ksfxgrow 1.7s cubic-bezier(.2,.9,.3,1) forwards}.ksfx-pop.grow b{font-size:15em;line-height:1}.ksfx-pop.grow.big b{font-size:20em}
+@keyframes ksfxgrow{0%{transform:translate(-50%,-50%) scale(.35);opacity:0}12%{transform:translate(-50%,-50%) scale(1);opacity:1}55%{transform:translate(-50%,-62%) scale(1.35);opacity:1}100%{transform:translate(-50%,-105%) scale(2.1);opacity:0}}
+
 body.disp .board.ksb .dctl,body.disp .board.ksb-solo .dctl{z-index:9;opacity:0;transition:opacity .25s}body.disp .board.ksb:hover .dctl,body.disp .board.ksb-solo:hover .dctl{opacity:1}
 body.disp:has(.ksb-top) .kstag,body.disp:has(.ksb-top) .kswm{display:none!important}
 /* 품새 · 격파: 위·아래 띠 자리를 비우고, 점수는 크게 · 심판 세부는 작게 */
@@ -6815,8 +6836,8 @@ const FX=(()=>{
     if(pts>=3){const pn=b.querySelector(`.ks-side.${k} .ks-pn`),[px]=pn?at(pn,.5,0):[x];
       for(let i=0;i<2+Math.min(3,pts-2);i++)setTimeout(()=>bolt(px+(Math.random()-.5)*e*24,0,x+(Math.random()-.5)*e*8,y,col,e*.22,22),i*70);
       flash(k==='blue'?'rgba(120,160,255,.9)':'rgba(255,110,140,.9)',.85);shake();burst(x,y,col,60+pts*10,1.6,'spark');burst(x,y,'#fff',20,1,'spark');
-      pop('+'+pts,'',x+dx*14,y-e*4,'big '+k);play('zap',pts);setTimeout(()=>play('boom',pts),60);}
-    else{burst(x,y,col,18,.8,'spark');pop('+'+pts,'',x+dx*10,y-e*3,'sm '+k);play('tick');}}
+      {const pn=b.querySelector(`.ks-side.${k} .ks-pn`),[cx0,cy0]=pn?at(pn,.5,.5):[x,y];pop('+'+pts,'',cx0,cy0,'grow big '+k);}play('zap',pts);setTimeout(()=>play('boom',pts),60);}
+    else{burst(x,y,col,30,1.1,'spark');const pn=b.querySelector(`.ks-side.${k} .ks-pn`),[cx0,cy0]=pn?at(pn,.5,.5):[x,y];pop('+'+pts,'',cx0,cy0,'grow '+k);play('tick');}}
   function kyWin(b,k,nm){const s=b.querySelector(`.ks-side.${k} .ks-pn`);if(!s)return;const [x,y]=at(s,.5,.45),e=em();
     rays(x,y);flash('rgba(246,227,174,.95)',.9);shake();burst(x,y,'#F6E3AE',160,2,'gold');burst(x,y,'#fff',40,1.4,'spark');
     for(let i=0;i<6;i++)setTimeout(()=>bolt(x+(Math.random()-.5)*e*30,0,x+(Math.random()-.5)*e*14,y,'#F6E3AE',e*.2,18),i*90);
