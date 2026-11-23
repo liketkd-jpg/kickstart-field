@@ -129,7 +129,7 @@ const arStage=m=>m.label||'';
 function arJudges(js){if(!js||!js.length)return '';return `<div class="ar-js" style="--n:${js.length}">${js.map(j=>j.t!=null?`<div class="ar-j rv ${j.drop?'drop':j.per?'':'in'}"><span class="ar-jn">${j.n}</span><b>${E(j.t)}</b>${j.items?`<div class="ar-ji">${j.items.map(it=>`<span class="${it.x?'jx':'jk'}"><i>${E(it.l)}</i>${E(it.v)}</span>`).join('')}</div>`:`<small>${j.sub}</small>`}${j.drop&&j.why?`<em class="ar-why">${E(j.why)}</em>`:''}</div>`
   :`<div class="ar-j ${j.ok?'ok':'wait'}"><span class="ar-jn">${j.n}</span><b>${j.ok?'입력':'—'}</b><small>${j.ok?'Judge '+j.n:'채점 중'}</small></div>`).join('')}</div>`;}
 function aIdle(m){return `<div class="ar-idle"><span class="ar-en">Official Competition</span><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="ar-clock" data-now></span>${m.court?`<div class="ar-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
-function aWho(m){const team=!m.name||m.isTeam;return `<div class="ar-who"><span class="ar-en">${team?'Team':'Athlete'}</span><div class="ar-nm" style="font-size:${U(m.scr==='score'?fit(m.name||m.team,team?170:220,team?7:3):fit(m.name||m.team,team?200:300,team?7:3))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ar-tm">${E(m.team)}</div>`:''}${m.members?`<div class="ar-mem">${E(m.members)}</div>`:''}</div>`;}
+function aWho(m){const team=!m.name||m.isTeam;return `<div class="ar-who"><span class="ar-en">${team?'Team':'Athlete'}</span><div class="ar-nm" style="font-size:${U(fit(m.name||m.team,team?200:300,team?7:3))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ar-tm">${E(m.team)}</div>`:''}${m.members?`<div class="ar-mem">${E(m.members)}</div>`:''}</div>`;}
 function aLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
   const right=m.liveCount?`<div class="ar-sc"><span class="ar-en">${E(m.liveCount.l)}</span><div class="ar-big dzlive">${E(m.liveCount.v)}<small>${E(m.liveCount.u)}</small></div><div class="ar-sub">경기 시간 <span class="timer" data-timer>${E(m.timer||'')}</span></div></div>`
     :`<div class="ar-sc"><span class="ar-en">Time</span><div class="ar-big ar-time timer" data-timer>${E(m.timer||'')}</div><div class="ar-sub">${m.name?'경기 시간':'연기 시간'}</div></div>`;
@@ -313,7 +313,7 @@ function nLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
     :`<div class="n-clk">${nEn('Time')}<b class="timer" data-timer>${E(m.timer||'')}</b><span class="n-sub">${m.name?'경기 시간':'연기 시간'}</span></div>`;
   return `${nTop(m)}<div class="n-main">${nWho(m)}${right}</div>${nJs(js,true)}${nStand(m)}`;}
 function nScore(m){const parts=(m.parts||[]).map(p=>`<span class="n-p ${p.neg?'neg':''}"><small>${E(p.l)}</small><b>${E(p.v)}</b></span>`).join('');
-  return `${nTop(m)}<div class="n-main sc">${nWho(m,m.isTeam||!m.name?180:240)}<div class="n-clk fin">${nEn('Score')}<div class="cbres n-res"><span class="cbfinal n-final">${E(m.final)}</span><div class="n-parts">${parts}</div></div>${m.note?`<span class="n-sub neg">${E(m.note)}</span>`:''}</div></div>${nJs(m.js,false)}${nStand(m)}`;}
+  return `${nTop(m)}<div class="n-main sc">${nWho(m)}<div class="n-clk fin">${nEn('Score')}<div class="cbres n-res"><span class="cbfinal n-final">${E(m.final)}</span><div class="n-parts">${parts}</div></div>${m.note?`<span class="n-sub neg">${E(m.note)}</span>`:''}</div></div>${nJs(m.js,false)}${nStand(m)}`;}
 function nRank(m){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,8);if(me&&!show.includes(me)){const k=R.indexOf(me);show=R.slice(0,5).concat(R.slice(Math.max(5,k-1),k+2));}
   const rh=Math.max(64,Math.min(116,Math.floor((660-(show.length-1)*10)/Math.max(1,show.length))));let list='';
   show.forEach((r,i,a)=>{const prev=a[i-1];if(m.pre&&m.quota&&prev&&prev.rank<=m.quota&&r.rank>m.quota)list+=`<div class="n-cut"><span>${E(m.cut||'')}</span>${nEn('Qualified')}</div>`;
@@ -1009,7 +1009,9 @@ const css3=`
 :is(.sk-bc,.sk-sw,.sk-pr):is(.sk-live,.sk-score) .n-j{flex-direction:row;gap:${U(26)}}
 :is(.sk-bc,.sk-sw,.sk-pr):is(.sk-live,.sk-score) .n-j small{font-size:${U(36)};opacity:.9}
 :is(.sk-bc,.sk-sw,.sk-pr).sk-live .n-j b{font-size:${U(72)};margin:0}:is(.sk-bc,.sk-sw,.sk-pr).sk-live .n-j.wait b{font-size:${U(56)};opacity:.6}
-:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j{flex-direction:column;gap:0}:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j small{font-size:${U(24)}}:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j b{font-size:${U(64)}}
+:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j{flex-direction:row;align-items:center!important;justify-content:center!important;gap:${U(22)};padding:0 ${U(14)};overflow:hidden}
+:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j small{font-size:${U(30)}}:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j b{font-size:${U(66)};margin:0}
+:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-js .n-ji{flex-direction:column;gap:${U(2)};font-size:${U(24)};margin:0;line-height:1.15}
 .sk-pr .n-bot{bottom:${U(30)};left:${U(50)};right:${U(50)};height:${U(160)};border-top:1px solid rgba(214,178,106,.35)}.sk-pr .n-sc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}.sk-pr .n-sc i{color:#F2D27A}.sk-pr .n-sc.me{border-color:#D6B26A}.sk-pr .n-sc em{font-family:Archivo,sans-serif;font-weight:700}
 .sk-pr .n-r{background:linear-gradient(90deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1)}.sk-pr .n-r.me{border-color:#D6B26A;box-shadow:0 0 ${U(30)} rgba(214,178,106,.25)}.sk-pr .n-rk{color:#F2D27A}.sk-pr .n-rs{font-family:Archivo,sans-serif;font-weight:700}.sk-pr .n-cut{border-color:#D6B26A;color:#D6B26A}
 .sk-pr .n-rank{top:${U(180)};height:${U(640)}}
