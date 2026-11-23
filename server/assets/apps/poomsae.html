@@ -4729,8 +4729,10 @@ function board(){
   if(ci<0)ci=info.findIndex(x=>x.total>x.done);
   if(ci<0)ci=0;
   const next=[];
+  /* v1.7.64 지금 선수(팀)의 재경기·2품새 같은 다음 차례는 「다음 선수」로 세지 않음 */
+  const pk=L=>(L||[]).map(p=>(p&&p.name||'')+'|'+(p&&p.team||'')).sort().join(','),nowK=now?pk(now.names):'';
   for(let k=0;k<info.length&&next.length<10;k++){const x=info[(ci+k)%info.length];if(!x)continue;
-    for(const it of x.it){if(it.done||(now&&it.id===now.id))continue;next.push({div:x.d.name,label:it.label,names:it.names});if(next.length>=10)break;}}
+    for(const it of x.it){if(it.done||(now&&it.id===now.id)||(nowK&&pk(it.names)===nowK))continue;next.push({div:x.d.name,label:it.label,names:it.names});if(next.length>=10)break;}}
   let nextDiv=null;
   for(let k=1;k<info.length;k++){const x=info[(ci+k)%info.length];if(x&&x.total>x.done&&x.done===0){nextDiv=x.d.name;break;}}
   if(!nextDiv)for(let k=1;k<info.length;k++){const x=info[(ci+k)%info.length];if(x&&x.total>x.done){nextDiv=x.d.name;break;}}

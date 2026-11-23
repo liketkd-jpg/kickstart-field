@@ -303,7 +303,7 @@ function nStand(m){const t=(m.top||[]).slice(0,3);
   const cells=t.length?t.map(r=>`<div class="n-sc ${r.me?'me':''}"><i>${r.rank}</i><span><b>${E(r.name||r.team)}</b><small>${E(r.name?r.team:'')}</small></span><em>${E(r.score)}</em></div>`).join(''):`<div class="n-sc mute"><span><b>아직 순위 없음</b></span></div>`;
   return `<div class="n-bot"><div class="n-bl">${nEn('Standings')}<b>현재 순위</b></div><div class="n-scs">${cells}</div>${nNext(m)}</div>`;}
 function nWho(m,big){const team=!m.name||m.isTeam,nm=m.name||m.team;
-  return `<div class="n-who">${nEn(team?'Team':'Athlete')}<div class="n-nm" style="font-size:${U(fit(nm,big||(team?170:230),team?6:4))}">${E(nm)}</div>${m.name&&m.team?`<div class="n-tm">${E(m.team)}</div>`:''}${m.members?`<div class="n-mem">${E(m.members)}</div>`:''}</div>`;}
+  return `<div class="n-who">${nEn(team?'Team':'Athlete')}<div class="n-nm" style="font-size:${U(fit(nm,big||(team?240:320),team?5:3))}">${E(nm)}</div>${m.name&&m.team?`<div class="n-tm">${E(m.team)}</div>`:''}${m.members?`<div class="n-mem">${E(m.members)}</div>`:''}</div>`;}
 function nJs(js,live){if(!js||!js.length)return '';
   return `<div class="n-js" style="--n:${js.length}">${js.map(j=>live?`<div class="n-j ${j.ok?'ok':'wait'}"><small>J${j.n}</small><b>${j.ok?'✓':'···'}</b></div>`
     :`<div class="n-j rv ${j.drop?'drop':''}"><small>J${j.n}${j.drop?' · 제외':''}</small><b>${E(j.t)}</b>${j.items&&j.items.length?`<span class="n-ji">${j.items.map(it=>`<i class="${it.x?'x':''}">${E(it.l)} ${E(it.v)}</i>`).join('')}</span>`:''}</div>`).join('')}</div>`;}
@@ -313,7 +313,7 @@ function nLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
     :`<div class="n-clk">${nEn('Time')}<b class="timer" data-timer>${E(m.timer||'')}</b><span class="n-sub">${m.name?'경기 시간':'연기 시간'}</span></div>`;
   return `${nTop(m)}<div class="n-main">${nWho(m)}${right}</div>${nJs(js,true)}${nStand(m)}`;}
 function nScore(m){const parts=(m.parts||[]).map(p=>`<span class="n-p ${p.neg?'neg':''}"><small>${E(p.l)}</small><b>${E(p.v)}</b></span>`).join('');
-  return `${nTop(m)}<div class="n-main sc">${nWho(m,m.isTeam||!m.name?150:200)}<div class="n-clk fin">${nEn('Score')}<div class="cbres n-res"><span class="cbfinal n-final">${E(m.final)}</span><div class="n-parts">${parts}</div></div>${m.note?`<span class="n-sub neg">${E(m.note)}</span>`:''}</div></div>${nJs(m.js,false)}${nStand(m)}`;}
+  return `${nTop(m)}<div class="n-main sc">${nWho(m,m.isTeam||!m.name?180:240)}<div class="n-clk fin">${nEn('Score')}<div class="cbres n-res"><span class="cbfinal n-final">${E(m.final)}</span><div class="n-parts">${parts}</div></div>${m.note?`<span class="n-sub neg">${E(m.note)}</span>`:''}</div></div>${nJs(m.js,false)}${nStand(m)}`;}
 function nRank(m){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,8);if(me&&!show.includes(me)){const k=R.indexOf(me);show=R.slice(0,5).concat(R.slice(Math.max(5,k-1),k+2));}
   const rh=Math.max(64,Math.min(116,Math.floor((660-(show.length-1)*10)/Math.max(1,show.length))));let list='';
   show.forEach((r,i,a)=>{const prev=a[i-1];if(m.pre&&m.quota&&prev&&prev.rank<=m.quota&&r.rank>m.quota)list+=`<div class="n-cut"><span>${E(m.cut||'')}</span>${nEn('Qualified')}</div>`;
@@ -993,6 +993,18 @@ const css3=`
 .sk-pr .n-clk>b{font-size:${U(150)}}.sk-pr .n-final{font-size:${U(170)}}.sk-pr .n-verd b,.sk-pr .n-hero.champ b{font-family:"Black Han Sans","Noto Sans KR",sans-serif;font-weight:400}
 .sk-pr .n-p b{font-family:Archivo,sans-serif;font-weight:700}
 .sk-pr .n-js{left:${U(70)};right:${U(70)};top:${U(680)}}.sk-pr .n-j{border:1.5px solid rgba(214,178,106,.5);background:rgba(0,0,0,.25);border-radius:${U(70)}}.sk-pr .n-j.ok{border-color:#7BE0A8}.sk-pr .n-j.ok b{color:#7BE0A8}.sk-pr .n-j small{font-family:"Cormorant Garamond",serif;color:#C9A262;opacity:1}.sk-pr .n-j b{font-family:Archivo,sans-serif;font-weight:700}
+/* v1.7.64 새 디자인(중계방송형·스위스형·프레스티지형) 한 명씩 화면 꽉 차게: 가운데 칸을 아래로 넓히고 이름·시간·심판 칸 크게 */
+:is(.sk-bc,.sk-sw,.sk-pr):is(.sk-live,.sk-score) .n-js{top:${U(770)};height:${U(108)}}
+.sk-bc:is(.sk-live,.sk-score) .n-main{height:${U(630)}}.sk-sw:is(.sk-live,.sk-score) .n-main{height:${U(610)}}.sk-pr:is(.sk-live,.sk-score) .n-main{height:${U(560)}}
+.sk-sw:is(.sk-live,.sk-score) .n-js{top:${U(750)};height:${U(130)}}
+.sk-bc:is(.sk-live,.sk-score) .n-clk{margin:${U(26)} 0}.sk-bc.sk-live .n-clk>b{font-size:${U(335)}}.sk-sw.sk-live .n-clk>b{font-size:${U(290)};letter-spacing:-.02em}:is(.sk-bc,.sk-sw,.sk-pr).sk-live .n-j{align-items:center!important;justify-content:center!important}
+.sk-pr.sk-live .n-clk{width:${U(530)};height:${U(530)}}.sk-pr.sk-live .n-clk>b{font-size:${U(190)}}
+:is(.sk-bc,.sk-sw,.sk-pr):is(.sk-live,.sk-score) .n-tm{font-size:${U(62)}}:is(.sk-bc,.sk-sw,.sk-pr):is(.sk-live,.sk-score) .n-mem{font-size:${U(34)}}
+:is(.sk-bc,.sk-sw,.sk-pr):is(.sk-live,.sk-score) .n-sub{font-size:${U(36)}}
+:is(.sk-bc,.sk-sw,.sk-pr):is(.sk-live,.sk-score) .n-j{flex-direction:row;gap:${U(26)}}
+:is(.sk-bc,.sk-sw,.sk-pr):is(.sk-live,.sk-score) .n-j small{font-size:${U(36)};opacity:.9}
+:is(.sk-bc,.sk-sw,.sk-pr).sk-live .n-j b{font-size:${U(72)};margin:0}:is(.sk-bc,.sk-sw,.sk-pr).sk-live .n-j.wait b{font-size:${U(56)};opacity:.6}
+:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j{flex-direction:column;gap:0}:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j small{font-size:${U(24)}}:is(.sk-bc,.sk-sw,.sk-pr).sk-score .n-j b{font-size:${U(64)}}
 .sk-pr .n-bot{bottom:${U(30)};left:${U(50)};right:${U(50)};height:${U(160)};border-top:1px solid rgba(214,178,106,.35)}.sk-pr .n-sc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}.sk-pr .n-sc i{color:#F2D27A}.sk-pr .n-sc.me{border-color:#D6B26A}.sk-pr .n-sc em{font-family:Archivo,sans-serif;font-weight:700}
 .sk-pr .n-r{background:linear-gradient(90deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1)}.sk-pr .n-r.me{border-color:#D6B26A;box-shadow:0 0 ${U(30)} rgba(214,178,106,.25)}.sk-pr .n-rk{color:#F2D27A}.sk-pr .n-rs{font-family:Archivo,sans-serif;font-weight:700}.sk-pr .n-cut{border-color:#D6B26A;color:#D6B26A}
 .sk-pr .n-rank{top:${U(180)};height:${U(640)}}
