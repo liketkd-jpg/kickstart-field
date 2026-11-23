@@ -1739,17 +1739,17 @@ function qtFmtD(s,lang){if(!s)return '';const d=new Date(s+'T00:00:00');if(isNaN
   return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}. (${'일월화수목금토'[d.getDay()]})`;}
 function qtPeriod(q,lang){if(!q.start)return '';const n=Math.max(1,qtNum(q.days)||1);return n>1?`${qtFmtD(q.start,lang)} ~ ${qtFmtD(qtAdd(q.start,n-1),lang)}`:qtFmtD(q.start,lang);}
 /* 블록들을 만들어 A4에 나눠 담기 */
-function qtBlocks(q,co){const lg=q.lang||'both',K=(ko,en)=>lg==='en'?en:lg==='ko'?ko:`${ko} <em>${en}</em>`,E=esc,T=qtTot(q);
+function qtBlocks(q,co){const lg=q.lang||'both',K=(ko,en)=>lg==='en'?en:lg==='ko'?ko:`${ko} <em>${en}</em>`,E=esc,T=qtTot(q),S=q.kind==='stmt';
   const discN=QT_DISC.filter(d=>(q.disc||[]).includes(d[0])).map(d=>lg==='en'?d[2]:d[1]).join(' · ');
   const head=`<div class="qh"><div class="qbrand"><img src="${qtLogoImg()}" alt=""><div><div class="qbn">${E(co.name||'KICKSTART UP')}</div><div class="qbs">Taekwondo Competition Systems</div></div></div>
-    <div class="qtt">${lg==='en'?'<div class="qtk" style="font:900 30px/1 Cinzel,serif;letter-spacing:.22em;margin-right:-.22em">QUOTATION</div>':`<div class="qtk">견적서</div><div class="qte">QUOTATION</div>`}</div></div>`;
+    <div class="qtt">${lg==='en'?`<div class="qtk" style="font:900 30px/1 Cinzel,serif;letter-spacing:.22em;margin-right:-.22em">${S?'STATEMENT':'QUOTATION'}</div>`:S?`<div class="qtk" style="letter-spacing:.18em;margin-right:-.18em">거래명세서</div><div class="qte">TRANSACTION STATEMENT</div>`:`<div class="qtk">견적서</div><div class="qte">QUOTATION</div>`}</div></div>`;
   const row=(k,e,v)=>v?`<dt>${lg==='en'?e:lg==='ko'?k:`${k}<em>${e}</em>`}</dt><dd>${v}</dd>`:'';
-  const info=`<div class="qinfo"><div><div class="qlab">${lg==='en'?'Prepared for':lg==='ko'?'수신':'수신 · Prepared for'}</div>
+  const info=`<div class="qinfo"><div><div class="qlab">${S?(lg==='en'?'Buyer':lg==='ko'?'공급받는자':'공급받는자 · Buyer'):lg==='en'?'Prepared for':lg==='ko'?'수신':'수신 · Prepared for'}</div>
       <div class="qto">${E(q.to||(lg==='en'?'(Client)':'(수신처)'))}${lg!=='en'?' <small>귀하</small>':''}</div>
       <dl>${row('담당','Attn.',E(q.attn))}${row('대회명','Event',E(q.event))}${row('장소','Venue',E(q.venue))}${row('기간','Dates',E(qtPeriod(q,lg)))}${row('규모','Scale',E([discN,`${qtNum(q.courts)}${lg==='en'?' courts':'코트'}`,`${Math.max(1,qtNum(q.days)||1)}${lg==='en'?(qtNum(q.days)>1?' days':' day'):'일'}`].filter(Boolean).join(' · ')))}</dl></div>
-    <div><div class="qlab">${lg==='en'?'Quotation details':lg==='ko'?'견적 정보':'견적 정보 · Details'}</div>
-      <dl>${row('견적 번호','No.',`<b>${E(q.no)}</b>`)}${row('견적 일자','Date',E(qtFmtD(q.date,lg)))}${row('유효 기간','Valid until',E(qtFmtD(qtAdd(q.date,qtNum(q.valid)||30),lg)))}${row('담당자','Contact',E(co.person||co.rep))}${row('연락처','Tel.',E(co.tel))}${row('이메일','E-mail',E(co.email))}</dl></div></div>
-    <div class="qtotal"><div class="qtl"><b>${lg==='en'?'Total Amount':'견적 합계 금액'}</b><span>${lg==='both'?'Total Amount · ':''}${q.vat==='excl'?(lg==='en'?'VAT included (10% added)':'부가세 10% 포함'):(lg==='en'?'':'')}</span>
+    <div><div class="qlab">${S?(lg==='en'?'Transaction details':lg==='ko'?'거래 정보':'거래 정보 · Details'):lg==='en'?'Quotation details':lg==='ko'?'견적 정보':'견적 정보 · Details'}</div>
+      <dl>${S?row('거래 번호','No.',`<b>${E(q.tno||q.no)}</b>`)+row('거래 일자','Date',E(qtFmtD(q.tdate||qtToday(),lg)))+row('견적 번호','Quote No.',E(q.no)):row('견적 번호','No.',`<b>${E(q.no)}</b>`)+row('견적 일자','Date',E(qtFmtD(q.date,lg)))+row('유효 기간','Valid until',E(qtFmtD(qtAdd(q.date,qtNum(q.valid)||30),lg)))}${row('담당자','Contact',E(co.person||co.rep))}${row('연락처','Tel.',E(co.tel))}${row('이메일','E-mail',E(co.email))}</dl></div></div>
+    <div class="qtotal"><div class="qtl"><b>${lg==='en'?'Total Amount':S?'거래 합계 금액':'견적 합계 금액'}</b><span>${lg==='both'?'Total Amount · ':''}${q.vat==='excl'?(lg==='en'?'VAT included (10% added)':'부가세 10% 포함'):(lg==='en'?'':'')}</span>
       <i>${lg==='en'?`Korean Won ${E(qtEnglish(T.total).replace(/\b[a-z]/g,c=>c.toUpperCase()))} Only`:`일금 ${qtHangul(T.total)}원정`}</i></div>
       <div class="qtv"><b><small>KRW</small>${qtW(T.total)}</b><span>${lg==='en'?'':'₩ '+qtW(T.total)+' · '}${lg==='ko'?'':'Korean Won'}</span></div></div>`;
   const th=`<thead><tr><th>No</th><th style="text-align:left">${K('품목 · 내용','Item · Description').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('단가','Unit Price').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('수량','Qty').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('일수','Days').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('금액','Amount').replace('<em>','<small>').replace('</em>','</small>')}</th><th>${K('비고','Remarks').replace('<em>','<small>').replace('</em>','</small>')}</th></tr></thead>`;
@@ -1757,13 +1757,14 @@ function qtBlocks(q,co){const lg=q.lang||'both',K=(ko,en)=>lg==='en'?en:lg==='ko
     return `<tr class="${i%2?'z':''}"><td class="n">${String(i+1).padStart(2,'0')}</td><td class="it"><b>${E(lg==='en'?(l.en||l.ko):l.ko)}${dc?'<span class="se" style="display:inline">*</span>':''}${lg==='both'&&l.en?`<span class="en">${E(l.en)}</span>`:''}</b>${dsc?`<span>${E(dsc)}</span>`:''}</td>
       <td class="r">${qtW(l.price)}</td><td>${qtW(l.qty)}</td><td>${qtW(l.days)}</td><td class="r am">${qtW(qtAmt(l))}</td><td class="nt">${dc?`<span class="dc">${lg==='en'?'Discount':'할인'} −${qtW(dc)}</span>`:''}${E(l.note||'')}</td></tr>`;});
   const srow=(k,e,v,c)=>`<tr class="${c||''}"><td>${lg==='en'?e:lg==='ko'?k:`${k} <span style="color:#B0B5C0;font-size:9px">${e}</span>`}</td><td>${v}</td></tr>`;
-  const sum=!T.disc&&q.vat!=='excl'?'':`<div class="qsum"><table>${srow('공급가 합계','Subtotal',qtW(T.gross))}${T.disc?srow(q.discWhy?'할인 · '+E(q.discWhy):'할인',q.discWhy?'Discount · '+E(q.discWhy):'Discount','<span style="color:#B03030">−'+qtW(T.disc)+'</span>'):''}${q.vat==='excl'?srow('부가세 (10%)','VAT (10%)',qtW(T.vat)):''}${srow('합계','Total',qtW(T.total),'g')}</table></div>`;
-  const terms=(lg==='en'?(q.termsEn||''):(q.terms||'')).split('\n').map(s=>s.trim()).filter(Boolean);
-  if(q.vat==='excl')terms.unshift(lg==='en'?'Prices exclude VAT; 10% VAT is added to the total.':'단가는 부가세 별도이며, 합계에 부가세 10%를 더했습니다.');
+  const sum=!S&&!T.disc&&q.vat!=='excl'?'':`<div class="qsum"><table>${srow('공급가 합계','Subtotal',qtW(T.gross))}${T.disc?srow(q.discWhy?'할인 · '+E(q.discWhy):'할인',q.discWhy?'Discount · '+E(q.discWhy):'Discount','<span style="color:#B03030">−'+qtW(T.disc)+'</span>'):''}${S&&T.disc?srow('공급가액','Net amount',qtW(T.gross-T.disc)):''}${q.vat==='excl'?srow(S?'세액 (10%)':'부가세 (10%)','VAT (10%)',qtW(T.vat)):''}${srow('합계','Total',qtW(T.total),'g')}</table></div>`;
+  const terms=S?[]:(lg==='en'?(q.termsEn||''):(q.terms||'')).split('\n').map(s=>s.trim()).filter(Boolean);
+  if(q.vat==='excl'&&!S)terms.unshift(lg==='en'?'Prices exclude VAT; 10% VAT is added to the total.':'단가는 부가세 별도이며, 합계에 부가세 10%를 더했습니다.');
   if(T.disc)terms.push(lg==='en'?'Items marked * are discounted.':'「*」 표시 항목은 할인이 적용된 금액입니다.');
   const sealU=qtSealOf(co);
-  const foot=`<div class="qfoot2"><div><div class="qlab">${lg==='en'?'Terms & Conditions':lg==='ko'?'조건 및 안내':'조건 및 안내 · Terms'}</div><ol>${terms.map(t=>`<li>${E(t)}</li>`).join('')}</ol>
-      ${co.bank||q.pay?`<div class="qbank">${q.pay?`${lg==='en'?'Payment terms':'결제 조건'}${lg==='both'?' <span style="color:#A9AEBB;font-size:9px">Payment</span>':''}<br><b>${E(q.pay)}</b>${co.bank?'<br><br>':''}`:''}${co.bank?`${lg==='en'?'Bank account':'입금 계좌'}${lg==='both'?' <span style="color:#A9AEBB;font-size:9px">Bank account</span>':''}<br><b>${E(co.bank)}</b>`:''}</div>`:''}</div>
+  const foot=`<div class="qfoot2"><div>${terms.length?`<div class="qlab">${lg==='en'?'Terms & Conditions':lg==='ko'?'조건 및 안내':'조건 및 안내 · Terms'}</div><ol>${terms.map(t=>`<li>${E(t)}</li>`).join('')}</ol>`:''}
+      ${co.bank||q.pay?`<div class="qbank">${q.pay?`${lg==='en'?'Payment terms':'결제 조건'}${lg==='both'?' <span style="color:#A9AEBB;font-size:9px">Payment</span>':''}<br><b>${E(q.pay)}</b>${co.bank?'<br><br>':''}`:''}${co.bank?`${lg==='en'?'Bank account':'입금 계좌'}${lg==='both'?' <span style="color:#A9AEBB;font-size:9px">Bank account</span>':''}<br><b>${E(co.bank)}</b>`:''}</div>`:''}${S?`<div class="qconf" style="margin-top:14px;font:600 11.5px/1.6 'Noto Sans KR',sans-serif;color:#1B2233">${lg==='en'?'We hereby confirm the above transaction.':'위와 같이 거래하였음을 확인합니다.'}${lg==='both'?'<br><span style="color:#A9AEBB;font-size:9px;font-weight:400">We hereby confirm the above transaction.</span>':''}
+        <div style="margin-top:14px;display:flex;align-items:flex-end;gap:8px;color:#4A5266;font-weight:500">${lg==='en'?'Received by':'인수자'}<span style="flex:1;border-bottom:1px solid #9AA0AE;height:18px"></span><span style="color:#B9BDC8">${lg==='en'?'(Signature)':'(인)'}</span></div></div>`:''}</div>
     <div>${sum}<div class="qsup"><div class="qlab">${lg==='en'?'Supplier':lg==='ko'?'공급자':'공급자 · Supplier'}</div><div class="co">${E(co.name||'KICKSTART UP')}${lg!=='en'&&co.nameKo?` <span class="ck" style="font:700 11px 'Noto Serif KR',serif;letter-spacing:0;color:#4A5266;margin-left:6px">${E(co.nameKo)}</span>`:''}${q.showRep===false?`<span class="in" style="position:relative;display:inline-block;margin-left:10px;color:#B9BDC8;font:400 11px 'Noto Sans KR',sans-serif;letter-spacing:0">${lg==='en'?'(Seal)':'(인)'}${sealU?`<img class="qseal ${co.seal==='square'?'sq':''}" src="${sealU}" alt="">`:''}</span>`:''}</div>
       ${q.showRep===false?'<div style="height:30px"></div>':''}<div class="qrep" ${q.showRep===false?'style="display:none"':''}><span style="color:#7A8194">${lg==='en'?'CEO':'대표'}</span><b>${E(lg==='en'?(co.repEn||co.rep):co.rep)}</b><span class="in">${lg==='en'?'(Seal)':'(인)'}${sealU?`<img class="qseal ${co.seal==='square'?'sq':''}" src="${sealU}" alt="">`:''}</span></div>
       <dl style="margin-top:12px">${row('사업자등록번호','Reg. No.',E(co.bizNo))}${row('주소','Address',E(lg==='en'?(co.addrEn||co.addr):co.addr))}${row('웹사이트','Web',E(co.web))}</dl></div></div></div>`;
@@ -1789,7 +1790,7 @@ let QT_PT=null;function qtPreviewSoon(){clearTimeout(QT_PT);QT_PT=setTimeout(qtP
 
 /* ---- PDF 내려받기 · 인쇄 ---- */
 function loadH2C(){if(window.html2canvas)return Promise.resolve(window.html2canvas);return new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=()=>res(window.html2canvas);s.onerror=()=>rej(new Error('PDF 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요'));document.head.appendChild(s);});}
-async function qtPdf(){const q=QT.cur;if(!q)return;toast('견적서 PDF를 만드는 중…');const co=QT.co;
+async function qtPdf(){const q=QT.cur;if(!q)return;toast((q.kind==='stmt'?'거래명세서':'견적서')+' PDF를 만드는 중…');const co=QT.co;
   if(co.seal&&!['none','custom'].includes(co.seal))await qtSealUrl(co.seal);
   await qtLogoPng();const [lib,h2c]=await Promise.all([loadJsPDF(),loadH2C()]);try{await document.fonts.ready;}catch(e){}
   const W=document.createElement('div');W.style.cssText='position:fixed;left:0;top:0;z-index:-50;pointer-events:none';W.setAttribute('data-notr','');W.innerHTML=qtPages(q,co).join('');document.body.appendChild(W);
@@ -1797,12 +1798,12 @@ async function qtPdf(){const q=QT.cur;if(!q)return;toast('견적서 PDF를 만�
     const doc=new lib.jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});const pg=[...W.querySelectorAll('.qpage')];
     for(let i=0;i<pg.length;i++){const cv=await h2c(pg[i],{scale:2.5,backgroundColor:'#ffffff',useCORS:true,logging:false,width:794,height:1123,windowWidth:1200});
       if(i)doc.addPage();doc.addImage(cv.toDataURL('image/jpeg',.93),'JPEG',0,0,210,297,undefined,'FAST');}
-    const nm=`견적서_${q.no}${q.to?'_'+q.to:''}.pdf`.replace(/[\\/:*?"<>|]/g,'_');doc.save(nm);toast('견적서 PDF를 내려받았습니다');}
+    const nm=`${q.kind==='stmt'?'거래명세서_'+(q.tno||q.no):'견적서_'+q.no}${q.to?'_'+q.to:''}.pdf`.replace(/[\\/:*?"<>|]/g,'_');doc.save(nm);toast((q.kind==='stmt'?'거래명세서':'견적서')+' PDF를 내려받았습니다');}
   finally{W.remove();}}
 async function qtPrint(){const q=QT.cur;if(!q)return;const co=QT.co;await qtLogoPng();if(co.seal&&!['none','custom'].includes(co.seal))await qtSealUrl(co.seal);
   const w=window.open('','_blank');if(!w){toast('팝업이 막혀 있습니다. 「PDF 내려받기」를 써 주세요');return;}
   const fl=[...document.querySelectorAll('link[href*="fonts.googleapis"]')].map(l=>l.outerHTML).join('');
-  w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>견적서 ${esc(q.no)}</title>${fl}<style>${QT_CSS}@page{size:A4;margin:0}body{margin:0;background:#777}.qpage{margin:0 auto 12px;page-break-after:always}@media print{body{background:#fff}.qpage{margin:0}}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${qtPages(q,co).join('')}<script>document.fonts.ready.then(()=>setTimeout(()=>print(),300))<\/script></body></html>`);w.document.close();}
+  w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${q.kind==='stmt'?'거래명세서':'견적서'} ${esc(q.kind==='stmt'?(q.tno||q.no):q.no)}</title>${fl}<style>${QT_CSS}@page{size:A4;margin:0}body{margin:0;background:#777}.qpage{margin:0 auto 12px;page-break-after:always}@media print{body{background:#fff}.qpage{margin:0}}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${qtPages(q,co).join('')}<script>document.fonts.ready.then(()=>setTimeout(()=>print(),300))<\/script></body></html>`);w.document.close();}
 
 /* ---- 관리 화면 ---- */
 function vQuote(){if(!isOwner(me()))return '<div class="empty">견적서는 대표만 볼 수 있습니다.</div>';qtCss();
@@ -1820,7 +1821,7 @@ function qtListV(){const Q=QT.quotes;
    ${Q.length?`<div class="tablewrap"><table><tr><th>견적 번호</th><th>수신</th><th>대회명</th><th>견적일</th><th>합계</th><th>상태</th><th></th></tr>
    ${Q.map(q=>`<tr><td class="num"><b>${esc(q.no)}</b></td><td>${esc(q.to||'—')}</td><td class="small">${esc(q.event||'—')}</td><td class="small num">${esc(q.date)}</td><td class="num"><b>${won(qtTot(q).total)}</b></td>
      <td><select data-qs="${q.id}">${QT_ST.map(([k,l])=>`<option value="${k}" ${q.status===k?'selected':''}>${l}</option>`).join('')}</select></td>
-     <td style="white-space:nowrap"><button class="btn sm gold" type="button" data-q="open" data-id="${q.id}">열기</button> <button class="btn sm" type="button" data-q="dup" data-id="${q.id}">복사해서 새로</button> <button class="btn sm danger" type="button" data-q="del" data-id="${q.id}">${QT.armDel===q.id?'한 번 더 누르면 지움':'지우기'}</button></td></tr>`).join('')}</table></div>`
+     <td style="white-space:nowrap"><button class="btn sm gold" type="button" data-q="open" data-id="${q.id}">열기</button> <button class="btn sm" type="button" data-q="stmt" data-id="${q.id}">거래명세서</button> <button class="btn sm" type="button" data-q="dup" data-id="${q.id}">복사해서 새로</button> <button class="btn sm danger" type="button" data-q="del" data-id="${q.id}">${QT.armDel===q.id?'한 번 더 누르면 지움':'지우기'}</button></td></tr>`).join('')}</table></div>`
    :'<div class="empty">아직 만든 견적서가 없습니다. 「새 견적서 만들기」를 눌러 주세요.</div>'}`;}
 const qtIn=(f,v,type='text',ex='')=>`<input type="${type}" data-qf="${f}" value="${esc(v??'')}" ${ex}>`;
 function qtEdit(){const q=QT.cur,T=qtTot(q);
@@ -1836,6 +1837,8 @@ function qtEdit(){const q=QT.cur,T=qtTot(q);
       ${!l.auto?`<button class="btn sm ghost" type="button" data-q="lauto" data-i="${i}">자동 계산으로</button>`:''}<button class="btn sm ghost" type="button" data-q="lup" data-i="${i}" ${i?'':'disabled'} title="위로">↑</button><button class="btn sm danger" type="button" data-q="ldel" data-i="${i}">빼기</button></div></div></div>`).join('');
   const notIn=QT.prices.filter(p=>!q.lines.some(l=>l.key===p.id));
   return `<div class="qt-wrap"><div class="stack">
+   <div class="qt-chk" style="font-size:15px"><label class="${q.kind!=='stmt'?'on':''}"><input type="radio" name="qkind" data-qk="quote" ${q.kind!=='stmt'?'checked':''}>📄 견적서</label><label class="${q.kind==='stmt'?'on':''}"><input type="radio" name="qkind" data-qk="stmt" ${q.kind==='stmt'?'checked':''}>📑 거래명세서</label></div>
+   ${q.kind==='stmt'?`<section class="card stack"><h3>거래 정보 (거래명세서)</h3><div class="qt-grid"><label class="f"><span>거래 일자</span>${qtIn('tdate',q.tdate||qtToday(),'date')}</label><label class="f"><span>거래 번호</span>${qtIn('tno',q.tno||q.no)}</label></div><span class="small mute">견적서와 항목·금액·할인·부가세가 같습니다. 아래에서 고치면 견적서에도 같이 바뀝니다. 「📄 견적서」를 누르면 언제든 견적서로 돌아갑니다.</span></section>`:''}
    <div class="row" style="gap:8px"><button class="btn gold" type="button" data-q="pdf">⬇ PDF 내려받기</button><button class="btn" type="button" data-q="print">🖨 인쇄</button><button class="btn ghost" type="button" data-q="view" data-v="list">← 목록</button></div>
    <section class="card stack"><h3>받는 곳 · 대회</h3><div class="qt-grid">
      <label class="f"><span>수신 (협회·단체)</span>${qtIn('to',q.to,'text','placeholder="예: 세계태권도문화예술협회"')}</label><label class="f"><span>담당자</span>${qtIn('attn',q.attn)}</label>
@@ -1896,6 +1899,7 @@ document.addEventListener('input',e=>{const t=e.target;if(!t||!t.closest||!t.clo
   else if(d.qp!=null){const [i,f]=d.qp.split(':'),p=QT.prices[+i];if(!p)return;p[f]=f==='on'?t.checked:f==='price'?qtNum(t.value):t.value;qtSave('prices',QT.prices);}
   else if(d.qc!=null){QT.co[d.qc]=d.qc==='valid'?qtNum(t.value):t.value;qtSave('company',QT.co);}});
 document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#qt'))return;const d=t.dataset;
+  if(d.qk!=null&&QT.cur){QT.cur.kind=d.qk;if(d.qk==='stmt'&&!QT.cur.tdate)QT.cur.tdate=qtToday();qtSaveQ();qtRefresh();return;}
   if(d.qvat!=null&&QT.cur){QT.cur.vat=t.checked?'excl':'incl';t.closest('label').classList.toggle('on',t.checked);qtLive();return;}
   if(d.qrep!=null&&QT.cur){QT.cur.showRep=t.checked;t.closest('label').classList.toggle('on',t.checked);qtLive();return;}
   if(d.qd!=null&&QT.cur){const q=QT.cur;q.disc=QT_DISC.map(x=>x[0]).filter(k=>k===d.qd?t.checked:(q.disc||[]).includes(k));t.closest('label').classList.toggle('on',t.checked);qtRecalc(q);qtLive();}
@@ -1911,8 +1915,9 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   if(a!=='del')QT.armDel=null;if(a!=='pdel')QT.armP=null;if(a!=='preset')QT.armPreset=false;
   if(a==='view'){QT.view=b.dataset.v;qtRefresh();}
   else if(a==='new'){QT.cur=qtNew();QT.view='edit';qtSaveQ();qtRefresh();}
+  else if(a==='stmt'){QT.cur=QT.quotes.find(x=>x.id===b.dataset.id)||null;if(QT.cur){QT.cur.kind='stmt';if(!QT.cur.tdate)QT.cur.tdate=qtToday();qtSaveQ();}QT.view=QT.cur?'edit':'list';qtRefresh();}
   else if(a==='open'){QT.cur=QT.quotes.find(x=>x.id===b.dataset.id)||null;QT.view=QT.cur?'edit':'list';qtRefresh();}
-  else if(a==='dup'){const s=QT.quotes.find(x=>x.id===b.dataset.id);if(!s)return;const n=qtNew();QT.cur={...qtClone(s),id:n.id,no:n.no,date:n.date,status:'draft'};QT.view='edit';qtSaveQ();qtRefresh();toast('복사한 새 견적서입니다');}
+  else if(a==='dup'){const s=QT.quotes.find(x=>x.id===b.dataset.id);if(!s)return;const n=qtNew();QT.cur={...qtClone(s),id:n.id,no:n.no,date:n.date,status:'draft',kind:'quote',tno:'',tdate:''};QT.view='edit';qtSaveQ();qtRefresh();toast('복사한 새 견적서입니다');}
   else if(a==='del'){const id=b.dataset.id;if(QT.armDel!==id){QT.armDel=id;qtRefresh();return;}QT.armDel=null;QT.quotes=QT.quotes.filter(x=>x.id!==id);if(QT.cur&&QT.cur.id===id)QT.cur=null;qtSave('q:'+id,null);qtRefresh();toast('견적서를 지웠습니다');}
   else if(a==='pdf')run(qtPdf);
   else if(a==='print')run(qtPrint);
@@ -1932,7 +1937,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    · 부문 나누기는 본부 운영표가 엑셀 명단을 읽는 규칙(종목·세부 종목·부별·학년·실력조·성별)과 똑같이
    · 생활체육: 유치·실버 통합 + 부문마다 4명 1조(경기 앱 생활체육 모드와 같은 크기: 4·4·…·3·2), 같은 도장은 여러 조로 고르게
    · 대진표·PDF 순서: 공인 품새 → (자유 품새) → 겨루기 → 격파 → 태권체조 → 팀 경연 */
-const HD_VER='v1.7.40'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
+const HD_VER='v1.7.41'; /* 관리자가 새 홈페이지를 받았는지 확인하는 표시 */
 const HD={fair:true,rec:{},sel:new Set(),res:{},arm:null,pick:[],rule:{},comm:true,fmt:{'공인 품새':'t','자유 품새':'o'},ori:'p'};
 const HD_TOUROK=['공인 품새','자유 품새']; /* 격파·태권체조·팀 경연은 경기 앱이 컷오프로만 진행 */
 const HD_KEYN=k=>String(k).replace(/\(.*?\)/g,'').replace(/[\s*★]/g,'');
