@@ -363,6 +363,7 @@ body.jfit .brand{font-size:14px}
 .jlong .lro{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:3px}
 .jlong .lro .opt{min-height:40px;padding:0;font-size:15px;border-radius:8px;border-width:1px}
 .jsheet.long .jfoot{position:sticky;bottom:0;padding:8px 0 4px;background:linear-gradient(transparent,var(--bg) 30%);z-index:2}
+
 /* v1.7.66 태권체조·팀 경연 한 종목씩 채점판 */
 body.jdg main:has(.jsheet.stp){max-width:1180px}
 .jsheet.stp{min-height:calc(100dvh - 86px);display:flex;flex-direction:column;gap:8px}
@@ -388,7 +389,22 @@ body.jmax .jsheet.stp{min-height:calc(100dvh - 20px)}
 .sp-foot{flex:none;display:flex;gap:10px;position:sticky;bottom:0;padding:6px 0 4px;background:linear-gradient(transparent,var(--bg) 30%);z-index:2}.sp-foot .btn{flex:1;min-height:56px;font-size:20px}
 @media (max-width:620px){.sp-t{min-width:0}.sp-foot{padding-right:76px}.sp-o{flex:none}.sp-it{flex:none}.sp-card{justify-content:space-around}.sp-o.sp-int[style]{grid-template-columns:repeat(6,minmax(0,1fr))}.sp-o[style*="--n:10"],.sp-o[style*="--n:11"]{grid-template-columns:repeat(5,minmax(0,1fr))}.sp-t small{display:none}.sp-o.sp-half{grid-template-columns:1fr 1fr}.sp-hint{display:none}}
 @media (orientation:landscape) and (max-height:520px){body.jdg .bar{display:none}.sp-foot{padding-right:128px}.sp-o.sp-ded{flex:.7}.sp-o{grid-auto-rows:minmax(40px,1fr)}.jsheet.stp{min-height:calc(100dvh - 12px);gap:5px}.sp-t{flex-direction:row;justify-content:center;gap:6px;padding:4px}.sp-t b{font-size:16px}.sp-t small{font-size:13px}
-  .sp-card{gap:6px;padding:8px 10px}.sp-o{gap:5px;min-height:40px}.sp-o .opt{min-height:40px;font-size:clamp(17px,5.4vh,28px)}.sp-o.sp-half{min-height:40px;grid-template-columns:110px 110px 1fr}.sp-o.sp-half .opt{min-height:40px}.sp-foot .btn{min-height:44px;font-size:18px}.jsheet.stp .jwho{padding:4px 10px}}
+  .sp-card{gap:6px;padding:8px 10px}.sp-o{gap:5px;min-height:40px}.sp-o .opt{min-height:40px;font-size:clamp(22px,min(11vh,4.6vw),46px)}.sp-o.sp-half{min-height:40px;grid-template-columns:110px 110px 1fr}.sp-o.sp-half .opt{min-height:40px}.sp-foot .btn{min-height:44px;font-size:18px}.jsheet.stp .jwho{padding:4px 10px}}
+/* v1.7.72 가로 화면 채점판: 위 정보 줄·단계 단추·종목 이름·단추 글씨 크게, 종목 자동 전환 안내가 점수를 가리지 않게 */
+@media (orientation:landscape){
+  body:has(.jsheet.stp) #ksJauto{display:none!important}
+  .jsheet.stp .jwho{padding:6px 14px;align-items:center}.jsheet.stp .jwho .jname b{font-size:clamp(20px,5.4vh,30px)}
+  .jsheet.stp .jtot{gap:12px;align-items:baseline}.jsheet.stp .jtot>span{font-size:clamp(14px,3.6vh,18px)}.jsheet.stp .jtot>span b{font-size:clamp(18px,5vh,26px)}.jsheet.stp .jtot>span.big b{font-size:clamp(26px,7.5vh,40px)}
+  .jsheet.stp .jtot .jx{font-size:clamp(14px,3.8vh,20px)}
+  .sp-t b{font-size:clamp(18px,2.4vw,26px)}.sp-t small{font-size:clamp(15px,2.1vw,22px);opacity:1;font-weight:700}
+  .sp-o.sp-ded .opt small{font-size:clamp(14px,1.9vw,20px)!important}.sp-h span{font-size:clamp(14px,1.8vw,18px)!important}
+  .sp-h b{font-size:clamp(22px,6vh,32px)}.sp-h span{font-size:clamp(13px,3.4vh,17px)}.sp-h em{font-size:clamp(26px,7.5vh,44px)}
+  .sp-l{font-size:clamp(17px,4.6vh,24px)}.sp-l b{font-size:clamp(22px,6.4vh,36px)}
+  .sp-o.sp-ded .opt{font-size:clamp(24px,8vh,40px)!important}.sp-o.sp-ded .opt small{font-size:clamp(13px,3.6vh,18px)}
+  .sp-card .jskill .jl{font-size:clamp(15px,4vh,20px)}.sp-card .jskill .jl small{font-size:clamp(12px,3.2vh,15px)}.sp-card .jskill .jl b{font-size:clamp(18px,5vh,24px)}
+  .sp-card .jskill .jo .opt{font-size:clamp(16px,4.8vh,24px);min-height:clamp(40px,11vh,64px);font-weight:800}
+}
+
 
 @media (min-width:820px){.jlong{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 .jsheet .banner{padding:7px 10px;font-size:12px}
