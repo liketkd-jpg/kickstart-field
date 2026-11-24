@@ -420,6 +420,11 @@ body.jmax .jsheet.stp{min-height:calc(100dvh - 20px)}
   .sp-o .opt{font-size:clamp(30px,4.6vw,60px)!important}
   .sp-o.sp-half{flex:none!important;min-height:0!important;grid-auto-rows:clamp(38px,11vh,60px)!important}.sp-o.sp-half .opt{min-height:0!important;font-size:clamp(22px,3vw,36px)!important}
   .sp-o.sp-int{flex:1.6 1 0!important}
+  /* v1.7.76 「.0 / .5」 줄: 격자 대신 고정 높이 줄 → 아이패드 사파리에서 단추가 납작해져 숫자가 칸 밖으로 나오던 문제 */
+  .sp-o.sp-half{display:flex!important;align-items:stretch!important;gap:8px!important;flex:0 0 auto!important;height:clamp(46px,8.5vh,66px)!important;min-height:46px!important;overflow:visible}
+  .sp-o.sp-half .opt{flex:0 0 clamp(96px,12vw,150px)!important;height:100%!important;min-height:0!important;line-height:1!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:clamp(20px,min(2.8vw,5vh),34px)!important;box-sizing:border-box}
+  .sp-o.sp-half .sp-hint{align-self:center}
+  .sp-o.sp-int{min-height:0!important}.sp-it{overflow:hidden}
   .sp-foot .btn{font-size:clamp(20px,2.8vw,30px)!important}
 }
 
@@ -5537,7 +5542,7 @@ function hasLocalKo(){try{return speechSynthesis.getVoices().some(v=>/^ko/i.test
 
 
 /* ---------- 2) 노트북 「구령음성」 폴더의 녹음 파일 ---------- */
-const FILES={ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승'],attn:['차렷'],bow:['경례']};
+const FILES={enter:['출전'],ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승'],attn:['차렷'],bow:['경례']};
 let LIST=null;   /* 폴더에 있는 파일 이름 → 주소 */
 async function loadList(){
   if(!F)return;

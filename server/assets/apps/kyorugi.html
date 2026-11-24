@@ -3742,7 +3742,7 @@ function hasLocalKo(){try{return speechSynthesis.getVoices().some(v=>/^ko/i.test
 
 
 /* ---------- 2) 노트북 「구령음성」 폴더의 녹음 파일 ---------- */
-const FILES={ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승']};
+const FILES={enter:['출전'],ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승']};
 let LIST=null;   /* 폴더에 있는 파일 이름 → 주소 */
 async function loadList(){
   if(!F)return;

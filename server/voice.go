@@ -23,7 +23,7 @@ func setupVoiceDir() {
 	if _, err := os.Stat(readme); err != nil {
 		_ = os.WriteFile(readme, []byte("이 폴더에 구령 녹음 파일을 넣으면 인터넷 없이 그 목소리로 구령이 나옵니다.\r\n\r\n"+
 			"넣지 않으면 프로그램에 들어 있는 기본 남자 목소리로 나옵니다.\r\n\r\n"+
-			"파일 이름(확장자 mp3·m4a·wav):\r\n  준비.mp3  시작.mp3  바로.mp3  쉬어.mp3\r\n  청승.mp3  홍승.mp3  차렷.mp3  경례.mp3\r\n\r\n"+
+			"파일 이름(확장자 mp3·m4a·wav):\r\n  준비.mp3  시작.mp3  바로.mp3  쉬어.mp3\r\n  청승.mp3  홍승.mp3  차렷.mp3  경례.mp3  출전.mp3\r\n\r\n"+
 			"넣은 파일이 기본 목소리보다 먼저 나옵니다.\r\n파일을 넣은 뒤 운영석 화면을 새로 고침(F5)하면 바로 적용됩니다.\r\n"), 0o644)
 	}
 }

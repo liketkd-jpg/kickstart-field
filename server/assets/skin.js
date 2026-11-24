@@ -133,7 +133,12 @@ const arStage=m=>m.label||'';
 function arJudges(js){if(!js||!js.length)return '';return `<div class="ar-js" style="--n:${js.length}">${js.map(j=>j.t!=null?`<div class="ar-j rv ${j.drop?'drop':j.per?'':'in'}"><span class="ar-jn">${j.n}</span><b>${E(j.t)}</b>${j.items?`<div class="ar-ji">${j.items.map(it=>`<span class="${it.x?'jx':'jk'}"><i>${E(it.l)}</i>${E(it.v)}</span>`).join('')}</div>`:`<small>${j.sub}</small>`}${j.drop&&j.why?`<em class="ar-why">${E(j.why)}</em>`:''}</div>`
   :`<div class="ar-j ${j.ok?'ok':'wait'}"><span class="ar-jn">${j.n}</span><b>${j.ok?'입력':'—'}</b><small>${j.ok?'Judge '+j.n:'채점 중'}</small></div>`).join('')}</div>`;}
 function aIdle(m){return `<div class="ar-idle"><span class="ar-en">Official Competition</span><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="ar-clock" data-now></span>${m.court?`<div class="ar-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
-function aWho(m){const team=!m.name||m.isTeam;return `<div class="ar-who"><span class="ar-en">${team?'Team':'Athlete'}</span><div class="ar-nm" style="font-size:${U(fit(m.name||m.team,300,3))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="ar-tm">${E(m.team)}</div>`:''}${m.members?`<div class="ar-mem">${E(m.members)}</div>`:''}</div>`;}
+/* v1.7.76 팀(단체) 이름은 파란 칸 너비에 꽉 차게, 팀원 이름은 이름 단위로 줄바꿈(이름이 중간에 끊기지 않게) + 두 줄 안에서 최대한 크게 */
+function memHtml(mem){const L=String(mem||'').split(/\s*[,·/]\s*|\s{2,}/).map(x=>x.trim()).filter(Boolean);return L.map((x,i)=>`<span class="ar-mn">${E(x)}${i<L.length-1?',':''}</span>`).join(' ');}
+function memSize(mem,w,lines,max){const c=String(mem||'').replace(/\s+/g,' ').length;return c?Math.max(26,Math.min(max,w*lines/(c*0.92+2))):max;}
+function aWho(m){const team=!m.name||m.isTeam,nm=m.name||m.team,n=String(nm||'').length;
+  const fs=m.isTeam?Math.max(70,Math.min(260,1000/(Math.max(n,1)*0.95))):fit(nm,300,3);
+  return `<div class="ar-who"><span class="ar-en">${team?'Team':'Athlete'}</span><div class="ar-nm${m.isTeam?' ks-fillw':''}" ${m.isTeam?'data-fmax="300"':''} style="font-size:${U(fs)}">${E(nm)}</div>${m.name&&m.team?`<div class="ar-tm">${E(m.team)}</div>`:''}${m.members?`<div class="ar-mem ar-mem2 ks-fillh" data-fmax="64" style="font-size:${U(memSize(m.members,1000,2,60))}">${memHtml(m.members)}</div>`:''}</div>`;}
 function aLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
   const right=m.liveCount?`<div class="ar-sc"><span class="ar-en">${E(m.liveCount.l)}</span><div class="ar-big dzlive">${E(m.liveCount.v)}<small>${E(m.liveCount.u)}</small></div><div class="ar-sub">경기 시간 <span class="timer" data-timer>${E(m.timer||'')}</span></div></div>`
     :`<div class="ar-sc"><span class="ar-en">Time</span><div class="ar-big ar-time timer" data-timer>${E(m.timer||'')}</div><div class="ar-sub">${m.name?'경기 시간':'연기 시간'}</div></div>`;
@@ -307,7 +312,7 @@ function nStand(m){const t=(m.top||[]).slice(0,3);
   const cells=t.length?t.map(r=>`<div class="n-sc ${r.me?'me':''}"><i>${r.rank}</i><span><b>${E(r.name||r.team)}</b><small>${E(r.name?r.team:'')}</small></span><em>${E(r.score)}</em></div>`).join(''):`<div class="n-sc mute"><span><b>아직 순위 없음</b></span></div>`;
   return `<div class="n-bot"><div class="n-bl">${nEn('Standings')}<b>현재 순위</b></div><div class="n-scs">${cells}</div>${nNext(m)}</div>`;}
 function nWho(m,big){const team=!m.name||m.isTeam,nm=m.name||m.team;
-  return `<div class="n-who">${nEn(team?'Team':'Athlete')}<div class="n-nm" style="font-size:${U(fit(nm,big||320,3))}">${E(nm)}</div>${m.name&&m.team?`<div class="n-tm">${E(m.team)}</div>`:''}${m.members?`<div class="n-mem">${E(m.members)}</div>`:''}</div>`;}
+  return `<div class="n-who">${nEn(team?'Team':'Athlete')}<div class="n-nm${m.isTeam?' ks-fillw':''}" ${m.isTeam?'data-fmax="300"':''} style="font-size:${U(fit(nm,big||320,3))}">${E(nm)}</div>${m.name&&m.team?`<div class="n-tm">${E(m.team)}</div>`:''}${m.members?`<div class="n-mem ar-mem2 ks-fillh" data-fmax="64" style="font-size:${U(memSize(m.members,1000,2,60))}">${memHtml(m.members)}</div>`:''}</div>`;}
 function nJs(js,live){if(!js||!js.length)return '';
   return `<div class="n-js" style="--n:${js.length}">${js.map(j=>live?`<div class="n-j ${j.ok?'ok':'wait'}"><small>J${j.n}</small><b>${j.ok?'✓':'···'}</b></div>`
     :`<div class="n-j rv ${j.drop?'drop':''}"><small>J${j.n}${j.drop?' · 제외':''}</small><b>${E(j.t)}</b>${j.items&&j.items.length?`<span class="n-ji">${j.items.map(it=>`<i class="${it.x?'x':''}">${E(it.l)} ${E(it.v)}</i>`).join('')}</span>`:''}</div>`).join('')}</div>`;}
@@ -566,6 +571,7 @@ body.disp .board.sk-arena .cbres b{font-size:inherit}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-band{flex:1;min-height:0;padding:${U(20)} ${U(50)}}
 .board.sk-arena.sk-score .ar-band{grid-template-columns:minmax(0,max-content) minmax(0,1fr)}.board.sk-arena.sk-score .ar-sc{min-width:0}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-who>.ar-en{font-size:${U(28)}}
+.n-mem.ar-mem2,.board.sk-arena .ar-mem.ar-mem2,.board.ky.ar .ar-mem.ar-mem2{white-space:normal!important;word-break:keep-all;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.28;color:#EAF2FF;opacity:.92;font-weight:700;text-overflow:clip}.ar-mem2 .ar-mn{white-space:nowrap;display:inline-block}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-tm{font-size:${U(76)};margin-top:${U(8)}}.board.sk-arena:is(.sk-live,.sk-score) .ar-mem{font-size:${U(38)};white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
 .board.sk-arena.sk-live .ar-big{font-size:${U(360)};line-height:.86;white-space:nowrap}.board.sk-arena.sk-live .ar-sc{min-width:${U(620)};padding-left:${U(50)};overflow:hidden}.board.sk-arena.sk-live .ar-band{grid-template-columns:minmax(55%,1fr) minmax(0,auto)}.board.sk-arena.sk-live .ar-big:is([data-over],.over){font-size:${U(280)}}
 .board.sk-arena:is(.sk-live,.sk-score) .ar-sc>.ar-en{font-size:${U(30)}}.board.sk-arena:is(.sk-live,.sk-score) .ar-sub{font-size:${U(38)}}
@@ -1048,4 +1054,21 @@ const cssMd=`
 `;
 const st=document.createElement('style');st.id='ks-skin-css';st.textContent=css+css3+cssMd;(document.head||document.documentElement).appendChild(st);
 window.KS_SKIN={skinFor,modelPm,modelGp,draw,NEW:NEWS};
+})();
+
+/* v1.7.76 팀 이름·팀원 이름 자동 맞춤: 칸 너비(이름)·두 줄(팀원)에 꽉 차도록 크게 시작해서 넘치면 줄입니다 */
+(function(){if(window.KS_FILLFIT)return;let q=0;
+function run(){q=0;document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(el=>{if(!el.isConnected||!el.clientWidth)return;const key=el.textContent+'|'+el.clientWidth+'|'+el.clientHeight;if(el._kf===key)return;
+  const max=Number(el.dataset.fmax)||200,h=el.classList.contains('ks-fillh');const base=el.style.fontSize;
+  let lo=8,hi=0;const px=parseFloat(getComputedStyle(el).fontSize)||40;
+  /* 지금 크기(px)와 설계 크기(--u 배수)의 비율로 최대 px 구하기 */
+  const m=/calc\(([\d.]+)\*var\(--u\)\)/.exec(base);const unit=m?px/Number(m[1]):1;hi=max*unit;
+  const rg=document.createRange();const over=()=>{if(h)return el.scrollHeight>el.clientHeight+2;rg.selectNodeContents(el);const cs=getComputedStyle(el),avail=el.clientWidth-parseFloat(cs.paddingLeft||0)-parseFloat(cs.paddingRight||0);return rg.getBoundingClientRect().width>avail*0.97;};
+  let a=lo,b=hi;for(let i=0;i<14;i++){const mid=(a+b)/2;el.style.fontSize=mid+'px';if(over())b=mid;else a=mid;}
+  el.style.fontSize=Math.floor(a)+'px';el._kf=el.textContent+'|'+el.clientWidth+'|'+el.clientHeight;});}
+const sch=()=>{if(q)return;q=requestAnimationFrame(run);};
+window.KS_FILLFIT=sch;
+const go=()=>{try{new MutationObserver(sch).observe(document.body,{childList:true,subtree:true});}catch(e){}addEventListener('resize',()=>{document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(e=>e._kf='');sch();});setInterval(sch,1500);sch();};
+if(document.body)go();else addEventListener('DOMContentLoaded',go);
+try{document.fonts&&document.fonts.ready.then(()=>{document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(e=>e._kf='');sch();});}catch(e){}
 })();
