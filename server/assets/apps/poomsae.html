@@ -1909,7 +1909,7 @@ function render(){
   if(SOLO()&&r!=='display'&&ST().status==='revealed'&&curOf()&&curOf().judgeCount===1&&SOLO_SHOWN!==soloKey()&&ST().revealedAt&&Date.now()-ST().revealedAt<15000){SOLO_SHOWN=soloKey();go('display');return;}
   SOLO_ON=(r==='admin-run'||r==='admin-board'||r==='display')&&soloNeedsSheet()&&ui.soloHide!==soloKey();
   if(SOLO_ON&&myJudge!==1&&SOLO_CLAIM!==1){SOLO_CLAIM=1;claimSeat(1).then(x=>{SOLO_CLAIM=x==='ok'?0:x;render();});}
-  document.body.classList.toggle('disp',r==='display'&&!SOLO_ON);document.body.classList.toggle('jdg',r==='judge'||SOLO_ON);const isBoard=!SOLO_ON&&(r==='admin-board'||r==='admin-run');document.body.classList.toggle('brdv',isBoard);document.body.classList.toggle('bmax',isBoard&&BMAX);document.body.classList.toggle('jmax',r==='judge'&&JMAX);
+  document.body.classList.toggle('disp',r==='display'&&!SOLO_ON);document.body.classList.toggle('jdg',r==='judge'||SOLO_ON);const isBoard=!SOLO_ON&&(r==='admin-board'||r==='admin-run');document.body.classList.toggle('brdv',isBoard);document.body.classList.toggle('bmax',isBoard&&BMAX&&S.divs.length>0);document.body.classList.toggle('jmax',r==='judge'&&JMAX);
   $('#backBtn').hidden=KIOSK||r==='admin-run';
   $('#brand').textContent=KIOSK?`${SET().name||'품새 대회'} · 심판 채점`:r==='display'?(SET().name||'품새 대회'):(SET().name||'품새 대회 운영')+' · 중앙 통제';
   const off=!navigator.onLine;
@@ -1942,7 +1942,7 @@ const TABS=[['settings','대회 설정·백업'],['players','선수 등록'],['d
 function vAdmin(tab){
   const body={settings:()=>(window.ssShell?ssShell(linkBar()+aSettings()):linkBar()+aSettings()),players:aPlayers,draw:aDraw,run:aRun,board:aBoard,results:aResults}[tab]||aRun;
   const nav=`<nav class="tabs">${TABS.map(([k,l])=>`<button class="tab ${k===tab||(k==='run'&&tab==='board')?'on':''}" data-act="go" data-r="admin-${k}">${l}</button>`).join('')}<button class="tab" data-act="go" data-r="display">전광판 ↗</button></nav>`;
-  if(tab==='board'||tab==='run')return (BMAX?'':nav)+soloBanner()+aBoard();
+  if(tab==='board'||tab==='run')return (BMAX&&S.divs.length?'':nav)+soloBanner()+aBoard();
   return `${nav}<div id="alerts" aria-live="polite"></div>${linkStrip()}${body()}`;
 }
 /* 설정 탭이 아닌 곳: 한 줄짜리 심판 링크 */
@@ -2317,7 +2317,7 @@ function aRun(){
 /* ---------- 경기부 모니터: 한 화면에 모든 정보 ---------- */
 function aBoard(){
   const cur=curOf(),st=ST();
-  if(!S.divs.length)return `<div class="empty">부문이 없습니다. 선수 등록과 대진표를 먼저 준비하세요.</div>`;
+  if(!S.divs.length)return `<div class="empty">부문이 없습니다. 선수 등록과 대진표를 먼저 준비하세요.<div class="row" style="gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap"><button class="btn" data-act="go" data-r="admin-settings">① 대회 설정</button><button class="btn primary" data-act="go" data-r="admin-players">② 선수 등록하러 가기</button></div></div>`;
   if(!ui.div||!S.divs.find(d=>d.id===ui.div))ui.div=(cur&&S.divs.find(d=>d.id===cur.divId)?cur.divId:S.divs[0].id);
   const div=S.divs.find(d=>d.id===ui.div),calls=callsOf(div);
   const doneN=calls.filter(callDone).length;
