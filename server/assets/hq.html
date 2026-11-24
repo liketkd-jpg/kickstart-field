@@ -1426,6 +1426,25 @@ document.addEventListener('wheel',()=>{LASTSC=Date.now();},{capture:true,passive
 document.addEventListener('scroll',e=>{if(e.target===document||(e.target.closest&&e.target.closest('#app')))LASTSC=Date.now();},true);
 function schedule(){if(pend)return;if(busyUI()){if(!deferred){deferred=true;flushLater();}return;}pend=true;requestAnimationFrame(()=>{pend=false;render();});}
 document.addEventListener('focusout',()=>setTimeout(()=>{if(deferred&&!typing()){deferred=false;schedule();}},200),true);
+/* 가벼운 화면 맞춤 (바뀐 곳만 고치기) */
+function morphAttrs(a,b){
+  for(const at of [...a.attributes]){if(!b.hasAttribute(at.name)){if(at.name==='open'&&a.tagName==='DETAILS')continue;a.removeAttribute(at.name);}}
+  for(const at of [...b.attributes]){if(at.name==='open'&&a.tagName==='DETAILS')continue;if(a.getAttribute(at.name)!==at.value)a.setAttribute(at.name,at.value);}
+  if(a.tagName==='DETAILS'&&b.hasAttribute('open')&&!a.__kso){a.open=true;a.__kso=1;}
+  if((a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT')&&a!==document.activeElement&&!a.id){
+    if(a.type==='checkbox'||a.type==='radio'){if(a.checked!==b.checked)a.checked=b.checked;}else if(a.tagName!=='SELECT'&&a.value!==b.value)a.value=b.value;}
+  if(a.tagName==='SELECT'&&a!==document.activeElement){const sel=b.querySelector('option[selected]');if(sel&&a.value!==sel.value)a.value=sel.value;}}
+const mkey=n=>n.nodeType!==1?'#'+n.nodeType:n.nodeName+'|'+(n.id||(n.dataset&&(n.dataset.k||n.dataset.id||n.dataset.a||n.dataset.c))||String(n.getAttribute('class')||'').split(/\s+/)[0]||'');
+function morphKids(a,b){const B=[...b.childNodes];let i=0;
+  for(const y of B){const x=a.childNodes[i];
+    if(!x){a.appendChild(y);i++;continue;}
+    const ky=mkey(y);let m=mkey(x)===ky?x:null;
+    if(!m){for(let j=i+1;j<Math.min(a.childNodes.length,i+12);j++){if(mkey(a.childNodes[j])===ky){m=a.childNodes[j];a.insertBefore(m,x);break;}}}
+    if(!m){a.insertBefore(y,x);i++;continue;}
+    if(m.nodeType===3||m.nodeType===8){if(m.nodeValue!==y.nodeValue)m.nodeValue=y.nodeValue;i++;continue;}
+    if((m.tagName==='CANVAS'||m.nodeName.toLowerCase()==='svg')&&m.outerHTML!==y.outerHTML){a.replaceChild(y,m);i++;continue;}
+    morphAttrs(m,y);morphKids(m,y);i++;}
+  while(a.childNodes.length>B.length)a.removeChild(a.lastChild);}
 function render(){
   const r=route();document.body.classList.toggle('mon',r==='board');
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.r===r));
@@ -1439,7 +1458,9 @@ function render(){
   const scs=[],cnt={};document.querySelectorAll('#app *').forEach(el=>{const g=sig(el);const i=cnt[g]=(cnt[g]||0)+1;if(el.scrollTop>0||el.scrollLeft>0)scs.push([g,i-1,el.scrollTop,el.scrollLeft]);});
   const wy=window.scrollY,wx=window.scrollX;
   document.body.classList.toggle('prtst',r==='print');document.body.classList.toggle('rmode',r.startsWith('room-')||r==='award'||r.startsWith('next'));document.body.classList.toggle('nxm',r.startsWith('next'));
-  $('#app').innerHTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r.startsWith('room-')?vRoom(r.slice(5)):r.startsWith('next')?vNext(r.slice(5)):r==='award'?vAward():r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
+  const HTML=!S.ready?'<div class="empty">본부 서버에 연결하는 중…</div>':r.startsWith('room-')?vRoom(r.slice(5)):r.startsWith('next')?vNext(r.slice(5)):r==='award'?vAward():r==='print'?vPrint():r==='results'?vResults():hqShell(vAdmin());
+  /* v1.7.81 떨림·스크롤 튐 없애기: 화면 전체를 갈아 끼우지 않고 바뀐 글자·칸만 고침 (열어 둔 접기 칸·입력 칸·스크롤 자리가 그대로) */
+  {const app=$('#app');if(app.__h!==HTML){if(app.__r!==r||!app.firstChild){app.innerHTML=HTML;}else{const t=document.createElement('div');t.innerHTML=HTML;morphKids(app,t);}app.__h=HTML;app.__r=r;}}
   for(const [k,v] of Object.entries(keep)){const el=document.getElementById(k);if(el)el.value=v;}
   if(fid){const el=document.getElementById(fid);if(el)el.focus({preventScroll:true});}
   if(scs.length){const by={};document.querySelectorAll('#app *').forEach(el=>{(by[sig(el)]=by[sig(el)]||[]).push(el);});scs.forEach(([g,i,t,l])=>{const el=(by[g]||[])[i];if(el){el.scrollTop=t;el.scrollLeft=l;}});}
@@ -1872,6 +1893,48 @@ async function lvPush(force){const cf=CFG();if(!cf.lvOn||!cf.lvComp||LVS.busy||!
   catch(e){LVS.err=/fetch|network|Failed/i.test(String(e&&e.message))?'인터넷에 연결되어 있지 않습니다 (본부 노트북 인터넷 확인)':(e.message||String(e));LVS.lastAt=now;}
   finally{LVS.busy=false;schedule();}}
 setInterval(()=>lvPush(false),5000);
+/* ---------- v1.7.81 경기 결과 → 접수 홈페이지 자동 보내기 ----------
+   코트마다 따로 「결과 보내기」를 누르면 같은 종목을 하는 다른 코트 결과가 지워지던 문제(홈페이지는 종목 단위로 통째로 바꿔 씀)를 없애려고,
+   본부가 모든 코트의 입상 결과를 종목(앱)별로 모아 한 번에 보냅니다. 「📱 지도자용 진행 상황」 보내기가 켜져 있으면 같이 돌아갑니다.
+   바뀐 것이 있을 때 30초에 한 번까지, 그리고 10분마다 한 번 더 · 인터넷이 끊겼다가 돌아오면 그동안 쌓인 결과를 자동으로 다시 보냅니다. */
+const RP={warn:'',busy:false,last:{},at:0,ok:0,err:'',n:{}};try{RP.last=JSON.parse(localStorage.getItem('ks_hq_rplast')||'{}')||{};}catch(e){}
+function resPubData(){const by={};const seen=new Set();
+  courtList().slice().sort((a,b)=>(b.online-a.online)).forEach(c=>{Object.entries(c.apps||{}).forEach(([k,v])=>{if(!appOn(k))return;const r=v&&v.results,p=r&&r.pub;if(r&&(r.divs||[]).length&&!(p&&Array.isArray(p.rows))){(by['!'+k]=by['!'+k]||[]).push(c.court);return;}if(!p||!Array.isArray(p.rows))return;
+    const id=c.court+'|'+k;if(seen.has(id))return;seen.add(id);(by[k]=by[k]||[]).push(p);});});
+  const out={};
+  Object.entries(by).forEach(([k,L])=>{if(k[0]==='!')return;const old=by['!'+k];if(old){out[k]={rows:[],old:[...new Set(old)]};return;}  /* 옛 버전 코트가 섞이면 그 코트 결과가 홈페이지에서 지워지므로 보내지 않음 */const med=[];L.forEach(p=>p.rows.filter(r=>r.kind!=='team').forEach(r=>med.push(r)));
+    let team=[];
+    if(L.length===1)team=L[0].rows.filter(r=>r.kind==='team');
+    else{const m=new Map();L.forEach(p=>(p.teamRaw||[]).forEach(t=>{if(!t.team)return;const x=m.get(t.team)||{team:t.team,g:0,s:0,b:0,n:0,pts:0,coach:t.coach||''};x.g+=t.g;x.s+=t.s;x.b+=t.b;x.n+=t.n;x.pts+=t.pts;if(!x.coach)x.coach=t.coach||'';m.set(t.team,x);}));
+      const rows=[...m.values()].sort((a,b)=>b.pts-a.pts||b.g-a.g||b.s-a.s||b.b-a.b||a.team.localeCompare(b.team,'ko'));let rk=0,prev=null;
+      rows.forEach((t,i)=>{const key=[t.pts,t.g,t.s,t.b].join('|');if(key!==prev){rk=i+1;prev=key;}t.rank=rk;});
+      team=rows.filter(t=>t.rank<=3).map(t=>({kind:'team',div:'',rank:t.rank,name:t.team,team:'',coach:t.coach||'',members:''}));}
+    out[k]={rows:[...med,...team],meta:(L.find(p=>p.meta&&(p.meta.host||p.meta.rep||p.meta.date))||L[0]).meta||{},courts:L.length};});
+  return out;}
+async function resPush(force){const cf=CFG();if(!cf.lvOn||!cf.lvComp||cf.resPubOff||RP.busy||!lvLeader())return;const now=Date.now();
+  if(!force&&now-RP.at<30000)return;RP.busy=true;RP.at=now;
+  try{const D=resPubData(),ks=Object.keys(D).filter(k=>D[k].rows.length);const olds=Object.values(D).filter(x=>x.old).flatMap(x=>x.old);
+    if(olds.length)RP.warn=`${[...new Set(olds)].join('·')}코트 프로그램이 옛 버전이라 그 종목은 보내지 않았습니다 — 코트 노트북을 다시 켜서 최신판으로 맞춰 주세요`;else RP.warn='';
+    if(!ks.length){RP.err='';return;}
+    let tok=null;
+    for(const k of ks){const body={p_comp:cf.lvComp,p_sport:k,p_rows:D[k].rows,p_meta:D[k].meta},sig=cf.lvComp+'|'+JSON.stringify(D[k].rows),prev=RP.last[k]||{};
+      if(!force&&prev.sig===sig&&now-(prev.at||0)<600000)continue;
+      tok=tok||await sbToken();if(!tok)throw new Error('관리자 계정으로 로그인해 주세요');
+      const up=await fetch(SB_URL+'/rest/v1/rpc/publish_results',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(!up.ok){const t=await up.text().catch(()=>'');throw new Error(up.status===401||up.status===403||/관리자/.test(t)?'대회 본부(관리자) 계정만 결과를 보낼 수 있습니다':'결과를 올리지 못했습니다 ('+up.status+') '+t.slice(0,80));}
+      RP.last[k]={sig,at:now,n:D[k].rows.length};RP.n[k]=D[k].rows.length;}
+    try{localStorage.setItem('ks_hq_rplast',JSON.stringify(RP.last));}catch(e){}RP.ok=now;RP.err='';}
+  catch(e){RP.err=/fetch|network|Failed/i.test(String(e&&e.message))?'인터넷에 연결되어 있지 않습니다 — 연결되면 자동으로 다시 보냅니다':(e.message||String(e));RP.at=now-20000;}
+  finally{RP.busy=false;schedule();}}
+setInterval(()=>resPush(false),10000);
+try{window.__KSHQ={resPubData,resPush,RP,saveCfg:(...a)=>saveCfg(...a)};}catch(e){}  /* 점검용 */
+function vResPub(){const cf=CFG();if(!cf.lvComp)return '';const nm={poomsae:'품새',kyorugi:'겨루기',gyeokpa:'격파'};
+  const L=Object.entries(RP.last).filter(([k])=>nm[k]).map(([k,v])=>`${nm[k]} ${v.n||0}건`).join(' · ');
+  return `<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>🏅 경기 결과 → 홈페이지</b>
+    <span class="chip ${cf.resPubOff||!cf.lvOn?'':RP.err?'bad':RP.ok?'ok':'warn'}"><i class="dot"></i>${cf.resPubOff?'꺼짐':!cf.lvOn?'보내기를 켜면 같이 보냅니다':RP.err?esc(RP.err):RP.ok?'자동으로 보내는 중 · 마지막 '+hhmm(RP.ok):'곧 보냅니다'}</span>
+    ${L?`<span class="small muted">${L}</span>`:''}${RP.warn?`<span class="chip bad">${esc(RP.warn)}</span>`:''}<button class="btn sm" data-a="lvResNow" ${cf.lvOn&&!cf.resPubOff?'':'disabled'}>지금 결과 보내기</button><button class="btn sm ghost" data-a="lvResTg">${cf.resPubOff?'결과 보내기 켜기':'결과는 보내지 않기'}</button></div>
+    <span class="small muted">모든 코트의 입상 결과(1~3위·종합 순위)를 종목별로 모아 홈페이지 「결과 · 상장」으로 보냅니다. 지도자가 홈페이지에서 바로 상장을 뽑을 수 있습니다. 코트 노트북에서 따로 「결과 보내기」를 누르지 않으셔도 됩니다.</span>`;}
+
 
 /* QR 그림 (SVG) — 묶여 있는 qrcode 도구로 칸을 직접 그림 */
 function qrSvgOf(t){try{const q=qrcode(0,'M');q.addData(t);q.make();const n=q.getModuleCount();let d='';
@@ -1916,11 +1979,14 @@ function vLvPanel(){const cf=CFG(),au=sbAuth(),url=cf.lvComp?lvUrl(cf.lvComp):''
     <div class="row"><label class="row">대회 <select data-lvcomp="1">${(LVS.comps||[]).map(c=>`<option value="${esc(c.id)}" ${c.id===cf.lvComp?'selected':''}>${esc(c.name)} (${esc(c.date)})</option>`).join('')||`<option>${LVS.loading?'불러오는 중…':cf.lvCompName?esc(cf.lvCompName):'대회 없음'}</option>`}</select></label>
       <button class="btn ${cf.lvOn?'':'primary'}" data-a="lvToggle" ${cf.lvComp?'':'disabled'}>${cf.lvOn?'⏸ 보내기 멈춤':'▶ 인터넷으로 보내기 시작'}</button>${cf.lvOn?`<button class="btn sm" data-a="lvNow">지금 보내기</button>`:''}</div>
     <span class="small ${LVS.err?'':'muted'}" style="${LVS.err?'color:var(--red);font-weight:700':''}">${LVS.err?esc(LVS.err):cf.lvOn?`보낸 횟수 ${LVS.n} · 마지막 ${LVS.lastAt?hhmm(LVS.lastAt):'-'} · 바뀐 것이 있을 때만 (12초에 한 번까지) · 본부 화면을 켜 두세요`:'시작하면 이 노트북이 계속 올립니다 (본부 운영 또는 본부 모니터 화면이 켜져 있는 동안)'}</span>
+    ${vResPub()}
     ${url?`<div class="lvshare"><div class="lvqr">${qrSvgOf(url,4)}</div><div class="lvsh"><b>지도자에게 줄 주소</b><code>${esc(url)}</code>
       <div class="row"><button class="btn" data-a="lvCopy">🔗 링크 복사</button><button class="btn" data-a="lvQR">📱 QR 크게</button><button class="btn primary" data-a="lvPrint">🖨 A4 QR 인쇄</button><button class="btn sm" data-a="lvPrintW" title="흰 바탕 (잉크 아끼기)">🖨 흰 바탕</button><a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">열어 보기 ↗</a></div>
       <span class="small muted">오픈 채팅방에는 링크를, 대회장 입구·관중석에는 A4 QR을 붙이세요. 「보내기」를 켜기 전에는 「경기 소식을 기다리는 중」으로 보입니다.</span></div></div>`:''}
     <span class="small muted">로그인: ${esc(au.email||'')} · <a href="#" data-a="lvOut">로그아웃</a></span>`}</div>`;}
 async function lvClick(a,b){const cf=CFG();
+  if(a==='lvResNow'){resPush(true);toast('결과를 홈페이지로 보내는 중입니다');return;}
+  if(a==='lvResTg'){await saveCfg({resPubOff:!cf.resPubOff});return;}
   if(a==='lvLogin'){try{await sbLogin(($('#lvEm').value||'').trim(),$('#lvPw').value||'');LVS.comps=null;LVS.err='';toast('로그인했습니다');}catch(e){toast(e.message);}render();}
   else if(a==='lvOut'){localStorage.removeItem(SB_LS);LVS.comps=null;await saveCfg({lvOn:false});render();}
   else if(a==='lvToggle'){await saveCfg({lvOn:!cf.lvOn});LVS.err='';LVS.last='';if(!cf.lvOn)setTimeout(()=>lvPush(true),300);}

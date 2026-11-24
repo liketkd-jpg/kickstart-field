@@ -3756,6 +3756,7 @@ async function printCerts(list,fname){
   const ok=await saveFile(`${safe}.pdf`,doc.output('arraybuffer'));if(ok)toast(`상장 ${list.length}장을 저장했습니다`);
 }
 window.AW.printCerts=printCerts;window.AW.drawCert=drawCert;window.AW.medalCert=medalCert;window.AW.sealImg=sealImg;
+window.AW.teamRaw=()=>{try{return teamStandings(false)||[];}catch(e){return [];}};  /* v1.7.81 본부가 여러 코트 종합 순위를 합칠 때 씀 */
 window.AW.results=()=>{const cf=CFG(),comp=(SET()||{}).name||'';let med=[],team=[];try{med=medalists();}catch(err){}try{team=teamStandings(false)||[];}catch(err){}
   return {comp,meta:{host:cf.host||'',title:cf.title||'',rep:cf.rep||'',date:cf.date||'',serial:cf.serial||''},rows:[...med.map(x=>({kind:'medal',div:x.div.name||'',rank:x.rank,name:x.name,team:x.team,coach:x.coach||coachOf(x.team)||'',members:x.members||''})),...team.filter(r=>r.rank<=3).map(r=>({kind:'team',div:'',rank:r.rank,name:r.team,team:'',coach:r.coach||'',members:''}))]};};
 })();
@@ -4291,7 +4292,10 @@ function results(){
   const divs=[...by.entries()].map(([id,v])=>{const d=S.divs.find(x=>x.id===id);let pending=0;try{pending=itemsOf(d).filter(x=>!x.done).length;}catch(e){}
     v.podium.sort((a,b)=>a.rank-b.rank);return {...v,done:pending===0&&v.podium.some(p=>p.rank===1)};}).filter(v=>v.podium.length);
   let awardN=null;try{awardN=(g('SET')()||{}).awardN||null;}catch(e){}
-  return {v:1,app:APP,appName:APPNAME,court:F.court||'',divs,awardN};
+  /* v1.7.81 본부가 모든 코트 결과를 모아 접수 홈페이지로 자동으로 보내도록, 홈페이지 결과 줄(pub)과 종합 순위 원자료(teamRaw)도 함께 */
+  let pub=null;try{const R=AW.results?AW.results():null;if(R&&R.rows)pub={rows:R.rows,meta:R.meta||{},comp:R.comp||''};}catch(e){}
+  try{if(pub&&AW.teamRaw)pub.teamRaw=(AW.teamRaw()||[]).map(t=>({team:t.team,g:t.g||0,s:t.s||0,b:t.b||0,n:t.n||0,pts:t.pts||0,coach:t.coach||''}));}catch(e){}
+  return {v:1,app:APP,appName:APPNAME,court:F.court||'',divs,awardN,pub};
 }
 let lastB='',lastR='',lastAt=0,busy=false,lastDiv=null;
 /* 통합 본부(Claude): 서버가 없으니 코트 운영석이 새 부문 시작을 직접 본부에 알림 */
