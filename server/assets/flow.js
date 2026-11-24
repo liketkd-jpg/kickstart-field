@@ -17,7 +17,7 @@
     timer=setInterval(()=>{left--;if(left<=0)fire();else draw();},1000);}
   /* o={title,stage,done,total,items:[{no,names:[{t,side}],team,sc,state:'cur'|'done'|''}],auto,toggleAct} */
   function strip(o){if(!o)return '';
-    const it=(o.items||[]).map(x=>`<div class="kfi ${x.state||''}"><span class="kfn">${esc(x.no)}</span><span class="kfm">${(x.names||[]).map(n=>`<b class="${n.side||''}">${esc(n.t)}</b>`).join('<i>vs</i>')}${x.team?`<small>${esc(x.team)}</small>`:''}</span>${x.sc!=null&&x.sc!==''?`<span class="kfs">${esc(x.sc)}</span>`:x.state==='cur'?'<span class="kfs live">진행</span>':''}</div>`).join('');
+    const it=(o.items||[]).map(x=>`<div class="kfi ${x.state||''}"><span class="kfn">${esc(x.no)}</span><span class="kfm">${(x.names||[]).map(n=>`<b class="${n.side||''}">${esc(n.t)}</b>`).join('<i>vs</i>')}${x.team?`<small>${esc(x.team)}</small>`:''}</span>${x.sc!=null&&x.sc!==''?`<span class="kfs${x.sc==='기권'?' wd':''}">${esc(x.sc)}</span>`:x.out&&x.state!=='cur'?'<span class="kfs out">미출석</span>':x.state==='cur'?'<span class="kfs live">진행</span>':''}</div>`).join('');
     return `<div class="panel bp kfstrip"><div class="kfh"><div><span class="kfl">지금 경기</span><b class="kft">${esc(o.title)}</b>${o.stage?`<span class="kfst">${esc(o.stage)}</span>`:''}</div>
       <div class="kfr"><span class="kfp"><b>${o.done}</b> / ${o.total} 끝</span><button class="btn sm ${o.auto?'primary':''}" data-act="${o.toggleAct||'toggleAutoDiv'}" title="한 조가 끝나면 5초 뒤 다음 조 첫 선수를 자동 호출">조 넘어가기 ${o.auto?'자동':'수동'}</button></div></div>
       <div class="kfl2">${it||'<span class="small muted">선수가 없습니다</span>'}</div>${o.next?`<div class="kfnx">다음 → <b>${esc(o.next)}</b></div>`:''}</div>`;}
@@ -39,7 +39,7 @@
 .kfstrip .kfi .kfn{flex:none;min-width:22px;height:22px;border-radius:7px;background:rgba(127,127,127,.25);font-weight:900;font-size:13px;display:grid;place-items:center;padding:0 4px}
 .kfstrip .kfi .kfm{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}.kfstrip .kfi .kfm b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kfstrip .kfi .kfm b.blue{color:#5B8DEF}.kfstrip .kfi .kfm b.red{color:#F06464}
 .kfstrip .kfi .kfm i{font-style:normal;font-size:11px;opacity:.6}.kfstrip .kfi .kfm small{font-size:11.5px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kfstrip .kfi .kfs{flex:none;font-weight:900;font-size:14px}.kfstrip .kfi .kfs.live{color:#fff;background:#E5484D;border-radius:999px;padding:2px 8px;font-size:12px}
+.kfstrip .kfi .kfs{flex:none;font-weight:900;font-size:14px}.kfstrip .kfi .kfs.out,.kfstrip .kfi .kfs.wd{color:#fff;background:#E5484D;border-radius:999px;padding:2px 8px;font-size:12px}.kfstrip .kfi.done .kfs.wd{opacity:1}.kfstrip .kfi .kfs.live{color:#fff;background:#E5484D;border-radius:999px;padding:2px 8px;font-size:12px}
 .kfstrip .kfi.cur{border-color:#E5484D;background:rgba(229,72,77,.16);box-shadow:0 0 0 3px rgba(229,72,77,.22)}.kfstrip .kfi.cur .kfm b{font-size:16.5px}
 .kfstrip .kfi.done{opacity:.45}.kfstrip .kfi.done .kfs{opacity:1}.kfstrip .kfnx{font-size:14px;opacity:.8}`;
   const st=document.createElement('style');st.textContent=css;(document.head||document.documentElement).appendChild(st);

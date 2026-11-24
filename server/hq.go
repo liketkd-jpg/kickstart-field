@@ -557,6 +557,10 @@ func pollCourt(addr string) {
 							Text string `json:"text"`
 							At   int64  `json:"at"`
 						} `json:"stage"`
+						Recall *struct {
+							Text string `json:"text"`
+							At   int64  `json:"at"`
+						} `json:"recall"` // v1.7.75 운영석 「한 번 더 부르기」
 					} `json:"board"`
 				}
 				if json.Unmarshal(raw, &a) != nil {
@@ -572,6 +576,16 @@ func pollCourt(addr string) {
 						calls = append(calls, map[string]any{"court": c.court, "app": app, "text": c.court + "코트, " + st.Text + ".", "auto": true})
 					}
 					c.stageAt[k] = st.At
+				}
+				if _, ok := c.stageAt[app+"#recall"]; !ok && a.Board.Recall == nil {
+					c.stageAt[app+"#recall"] = 0
+				}
+				if rc := a.Board.Recall; rc != nil && rc.Text != "" {
+					k := app + "#recall"
+					if old, ok := c.stageAt[k]; ok && rc.At > old && time.Now().UnixMilli()-rc.At < 60000 {
+						calls = append(calls, map[string]any{"court": c.court, "app": app, "text": c.court + "코트, " + rc.Text, "manual": true})
+					}
+					c.stageAt[k] = rc.At
 				}
 				prev, seen := c.curDiv[app]
 				c.curDiv[app] = a.Board.CurDiv
@@ -653,7 +667,8 @@ func autoCall(cl map[string]any) {
 		AutoCall *bool `json:"autoCall"`
 	}
 	_ = json.Unmarshal(b, &m)
-	if m.AutoCall != nil && !*m.AutoCall {
+	manual, _ := cl["manual"].(bool) // v1.7.75 운영석이 직접 누른 「한 번 더 부르기」는 자동 호출을 꺼 둬도 방송
+	if m.AutoCall != nil && !*m.AutoCall && !manual {
 		return
 	}
 	text := fmt.Sprintf("%s코트, %s 선수는 준비해 주세요.", cl["court"], cl["div"])

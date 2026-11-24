@@ -842,7 +842,7 @@ body.disp .board.one .pban:empty + .who-row{}
 
 .bcmd{display:grid;grid-template-columns:1.7fr 1fr .7fr;gap:8px}
 .bcmd .btn{padding:12px 8px;font-size:18px}
-.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
+html body .btn.wdb{background:transparent!important;border:1.5px solid #E5484D!important;color:#FF8A8A!important;font-weight:800}html body .bcmd .btn.entb{background:linear-gradient(160deg,#FF9A8B,#F2624F)!important;color:#fff!important;border-color:#F2624F!important;font-weight:900}html body .bcmd .btn.entb:disabled{opacity:.45}.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
 body.bmax .bcmd .btn{font-size:clamp(18px,2.6vh,28px);padding:clamp(10px,1.6vh,18px) 8px}
 @media (min-width:1000px) and (max-height:820px){.bcmd .btn{padding:7px 6px;font-size:16px}.bcmd{gap:6px}}
 
@@ -1169,6 +1169,7 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
   .jo .opt.on,.jcol.fs .jo .opt.on{font-size:clamp(26px,3.3vh,44px)!important}
 }
 .cbr .cbrk.md,.cbrk.md{font-family:"Noto Sans KR",sans-serif;font-weight:900;display:grid;place-items:center;border-radius:50%;width:1.9em;height:1.9em;margin:auto;color:#1a1405;font-size:1.05em}.cbrk.m1{background:radial-gradient(circle at 35% 30%,#FFF6D2,#E2B54A 55%,#9C7120)}.cbrk.m2{background:radial-gradient(circle at 35% 30%,#fff,#C2C8D2 55%,#7C8594)}.cbrk.m3{background:radial-gradient(circle at 35% 30%,#FFE2C4,#C9864A 55%,#7E4A20)}
+html body .chip.kout{background:#E5484D!important;color:#fff!important;border-color:#E5484D!important;font-weight:800}.ksout{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(229,72,77,.14);border:1.5px solid #E5484D;border-radius:12px;padding:10px 12px;margin:8px 0;font-weight:800;color:#FFB4B4}.ksout .btn{min-height:44px}
 </style>
 
 <header class="bar">
@@ -1563,6 +1564,7 @@ function tbText(t){
 function agg(perfIds){return aggRs(perfIds.map(id=>S.results[id]));}
 function aggRs(rs){
   if(!rs.length||rs.some(r=>!r))return null;
+  if(rs.some(r=>r.wd))return {type:rs[0].type,final:0,a:0,b:0,deduction:0,sumAll:0,n:rs.length,wd:true}; /* v1.7.75 기권 */
   return {type:rs[0].type,final:r3(mean(rs.map(r=>r.final))),a:r3(mean(rs.map(r=>r.a))),b:r3(mean(rs.map(r=>r.b))),
     deduction:r1(sum(rs.map(r=>r.deduction||0))),sumAll:r3(sum(rs.map(r=>r.sumAll))),n:rs.length};
 }
@@ -1694,8 +1696,9 @@ const curStage=d=>{const s=stagesOf(d);return s[s.length-1];};
 const stagePerfIds=(d,stKey,aid)=>ksR(d,stKey).map(k=>`${d.id}_${stKey}_${aid}_${k}`);
 function stageRanking(d,st){
   const rows=st.order.map(id=>({id,agg:agg(stagePerfIds(d,st.key,id))}));
-  rows.sort((x,y)=>rowCmp(d,st,x,y).c);
-  return rows;
+  rows.forEach(x=>{if(x.agg&&x.agg.wd)x.wd=true;});   /* v1.7.75 기권은 순위·진출·입상에서 빼고 맨 뒤 */
+  const ok=rows.filter(x=>!x.wd);ok.sort((x,y)=>rowCmp(d,st,x,y).c);
+  return [...ok,...rows.filter(x=>x.wd)];
 }
 const rowCmp=(d,st,x,y)=>tbCompare(x.agg,y.agg,`${d.id}_${st.key}_${x.id}`,`${d.id}_${st.key}_${y.id}`);
 /* 컷오프에서 지금 재경기가 필요한 선수들 (진출 경계 동점 또는 결선 입상 순위 동점) */
@@ -1703,7 +1706,7 @@ function rematchNeed(d){
   if(d.format==='tournament')return null;
   const st=curStage(d);
   if(nextStage(d,st.key)){const p=advancePlan(d);return p.tie&&p.need?{ids:p.tie,n:p.need,why:'진출 경계'}:null;}
-  const r=stageRanking(d,st);if(!r.length||!r.every(x=>x.agg))return null;
+  const r0=stageRanking(d,st);if(!r0.length||!r0.every(x=>x.agg))return null;const r=r0.filter(x=>!x.wd);
   for(let j=1;j<r.length&&j<4;j++){const t=rowCmp(d,st,r[j-1],r[j]);
     if(t.c===0&&t.need){const g=r.filter(x=>rowCmp(d,st,x,r[j]).c===0);return {ids:g.map(x=>x.id),n:t.need,why:'입상 순위'};}}
   return null;
@@ -1873,6 +1876,8 @@ window.addEventListener('hashchange',()=>{const r=routeNow();if(navStack[navStac
 
 /* ===================== 렌더 ===================== */
 let pending=false;
+function isOut(div,name,team){try{return !!(window.KS_ROOM_OUT&&window.KS_ROOM_OUT(div,name,team));}catch(e){return false;}}  /* v1.7.75 대기실 미출석 */
+function outBanner(div,name,team,wd){if(!isOut(div,name,team))return '';return `<div class="ksout">⚠ ${esc(name)} 선수는 대기실에서 <u>미출석</u>으로 표시되어 있습니다<button class="btn" data-act="recallOut">📢 한 번 더 부르기</button>${wd}</div>`;}
 function schedule(){if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;render();});}
 /* ===================== 1심제 혼자 운영 =====================
    심판 수가 1이면 운영석 기기 한 대로: 선수 호출 → 이 기기에 채점표 → 보내면 자동 공개 → 같은 기기에 전광판(TV 연결) → 다음 선수.
@@ -1910,7 +1915,12 @@ function render(){
   else if(r.startsWith('admin'))html=vAdmin(r.split('-')[1]);
   else if(r==='judge')html=vJudge();
   else if(r==='display')html=vDisplay();
+  /* v1.7.75 다시 그려도 안쪽 스크롤 칸(채점 항목 목록 등)과 화면 위치를 그대로 */
+  const KSP=el=>{const p=[];while(el&&el!==app){const par=el.parentElement;p.unshift((el.className||el.tagName)+'#'+(par?[...par.children].indexOf(el):0));el=par;}return p.join('>');};
+  const ksSc=[];app.querySelectorAll('*').forEach(el=>{if(el.scrollTop>0||el.scrollLeft>0)ksSc.push([KSP(el),el.scrollTop,el.scrollLeft]);});const ksWy=window.scrollY,ksSame=render._lr===location.hash;render._lr=location.hash;
   app.innerHTML=html;
+  if(ksSc.length&&ksSame){const m=new Map(ksSc.map(x=>[x[0],x]));app.querySelectorAll('*').forEach(el=>{if(el.scrollHeight<=el.clientHeight&&el.scrollWidth<=el.clientWidth)return;const x=m.get(KSP(el));if(x){el.scrollTop=x[1];el.scrollLeft=x[2];}});}
+  if(ksSame&&ksWy){if(Math.abs(window.scrollY-ksWy)>2)window.scrollTo(0,ksWy);requestAnimationFrame(()=>{if(render._lr===location.hash&&Math.abs(window.scrollY-ksWy)>40&&window.scrollY<20)window.scrollTo(0,ksWy);});}
   document.body.classList.toggle('jfit',!!app.querySelector('.jsheet'));
   updatePresence();
   for(const [id,v] of Object.entries(keep)){const el=document.getElementById(id);if(el&&el.dataset.fresh===undefined)el.value=v;}
@@ -2128,8 +2138,8 @@ function stageChips(d){
 /* 컷오프 다음 단계 진출자 계산 (제7조 지침, 제14조 5항 동점 처리) */
 function advancePlan(d){
   const st=curStage(d),NX=nextStage(d,st.key);if(!NX)return {final:true};
-  const ranking=stageRanking(d,st);
-  const done=ranking.every(x=>x.agg);
+  const ranking0=stageRanking(d,st);
+  const done=ranking0.every(x=>x.agg),ranking=ranking0.filter(x=>!x.wd);
   const n=st.order.length,quota=cutMode(d)==='two'?Math.min(n,cutAdv(d)):st.key==='pre'?Math.ceil(n/2):8;
   if(!done)return {done:false,quota,next:NX};
   let winners=ranking.slice(0,quota),tie=null,need=null,tieAll=null;
@@ -2315,8 +2325,8 @@ function aBoard(){
     <div class="panel bp grow"><div class="row between"><h3>진행 순서</h3><span class="small muted">${calls.length}경기</span></div>
       <div class="scroll"><div class="blist">${calls.length?calls.map(c=>{const isCur=cur&&cur.callId===c.callId,done=callDone(c);
         return `<div class="bitem ${isCur?'cur':''} ${done?'done':''}"><div class="bmain"><span class="small muted">${esc(c.label)}</span>
-          ${c.entries.map(e=>{const r=S.results[e.perfId];return `<b class="${e.side||''}">${e.side?sideName(e.side)+' ':''}${esc(aName(e.athleteId))}${r?` <span class="sc">${fmt3(r.final)}</span>`:''}</b>`;}).join('')}</div>
-          ${isCur?'<span class="chip live">진행</span>':`<button class="btn" data-act="call" data-c="${c.callId}">${done?'다시':'호출'}</button>`}</div>`;}).join(''):'<div class="empty">진행할 경기가 없습니다.</div>'}</div></div></div>
+          ${c.entries.map(e=>{const r=S.results[e.perfId];return `<b class="${e.side||''}">${e.side?sideName(e.side)+' ':''}${esc(aName(e.athleteId))}${r?` <span class="sc">${r.wd?'<span class="chip kout">기권</span>':fmt3(r.final)}</span>`:(!isCur&&isOut(div.name,aName(e.athleteId),(athlete(e.athleteId)||{}).team)?' <span class="chip kout">미출석</span>':'')}</b>`;}).join('')}</div>
+          ${c.entries.length===1&&S.results[c.entries[0].perfId]&&S.results[c.entries[0].perfId].wd&&!isCur?`<button class="btn sm wdb" data-act="unWithdraw" data-p="${c.entries[0].perfId}">기권 취소</button>`:''}${isCur?'<span class="chip live">진행</span>':`<button class="btn" data-act="call" data-c="${c.callId}">${done?'다시':'호출'}</button>`}</div>`;}).join(''):'<div class="empty">진행할 경기가 없습니다.</div>'}</div></div></div>
   </div>`;
   /* 가운데: 현재 경기 */
   let center;
@@ -2346,13 +2356,14 @@ function aBoard(){
     center=`<div class="col">${flowStrip(S.divs.find(x=>x.id===cur.divId)||div,cur)}<div class="panel bp grow bcur">
       <div class="row between"><span class="label">${esc(cur.divName)} · ${esc(cur.label)} · ${sh.label} · ${N}심제</span>${revealed?'<span class="chip ok">점수 공개됨</span>':'<span class="chip live">채점 중</span>'}</div>
       ${pbarHtml(cur,revealed)}
+      ${revealed?'':cur.entries.map(e=>outBanner(cur.divName,e.name,e.team,cur.entries.length===1?'<button class="btn wdb" data-act="withdraw">🚫 기권 처리</button>':'<span class="small">토너먼트는 「특수 판정 → 기권승」으로 처리해 주세요</span>')).join('')}
       <div class="btimer"><span class="timer" data-timer>${cdText(ST().timer)}</span><span class="small muted">제한 ${limitText(t)}${flag==='over'?' · <b style="color:var(--red)">초과</b>':flag==='under'?' · <b style="color:var(--red)">미달</b>':''}</span>
         ${cur.type==='recognized'?`<span class="row" style="gap:4px">${[60,90,120].map(x=>`<button class="btn sm ${t.max===x?'primary':''}" data-act="timerMax" data-t="${x}" ${t.running?'disabled':''}>${mmss(x)}</button>`).join('')}</span>`:''}
         </div><div class="bcmd${SET().bow!==false?' b4':''}">${(()=>{const ra=ST().readyAt,pend=ra&&!t.running&&Date.now()<ra+READY_SEC*1000+1500;return cmdBtns(pend,revealed||t.running,ra);})()}<button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 · 쉬어</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>
       <div class="bents ${cur.entries.length===2?'two':''}">${ent}</div>${window.MUS?MUS.html('run'):''}
       <div class="tablewrap">${jt}</div>
       <div class="row bact">${revealed?`<button class="btn primary big" data-act="nextCall">${mv.two&&mv.stage===1?'2품새 호출 →':(()=>{const i2=flowInfo();return i2&&i2.n?'다음 부문 첫 경기 호출 →':'다음 경기 호출 →';})()}</button>${(()=>{const inf=autoNextInfo();return inf?`<span class="chip live" style="font-size:14px" data-cd="${inf.at}">${Math.max(0,Math.ceil((inf.at-Date.now())/1000))}초 뒤 2품새 자동 호출</span><button class="btn sm" data-act="cancelAutoNext">취소</button>`:'';})()}${mv.win==='blue'||mv.win==='red'?`<button class="btn sm" data-act="sayWinner" data-k="${mv.win}">🔊 ${mv.win==='blue'?'청':'홍'} 승</button>`:''}<button class="btn danger" data-act="armed" data-do="rescore">재채점</button>${win==='tie'?`<div class="chip warn" style="font-size:14px;white-space:normal">${revealed?'':'(예상) '}완전 동점 · ${perPoom?'두 품새 평균으로 최종 판정, 평균도 같으면 ':''}제14조에 따라 재경기 (진행 순서에 자동 추가)</div>`:why?`<div class="chip ${revealed?'ok':'warn'}" style="font-size:14px;white-space:normal">${revealed?'':'(예상) '}${esc(why)} · 제14조${mv.two?' · 두 품새 평균 기준':''}</div>`:mv.two&&mv.stage===1?'<div class="chip live" style="font-size:14px">1품새 점수 공개 · 다음은 2품새</div>':''}`
-        :`<button class="btn primary big" data-act="reveal" ${ready?'':'disabled'}>점수 공개</button>${cs.length?'<button class="btn danger" data-act="armed" data-do="rescore">채점 지우기</button>':''}<span class="small muted">${ready?(SET().autoReveal===false?'모든 점수가 도착했습니다.':'<b style="color:var(--green-ink)">모든 점수 도착 · 곧 자동 공개</b>'):'심판 점수를 기다리는 중입니다.'}</span>`}
+        :`${cur.entries.length===1?`<button class="btn wdb" data-act="withdraw" title="선수가 나오지 않았거나 기권했을 때">🚫 기권</button>`:''}<button class="btn primary big" data-act="reveal" ${ready?'':'disabled'}>점수 공개</button>${cs.length?'<button class="btn danger" data-act="armed" data-do="rescore">채점 지우기</button>':''}<span class="small muted">${ready?(SET().autoReveal===false?'모든 점수가 도착했습니다.':'<b style="color:var(--green-ink)">모든 점수 도착 · 곧 자동 공개</b>'):'심판 점수를 기다리는 중입니다.'}</span>`}
         <span class="row autos" style="margin-left:auto;gap:4px">
           <button class="btn sm ${SET().autoReveal===false?'':'primary'}" data-act="toggleAutoReveal" title="모든 심판 점수가 들어오면 자동으로 공개">점수 공개 ${SET().autoReveal===false?'수동':'자동'}</button>
           <button class="btn sm ${SET().autoNext==='manual'?'':'primary'}" data-act="toggleAutoNext" title="1품새 점수 공개 5초 뒤 2품새를 자동 호출">2품새 진행 ${SET().autoNext==='manual'?'수동':'자동'}</button>
@@ -2452,12 +2463,13 @@ function rankDiv0(d){
   }
   const sts=stagesOf(d),rows=[],placed=new Set();let base=0;
   for(let i=sts.length-1;i>=0;i--){
-    const sr=stageRanking(d,sts[i]).filter(x=>!placed.has(x.id));let rank=0;
+    const sr=stageRanking(d,sts[i]).filter(x=>!placed.has(x.id)&&!x.wd);let rank=0;
     sr.forEach((x,j)=>{if(x.agg){const t=j?rowCmp(d,sts[i],sr[j-1],x):null;if(j===0||t.c!==0)rank=base+j+1;x.rank=rank;
         if(t&&sr[j-1].agg&&Math.abs(sr[j-1].agg.final-x.agg.final)<1e-9){const w=tbText(t);sr[j-1].note=sr[j-1].note||w;x.note=w;}}
       else x.rank=null;x.stage=STAGES[sts[i].key];rows.push(x);placed.add(x.id);});
     base+=sr.length;
   }
+  for(let i=sts.length-1;i>=0;i--)stageRanking(d,sts[i]).filter(x=>x.wd&&!placed.has(x.id)).forEach(x=>{x.rank=null;x.stage=STAGES[sts[i].key];x.note='기권';rows.push(x);placed.add(x.id);}); /* v1.7.75 기권은 맨 아래에 「기권」으로 */
   return rows;
 }
 function aResults(){
@@ -2483,7 +2495,7 @@ function aResults(){
     ${(d.order||[]).length<4?'<span class="chip warn">4명(팀) 미만 · 공식 결과 불인정</span>':''}
     <span class="small muted">동점이면 ${tieOrder(d.type).map(k=>k==='a'?sh.A.label:sh.B.label).join(' → ')} → ${sh.trim==='total'?'제외했던 최고·최저 점수 합 순으로 가립니다 (한마당 제27조).':'상하포함 총점 순으로 가립니다 (제14조).'}${pCount(d)>1?' 품새 2개는 평균 점수입니다.':''}</span>
     ${rows.length?`<div class="tablewrap"><table><tr><th class="num">순위</th><th>이름</th><th>소속</th><th>단계</th><th class="num">${sh.A.label}</th><th class="num">${sh.B.label}</th><th class="num">감점</th><th class="num">최종</th><th>동점 처리</th></tr>
-    ${rows.map(x=>{const a=athlete(x.id);return `<tr><td class="num">${x.rank??'—'}</td><td><b>${esc(a?.name||'(삭제됨)')}</b>${a?.members?`<div class="small muted">${esc(a.members)}</div>`:''}</td><td>${esc(a?.team||'')}</td><td class="small">${esc(x.stage||'')}</td><td class="num">${x.agg?fmt3(x.agg.a):''}</td><td class="num">${x.agg?fmt3(x.agg.b):''}</td><td class="num">${x.agg&&x.agg.deduction?fmt1(x.agg.deduction):''}</td><td class="num"><b>${x.agg?fmt3(x.agg.final):'미실시'}</b></td><td class="small">${x.note?`<span class="chip ${/완전/.test(x.note)?'warn':'ok'}" style="white-space:normal">${esc(x.note)}</span>`:''}</td></tr>`;}).join('')}</table></div>`
+    ${rows.map(x=>{const a=athlete(x.id);return `<tr><td class="num">${x.rank??'—'}</td><td><b>${esc(a?.name||'(삭제됨)')}</b>${a?.members?`<div class="small muted">${esc(a.members)}</div>`:''}</td><td>${esc(a?.team||'')}</td><td class="small">${esc(x.stage||'')}</td><td class="num">${x.agg&&!x.wd?fmt3(x.agg.a):''}</td><td class="num">${x.agg&&!x.wd?fmt3(x.agg.b):''}</td><td class="num">${x.agg&&x.agg.deduction?fmt1(x.agg.deduction):''}</td><td class="num"><b>${x.wd?'기권':x.agg?fmt3(x.agg.final):'미실시'}</b></td><td class="small">${x.note?`<span class="chip ${/완전/.test(x.note)?'warn':'ok'}" style="white-space:normal">${esc(x.note)}</span>`:''}</td></tr>`;}).join('')}</table></div>`
     :'<div class="empty">아직 결과가 없습니다.</div>'}
     ${d.format==='tournament'?vBracket(d):''}
   </div>
@@ -2755,7 +2767,7 @@ const CB_SCORE_MS=7000;
 /* v1.7.55 메달(금·은·동)은 그 조·단계의 모든 선수가 끝난 뒤에만 보여 줌 (예선처럼 다음 단계가 있으면 메달 없이 순위·진출선만) */
 function medalOn(d,st){try{if(!d)return false;st=st||curStage(d);const p=advancePlan(d);if(p&&!p.final)return false;const r=stageRanking(d,st);return r.length>0&&r.every(x=>x.agg);}catch(e){return false;}}
 const medalMax=()=>COMM()?4:3;
-function stageRanked(d,st){const sr=stageRanking(d,st).filter(x=>x.agg);let rank=0;sr.forEach((x,j)=>{const t=j?rowCmp(d,st,sr[j-1],x):null;if(j===0||t.c!==0)rank=j+1;x.rank=rank;});return sr;}
+function stageRanked(d,st){const sr=stageRanking(d,st).filter(x=>x.agg&&!x.wd);let rank=0;sr.forEach((x,j)=>{const t=j?rowCmp(d,st,sr[j-1],x):null;if(j===0||t.c!==0)rank=j+1;x.rank=rank;});return sr;}
 function cbRanking(d,st,cur,revAt){
   const rows=stageRanked(d,st),me=rows.find(x=>x.id===cur.athleteId||x.id===(cur.entries&&cur.entries[0]&&cur.entries[0].athleteId));
   const meId=me?me.id:null,prev=rows.filter(x=>x.id!==meId);
@@ -2835,7 +2847,7 @@ const BOW_AT=2600,BOW_READY=5300; /* v1.7.58 차렷→경례 1.6초→2.6초 */
 function bowFirst(cur){return SET().bow!==false&&!!cur&&(cur.k||1)===1;}
 const BOWED={};let BOWING=0;   /* v1.7.53 차렷·경례를 이미 한 선수 · 경례 중 */
 function cmdBtns(pend,dis,ra){const cur=curOf(),bw=SET().bow!==false,first=bowFirst(cur)&&!(cur&&BOWED[cur.callId]),bz=Date.now()<BOWING;
-  return `<button class="btn big" data-act="cmdEnter" ${dis||pend||bz?'disabled':''}>🔊 출전</button>`+(bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;}
+  return `<button class="btn big entb" data-act="cmdEnter" ${dis||pend||bz?'disabled':''}>🔊 출전</button>`+(bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;}
 let VOICE_SEEN=Date.now(),READY_T=null;
 /* 진행요원 구령 목소리: 남성 한국어 목소리를 먼저 찾고, 빠르고 씩씩하게 */
 function koVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));return vs.find(v=>/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name))||vs.find(v=>/Natural|Online|Google/i.test(v.name))||vs[0]||null;}catch(e){return null;}}
@@ -2947,8 +2959,8 @@ function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))r
     go:()=>{const c2=callsOf(n).find(x=>!callDone(x));if(!c2)return;ui.div=n.id;callIt(c2.callId);},stop:()=>{FLOW_STOP=inf.key;render();}});}
 function flowStrip(div,cur){if(!window.KSFLOW||!div)return '';const calls=callsOf(div),st=div.format==='tournament'?null:curStage(div);
   const items=calls.map((c,i)=>{const done=callDone(c),on=cur&&cur.callId===c.callId;
-    const sc=c.entries.length===1?(S.results[c.entries[0].perfId]?fmt3(S.results[c.entries[0].perfId].final):''):(()=>{const v=matchVerdict(c,e=>S.results[e.perfId]);return done&&v&&v.win?(v.win==='blue'?'청 승':'홍 승'):'';})();
-    return {no:c.no||i+1,names:c.entries.map(e=>({t:aName(e.athleteId),side:e.side||''})),team:c.entries.length===1?(athlete(c.entries[0].athleteId)||{}).team||'':'',sc,state:on?'cur':done?'done':''};});
+    const sc=c.entries.length===1?(S.results[c.entries[0].perfId]?(S.results[c.entries[0].perfId].wd?'기권':fmt3(S.results[c.entries[0].perfId].final)):''):(()=>{const v=matchVerdict(c,e=>S.results[e.perfId]);return done&&v&&v.win?(v.win==='blue'?'청 승':'홍 승'):'';})();
+    return {no:c.no||i+1,names:c.entries.map(e=>({t:aName(e.athleteId),side:e.side||''})),team:c.entries.length===1?(athlete(c.entries[0].athleteId)||{}).team||'':'',sc,out:!done&&c.entries.length===1&&isOut(div.name,aName(c.entries[0].athleteId),(athlete(c.entries[0].athleteId)||{}).team),state:on?'cur':done?'done':''};});
   const inf=flowInfo(),nx=inf&&inf.n?inf.n.name.replace(/^\d{1,3}\s+/,''):(flowEnded(div)?((flowNextDiv(div)||{}).name||'').replace(/^\d{1,3}\s+/,''):'');
   return KSFLOW.strip({title:div.name.replace(/^\d{1,3}\s+/,''),stage:div.format==='tournament'?'토너먼트':(stagesOf(div).length>1||nextStage(div,st.key)?STAGES[st.key]:''),done:calls.filter(callDone).length,total:calls.length,items,auto:SET().autoDiv!=='manual',next:nx});}
 function maybeAutoNext(){
@@ -3449,6 +3461,15 @@ const ACT={
     await saveState({...st,status:'open',epoch:(st.epoch||0)+1,deduction:{},timer:{...st.timer,running:false,elapsed:0,startedAt:0}});
     addLog('재채점',cur.entries.map(e=>e.name).join(' / ')+' · '+cur.label,'현재 경기 점수를 지우고 다시 채점');toast('채점을 다시 받습니다');
   },
+  recallOut:()=>{const cur=curOf();if(!cur||!window.KS_ROOM_RECALL)return;const e=cur.entries.find(x=>isOut(cur.divName,x.name,x.team))||cur.entries[0];KS_ROOM_RECALL(e.name,e.team,cur.divName);},
+  unWithdraw:async(el)=>{const p=el&&el.dataset&&el.dataset.p,r=p&&S.results[p];if(!r||!r.wd)return;if(!confirm(`${r.name||''} 선수의 기권을 취소할까요?\n이 선수는 다시 「호출 전」 상태로 돌아갑니다.`))return;
+    await store.del('results/'+p);addLog('기권 취소',`${r.name||''} · ${r.label||''}`,'기권 취소 — 다시 경기할 수 있음');toast('기권을 취소했습니다. 순서가 되면 「호출」을 눌러 주세요');},
+  withdraw:async()=>{const cur=curOf();if(!cur||cur.entries.length!==1)return;const e=cur.entries[0];
+    if(!confirm(`${e.name||'이 선수'} 선수를 기권 처리할까요?\n\n· 순위·진출·입상에서 빠지고 결과표에 「기권」으로 남습니다.\n· 잘못 눌렀으면 진행 순서에서 이 선수의 「다시」를 누르면 다시 경기할 수 있습니다.`))return;
+    const r={perfId:e.perfId,callId:cur.callId,divId:cur.divId,athleteId:e.athleteId,side:e.side||null,type:cur.type,name:e.name,team:e.team,members:e.members||'',divName:cur.divName,label:cur.label,stage:cur.stage||null,k:cur.k||1,judgeCount:cur.judgeCount,
+      pname:pnameOfCall(cur)||'',wd:true,a:0,b:0,deduction:0,dedList:[],final:0,sumAll:0,judges:[],at:Date.now()};
+    await store.put('results/'+e.perfId,r);S.results[e.perfId]=r;try{addLog('기권',cur.divName||'',e.name||'');}catch(err){}toast(`${e.name||''} 기권 처리했습니다 — 다음 선수를 부릅니다`);
+    try{window.LMUS&&LMUS.stop();}catch(err){}setTimeout(()=>ACT.nextCall(),300);},
   nextCall:()=>{
     const cur=curOf(),d=S.divs.find(x=>x.id===cur.divId);
     const list=d?callsOf(d):[],i=list.findIndex(c=>c.callId===cur.callId);
@@ -3733,7 +3754,7 @@ function downloadTemplate(){const bin=atob(TPL_B64),u=new Uint8Array(bin.length)
 function exportResults(){
   if(!window.XLSX)return toast('엑셀 도구를 불러오지 못했습니다');
   const rows=[['부문','종목','구분','경기방식','순위','단계','이름','팀원','소속','정확도/기술력','표현력/연출력','감점','최종점수','동점 처리']];
-  S.divs.forEach(d=>rankDiv(d).forEach(x=>{const a=athlete(x.id);rows.push([d.name,SHEETS[d.type].label,EVENTS[d.event||'ind'],d.format==='tournament'?'토너먼트':'컷오프',x.rank??'',x.stage||'',a?.name||'',a?.members||'',a?.team||'',x.agg?x.agg.a:'',x.agg?x.agg.b:'',x.agg?x.agg.deduction:'',x.agg?x.agg.final:'미실시',x.note||'']);}));
+  S.divs.forEach(d=>rankDiv(d).forEach(x=>{const a=athlete(x.id);rows.push([d.name,SHEETS[d.type].label,EVENTS[d.event||'ind'],d.format==='tournament'?'토너먼트':'컷오프',x.rank??'',x.stage||'',a?.name||'',a?.members||'',a?.team||'',x.agg&&!x.wd?x.agg.a:'',x.agg&&!x.wd?x.agg.b:'',x.agg&&!x.wd?x.agg.deduction:'',x.wd?'기권':x.agg?x.agg.final:'미실시',x.note||'']);}));
   const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:24},{wch:10},{wch:8},{wch:10},{wch:6},{wch:8},{wch:14},{wch:20},{wch:14},{wch:12},{wch:12},{wch:6},{wch:10}];
   const detail=[['부문','경기','청/홍','이름','심판','정확도/기술력','표현력/연출력','제외(최고·최저)','최종','수정됨']];
   Object.values(S.results).forEach(r=>r.judges.forEach(j=>detail.push([r.divName,r.label,sideName(r.side),r.name,j.judge+'심',j.a,j.b,[j.dropA?'A':'',j.dropB?'B':''].filter(Boolean).join(','),r.final,r.edited?'예':''])));
@@ -4848,6 +4869,7 @@ function board(){
     upcoming:[...info.slice(ci),...info.slice(0,ci)].filter(x=>x&&x.total>x.done).slice(0,4).map(x=>{const m=new Map();
       x.it.forEach(it=>(it.names||[]).forEach(p=>{if(p&&p.name)m.set(p.name+'|'+(p.team||''),{name:p.name,team:p.team||''});}));return {name:x.d.name,names:[...m.values()].slice(0,120)};}),
     totals:{divs:info.length,doneDivs:info.filter(x=>x.total&&x.done===x.total).length},
+    recall:window.KS_RECALL||null, /* v1.7.75 「한 번 더 부르기」 → 본부 대기실 방송 */
     judges:(()=>{try{return judgeStatus();}catch(e){return null;}})()};
 }
 function results(){

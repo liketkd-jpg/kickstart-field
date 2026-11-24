@@ -14,7 +14,7 @@ const admin=()=>{try{return String(g('routeNow')()||'').startsWith('admin');}cat
 function chime(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C(),t=c.currentTime;
   [[988,0],[784,.2],[988,.4]].forEach(([f,d])=>{const o=c.createOscillator(),gn=c.createGain();o.frequency.value=f;gn.gain.setValueAtTime(0,t+d);gn.gain.linearRampToValueAtTime(.22,t+d+.02);gn.gain.exponentialRampToValueAtTime(.001,t+d+.4);o.connect(gn).connect(c.destination);o.start(t+d);o.stop(t+d+.45);});}catch(e){}}
 function watch(){const st=g('store');if(WATCHED||!st||!st.watchColl)return;WATCHED=true;
-  st.watchColl('hqatt',null,null,l=>{ATT=(l||[]).sort((a,b)=>(b.at||0)-(a.at||0));check();draw();});
+  st.watchColl('hqatt',null,null,l=>{ATT=(l||[]).sort((a,b)=>(b.at||0)-(a.at||0));check();draw();try{g('schedule')();}catch(e){}});
   st.watchColl('hqnote',null,null,l=>{NOTE=(l||[]).sort((a,b)=>(b.at||0)-(a.at||0));check();draw();});}
 /* 새로 온 불참·추가 대기 → 소리 (처음 불러온 것은 소리 없이) */
 function sig(){const s=new Set();ATT.forEach(a=>(a.list||[]).forEach(p=>{if(p.st==='out')s.add('o|'+a.div+'|'+p.name+'|'+(p.team||''));}));NOTE.forEach(n=>{if(!n.ack)s.add('n|'+n._id);});return s;}
@@ -42,4 +42,15 @@ const css=document.createElement('style');css.textContent=`.ksroom{position:fixe
 .ksroom .ksrn{background:color-mix(in srgb,#E2A400 14%,transparent);border-radius:9px;padding:5px 8px}`;
 (document.head||document.documentElement).appendChild(css);
 window.KS_ROOM={get state(){return {ATT,NOTE};}};
+/* v1.7.75 한 번 더 부르기: 운영석 스피커로 이름을 두 번 부르고, 통합 본부가 있으면 대기실 방송에도 올립니다 */
+window.KS_ROOM_RECALL=function(name,team,div){const text=`${name} 선수, ${name} 선수. ${team?team+' ':''}${name} 선수는 경기장으로 출전해 주세요.`;
+  try{const ss=window.speechSynthesis;if(ss){ss.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=1;const vs=ss.getVoices().filter(v=>/^ko/i.test(v.lang));if(vs[0])u.voice=vs.find(v=>/Natural|Online|Google/i.test(v.name))||vs[0];ss.speak(u);}}catch(e){}
+  window.KS_RECALL={text,at:Date.now()};try{const P=g('KS_HQ');P&&P.publish&&P.publish();}catch(e){}
+  try{const F2=window.KS_FIELD||{};if(F2.rawDb){const now=Date.now(),id='r'+now.toString(36)+(F2.court||''),t2=`${F2.court?F2.court+'코트, ':''}${text}`;
+    F2.rawDb.doc('hq/announce').set({id,text:t2,court:F2.court||'',div:div||'',app:APP,auto:false,at:now});F2.rawDb.doc('calllog/'+id).set({text:t2,court:F2.court||'',at:now});}}catch(e){}
+  say(`📢 ${name} 선수를 한 번 더 불렀습니다`);return text;};
+/* v1.7.75 대기실 미출석 → 진행 순서·현재 호출에 표시. 부문 이름과 선수 이름(소속이 있으면 소속까지)으로 찾습니다 */
+const nk=v=>String(v==null?'':v).replace(/\s+/g,'');
+window.KS_ROOM_OUT=function(div,name,team){if(!name)return false;const dn=nk(div),n=nk(name),t=nk(team);
+  for(const a of ATT){if(dn&&nk(a.div)!==dn)continue;for(const p of (a.list||[])){if(p.st!=='out')continue;if(nk(p.name)!==n)continue;if(t&&p.team&&nk(p.team)!==t)continue;return true;}}return false;};
 })();

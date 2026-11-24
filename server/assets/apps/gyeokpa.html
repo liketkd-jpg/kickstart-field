@@ -765,7 +765,7 @@ body.disp .board.one .pban:empty + .who-row{}
 
 .bcmd{display:grid;grid-template-columns:1.7fr 1fr .7fr;gap:8px}
 .bcmd .btn{padding:12px 8px;font-size:18px}
-.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
+html body .bcmd .btn.entb{background:linear-gradient(160deg,#FF9A8B,#F2624F)!important;color:#fff!important;border-color:#F2624F!important;font-weight:900}html body .bcmd .btn.entb:disabled{opacity:.45}.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
 body.bmax .bcmd .btn{font-size:clamp(18px,2.6vh,28px);padding:clamp(10px,1.6vh,18px) 8px}
 @media (min-width:1000px) and (max-height:820px){.bcmd .btn{padding:7px 6px;font-size:16px}.bcmd{gap:6px}}
 
@@ -819,6 +819,7 @@ textarea:focus{outline:none;border-color:var(--brass-2,var(--green));box-shadow:
 .jc b{font-size:15px;color:var(--ink)} .jc.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)} .jc.rev{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
 .jc.off{border-color:var(--red);color:var(--red)} .jc.empty{opacity:.6}
 .dedbox,.recbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.dedgrid{display:flex;flex-direction:column;gap:6px}@media (min-width:900px){.dedgrid{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;row-gap:4px}.dedgrid>.cnt{min-width:0}}
 .cnt{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:4px 0;border-bottom:1px solid var(--line)}
 .cnt:last-of-type{border-bottom:none}
 .cnt .cl{display:flex;flex-direction:column;font-weight:700;font-size:14px;line-height:1.3} .cnt .cl small{font-weight:500;color:var(--muted);font-size:12px}
@@ -1361,6 +1362,8 @@ body.gfit .gjtop{display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .mboard .mbj{display:flex;gap:6px}.mboard .mbj i{font-style:normal;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:14px;border:2px solid rgba(255,255,255,.3);color:rgba(255,255,255,.5)}.mboard .mbj i.ok{background:#fff;color:#111;border-color:#fff}
 
 .cbr .cbrk.md,.cbrk.md{font-family:"Noto Sans KR",sans-serif;font-weight:900;display:grid;place-items:center;border-radius:50%;width:1.9em;height:1.9em;margin:auto;color:#1a1405;font-size:1.05em}.cbrk.m1{background:radial-gradient(circle at 35% 30%,#FFF6D2,#E2B54A 55%,#9C7120)}.cbrk.m2{background:radial-gradient(circle at 35% 30%,#fff,#C2C8D2 55%,#7C8594)}.cbrk.m3{background:radial-gradient(circle at 35% 30%,#FFE2C4,#C9864A 55%,#7E4A20)}
+html body .btn.wdb{background:transparent!important;border:1.5px solid #E5484D!important;color:#FF8A8A!important;font-weight:800}
+html body .chip.kout{background:#E5484D!important;color:#fff!important;border-color:#E5484D!important;font-weight:800}.ksout{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(229,72,77,.14);border:1.5px solid #E5484D;border-radius:12px;padding:10px 12px;margin:8px 0;font-weight:800;color:#FFB4B4}.ksout .btn{min-height:44px}
 </style>
 
 <header class="bar">
@@ -1728,7 +1731,7 @@ function rowOf(d,stKey,aid){
 }
 function cmpRows(d,x,y){
   if(x.ok!==y.ok)return {c:x.ok?-1:1};
-  if(!x.ok){const sx=x.r?(x.dq?2:1):3,sy=y.r?(y.dq?2:1):3;return {c:sx-sy};}
+  if(!x.ok){const sx=x.r?(x.r.wd?4:x.dq?2:1):3,sy=y.r?(y.r.wd?4:y.dq?2:1):3;return {c:sx-sy};}
   const kx=x.r.keys||[x.r.final],ky=y.r.keys||[y.r.final];
   for(let i=0;i<Math.max(kx.length,ky.length);i++){const e=(ky[i]??-1e9)-(kx[i]??-1e9);if(Math.abs(e)>1e-9)return {c:e,by:i};}
   const n=Math.max(x.rms.length,y.rms.length),te=tieEnd(d)==='rm';
@@ -1858,7 +1861,7 @@ function pf(r){const m=p100max(r);return m?100/m:1;}
 const fP=v=>{const n=Math.round(Number(v||0)*100)/100;return String(n);};
 function p100(r,v){const m=p100max(r);v=v==null?(r&&r.final):v;return m&&v!=null?v/m*100:v;}
 function resultText(r){
-  if(!r)return '—';if(r.dq)return '실격';
+  if(!r)return '—';if(r.dq)return r.wd?'기권':'실격';
   if(p100max(r))return fmt3(p100(r));
   if(r.kind==='height')return `${fmtN(r.final)}cm`;
   if(r.kind==='count')return `${fmtN(r.final)}장`;
@@ -1948,7 +1951,12 @@ function render(){
       if(voiceHere('display')&&navigator.userActivation&&!navigator.userActivation.hasBeenActive)tap='<button class="tapv" data-act="testVoiceQuiet">🔊 화면을 한 번 눌러 음성을 켜 주세요</button>';}catch(e){}
     html=`<div class="dctl gdctl"><button data-act="back">← 운영석</button><button data-act="fullscreen">전체 화면</button></div>`+html+ov+tap;
   }
+  /* v1.7.75 다시 그려도 안쪽 스크롤 칸(채점 항목 목록 등)과 화면 위치를 그대로 */
+  const KSP=el=>{const p=[];while(el&&el!==app){const par=el.parentElement;p.unshift((el.className||el.tagName)+'#'+(par?[...par.children].indexOf(el):0));el=par;}return p.join('>');};
+  const ksSc=[];app.querySelectorAll('*').forEach(el=>{if(el.scrollTop>0||el.scrollLeft>0)ksSc.push([KSP(el),el.scrollTop,el.scrollLeft]);});const ksWy=window.scrollY,ksSame=render._lr===location.hash;render._lr=location.hash;
   app.innerHTML=html;
+  if(ksSc.length&&ksSame){const m=new Map(ksSc.map(x=>[x[0],x]));app.querySelectorAll('*').forEach(el=>{if(el.scrollHeight<=el.clientHeight&&el.scrollWidth<=el.clientWidth)return;const x=m.get(KSP(el));if(x){el.scrollTop=x[1];el.scrollLeft=x[2];}});}
+  if(ksSame&&ksWy){if(Math.abs(window.scrollY-ksWy)>2)window.scrollTo(0,ksWy);requestAnimationFrame(()=>{if(render._lr===location.hash&&Math.abs(window.scrollY-ksWy)>40&&window.scrollY<20)window.scrollTo(0,ksWy);});}
   document.body.classList.toggle('gfit',(r==='judge'||SOLO_ON)&&!!app.querySelector('.gjsheet'));
   updatePresence();
   for(const [id,v] of Object.entries(keep)){const el=document.getElementById(id);if(el&&el.dataset.fresh===undefined)el.value=v;}
@@ -2262,8 +2270,8 @@ function aBoard(){
   if(!S.divs.find(x=>x.id===ui.div))ui.div=(cur&&S.divs.find(x=>x.id===cur.divId))?cur.divId:(L[0]||S.divs[0]).id;
   const d=S.divs.find(x=>x.id===ui.div),calls=callsOf(d),sk=curStage(d),rn=rematchNeed(d);
   const items=calls.map(c=>{const a=athlete(c.athleteId)||{},r=S.results[c.perfId],on=cur&&cur.callId===c.callId;
-    return `<div class="bitem ${on?'cur':''} ${r?'done':''}"><div class="bmain"><span class="small muted">${esc(c.label)}</span><b>${esc(a.name||'(삭제됨)')}${r?` <span class="sc">${resultText(r)}</span>`:''}</b><span class="small muted">${esc(a.team||'')}</span></div>
-      ${on&&st.status==='open'?'<span class="chip live">진행</span>':`<button class="btn" data-act="${r||(cur&&st.status==='open')?'armed':'call'}" data-do="call" data-id="${c.callId}">${r?'다시':'호출'}</button>`}</div>`;}).join('');
+    return `<div class="bitem ${on?'cur':''} ${r?'done':''}"><div class="bmain"><span class="small muted">${esc(c.label)}</span><b>${esc(a.name||'(삭제됨)')}${r?` <span class="sc">${resultText(r)}</span>`:(isOut(d.name,a.name,a.team)?' <span class="chip kout">미출석</span>':'')}</b><span class="small muted">${esc(a.team||'')}</span></div>
+      ${on&&st.status==='open'?'<span class="chip live">진행</span>':`${r&&r.wd?`<button class="btn sm wdb" data-act="unWithdraw" data-p="${c.perfId}">기권 취소</button>`:''}<button class="btn" data-act="${r||(cur&&st.status==='open')?'armed':'call'}" data-do="call" data-id="${c.callId}">${r?'다시':'호출'}</button>`}</div>`;}).join('');
   const left=`<div class="col">
     <div class="panel bp"><div class="row between"><span class="label">부문</span>${catSeg()}</div>
       <select id="runDiv" data-on="runDiv" aria-label="부문 선택">${divOptions(d.id)}</select>
@@ -2295,7 +2303,7 @@ function aBoard(){
 function miniBoard(cur,st,r,d){if(!cur)return '';const rev=st.status==='revealed'&&r,N=cur.judgeCount||0,JU=JUDGED(cur.kind),t=st.timer||{};
   const got=new Set(curScores().filter(x=>x.perfId===cur.perfId).map(x=>x.judge));
   let rk='';if(rev&&d){try{const sk=curStage(d),blk=sk.groups?sk.groups.find(g=>g.includes(cur.athleteId))||stIds(sk):stIds(sk),rows=rankList(d,sk.key,blk),me=rows.find(x=>x.id===cur.athleteId);if(me&&me.rank)rk=`<div class="mbk">현재 <b>${me.rank}위</b> <small>/ ${rows.length}명</small></div>`;}catch(e){}}
-  const sc=rev?(r.dq?'실격':resultText(r)):'';
+  const sc=rev?(r.dq?(r.wd?'기권':'실격'):resultText(r)):'';
   return `<div class="mboard ${rev?'rev':''}"><div class="mbh"><span class="mbl">📺 전광판</span><span class="mbd">${esc(cur.divName||'')} · ${esc(cur.label||'')}</span><span class="mbe">${esc(EV[cur.ev]?.label||'')}</span></div>
     <div class="mbm"><div class="mbw"><b class="mbn">${esc(cur.name)}</b><span class="mbt">${esc(cur.team||'')}${cur.members?' · '+esc(cur.members):''}</span></div>
     ${rev?`<div class="mbs"><span class="mbsc">${esc(sc)}</span>${p100max(r)?'<small>100점 환산</small>':''}${rk}</div>`:`<div class="mbs"><span class="mbtm" data-timer>${cdText(t)}</span>${JU&&N?`<div class="mbj">${Array.from({length:N},(_,i)=>`<i class="${got.has(i+1)?'ok':''}">${i+1}</i>`).join('')}</div>`:''}</div>`}</div></div>`;}
@@ -2306,7 +2314,7 @@ function rankPanel(d,big,gOnly){
   if(gOnly!=null&&blocks[gOnly])blocks=[blocks[gOnly]];
   return `<div class="panel ${big?'rkbig':''}"><h3>${STAGE_NAME[st.key]} 순위</h3>${blocks.map(b=>{const rows=rankList(d,st.key,b.ids);
     return `<div class="rk">${blocks.length>1?`<span class="label">${b.title}</span>`:''}${rows.map((r,i)=>{const a=athlete(r.id)||{};
-      return `<div class="rkr ${r.rank&&r.rank<=b.cut?'in':''} ${!r.r?'wait':''}"><span class="rkn">${r.rank||(r.dq?'실격':r.zero?'—':'')}</span><span class="rkw"><b>${esc(a.name||'')}</b><span class="small muted">${esc(a.team||'')}</span></span><span class="rks">${r.r?resultText(r.r):'<span class="muted small">대기</span>'}</span></div>${b.cut&&i===b.cut-1&&rows.length>b.cut&&st.key==='pre'?'<div class="cut"><span>결선 진출선</span></div>':''}`;}).join('')}</div>`;}).join('')}</div>`;
+      return `<div class="rkr ${r.rank&&r.rank<=b.cut?'in':''} ${!r.r?'wait':''}"><span class="rkn">${r.rank||(r.dq?(r.r&&r.r.wd?'—':'실격'):r.zero?'—':'')}</span><span class="rkw"><b>${esc(a.name||'')}</b><span class="small muted">${esc(a.team||'')}</span></span><span class="rks">${r.r?resultText(r.r):'<span class="muted small">대기</span>'}</span></div>${b.cut&&i===b.cut-1&&rows.length>b.cut&&st.key==='pre'?'<div class="cut"><span>결선 진출선</span></div>':''}`;}).join('')}</div>`;}).join('')}</div>`;
 }
 function judgeChips(cur){
   const N=cur.judgeCount,cs=curScores().filter(s=>s.perfId===cur.perfId);
@@ -2346,7 +2354,7 @@ function runPanel(st,cur){
     const rows=(DED[k]||[]).map(x=>x.opts?`<div class="cnt"><span class="cl">${x.label}<small>최대 −3</small></span>${seg('dedSet',[[0,'없음'],[1,'미세 −1'],[2,'보통 −2'],[3,'큼 −3']],Number(ded[x.k])||0,'data-k="'+x.k+'"')}</div>`
       :cnt('dedInc',x.k,ded[x.k],x.label,`−${x.v} × ${x.unit}`)).join('');
     let prev='';if(cs.length){const pr=computeJudged(cur,cs,ded,st.dq);prev=`<div class="prev"><span>심판 평균 <b>${fmt3(pr.score*pf(pr))}</b></span><span>감점 <b>−${fP(pr.dedTotal*pf(pr))}</b></span><span class="big">${ready?'최종':'현재'} <b>${pr.dq?'실격':fmt3(p100(pr))}</b>${p100max(pr)?' <small>(100점 기준)</small>':''}</span></div>`;}
-    body=`${judgeChips(cur)}<div class="dedbox"><div class="row between"><b>감점 (운영석)</b>${tsug}</div>${rows}${dqBox}</div>${prev}`;
+    body=`${judgeChips(cur)}<div class="dedbox"><div class="row between"><b>감점 (운영석)</b>${tsug}</div><div class="dedgrid">${rows}</div>${dqBox}</div>${prev}`;
     btn=ready?`<button class="btn primary big" data-act="reveal">점수 공개</button>`:`<button class="btn big" data-act="armed" data-do="revealForce" ${cs.length?'':'disabled'}>미제출 ${miss}명 — 그래도 공개</button>`;
     btn+=`<button class="btn" data-act="armed" data-do="rescore">재채점 (점수 지우기)</button>`;
   }else{
@@ -2370,6 +2378,8 @@ function runPanel(st,cur){
     btn=`<button class="btn primary big" data-act="confirmRec">기록 확정</button>`;
   }
   const mus=k==='team'&&window.LMUS?(LMUS.setEntries(teamEntries),LMUS.runCtl(cur.athleteId)):'';
+  body=outBanner(cur.divName,cur.name,cur.team,`<button class="btn wdb" data-act="withdraw">🚫 기권 처리</button>`)+body;
+  btn=`<button class="btn wdb" data-act="withdraw" title="선수가 나오지 않았거나 기권했을 때">🚫 기권</button>`+btn;
   return `<div class="panel run">${head}${timerB}${mus}${body}<div class="row">${btn}</div>${miniBoard(cur,st,null,d)}</div>`;
 }
 function resultCard(r,cur){
@@ -2378,7 +2388,7 @@ function resultCard(r,cur){
     det=`<div class="gjrow">${r.judges.map((j,i)=>`<span class="gjt ${i===r.hi||i===r.lo?'drop':''}"><small>${j.judge}심</small>${p100max(r)?fP(j.total*pf(r)):fmtN(j.total)}</span>`).join('')}</div>`;
     if(k==='tech')det+=`<div class="gparts">${r.techs.map((x,i)=>`<span>${esc(x)} <b>${fmt3(r.techScores[i]*pf(r))}</b></span>`).join('')}</div>`;
     else det+=`<div class="gparts">${(k==='comp'?COMP_ITEMS:TEAM_ITEMS).map(it=>`<span>${it.label} <b>${fmt3(r.parts[it.k])}</b></span>`).join('')}</div>`;
-    det+=`<div class="prev"><span>심판 평균 <b>${fmt3(r.score*pf(r))}</b></span><span>감점 <b>−${fP(r.dedTotal*pf(r))}</b></span><span class="big">최종 <b>${r.dq?'실격':fmt3(p100(r))}</b>${p100max(r)?' <small>(100점 기준 · 채점판 점수 '+fmt3(r.final)+'/'+p100max(r)+')</small>':''}</span></div>`;
+    det+=`<div class="prev"><span>심판 평균 <b>${fmt3(r.score*pf(r))}</b></span><span>감점 <b>−${fP(r.dedTotal*pf(r))}</b></span><span class="big">최종 <b>${r.dq?(r.wd?'기권':'실격'):fmt3(p100(r))}</b>${p100max(r)?' <small>(100점 기준 · 채점판 점수 '+fmt3(r.final)+'/'+p100max(r)+')</small>':''}</span></div>`;
   }else{
     const v=r.rec||{};
     const parts=k==='height'?[['최고 높이',fmtN(v.best||0)+'cm'],['시간 초과',(v.over||0)+'회']]:k==='count'?[['격파',v.broken||0],['경계선',v.line||0]]
@@ -2405,7 +2415,7 @@ function aResults(){
   const fin=rankDiv(d);
   const medal=n=>n===1?'🥇':n===2?'🥈':n===3?'🥉':'';
   const table=(key,ids,title)=>{const rows=rankList(d,key,ids);return `<div class="panel"><div class="row between"><h3>${title}</h3><span class="small muted">${rows.filter(r=>r.r).length}/${rows.length}명 완료</span></div><div class="tablewrap"><table><tr><th class="num">순위</th><th>이름</th><th>소속</th>${cols.map(c=>`<th class="num">${c[0]}</th>`).join('')}<th class="num">최종</th><th></th></tr>
-    ${rows.map(x=>{const a=athlete(x.id)||{},r=x.r;return `<tr><td class="num">${x.rank||(x.dq?'실격':'')}</td><td><b>${esc(a.name||'')}</b>${x.rms.length?` <span class="chip">재경기 ${x.rms.map(m=>resultText(m)).join(', ')}</span>`:''}</td><td class="small">${esc(a.team||'')}</td>
+    ${rows.map(x=>{const a=athlete(x.id)||{},r=x.r;return `<tr><td class="num">${x.rank||(x.dq?(x.r&&x.r.wd?'기권':'실격'):'')}</td><td><b>${esc(a.name||'')}</b>${x.rms.length?` <span class="chip">재경기 ${x.rms.map(m=>resultText(m)).join(', ')}</span>`:''}</td><td class="small">${esc(a.team||'')}</td>
       ${cols.map(c=>`<td class="num">${r?c[1](r):''}</td>`).join('')}<td class="num"><b>${r?resultText(r):'<span class="muted">대기</span>'}</b></td>
       <td>${r?`<button class="btn sm danger" data-act="armed" data-do="delResult" data-id="${r._id}">지우기</button>`:''}</td></tr>`;}).join('')}</table></div></div>`;};
   const finals=fin.filter(x=>x.stage==='final'&&x.rank&&x.rank<=3);
@@ -2643,6 +2653,8 @@ function vDisplay(){
 }
 
 /* ===================== 호출 · 공개 ===================== */
+function isOut(div,name,team){try{return !!(window.KS_ROOM_OUT&&window.KS_ROOM_OUT(div,name,team));}catch(e){return false;}}  /* v1.7.75 대기실 미출석 */
+function outBanner(div,name,team,wd){if(!isOut(div,name,team))return '';return `<div class="ksout">⚠ ${esc(name)} 선수는 대기실에서 <u>미출석</u>으로 표시되어 있습니다<button class="btn" data-act="recallOut">📢 한 번 더 부르기</button>${wd}</div>`;}
 const jclean=o=>JSON.parse(JSON.stringify(o));
 function patchState(p){const n={...ST(),...p};S.state=n;schedule();return saveState(n);}
 async function callIt(callId){
@@ -2653,7 +2665,7 @@ async function callIt(callId){
   ui.div=d.id;ui.editing=false;clearTimeout(READY_T);try{window.LMUS&&LMUS.stop();}catch(err){}
   await saveState(jclean({status:'open',epoch:(st.epoch||0)+1,calledAt:Date.now(),readyAt:null,prep:null,voice:st.voice||null,
     timer:{max:lim,tol:d.ev==='team'?10:0,running:false,startedAt:0,elapsed:0},
-    ded:prev&&prev.ded?{...prev.ded}:{},rec:prev&&prev.rec?{...prev.rec,dq:undefined,dqWhy:undefined}:{},dq:prev&&prev.dq?(prev.dqWhy||'실격'):null,
+    ded:prev&&prev.ded?{...prev.ded}:{},rec:prev&&prev.rec?{...prev.rec,dq:undefined,dqWhy:undefined}:{},dq:prev&&prev.dq&&!prev.wd?(prev.dqWhy||'실격'):null,
     current:{callId:c.callId,perfId:c.perfId,divId:d.id,divName:d.name,label:c.label,stage:c.stage,group:c.group,rm:c.rm||0,ev:d.ev,kind,level:d.level||'',gender:d.gender||'',
       athleteId:c.athleteId,name:a.name||'',team:a.team||'',members:a.members||'',judgeCount:s.judges,techs:kind==='tech'?techsOf(d,c.stage):null}}));
 }
@@ -2730,7 +2742,7 @@ function maybeFlow(){if(!window.KSFLOW||KIOSK||!routeNow().startsWith('admin'))r
     go:()=>{const n=divById(inf.n.id);if(!n)return;const c2=callsOf(n).find(x=>!callDone(x));if(!c2)return;ui.div=n.id;callIt(c2.callId);},stop:()=>{FLOW_STOP=inf.key;render();}});}
 function flowStrip(d,cur){if(!window.KSFLOW||!d)return '';const calls=callsOf(d);if(!calls.length)return '';
   const ref=(cur&&cur.divId===d.id&&calls.find(c=>c.callId===cur.callId))||calls.find(c=>!callDone(c))||calls[calls.length-1],unit=flowUnit(d,ref);
-  const items=unit.map(c=>{const a=athlete(c.athleteId)||{},r=S.results[c.perfId],on=cur&&cur.callId===c.callId;return {no:(c.idx||0)+1+(c.rm?'R':''),names:[{t:a.name||'(삭제됨)'}],team:a.team||'',sc:r?resultText(r):'',state:on?'cur':r?'done':''};});
+  const items=unit.map(c=>{const a=athlete(c.athleteId)||{},r=S.results[c.perfId],on=cur&&cur.callId===c.callId;return {no:(c.idx||0)+1+(c.rm?'R':''),names:[{t:a.name||'(삭제됨)'}],team:a.team||'',sc:r?resultText(r):'',out:!r&&isOut(d.name,a.name,a.team),state:on?'cur':r?'done':''};});
   const inf=flowInfo();
   return KSFLOW.strip({title:flowTitle(d,ref),stage:STAGE_NAME[ref.stage]||'',done:unit.filter(callDone).length,total:unit.length,items,auto:SET().autoDiv!=='manual',next:inf&&inf.title?inf.title:''});}
 function maybeAutoAdvance(){
@@ -2760,7 +2772,7 @@ const BOW_AT=2600,BOW_READY=5300; /* v1.7.58 차렷→경례 1.6초→2.6초 */
 function bowFirst(cur){return SET().bow!==false&&!!cur&&(cur.k||1)===1;}
 const BOWED={};let BOWING=0;   /* v1.7.53 차렷·경례를 이미 한 선수 · 경례 중 */
 function cmdBtns(pend,dis,ra){const cur=curOf(),bw=SET().bow!==false,first=bowFirst(cur)&&!(cur&&BOWED[cur.callId]),bz=Date.now()<BOWING;
-  return `<button class="btn big" data-act="cmdEnter" ${dis||pend||bz?'disabled':''}>🔊 출전</button>`+(bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;}
+  return `<button class="btn big entb" data-act="cmdEnter" ${dis||pend||bz?'disabled':''}>🔊 출전</button>`+(bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;}
 let VOICE_SEEN=Date.now(),READY_T=null;
 function koVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));return vs.find(v=>/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name))||vs.find(v=>/Natural|Online|Google/i.test(v.name))||vs[0]||null;}catch(e){return null;}}
 function koMale(v){return !!(v&&/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name));}
@@ -3004,6 +3016,18 @@ const ACT={
   dedSet:b=>{const st=ST();patchState({ded:{...(st.ded||{}),[b.dataset.k]:Number(b.dataset.v)}});},
   recInc:b=>{const st=ST();patchState({rec:bump(st.rec||{},b.dataset.k,Number(b.dataset.d))});},
   recSet:b=>{const st=ST();patchState({rec:{...(st.rec||{}),[b.dataset.k]:Number(b.dataset.v)}});},
+  unWithdraw:async(el)=>{const p=el&&el.dataset&&el.dataset.p,r=p&&S.results[p];if(!r||!r.wd)return;if(!confirm(`${r.name||''} 선수의 기권을 취소할까요?\n이 선수는 다시 「호출 전」 상태로 돌아갑니다.`))return;
+    await store.del('results/'+p);addLog('기권 취소',`${r.name||''} · ${r.label||''}`,'기권 취소 — 다시 경기할 수 있음');toast('기권을 취소했습니다. 순서가 되면 「호출」을 눌러 주세요');},
+  recallOut:()=>{const cur=curOf();if(cur&&window.KS_ROOM_RECALL)KS_ROOM_RECALL(cur.name,cur.team,cur.divName);},
+  withdraw:async()=>{const st=ST(),cur=curOf();if(!cur||st.status!=='open')return;
+    if(!confirm(`${cur.name} 선수를 기권 처리할까요?\n순위와 메달에서 빠지고 전광판·결과표에 「기권」으로 나옵니다.\n되돌리려면 진행 순서 목록에서 이 선수의 「다시」를 누르면 됩니다.`))return;
+    const r={kind:cur.kind,rec:{},judges:[],score:0,dedTotal:0,final:0,keys:[0],dq:true,dqWhy:'기권',wd:true};
+    try{window.LMUS&&LMUS.stop();}catch(err){}
+    await store.put('results/'+cur.perfId,jclean({...r,perfId:cur.perfId,divId:cur.divId,divName:cur.divName,stage:cur.stage,rm:cur.rm||0,athleteId:cur.athleteId,name:cur.name,team:cur.team,label:cur.label,ev:cur.ev,at:Date.now()}));
+    addLog('기권',`${cur.name} · ${cur.label}`,'기권 처리 — 순위 제외');toast(`${cur.name} 선수 기권 처리했습니다`);
+    const d=S.divs.find(x=>x.id===cur.divId),nx=d?callsOf(d).find(c=>!callDone(c)&&c.callId!==cur.callId):null;
+    if(nx){await callIt(nx.callId);return;}
+    await saveState(jclean({...st,status:'revealed',revealedAt:Date.now(),timer:stopT(st.timer)}));},
   dqToggle:()=>{const st=ST(),cur=curOf();if(!cur)return;patchState({dq:st.dq?null:dqList(cur.kind)[0]});},
   reveal:()=>doReveal(false),
   revealForce:()=>doReveal(false),
@@ -4256,6 +4280,7 @@ function board(){
     upcoming:[...info.slice(ci),...info.slice(0,ci)].filter(x=>x&&x.total>x.done).slice(0,4).map(x=>{const m=new Map();
       x.it.forEach(it=>(it.names||[]).forEach(p=>{if(p&&p.name)m.set(p.name+'|'+(p.team||''),{name:p.name,team:p.team||''});}));return {name:x.d.name,names:[...m.values()].slice(0,120)};}),
     totals:{divs:info.length,doneDivs:info.filter(x=>x.total&&x.done===x.total).length},
+    recall:window.KS_RECALL||null, /* v1.7.75 「한 번 더 부르기」 → 본부 대기실 방송 */
     judges:(()=>{try{return judgeStatus();}catch(e){return null;}})()};
 }
 function results(){

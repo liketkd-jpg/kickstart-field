@@ -15,8 +15,8 @@
   const enabled=()=>{try{const S=g('S');return !(S&&S.settings&&S.settings.bigCmd===false);}catch(e){return true;}};
   let last=null,box=null,hideT=0,restT=0;
   function el(){if(!box||!box.isConnected){box=document.createElement('div');box.id='ksCmdBig';box.setAttribute('data-noi18n','');box.innerHTML='<span></span>';document.body.appendChild(box);}return box;}
-  function show(t){const b=el();b.firstChild.textContent=t;b.classList.remove('on');void b.offsetWidth;b.classList.add('on');
-    clearTimeout(hideT);hideT=setTimeout(()=>b.classList.remove('on'),SHOW_MS);}
+  function show(t,k){const b=el();b.firstChild.textContent=t;b.classList.remove('on');b.classList.toggle('ent',k==='enter');void b.offsetWidth;b.classList.add('on');
+    clearTimeout(hideT);hideT=setTimeout(()=>b.classList.remove('on'),k==='enter'?2400:SHOW_MS);}
   function hide(){clearTimeout(hideT);clearTimeout(restT);if(box)box.classList.remove('on');}
   function tick(){
     if(!isDisp()){hide();return;}
@@ -26,7 +26,7 @@
     if(key===last)return;last=key;
     if(!vc||!enabled())return;
     const t=BIG[vc.k];if(!t)return;
-    clearTimeout(restT);show(t);
+    clearTimeout(restT);show(t,vc.k);
     if(vc.k==='stop'&&APPK!=='kyorugi')restT=setTimeout(()=>{if(last===key&&isDisp()&&enabled())show('쉬어');},REST_AT);
   }
   /* v1.7.58 다시 네모 상자: 화면 가운데 진한 상자 안에 큰 흰 글씨가 떴다가 사라짐 (배경 화면과 섞이지 않게) · 빛 번짐 없음 */
@@ -37,6 +37,13 @@
   padding:min(3.2vw,5.5vh) min(6vw,10vh) min(3.6vw,6vh);border-radius:min(2.4vw,4vh);background:#080A12;
   border:min(.35vw,.6vh) solid rgba(255,255,255,.9);box-shadow:0 0 0 min(.9vw,1.5vh) rgba(8,10,18,.55),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.6)}
 #ksCmdBig.on span{animation:ksCmdIn .24s cubic-bezier(.2,1.3,.4,1) both}
+/* v1.7.75 「출전」만 연한 다홍빛 상자 · 작게 시작해 화면 가득 커지며 테두리가 은은하게 빛남 */
+#ksCmdBig.ent{background:radial-gradient(ellipse at center,rgba(255,120,100,.28),rgba(0,0,0,0) 70%)}
+#ksCmdBig.ent span{background:linear-gradient(160deg,#FF8A7A,#F2624F 55%,#D9483A);color:#fff;border-color:#FFE3DC;text-shadow:0 min(.5vw,.8vh) min(1.4vw,2.4vh) rgba(120,20,10,.45);
+  box-shadow:0 0 0 min(.9vw,1.5vh) rgba(255,138,122,.35),0 0 min(6vw,10vh) rgba(255,110,90,.75),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.5)}
+#ksCmdBig.ent.on span{animation:ksEntIn 1s cubic-bezier(.16,1,.3,1) both,ksEntGlow 1.2s ease-in-out .9s infinite alternate}
+@keyframes ksEntIn{0%{transform:scale(.18);opacity:0}25%{opacity:1}100%{transform:scale(1.08);opacity:1}}
+@keyframes ksEntGlow{from{box-shadow:0 0 0 min(.9vw,1.5vh) rgba(255,138,122,.35),0 0 min(4vw,7vh) rgba(255,110,90,.55),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.5)}to{box-shadow:0 0 0 min(1.4vw,2.4vh) rgba(255,138,122,.5),0 0 min(9vw,15vh) rgba(255,110,90,.95),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.5)}}
 @keyframes ksCmdIn{from{transform:scale(.82);opacity:0}to{transform:none;opacity:1}}
 html body .cmdov,html body .cmdov.cmdtop,html body div.cmdov{display:none!important;visibility:hidden!important}`;
   const st=document.createElement('style');st.textContent=css;(document.head||document.documentElement).appendChild(st);
