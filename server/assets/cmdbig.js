@@ -15,7 +15,7 @@
   const enabled=()=>{try{const S=g('S');return !(S&&S.settings&&S.settings.bigCmd===false);}catch(e){return true;}};
   let last=null,box=null,hideT=0,restT=0;
   function el(){if(!box||!box.isConnected){box=document.createElement('div');box.id='ksCmdBig';box.setAttribute('data-noi18n','');box.innerHTML='<span></span>';document.body.appendChild(box);}return box;}
-  function show(t,k){const b=el();b.firstChild.textContent=t;b.classList.remove('on');b.classList.toggle('ent',k==='enter');void b.offsetWidth;b.classList.add('on');
+  function show(t,k){const b=el();b.firstChild.textContent=t;b.classList.remove('on');b.classList.toggle('ent',k==='enter');b.dataset.k=k||'rest';void b.offsetWidth;b.classList.add('on');
     clearTimeout(hideT);hideT=setTimeout(()=>b.classList.remove('on'),k==='enter'?2400:SHOW_MS);}
   function hide(){clearTimeout(hideT);clearTimeout(restT);if(box)box.classList.remove('on');}
   function tick(){
@@ -37,13 +37,19 @@
   padding:min(3.2vw,5.5vh) min(6vw,10vh) min(3.6vw,6vh);border-radius:min(2.4vw,4vh);background:#080A12;
   border:min(.35vw,.6vh) solid rgba(255,255,255,.9);box-shadow:0 0 0 min(.9vw,1.5vh) rgba(8,10,18,.55),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.6)}
 #ksCmdBig.on span{animation:ksCmdIn .24s cubic-bezier(.2,1.3,.4,1) both}
-/* v1.7.75 「출전」만 연한 다홍빛 상자 · 작게 시작해 화면 가득 커지며 테두리가 은은하게 빛남 */
-#ksCmdBig.ent{background:radial-gradient(ellipse at center,rgba(255,120,100,.28),rgba(0,0,0,0) 70%)}
-#ksCmdBig.ent span{background:linear-gradient(160deg,#FF8A7A,#F2624F 55%,#D9483A);color:#fff;border-color:#FFE3DC;text-shadow:0 min(.5vw,.8vh) min(1.4vw,2.4vh) rgba(120,20,10,.45);
-  box-shadow:0 0 0 min(.9vw,1.5vh) rgba(255,138,122,.35),0 0 min(6vw,10vh) rgba(255,110,90,.75),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.5)}
-#ksCmdBig.ent.on span{animation:ksEntIn 1s cubic-bezier(.16,1,.3,1) both,ksEntGlow 1.2s ease-in-out .9s infinite alternate}
-@keyframes ksEntIn{0%{transform:scale(.18);opacity:0}25%{opacity:1}100%{transform:scale(1.08);opacity:1}}
-@keyframes ksEntGlow{from{box-shadow:0 0 0 min(.9vw,1.5vh) rgba(255,138,122,.35),0 0 min(4vw,7vh) rgba(255,110,90,.55),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.5)}to{box-shadow:0 0 0 min(1.4vw,2.4vh) rgba(255,138,122,.5),0 0 min(9vw,15vh) rgba(255,110,90,.95),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.5)}}
+/* v1.7.78 구령 상자: 짙은 남색 바탕 + 흰 글씨로 통일, 얇은 테두리 색만 구령별 (운영석 단추와 같은 색)
+   출전 금빛(글씨도 금빛) · 차렷·경례 은빛 · 준비·시작 청록 · 바로·쉬어 자줏빛 붉은색 */
+#ksCmdBig span{--kc:201,209,220;background:linear-gradient(180deg,#16233F,#0C1528);color:#fff;border:min(.3vw,.5vh) solid rgba(var(--kc),.9);
+  box-shadow:0 0 0 min(.6vw,1vh) rgba(var(--kc),.12),0 0 min(4vw,7vh) rgba(var(--kc),.18),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.6)}
+#ksCmdBig[data-k="enter"] span{--kc:217,179,106}
+#ksCmdBig:is([data-k="attn"],[data-k="bow"]) span{--kc:201,209,220}
+#ksCmdBig:is([data-k="ready"],[data-k="start"],[data-k="start1"]) span{--kc:63,191,176}
+#ksCmdBig:is([data-k="stop"],[data-k="rest"]) span{--kc:200,88,122}
+#ksCmdBig.ent{background:radial-gradient(ellipse at center,rgba(217,179,106,.14),rgba(0,0,0,0) 65%)}
+#ksCmdBig.ent span{color:#E6C47E;text-shadow:0 0 min(1.6vw,2.8vh) rgba(217,179,106,.35)}
+#ksCmdBig.ent.on span{animation:ksEntIn 1s cubic-bezier(.16,1,.3,1) both,ksEntGlow 1.4s ease-in-out .9s infinite alternate}
+@keyframes ksEntIn{0%{transform:scale(.18);opacity:0}25%{opacity:1}100%{transform:scale(1.06);opacity:1}}
+@keyframes ksEntGlow{from{box-shadow:0 0 0 min(.6vw,1vh) rgba(217,179,106,.14),0 0 min(3vw,5vh) rgba(217,179,106,.20),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.6)}to{box-shadow:0 0 0 min(.9vw,1.5vh) rgba(217,179,106,.22),0 0 min(6vw,10vh) rgba(217,179,106,.38),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.6)}}
 @keyframes ksCmdIn{from{transform:scale(.82);opacity:0}to{transform:none;opacity:1}}
 html body .cmdov,html body .cmdov.cmdtop,html body div.cmdov{display:none!important;visibility:hidden!important}
 /* v1.7.77 구령 단추: 짙은 남색 바탕으로 통일, 글씨·얇은 테두리만 은은한 색 (출전 금빛 · 차렷·경례 은빛 · 준비·시작 청록 · 바로·쉬어 자줏빛 붉은색)
