@@ -355,6 +355,7 @@ body.nxm{background:#0B0D12}body.nxm header,body.nxm .tabs,body.nxm #hqtabs{disp
 .rmh{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line,#333)}.rmh .ic{font-size:30px}.rmh h3{margin:0;flex:1;font-size:24px}
 .rmc{padding:14px 20px;overflow:auto;display:flex;flex-direction:column;gap:10px}.rmf{padding:12px 20px;border-top:1px solid var(--line,#333)}
 .pfed{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}.pft{border-collapse:collapse;width:100%}.pft th{font-size:12.5px;text-align:left;opacity:.75;padding:4px}.pft td{padding:3px 4px}.pft select{width:100%;min-width:96px}
+.awc.late{border-color:#E5484D!important;box-shadow:0 0 0 1px rgba(229,72,77,.35)}.awlate{color:#FF8A8A;font-weight:800}
 </style><link rel="stylesheet" href="/vendor/ks-lux.css"><link rel="stylesheet" href="/vendor/fonts/themes.css"><link rel="stylesheet" href="/vendor/hq-themes.css">
 
 <svg id="hqdefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ksGoldH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs></svg><header class="bar"><svg class="logo ks" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="url(#ksGoldH)" stroke-width="2.2" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksGoldH)" d="M19 16h7.5v32H19z"/><path fill="url(#ksGoldH)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksGoldH)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksGoldH)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg><span class="ksword">KICKSTART<b>UP</b></span><span class="brand">대회 본부</span></header>
@@ -1720,19 +1721,22 @@ function vRoom(id){
    요원: 선수 도착 체크 → 「입상자 호출」(본부 방송) → 「시상 완료」. 본부 「🚪 대기실 연결 → 🏅 시상식 대기실」에서 같은 현황을 봅니다.
    저장: award/* (도착·완료) · hqcfg/main 의 awardN {poomsae,kyorugi,gyeokpa,gym,team100} */
 const AW_EV=[['poomsae','품새'],['kyorugi','겨루기'],['gyeokpa','격파'],['gym','태권체조'],['team100','팀 경연']];
-const AWS={tab:'wait',unlocked:false,seen:null,first:{}};
+const AWS={tab:'wait',unlocked:false,seen:null,first:(()=>{try{return JSON.parse(localStorage.getItem('ks_awfirst')||'{}');}catch(e){return {};}})()};
 const awEvOf=(app,div)=>{const e=MONG_EV(app,div);return e==='태권체조'?'gym':e==='팀 경연'?'team100':e==='격파'?'gyeokpa':e==='겨루기'?'kyorugi':'poomsae';};
 /* 시상 인원: 본부에서 고른 값 → 없으면 코트 앱이 홈페이지 「대회 설계」에서 받아 온 값 → 없으면 4위 */
 const awN=k=>{const h=(CFG().awardN||{})[k];if(h===3||h===4)return h;for(const c of courtList())for(const v of Object.values(c.apps||{})){const a=v&&v.results&&v.results.awardN;if(a&&(a[k]===3||a[k]===4))return a[k];}return 4;};
 function awList(){const out=[];courtList().forEach(c=>{for(const [k,v] of Object.entries(c.apps||{})){const r=v&&v.results;if(!r||!r.divs)continue;
     r.divs.forEach(d=>{if(!d.done)return;const ev=awEvOf(k,d.div),N=awN(ev),ppl=[...(d.podium||[]),...(d.fourth||[])].filter(p=>p.rank<=N).sort((a,b)=>a.rank-b.rank);
-      const id=attKey(c.court,k,d.div);if(!AWS.first[id])AWS.first[id]=NOW();const st=(S.awd||{})[id]||{};
-      out.push({id,court:c.court,app:k,ev,div:d.div,ppl,arr:st.arr||{},done:!!st.done,doneAt:st.doneAt||0,first:AWS.first[id]});});}});
+      const id=attKey(c.court,k,d.div);if(!AWS.first[id]){AWS.first[id]=NOW();try{localStorage.setItem('ks_awfirst',JSON.stringify(AWS.first));}catch(e){}}const st=(S.awd||{})[id]||{};
+      /* v1.7.79 같은 코트 이름이 두 번 등록된 경우(노트북 주소가 바뀌어 다시 추가 등) 같은 부문 카드가 두 장 뜨지 않게 — 켜져 있는 코트 쪽 하나만 */
+      const o={id,court:c.court,app:k,ev,div:d.div,ppl,arr:st.arr||{},done:!!st.done,doneAt:st.doneAt||0,first:AWS.first[id],on:!!c.online},j=out.findIndex(y=>y.id===id);
+      if(j<0)out.push(o);else if(o.on&&!out[j].on)out[j]=o;});}});
   return out.sort((a,b)=>a.first-b.first||String(a.court).localeCompare(String(b.court))||a.div.localeCompare(b.div,'ko'));}
 const awMed=r=>`<span class="awm r${Math.min(r,4)}">${r}</span>`;
 const awPk=p=>p.name+'|'+(p.team||'');
 function awCard(x,phone){const inn=x.ppl.filter(p=>x.arr[awPk(p)]).length,evn=(AW_EV.find(e=>e[0]===x.ev)||['',''])[1];
-  return `<div class="awc ${x.done?'done':''}"><div class="awh"><span class="chip">${esc(x.court)}코트 · ${esc(evn)}</span><span class="small muted">${x.done?'✓ 시상 완료 '+hhmm(x.doneAt):'결과 확정 '+hhmm(x.first)}</span></div>
+  const wm=x.done?0:Math.floor((NOW()-x.first)/60000),late=wm>=10;  /* v1.7.79 10분 넘게 시상 못 한 부문은 빨갛게 */
+  return `<div class="awc ${x.done?'done':''} ${late?'late':''}"><div class="awh"><span class="chip">${esc(x.court)}코트 · ${esc(evn)}</span><span class="small ${late?'awlate':'muted'}">${x.done?'✓ 시상 완료 '+hhmm(x.doneAt):late?`⏰ ${wm}분째 시상 대기`:'결과 확정 '+hhmm(x.first)}</span></div>
     <b class="awd">${esc(x.div)}</b>
     <div class="awps">${x.ppl.map(p=>{const on=!!x.arr[awPk(p)];return `<div class="awp ${on?'in':''}">${awMed(p.rank)}<span><b>${esc(p.name)}</b><small>${esc(p.team||'')}</small></span>${phone&&!x.done?`<button class="btn ${on?'primary':''}" data-a="awrArr" data-id="${esc(x.id)}" data-k="${esc(awPk(p))}">${on?'✓ 도착':'도착'}</button>`:`<span class="chip ${on?'ok':''}">${on?'✓ 도착':'—'}</span>`}</div>`;}).join('')}</div>
     <div class="awf"><span class="chip ${inn===x.ppl.length?'ok':'warn'}">도착 ${inn}/${x.ppl.length}</span>${phone?(x.done?`<button class="btn" data-a="awrUndo" data-id="${esc(x.id)}">되돌리기</button>`
