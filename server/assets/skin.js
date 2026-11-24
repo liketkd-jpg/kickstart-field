@@ -337,7 +337,7 @@ function nSide(s,m,res){const b=s.side==='blue',r=s.res;
     :(s.live||[]).map(j=>`<div class="n-j ${j.ok?'ok':'wait'}"><small>J${j.n}</small><b>${j.ok?'✓':'···'}</b></div>`).join('');
   return `<div class="n-side side ${b?'b':'r'} ${res&&s.win?'win':''} ${res&&s.lose?'lose':''}"><div class="n-wm">${b?'청':'홍'}</div>
     <div class="n-sh"><i>${b?'청':'홍'}</i>${nEn(b?'Blue':'Red')}${res&&s.win?'<em class="n-win">WINNER</em>':''}</div>
-    <div class="n-nm ks-fillw" data-fmax="${res?170:280}" style="font-size:${U(fit(s.name,res?140:170,4))}">${E(s.name)}</div><div class="n-tm">${E(s.team)}</div>
+    <div class="n-nm ks-fillw" data-fmax="${res?240:280}" style="font-size:${U(fit(s.name,res?140:170,4))}">${E(s.name)}</div><div class="n-tm">${E(s.team)}</div>
     ${res&&r?`<div class="n-tot vfinal">${nf2(r.final)}</div><div class="n-sub">${r.parts?`1품새 ${nf2(r.parts[0])} · 2품새 ${nf2(r.parts[1])}`:`${E(m.labA||'정확성')} ${nf2(r.a)} · ${E(m.labB||'표현성')} ${nf2(r.b)}`}${r.ded?` · 감점 −${(+r.ded).toFixed(1)}`:''}</div>`:''}
     <div class="n-js sd" style="--n:${(res?s.js:s.live||[]).length||5}">${js}</div></div>`;}
 function nPl(m){const pl=m.pl||[];return pl.length?`<div class="n-pls ${pl.length>1?'two':'one'}">${pl.map(p=>`<div class="n-pi ${p.on&&pl.length>1?'on':''}">${pl.length>1?`<small>${E(p.lab)}</small>`:''}<b>${E(p.nm)}</b></div>`).join('')}</div>`:'';}
@@ -1043,7 +1043,12 @@ const css3=`
 .sk-pr .n-bm{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}.sk-pr .n-bm.now{border-color:#D6B26A}.sk-pr .n-bp em{font-family:Archivo,sans-serif;font-weight:700}
 .sk-pr .n-idle h1{background:linear-gradient(180deg,#FFF6D8,#E6C27A 60%,#B8862E);-webkit-background-clip:text;background-clip:text;color:transparent}.sk-pr .n-now{color:#F2D27A;font-family:Archivo,sans-serif}
 /* v1.7.82 청·홍 대결: 멀리서도 보이게 — 품새 이름을 금색 큰 판으로, 시간·선수 이름도 크게 (가운데 칸 넓힘, 이름은 칸 너비에 꽉 차게 자동 맞춤) */
-.board .n-duel:not(.res){grid-template-columns:minmax(0,1fr) ${U(600)} minmax(0,1fr)!important}
+.board .n-duel{grid-template-columns:minmax(0,1fr) ${U(600)} minmax(0,1fr)!important}   /* v1.7.86 결과(청승·홍승) 화면도 같은 크기 */
+.board .n-duel.res .n-side .n-tm{font-size:${U(50)};font-weight:700}
+
+.board .n-duel.res .n-side .n-sub{font-size:${U(30)}}
+.board .n-verd b{font-size:${U(170)}}.board .n-verd small{font-size:${U(34)}}
+.board .n-duel.res .n-side .n-j b{font-size:${U(40)}}
 .n-duel .n-ctr{gap:${U(22)}}
 .n-pls{width:100%;padding:0 ${U(10)};box-sizing:border-box}
 .board .n-pls .n-pi{width:100%;box-sizing:border-box;text-align:center;padding:${U(14)} ${U(18)} ${U(18)};border-radius:${U(22)};background:linear-gradient(180deg,#F8D36A,#E2AE3C);color:#141006;border:0;box-shadow:0 ${U(10)} ${U(36)} rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.4)}
@@ -1082,7 +1087,7 @@ function run(){q=0;document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(el=>
   el.style.fontSize=Math.floor(a)+'px';el._kf=el.textContent+'|'+el.clientWidth+'|'+el.clientHeight;});}
 const sch=()=>{if(q)return;q=requestAnimationFrame(run);};
 window.KS_FILLFIT=sch;
-const go=()=>{try{new MutationObserver(sch).observe(document.body,{childList:true,subtree:true});}catch(e){}addEventListener('resize',()=>{document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(e=>e._kf='');sch();});setInterval(sch,1500);sch();};
+const go=()=>{try{new MutationObserver(()=>run()).observe(document.body,{childList:true,subtree:true});}catch(e){}   /* v1.7.86 그리기 전에 바로 맞춤 → 크기가 한 번 바뀌며 깜빡이던 것 없앰 */addEventListener('resize',()=>{document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(e=>e._kf='');sch();});setInterval(sch,1500);sch();};
 if(document.body)go();else addEventListener('DOMContentLoaded',go);
 try{document.fonts&&document.fonts.ready.then(()=>{document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(e=>e._kf='');sch();});}catch(e){}
 })();

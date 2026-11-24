@@ -32,6 +32,7 @@
       <div class="kss-wm"><img src="${esc(wm)}" alt=""><i class="kss-wsw" style="-webkit-mask-image:url('${esc(wm)}');mask-image:url('${esc(wm)}')"></i></div><div class="kss-gl"></div>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
     if(p.k==='comp')return `<div class="kss-wave"><i></i><i class="w2"></i><b></b></div><div class="kss-comp">${logo}<span class="kss-l">${esc(C.label||'KICKSTART UP')}</span><h1 class="kss-shine">${esc(C.title||'태권도 대회').replace(/\n/g,'<br>')}</h1>${C.sub?`<p>${esc(C.sub)}</p>`:''}</div>`;
     if(p.k==='spon')return `<div class="kss-spon"><span class="kss-l">${esc(C.sponLabel||'OFFICIAL SPONSOR · 후원')}</span><div class="kss-card"><img src="${p.img}" alt=""></div>${p.name?`<b>${esc(p.name)}</b>`:''}</div>`;
+    if(!court)return html({k:'comp'});   /* v1.7.86 코트가 안 정해진 노트북이면 「—」 막대 대신 대회 이름 화면 */
     return `<div class="kss-court"><div class="kss-flash"></div><div class="kss-ring"></div><div class="kss-ring r2"></div><div class="kss-big kss-shine">${esc(court||'—')}</div><span class="kss-n"><b>${esc(court)}</b> 코트 <small>COURT</small></span></div>`;}  /* v1.7.25 코트 화면은 코트만 크게 */
   function tick(){
     if(!CFG||!CFG.on||!isDisp()){hide();return;}
