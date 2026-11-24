@@ -25,10 +25,11 @@ header .s{margin-left:auto;text-align:right;color:var(--mute);font-size:12px}
 .tel{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
 .tel div{border:1px dashed #A9A291;border-radius:8px;padding:6px 9px;font-weight:700;min-height:44px}
 .tel small{display:block;color:var(--mute);font-weight:500}
-@media print{body{background:#fff}.tool{display:none}.sheet{box-shadow:none;margin:0;width:auto;min-height:0;padding:0}@page{size:A4;margin:8mm}}
+.sheet+.sheet{page-break-before:always}.dl{display:flex;gap:8px;flex-wrap:wrap;margin-top:5px}.dl a{display:inline-block;padding:7px 11px;border-radius:9px;border:1.5px solid #BFB8A6;background:#F6F3EC;color:var(--ink);font-weight:800;text-decoration:none;font-size:13px}.dl a.on{border-color:var(--gold);background:#FFF3D6;box-shadow:0 0 0 2px rgba(154,116,50,.25)}.dl a.on::after{content:" · 이번 대회";color:var(--gold);font-size:11.5px}
+@media print{.dl{display:none}body{background:#fff}.tool{display:none}.sheet{box-shadow:none;margin:0;width:auto;min-height:0;padding:0}@page{size:A4;margin:8mm}}
 @media screen and (max-width:820px){.sheet{width:auto;min-height:0;padding:16px}.grid{grid-template-columns:1fr}.tel{grid-template-columns:1fr}}
 </style></head><body>
-<div class="tool"><button onclick="print()">🖨️ 인쇄하기 (A4 한 장)</button></div>
+<div class="tool"><button onclick="print()">🖨️ 인쇄하기 (A4 두 장)</button></div>
 <div class="sheet">
 <header><h1>🆘 대회 당일 비상 안내</h1><div class="s">KICKSTART UP 현장 모드 · 진행 요원용<br>코트마다 한 장씩 붙여 두세요</div></header>
 <div class="first"><b>먼저 이것부터:</b> 당황하지 말고 <b>경기를 잠시 멈춘 뒤</b> 본부에 알립니다. 점수와 결과는 노트북에 계속 저장되고, 1분마다 본부에도 모이므로 대부분 그대로 이어서 진행할 수 있습니다.</div>
@@ -84,4 +85,47 @@ header .s{margin-left:auto;text-align:right;color:var(--mute);font-size:12px}
 </div>
 <div class="tel"><div><small>본부 대표</small>&nbsp;</div><div><small>기술 담당</small>&nbsp;</div><div><small>예비 노트북·태블릿 위치</small>&nbsp;</div></div>
 </div>
+<div class="sheet">
+<header><h1>🆘 비상 안내 ② 선수·결과·종이 채점</h1><div class="s">v1.7.85 기준 · 새로 생긴 기능<br>본부와 코트마다 한 장씩</div></header>
+<div class="grid">
+<div class="c"><h2><i>10</i>선수가 안 왔어요 (미출석·기권)</h2><ol>
+<li>대기실 휴대폰에서 출석을 체크하면, 안 온 선수는 코트 진행 순서에 빨간 <span class="k">미출석</span>으로 나옵니다.</li>
+<li>그 선수 차례가 되면 <span class="k">📢 한 번 더 부르기</span> (코트 스피커 + 대기실 방송).</li>
+<li>끝내 안 오면 <span class="k">🚫 기권 처리</span> → 다음 선수로 넘어갑니다. 겨루기·토너먼트는 상대 <b>기권승</b>.</li>
+<li>나중에 오면 진행 순서의 <span class="k">기권 취소</span>로 되돌립니다.</li></ol></div>
+<div class="c"><h2><i>11</i>선수가 늦어서 조를 미뤄야 해요</h2><ol>
+<li>경기 진행 왼쪽 부문 칸에서 <span class="k">⏸ 이 조 나중에</span>.</li>
+<li>다른 조를 먼저 하고, 뒤의 조를 다 마치면 미뤄 둔 조를 <b>자동으로</b> 다시 부릅니다.</li>
+<li>바로 하고 싶으면 그 조를 골라 <span class="k">호출</span>, 표시는 <span class="k">▶ 나중에 해제</span>.</li></ol>
+<div class="note">겨루기는 다른 경기를 먼저 <b>호출</b>하면, 끝난 뒤 남은 경기로 돌아옵니다.</div></div>
+<div class="c"><h2><i>12</i>결과가 홈페이지에 안 올라가요</h2><ol>
+<li>본부 노트북이 <b>인터넷</b>에 연결됐는지 확인 (휴대폰 테더링·에그).</li>
+<li>본부 <span class="k">📱 지도자용 진행 상황</span> → 관리자 로그인 → 대회 고르기 → <span class="k">▶ 인터넷으로 보내기 시작</span>.</li>
+<li>같은 칸의 <b>🏅 경기 결과 → 홈페이지</b>가 「자동으로 보내는 중」이면 정상. 급하면 <span class="k">지금 결과 보내기</span>.</li>
+<li>「옛 버전 코트」 알림이 뜨면 그 코트 노트북을 다시 켜서 최신판으로.</li></ol>
+<div class="note">인터넷이 끊겨도 결과는 본부에 쌓여 있다가, 연결되면 저절로 다시 보냅니다. 코트에서 따로 보낼 필요 없습니다.</div></div>
+<div class="c"><h2><i>13</i>경기 진행 화면이 비었거나 메뉴가 없어요</h2><ol>
+<li><b>전체 화면</b>이면 오른쪽 위 <span class="k">⤡ 기본 화면</span>을 누릅니다.</li>
+<li>부문이 하나도 없으면 메뉴가 저절로 보이고 <span class="k">② 선수 등록하러 가기</span> 단추가 나옵니다.</li>
+<li>화면이 작거나 이상하면 <b>F5</b>(새로 고침). 점수는 그대로입니다.</li></ol></div>
+<div class="c wide"><h2><i>14</i>대회 날 아침 시험 → 실제 대회로 바꾸기</h2><ol>
+<li>본부 맨 위 띠가 <b>🧪 시험 모드</b>인지 확인합니다.</li>
+<li><b>자동 시험</b>: 본부 <span class="k">📡 코트로 보내기 · 🧪 가상 경기</span> → <span class="k">▶ 모든 코트 가상 경기 시작</span> (노트북·본부·전광판 연결 확인, 품새·격파).</li>
+<li><b>직접 시험</b>: 코트 운영석 <b>선수 등록</b> 화면 왼쪽 아래 <span class="k">🧪 시험용 명단 넣기</span> → 종목마다 20개(품새 20명·태권체조 20팀·팀 경연 20팀 / 격파 20명 / 겨루기 20명)가 들어갑니다 → 심판 패드로 실제처럼 채점.</li>
+<li>시험이 끝나면 <b>실제 명단을 다시 넣고</b>, 본부 띠의 <span class="k">🏁 실제 대회로 바꾸기</span> → <span class="k">🏅 경기 전 기록 지우기</span>로 시험 점수를 지웁니다.</li></ol></div>
+<div class="c wide"><h2><i>15</i>프로그램으로 더 진행할 수 없어요 → 종이 채점으로</h2><ol>
+<li>본부에 알리고 그 코트 경기를 멈춥니다. 지금까지 점수는 노트북·본부에 남아 있습니다.</li>
+<li>심판 한 분당 종목 채점지 한 장, 기록원은 <b>집계표</b>(각 PDF 2쪽)를 씁니다.</li>
+<li>집계표로 순위를 정해 시상하고, 프로그램이 돌아오면 운영석 <b>결과·수정</b>에서 점수를 옮겨 적습니다.</li></ol>
+<div class="note">대회 전날 종목별 채점지를 코트마다 한 묶음씩 뽑아 두세요. 이번 대회 종목은 노랗게 표시됩니다.</div>
+<div class="dl" id="sheetDl"><a href="/sheets/poomsae.pdf" target="_blank" data-k="poomsae">📄 품새 채점지</a><a href="/sheets/gym.pdf" target="_blank" data-k="gym">📄 태권체조 채점지</a><a href="/sheets/team.pdf" target="_blank" data-k="team">📄 팀 경연 채점지</a><a href="/sheets/gyeokpa.pdf" target="_blank" data-k="gyeokpa">📄 격파 채점지</a><a href="/sheets/kyorugi.pdf" target="_blank" data-k="kyorugi">📄 겨루기 기록지</a></div></div>
+</div>
+<div class="tel"><div><small>본부 대표</small>&nbsp;</div><div><small>기술 담당</small>&nbsp;</div><div><small>종이 채점지 보관 위치</small>&nbsp;</div></div>
+</div>
+<script>/* 이번 대회 종목의 채점지를 노랗게 · 맨 앞으로 */
+(async()=>{try{const j=await (await fetch('/api/view',{cache:'no-store'})).json();const on=new Set();
+(j.courts||[]).forEach(c=>(c.apps||[]).forEach(a=>{const ds=((a.results||{}).divs||[]).map(d=>d.div||'').join(' ')+' '+JSON.stringify(a.board||{});
+if(a.app==='gyeokpa')on.add('gyeokpa');if(a.app==='kyorugi')on.add('kyorugi');if(a.app==='poomsae'){if(/공인|자유|품새/.test(ds)||!ds.trim())on.add('poomsae');if(/체조/.test(ds))on.add('gym');if(/종합경연|팀\s*경연|시범/.test(ds))on.add('team');}}));
+const box=document.getElementById('sheetDl');if(!box||!on.size)return;[...box.children].sort((x,y)=>on.has(y.dataset.k)-on.has(x.dataset.k)).forEach(a=>{a.classList.toggle('on',on.has(a.dataset.k));box.appendChild(a);});}catch(e){}})();
+</script>
 </body></html>

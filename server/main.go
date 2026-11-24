@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.84" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.85" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -413,6 +413,10 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/bat.js":
 		serveAsset(w, "assets/bat.js", "application/javascript; charset=utf-8")
 		return
+	case strings.HasPrefix(p, "/sheets/") && strings.HasSuffix(p, ".pdf") && !strings.Contains(p, ".."): // v1.7.85 비상용 종이 채점지
+		w.Header().Set("Content-Disposition", "inline")
+		serveAsset(w, "assets"+p, "application/pdf")
+		return
 	case strings.HasPrefix(p, "/brand/") && !strings.Contains(p, ".."): // v1.7.23 대회 협회 로고 등
 		serveAsset(w, "assets"+p, "")
 		return
@@ -424,6 +428,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/fitrun.js":
 		serveAsset(w, "assets/fitrun.js", "application/javascript; charset=utf-8")
+		return
+	case p == "/testroster.js":
+		serveAsset(w, "assets/testroster.js", "application/javascript; charset=utf-8")
 		return
 	case p == "/detail.css":
 		serveAsset(w, "assets/detail.css", "text/css; charset=utf-8")
@@ -565,16 +572,17 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 		out.WriteString(`<script src="/jauto.js"></script>`) // 코트 심판 링크: 종목 바뀌면 채점기 자동 전환
 		out.WriteString(`<script src="/rules.js"></script>`) // 본부 종목별 경기 규칙 받기
 		out.WriteString(`<script src="/courtseq.js"></script>`)
-		out.WriteString(`<script src="/next.js"></script>`)     // 한 종목이 끝나면 다음 종목 운영석으로
-		out.WriteString(`<script src="/flow.js"></script>`)     // 조 자동 넘어가기 안내 · 지금 조 한눈에
-		out.WriteString(`<script src="/show.js"></script>`)     // v1.7.22 점수 뒤 전광판 (대회 이름 · 후원사 · 코트 이름)
-		out.WriteString(`<script src="/cmdbig.js"></script>`)   // v1.7.53 구령 큰 글씨 (모든 전광판 공통)
-		out.WriteString(`<script src="/fitrun.js"></script>`)   // v1.7.75 경기 진행 화면 한 화면에
-		out.WriteString(`<script src="/bat.js"></script>`)      // 심판 태블릿 배터리 → 본부
-		out.WriteString(`<script src="/mode.js"></script>`)     // 시험 모드 표시 · 실제 대회 모드 잠금
-		out.WriteString(`<script src="/skin.js"></script>`)     // 컷오프 전광판 왕실·불꽃 디자인 (종목별)
-		out.WriteString(`<script src="/together.js"></script>`) // 같이 경기하기 (본부에서 묶은 부문)
-		out.WriteString(`<script src="/chain.js"></script>`)    // 홈페이지 「모든 종목 보내기」 차례 안내
+		out.WriteString(`<script src="/next.js"></script>`)       // 한 종목이 끝나면 다음 종목 운영석으로
+		out.WriteString(`<script src="/flow.js"></script>`)       // 조 자동 넘어가기 안내 · 지금 조 한눈에
+		out.WriteString(`<script src="/show.js"></script>`)       // v1.7.22 점수 뒤 전광판 (대회 이름 · 후원사 · 코트 이름)
+		out.WriteString(`<script src="/cmdbig.js"></script>`)     // v1.7.53 구령 큰 글씨 (모든 전광판 공통)
+		out.WriteString(`<script src="/fitrun.js"></script>`)     // v1.7.75 경기 진행 화면 한 화면에
+		out.WriteString(`<script src="/testroster.js"></script>`) // v1.7.85 시험용 명단 넣기
+		out.WriteString(`<script src="/bat.js"></script>`)        // 심판 태블릿 배터리 → 본부
+		out.WriteString(`<script src="/mode.js"></script>`)       // 시험 모드 표시 · 실제 대회 모드 잠금
+		out.WriteString(`<script src="/skin.js"></script>`)       // 컷오프 전광판 왕실·불꽃 디자인 (종목별)
+		out.WriteString(`<script src="/together.js"></script>`)   // 같이 경기하기 (본부에서 묶은 부문)
+		out.WriteString(`<script src="/chain.js"></script>`)      // 홈페이지 「모든 종목 보내기」 차례 안내
 	}
 	out.WriteString(`</head><body>`)
 	out.WriteString(html)

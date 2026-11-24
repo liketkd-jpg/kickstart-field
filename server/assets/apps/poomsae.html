@@ -1595,7 +1595,7 @@ function pfixFor(d,rk,rm){
   if(!d||d.type!=='recognized')return null;const rows=pfRows();if(!rows.length)return null;
   const nm=pfGk(d.name),rn=rm?'재경기':pfRoundOf(d,rk);if(!rn)return null;let best=null,bs=-1;
   /* 토너먼트는 결승 전 라운드(준결승·8강 …)에 「예선」 줄도 씁니다 (4명 1조: 준결승 = 예선) */
-  const alt=!rm&&!STAGES[rk]&&rn!=='결선'?'예선':null;
+  const alt=!rm&&((!STAGES[rk]&&rn!=='결선')||rn==='본선')?'예선':null;   /* v1.7.85 컷오프 「본선」(첫 라운드가 본선일 때)도 「예선」 줄을 씀 */
   /* v1.7.19 「초등 저학년부 유급자부」처럼 낱말이 떨어져 있어도 낱말마다 부문 이름에 다 들어 있으면 맞음 */
   /* v1.7.21 급수 낱말: 「유급자」 = 유급자부·B조 · 「유품자(단)」 = 유품자부·유단자·A조 */
   const palt=x=>/^유급/.test(x)?['유급','B조']:/^(유품|유단)/.test(x)?['유품','유단','A조']:[pfGk(x)];
@@ -2326,7 +2326,8 @@ function aBoard(){
     <div class="panel bp"><label class="field"><span class="label">부문</span>${ptypeSeg()}<select id="runDiv" data-on="runDiv">${divOptions(ui.div)}</select></label>
       <div class="row between"><span class="small muted">${div.format==='tournament'?'토너먼트':'컷오프'} · 경기 ${doneN}/${calls.length} 완료</span>${stageChips(div)}</div>
       ${isTeamType(div.type)?'':`<div class="seg" title="이 부문의 품새 수">${[1,2].map(v=>`<button class="${pCount(div)===v?'on':''}" data-act="${divHasResults(div)?'armed':'divPoomsae'}" data-do="divPoomsae" data-id="${div.id}" data-v="${v}">품새 ${v}개</button>`).join('')}</div>`}
-      ${advanceBox(div)}</div>
+      ${advanceBox(div)}
+      <div class="row between" style="gap:8px;flex-wrap:wrap">${isLater(div)?'<span class="chip warn">⏸ 나중에 할 조 · 다른 조를 마친 뒤 자동으로 부릅니다</span>':'<span class="small muted">선수가 늦으면 이 조를 뒤로 미룰 수 있습니다</span>'}<button class="btn sm" data-act="divLater" data-id="${div.id}">${isLater(div)?'▶ 나중에 해제':'⏸ 이 조 나중에'}</button></div></div>
     <div class="panel bp grow"><div class="row between"><h3>진행 순서</h3><span class="small muted">${calls.length}경기</span></div>
       <div class="scroll"><div class="blist">${calls.length?calls.map(c=>{const isCur=cur&&cur.callId===c.callId,done=callDone(c);
         return `<div class="bitem ${isCur?'cur':''} ${done?'done':''}"><div class="bmain"><span class="small muted">${esc(c.label)}</span>
@@ -2952,7 +2953,10 @@ const flowNum=d=>{const m=/^(\d{1,3})\s/.exec(d.name||'');return m?+m[1]:9999;};
 function flowOrder(){return S.divs.map((d,i)=>({d,i})).sort((a,b)=>(flowNum(a.d)-flowNum(b.d))||(a.i-b.i)).map(x=>x.d);}
 function flowEnded(d){const c=callsOf(d);if(!c.length||!c.every(callDone))return false;if(d.format==='tournament')return true;
   const st=curStage(d);if(st.pending||nextStage(d,st.key))return false;return !rematchNeed(d);}
-function flowNextDiv(d){const L=flowOrder(),i=L.findIndex(x=>x.id===d.id);return L.slice(i+1).find(x=>callsOf(x).some(c=>!callDone(c)))||null;}
+/* v1.7.85 「⏸ 이 조 나중에」: 표시한 조는 건너뛰고, 뒤쪽 조를 다 마치면 앞에서 건너뛴 조 → 미뤄 둔 조 순서로 다시 부름 */
+const isLater=d=>!!(d&&(SET().later||{})[d.id]);
+function flowNextDiv(d){const L=flowOrder(),i=L.findIndex(x=>x.id===d.id),rem=x=>x.id!==d.id&&callsOf(x).some(c=>!callDone(c));
+  return L.slice(i+1).find(x=>rem(x)&&!isLater(x))||L.find(x=>rem(x)&&!isLater(x))||L.slice(i+1).find(rem)||L.find(rem)||null;}
 function flowInfo(){const st=ST(),cur=curOf();if(!cur||st.status!=='revealed')return null;const d=S.divs.find(x=>x.id===cur.divId);if(!d||!flowEnded(d))return null;
   const n=flowNextDiv(d);if(!n)return {end:true,d};return {d,n,c:callsOf(n).find(x=>!callDone(x)),key:cur.callId+'#'+(st.epoch||0)};}
 let FLOW_STOP='';
@@ -3365,6 +3369,8 @@ const ACT={
       addLog('선수 정보 수정',a.name,`${a.name} (${a.team}) ${k0} → ${name} (${n.team}) ${k1}`);
       ui.editAth=null;toast(k0!==k1?'저장했습니다 · 부문을 다시 편성합니다':'저장했습니다');if(k0!==k1)await regenAfterRoster([k0]);render();}catch(e){b.disabled=false;}
   },
+  divLater:async b=>{const id=b.dataset.id,d=S.divs.find(x=>x.id===id);if(!d)return;const L={...(SET().later||{})};const on=!L[id];if(on)L[id]=Date.now();else delete L[id];
+    S.settings={...SET(),later:L};await saveSettings(S.settings);addLog(on?'조 미룸':'조 미룸 해제',d.name,on?'다른 조를 마친 뒤 자동으로 부름':'원래 순서로');toast(on?`「${d.name}」은(는) 다른 조를 다 마친 뒤에 자동으로 부릅니다`:'원래 순서로 되돌렸습니다');render();},
   regen:()=>regenerateDivs(),
   courtN:b=>{ui.courtOpen=true;saveSettings({...SET(),courts:Number(b.dataset.n)});},
   courtAutoB:()=>{ui.courtOpen=true;return courtAuto(SET().courts||4);},
