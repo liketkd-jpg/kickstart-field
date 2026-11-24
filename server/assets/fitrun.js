@@ -22,9 +22,9 @@ html body.ks-fitrun .panel.bcur:has(>.gwho+*+.tbox)>.tbox .bcmd .btn{min-width:0
   const isRun=()=>/^#?admin-run$/.test((location.hash||'').replace(/^#/,'').split('?')[0])||/admin-run/.test(location.hash);
   /* v1.7.77 떨림 없애기: 크기를 1로 되돌렸다가 다시 줄이지 않고, 지난번 배율을 그대로 둔 채
      넘치면 줄이고 · 3% 이상 여유가 생길 때만 키웁니다. 화면이 새로 그려지면 그리기 전에 바로 지난 배율을 씌웁니다. */
-  let busy=false;const ZK={};
+  let busy=false;const ZK={},BAD={};
   const keyOf=p=>(p.className||'')+'|'+(location.hash||'');
-  const setZ=(kids,z)=>{const v=z>=1?'':String(z);kids.forEach(k=>{if(k.style.zoom!==v)k.style.zoom=v;});};
+  const setZ=(kids,z)=>{const v=z===1?'':String(z);kids.forEach(k=>{if(k.style.zoom!==v)k.style.zoom=v;});};
   const over=p=>p.scrollHeight>p.clientHeight+2;
   function fit(){
     if(busy)return;busy=true;
@@ -37,15 +37,23 @@ html body.ks-fitrun .panel.bcur:has(>.gwho+*+.tbox)>.tbox .bcmd .btn{min-width:0
         let z=Number(p.dataset.ksz||ZK[key]||1);
         setZ(kids,z);
         const ch=p.clientHeight;if(!ch)return;
-        const nat=p.scrollHeight/z;
-        if(over(p)){
-          z=Math.max(.5,Math.floor(ch/nat*100)/100);setZ(kids,z);
-          for(let i=0;i<6&&over(p)&&z>.5;i++){z=Math.max(.5,+(z-.02).toFixed(2));setZ(kids,z);}
-        }else if(z<1){
-          const up=Math.min(1,Math.floor(ch/nat*100)/100-.01);
-          if(up-z>=.03){const old=z;setZ(kids,up);if(over(p))setZ(kids,old);else z=up;}
+        /* v1.7.80 내용 높이는 칸 높이가 아니라 「실제 내용」으로 잼 — scrollHeight는 칸이 내용보다 크면 칸 높이가 나와서
+           한 번 줄어든 뒤에 다시 커지지 못하던 문제 (겨루기 화면이 반쪽 크기로 남던 원인) */
+        const cs=getComputedStyle(p),pt=parseFloat(cs.paddingTop)||0,pb=parseFloat(cs.paddingBottom)||0,top=p.getBoundingClientRect().top+pt-p.scrollTop;
+        const col=cs.display.includes('flex')&&cs.flexDirection.startsWith('column'),gap=parseFloat(cs.rowGap)||0;
+        /* 세로 flex 칸은 마지막 줄이 margin-top:auto 로 바닥에 붙어 있어 「맨 아래 위치」로 재면 늘 꽉 찬 것처럼 보임 → 높이를 더해서 잼 */
+        const used=()=>{if(col){let t=0,n=0;for(const k of kids){if(k.offsetParent===null)continue;const r=k.getBoundingClientRect();if(!r.height)continue;const kc=getComputedStyle(k);const mg=v=>{const n=parseFloat(v)||0;return n>40?0:n;};t+=r.height+mg(kc.marginTop)+mg(kc.marginBottom);  /* auto 여백(바닥 붙이기)은 계산값이 커서 뺌 */n++;}return t+Math.max(0,n-1)*gap;}
+          let m=0;for(const k of kids){if(k.offsetParent===null&&getComputedStyle(k).position!=='fixed')continue;const r=k.getBoundingClientRect();if(r.height)m=Math.max(m,r.bottom-top+(parseFloat(getComputedStyle(k).marginBottom)||0));}return m;};
+        const avail=ch-pt-pb;const over2=()=>used()>avail+1;
+        const nat=used()/z;if(!nat)return;
+        let want=Math.max(.5,Math.min(1.2,Math.floor(avail/nat*100)/100-.01));   /* 큰 화면에서 남는 자리가 있으면 1.2배까지 키움 */
+        const bad=BAD[key];if(bad&&Date.now()-bad.at<15000&&want>=bad.z&&!over2())want=z;   /* 방금 넘쳤던 크기로는 15초 동안 다시 키우지 않음 (줄었다 커졌다 반복 방지) */
+        if(over2()||want-z>=.03){const z0=z;
+          setZ(kids,want);z=want;
+          for(let i=0;i<8&&over2()&&z>.5;i++){z=Math.max(.5,+(z-.02).toFixed(2));setZ(kids,z);}
+          if(z<z0)BAD[key]={z:z0,at:Date.now()};
         }
-        p.style.setProperty('overflow-y',over(p)?'auto':'hidden','important');   /* 가장 작게 줄여도 넘치면 그 칸 안에서만 내려 보기 (아래 단추가 잘리지 않게) */
+        if(!p.dataset.ksov){p.style.setProperty('overflow-y','auto','important');p.style.setProperty('scrollbar-gutter','stable');p.dataset.ksov='1';}  /* 스크롤 막대가 생겼다 없어졌다 하며 폭이 바뀌어 떨리던 것 방지 */   /* 가장 작게 줄여도 넘치면 그 칸 안에서만 내려 보기 (아래 단추가 잘리지 않게) */
         p.dataset.ksz=z;ZK[key]=z;
       });
     }catch(e){}finally{busy=false;}
