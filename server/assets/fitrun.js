@@ -20,30 +20,39 @@ body.ks-fitrun .panel.bcur:has(>.gwho+*+.tbox)>.tbox .bcmd:not(.b4){grid-templat
 html body.ks-fitrun .panel.bcur:has(>.gwho+*+.tbox)>.tbox .bcmd .btn{min-width:0;padding:8px 4px!important;font-size:clamp(15px,.95vw,18px)!important;white-space:normal;line-height:1.2;word-break:keep-all}`;
   (document.head||document.documentElement).appendChild(st);
   const isRun=()=>/^#?admin-run$/.test((location.hash||'').replace(/^#/,'').split('?')[0])||/admin-run/.test(location.hash);
-  let busy=false;
+  /* v1.7.77 떨림 없애기: 크기를 1로 되돌렸다가 다시 줄이지 않고, 지난번 배율을 그대로 둔 채
+     넘치면 줄이고 · 3% 이상 여유가 생길 때만 키웁니다. 화면이 새로 그려지면 그리기 전에 바로 지난 배율을 씌웁니다. */
+  let busy=false;const ZK={};
+  const keyOf=p=>(p.className||'')+'|'+(location.hash||'');
+  const setZ=(kids,z)=>{const v=z>=1?'':String(z);kids.forEach(k=>{if(k.style.zoom!==v)k.style.zoom=v;});};
+  const over=p=>p.scrollHeight>p.clientHeight+2;
   function fit(){
     if(busy)return;busy=true;
     try{
       const on=isRun()&&innerWidth>=900&&!document.body.classList.contains('jdg')&&!document.body.classList.contains('disp');
-      document.body.classList.toggle('ks-fitrun',on);
+      if(document.body.classList.contains('ks-fitrun')!==on)document.body.classList.toggle('ks-fitrun',on);
       if(!on)return;
       document.querySelectorAll('.panel.bcur,.panel.bp.grow:has([data-act="timerStop"],[data-act="startRound"])').forEach(p=>{
-        const kids=[...p.children];
-        const cur=Number(p.dataset.ksz||1);
-        kids.forEach(k=>{k.style.zoom='';});
-        const ch=p.clientHeight,sh=p.scrollHeight;
-        if(!ch)return;
-        let z=1;
-        if(sh>ch+2){z=Math.max(.5,Math.floor(ch/sh*100)/100);}
-        if(z<1){kids.forEach(k=>{k.style.zoom=z;});
-          for(let i=0;i<4&&p.scrollHeight>p.clientHeight+2&&z>.5;i++){z=Math.max(.5,z-.03);kids.forEach(k=>{k.style.zoom=z;});}}
-        p.dataset.ksz=z;
+        const kids=[...p.children],key=keyOf(p);
+        let z=Number(p.dataset.ksz||ZK[key]||1);
+        setZ(kids,z);
+        const ch=p.clientHeight;if(!ch)return;
+        const nat=p.scrollHeight/z;
+        if(over(p)){
+          z=Math.max(.5,Math.floor(ch/nat*100)/100);setZ(kids,z);
+          for(let i=0;i<6&&over(p)&&z>.5;i++){z=Math.max(.5,+(z-.02).toFixed(2));setZ(kids,z);}
+        }else if(z<1){
+          const up=Math.min(1,Math.floor(ch/nat*100)/100-.01);
+          if(up-z>=.03){const old=z;setZ(kids,up);if(over(p))setZ(kids,old);else z=up;}
+        }
+        p.style.setProperty('overflow-y',over(p)?'auto':'hidden','important');   /* 가장 작게 줄여도 넘치면 그 칸 안에서만 내려 보기 (아래 단추가 잘리지 않게) */
+        p.dataset.ksz=z;ZK[key]=z;
       });
     }catch(e){}finally{busy=false;}
   }
   let raf=0;const later=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;fit();});};
   const app=()=>document.getElementById('app');
-  const mo=new MutationObserver(later);
+  const mo=new MutationObserver(()=>fit());
   const start=()=>{const a=app();if(a)mo.observe(a,{childList:true,subtree:false});later();};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
   addEventListener('resize',later);addEventListener('hashchange',later);

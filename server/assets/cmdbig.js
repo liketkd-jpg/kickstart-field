@@ -45,7 +45,23 @@
 @keyframes ksEntIn{0%{transform:scale(.18);opacity:0}25%{opacity:1}100%{transform:scale(1.08);opacity:1}}
 @keyframes ksEntGlow{from{box-shadow:0 0 0 min(.9vw,1.5vh) rgba(255,138,122,.35),0 0 min(4vw,7vh) rgba(255,110,90,.55),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.5)}to{box-shadow:0 0 0 min(1.4vw,2.4vh) rgba(255,138,122,.5),0 0 min(9vw,15vh) rgba(255,110,90,.95),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.5)}}
 @keyframes ksCmdIn{from{transform:scale(.82);opacity:0}to{transform:none;opacity:1}}
-html body .cmdov,html body .cmdov.cmdtop,html body div.cmdov{display:none!important;visibility:hidden!important}`;
+html body .cmdov,html body .cmdov.cmdtop,html body div.cmdov{display:none!important;visibility:hidden!important}
+/* v1.7.77 구령 단추: 짙은 남색 바탕으로 통일, 글씨·얇은 테두리만 은은한 색 (출전 금빛 · 차렷·경례 은빛 · 준비·시작 청록 · 바로·쉬어 자줏빛 붉은색)
+   지금 눌러야 할 단추(다음 차례)는 제 색이 살짝 번지고, 누를 수 없는 단추는 흐리게 */
+html body .btn.btn:is([data-act="cmdEnter"],[data-act="cmdBow"],[data-act="cmdReady"],[data-act="timerStop"],[data-act="timerReset"]){
+  --kc:201,209,220;background:linear-gradient(180deg,#17243F,#0F192E)!important;color:rgb(var(--kc))!important;border:1.5px solid rgba(var(--kc),.55)!important;
+  font-weight:800!important;letter-spacing:.01em;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 6px rgba(0,0,0,.25)!important;text-shadow:none!important;transition:background .2s,border-color .2s,box-shadow .2s,opacity .2s}
+html body .btn.btn[data-act="cmdEnter"]{--kc:217,179,106}
+html body .btn.btn[data-act="cmdBow"]{--kc:201,209,220}
+html body .btn.btn[data-act="cmdReady"]{--kc:63,191,176}
+html body .btn.btn[data-act="timerStop"]{--kc:200,88,122}
+html body .btn.btn[data-act="timerReset"]{--kc:140,152,176;border-color:rgba(140,152,176,.35)!important}
+html body .btn.btn:is([data-act="cmdEnter"],[data-act="cmdBow"],[data-act="cmdReady"],[data-act="timerStop"]):not(:disabled):hover{border-color:rgb(var(--kc))!important;background:linear-gradient(180deg,rgba(var(--kc),.14),rgba(var(--kc),.05)),#13203A!important}
+html body .btn.btn:is([data-act="cmdBow"],[data-act="cmdReady"]):is(.primary,.armed):not(:disabled),html body .btn.btn[data-act="timerStop"].stopb:not(:disabled){
+  background:linear-gradient(180deg,rgba(var(--kc),.26),rgba(var(--kc),.10)),#13203A!important;border-color:rgb(var(--kc))!important;color:#fff!important;
+  box-shadow:0 0 0 1px rgba(var(--kc),.35),0 6px 18px rgba(var(--kc),.22),inset 0 1px 0 rgba(255,255,255,.10)!important}
+html body .btn.btn:is([data-act="cmdEnter"],[data-act="cmdBow"],[data-act="cmdReady"],[data-act="timerStop"],[data-act="timerReset"]):disabled{opacity:.38!important;border-color:rgba(var(--kc),.25)!important;box-shadow:none!important}
+`;
   const st=document.createElement('style');st.textContent=css;(document.head||document.documentElement).appendChild(st);
   setInterval(tick,120);
   window.KS_CMDBIG={show,hide};
