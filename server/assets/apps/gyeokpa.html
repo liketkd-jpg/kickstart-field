@@ -2355,7 +2355,7 @@ function runPanel(st,cur){
     const rows=(DED[k]||[]).map(x=>x.opts?`<div class="cnt"><span class="cl">${x.label}<small>최대 −3</small></span>${seg('dedSet',[[0,'없음'],[1,'미세 −1'],[2,'보통 −2'],[3,'큼 −3']],Number(ded[x.k])||0,'data-k="'+x.k+'"')}</div>`
       :cnt('dedInc',x.k,ded[x.k],x.label,`−${x.v} × ${x.unit}`)).join('');
     let prev='';if(cs.length){const pr=computeJudged(cur,cs,ded,st.dq);prev=`<div class="prev"><span>심판 평균 <b>${fmt3(pr.score*pf(pr))}</b></span><span>감점 <b>−${fP(pr.dedTotal*pf(pr))}</b></span><span class="big">${ready?'최종':'현재'} <b>${pr.dq?'실격':fmt3(p100(pr))}</b>${p100max(pr)?' <small>(100점 기준)</small>':''}</span></div>`;}
-    body=`${judgeChips(cur)}<div class="dedbox"><div class="row between"><b>감점 (운영석)</b>${tsug}</div><div class="dedgrid">${rows}</div>${dqBox}</div>${prev}`;
+    body=`${judgeChips(cur)}<div class="dedbox" data-ksded="${Object.values(ded).filter(v=>Number(v)>0).length+(dqOn?1:0)}"><div class="row between"><b>감점 (운영석)</b>${tsug}</div><div class="dedgrid">${rows}</div>${dqBox}</div>${prev}`;
     btn=ready?`<button class="btn primary big" data-act="reveal">점수 공개</button>`:`<button class="btn big" data-act="armed" data-do="revealForce" ${cs.length?'':'disabled'}>미제출 ${miss}명 — 그래도 공개</button>`;
     btn+=`<button class="btn" data-act="armed" data-do="rescore">재채점 (점수 지우기)</button>`;
   }else{

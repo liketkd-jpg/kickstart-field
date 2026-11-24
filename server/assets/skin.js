@@ -110,7 +110,7 @@ function arEv(div){div=String(div||'');const k=div.replace(/\s/g,'');const f=AR_
   return {ko:f[0],rest,en:en.join(' · ')};}
 const arStEn=t=>{t=String(t||'');return /준결/.test(t)?'SEMIFINAL':/결승|결선/.test(t)?'FINAL':/8강/.test(t)?'QUARTERFINAL':/16강/.test(t)?'ROUND OF 16':/32강/.test(t)?'ROUND OF 32':/예선/.test(t)?'PRELIMINARY':/본선/.test(t)?'MAIN ROUND':/재경기/.test(t)?'REMATCH':'';};
 function arTop(m,ko,en){const v=arEv(m.div),title=(v.ko?`${E(v.ko)} <i>${E(v.rest)}</i>`:`<i>${E(m.div||m.comp||'')}</i>`);
-  return `<div class="ar-top"><div class="ar-court">${m.court?`<b>${E(m.court)}</b><span>코트</span>`:'<b>·</b>'}</div>
+  return `<div class="ar-top">${m.court?`<div class="ar-court"><b>${E(m.court)}</b><span>코트</span></div>`:''}
     <div class="ar-ev"><span class="ar-en">${E(v.en||'')}</span><h2 style="font-size:${U(fit(m.div||m.comp,56,28))}">${title}</h2></div>
     <div class="ar-stage"><span class="ar-en">${E(en||arStEn(ko))}</span><b>${E(ko||'')}</b></div></div>`;}
 const arNext=n=>n&&n.who?`<div class="ar-next"><span class="ar-en">Next</span><b>${E(n.who)}</b><small>${E(n.team||n.div||'')}</small></div>`:`<div class="ar-next"><span class="ar-en">Next</span><b>—</b></div>`;
@@ -304,7 +304,7 @@ const NEW_SK=['bc','sw','pr'];
 const isNew=th=>NEW_SK.includes(th);
 const nEn=t=>`<span class="n-en">${E(t)}</span>`;
 function nTop(m,stageKo,stageEn){const v=arEv(m.div),st=stageKo!=null?stageKo:(m.label||'');
-  return `<div class="n-top"><div class="n-crt"><b>${E(m.court||'·')}</b><small>COURT</small></div>
+  return `<div class="n-top">${m.court?`<div class="n-crt"><b>${E(m.court)}</b><small>COURT</small></div>`:''}
     <div class="n-ttl">${nEn(v.en||(APP==='gyeokpa'?'BREAKING':'POOMSAE'))}<b style="font-size:${U(fit(m.div||m.comp,46,26))}">${E(m.div||m.comp||'')}</b></div>
     <div class="n-stg">${nEn(stageEn||arStEn(st)||'LIVE')}<b style="font-size:${U(fit(st,40,8))}">${E(st||'—')}</b></div></div>`;}
 function nNext(m){return m.next&&m.next.who?`<div class="n-next">${nEn('Next')}<b>${E(m.next.who)}</b><small>${E(m.next.team||'')}</small></div>`:`<div class="n-next">${nEn('Next')}<b>—</b></div>`;}
