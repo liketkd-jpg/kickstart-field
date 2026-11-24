@@ -1435,16 +1435,19 @@ function morphAttrs(a,b){
     if(a.type==='checkbox'||a.type==='radio'){if(a.checked!==b.checked)a.checked=b.checked;}else if(a.tagName!=='SELECT'&&a.value!==b.value)a.value=b.value;}
   if(a.tagName==='SELECT'&&a!==document.activeElement){const sel=b.querySelector('option[selected]');if(sel&&a.value!==sel.value)a.value=sel.value;}}
 const mkey=n=>n.nodeType!==1?'#'+n.nodeType:n.nodeName+'|'+(n.id||(n.dataset&&(n.dataset.k||n.dataset.id||n.dataset.a||n.dataset.c))||String(n.getAttribute('class')||'').split(/\s+/)[0]||'');
+/* 다른 스크립트가 화면 안에 끼워 넣은 칸(가상·실제 모드 띠 등)은 건드리지 않음 — 지웠다 다시 생기며 깜빡이던 문제 */
+const isExt=n=>n.nodeType===1&&(n.id==='mdbar'||n.hasAttribute('data-ext'));
 function morphKids(a,b){const B=[...b.childNodes];let i=0;
-  for(const y of B){const x=a.childNodes[i];
+  const skip=()=>{while(a.childNodes[i]&&isExt(a.childNodes[i]))i++;};
+  for(const y of B){skip();const x=a.childNodes[i];
     if(!x){a.appendChild(y);i++;continue;}
     const ky=mkey(y);let m=mkey(x)===ky?x:null;
-    if(!m){for(let j=i+1;j<Math.min(a.childNodes.length,i+12);j++){if(mkey(a.childNodes[j])===ky){m=a.childNodes[j];a.insertBefore(m,x);break;}}}
+    if(!m){for(let j=i+1;j<Math.min(a.childNodes.length,i+12);j++){const c=a.childNodes[j];if(!isExt(c)&&mkey(c)===ky){m=c;a.insertBefore(m,x);break;}}}
     if(!m){a.insertBefore(y,x);i++;continue;}
     if(m.nodeType===3||m.nodeType===8){if(m.nodeValue!==y.nodeValue)m.nodeValue=y.nodeValue;i++;continue;}
     if((m.tagName==='CANVAS'||m.nodeName.toLowerCase()==='svg')&&m.outerHTML!==y.outerHTML){a.replaceChild(y,m);i++;continue;}
     morphAttrs(m,y);morphKids(m,y);i++;}
-  while(a.childNodes.length>B.length)a.removeChild(a.lastChild);}
+  for(let k=a.childNodes.length-1;k>=i;k--){const c=a.childNodes[k];if(!isExt(c))a.removeChild(c);}}
 function render(){
   const r=route();document.body.classList.toggle('mon',r==='board');
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.r===r));
@@ -3198,7 +3201,7 @@ window.KS_AUDIO={ctx:C,play,preload,stopAll,unlocked:running,keepAlive:startKeep
     const h=`<div class="mdk"><span class="mdnow">지금은 <b>${live?'🏁 실제 대회':'🧪 시험 모드'}</b></span><small>${live?'실제 대회 기록입니다 · 초기화·명단 지우기·가상 경기 단추가 잠겨 있고, 자동 업데이트를 하지 않습니다':'연습 기록입니다 · 모든 화면에 「시험 중」이 표시됩니다 · 대회를 시작할 때 오른쪽 「실제 대회로 바꾸기」를 누르세요'}</small>${chips}${warn}</div>
       <div class="mdsw"><button class="upd ${M.update?'':'off'}" data-md="upd" title="프로그램을 켤 때 새 버전을 받을지">${M.update?'🔄 자동 업데이트 켜짐':'⏸ 자동 업데이트 멈춤'}</button>
       ${live?`<button class="wipe" data-md="prewipe" title="가상 경기로 생긴 점수·결과·메달 집계를 모든 코트에서 지웁니다 · 명단은 그대로 · 실제 경기 점수가 있는 코트는 지우지 않습니다">${PREARM?'한 번 더 누르면 지웁니다':'🏅 경기 전 기록 지우기'}</button><button class="wipe" data-md="clr" title="모든 코트의 점수·결과를 실제 점수까지 모두 지웁니다 · 명단·대진은 그대로 (먼저 백업)">🗑 모든 경기 기록 지우기</button><button class="back" data-md="test">🧪 시험 모드로 바꾸기 →</button>`:'<button class="go" data-md="live">🏁 실제 대회로 바꾸기 →</button><button class="wipe" data-md="clr" title="모든 코트의 점수·결과만 지웁니다 · 명단·대진은 그대로 (먼저 백업)">🗑 경기 기록만 지우기</button><button class="wipe" data-md="wipe" title="모든 코트의 명단·대진·점수·결과와 운영표를 한 번에 지웁니다 (먼저 백업)">🧹 전체 초기화</button>'}</div>`;
-    if(!el){el=document.createElement('div');el.id='mdbar';host.parentNode.insertBefore(el,host);}
+    if(!el){el=document.createElement('div');el.id='mdbar';el.setAttribute('data-ext','1');host.parentNode.insertBefore(el,host);}
     el.className='mdbar '+(live?'live':'test');if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h;}}
   function warnList(){const C=window.KS_HQCHECK?KS_HQCHECK():{rows:[],hq:{}},W=[];
     C.rows.forEach(r=>r.it.forEach(([l,ok,t])=>{if(!ok)W.push(`${r.c.court}코트 · ${l}: ${t}`);}));
