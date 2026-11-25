@@ -35,6 +35,12 @@ body.ks-fitrun .lmrun.ks-nomus{display:none!important}
 body.ks-fitrun .mu-run:not(.ks-open)>:not(:first-child){display:none!important}
 body.ks-fitrun .mu-run>:first-child{cursor:pointer}
 body.ks-fitrun .mu-run:not(.ks-open)>:first-child::after{content:"  ▾ 음악 자세히";font-weight:700;color:#E8B04A;font-size:.9em;white-space:nowrap}
+body.ks-fitrun .advinfo:not(.ks-open){padding:6px 10px!important;cursor:pointer}
+body.ks-fitrun .advinfo:not(.ks-open)>*{display:none!important}
+body.ks-fitrun .advinfo:not(.ks-open)::before{content:"ℹ " attr(data-ksinfo) "  ▾";font-size:13px;font-weight:700;color:#C9CFDB}
+body.ks-fitrun .col .blist .bitem{padding:6px 10px!important;min-height:0!important}
+body.ks-fitrun .col .blist .bitem .bmain{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:baseline;gap:0 8px!important}
+body.ks-fitrun .col>.panel.bp.grow{min-height:170px}
 body.ks-fitrun .dedbox:not(.ks-open)>:not(:first-child){display:none!important}
 body.ks-fitrun .dedbox>:first-child{cursor:pointer;user-select:none}
 body.ks-fitrun .dedbox:not(.ks-open)>:first-child::after{content:"  ▾ 눌러서 감점 입력";font-weight:700;color:#E8B04A;font-size:.92em}
@@ -42,10 +48,12 @@ body.ks-fitrun .dedbox.ks-open>:first-child::after{content:"  ▴ 접기";font-w
 body.ks-fitrun .dedbox:not(.ks-open)[data-ksded]:not([data-ksded="0"])>:first-child::before{content:"감점 " attr(data-ksded) "건 들어감 · ";color:#FF8A8A;font-weight:900}`;
   (document.head||document.documentElement).appendChild(st);
   let DEDOPEN=false;
+  let ADVOPEN=false;
+  document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('body.ks-fitrun .advinfo');if(!a||e.target.closest('button,select,input,label'))return;ADVOPEN=!ADVOPEN;a.classList.toggle('ks-open',ADVOPEN);setTimeout(()=>{try{fit();}catch(x){}},30);},true);
   let MUOPEN=false;
   document.addEventListener('click',e=>{const m=e.target.closest&&e.target.closest('body.ks-fitrun .mu-run>:first-child');if(!m||e.target.closest('button,select,input,label'))return;MUOPEN=!MUOPEN;m.parentElement.classList.toggle('ks-open',MUOPEN);setTimeout(()=>{try{fit();}catch(x){}},30);},true);
   document.addEventListener('click',e=>{const h=e.target.closest&&e.target.closest('body.ks-fitrun .dedbox>:first-child');if(!h)return;DEDOPEN=!DEDOPEN;h.parentElement.classList.toggle('ks-open',DEDOPEN);setTimeout(()=>{try{fit();}catch(x){}},30);},true);
-  function decor(){document.querySelectorAll('.mu-run').forEach(m=>m.classList.toggle('ks-open',MUOPEN));document.querySelectorAll('.lmrun').forEach(m=>m.classList.toggle('ks-nomus',/연결된 음악 없음/.test(m.textContent||'')&&m.textContent.trim().length<30));document.querySelectorAll('.dedbox').forEach(b=>{b.classList.toggle('ks-open',DEDOPEN);
+  function decor(){document.querySelectorAll('.advinfo').forEach(m=>m.classList.toggle('ks-open',ADVOPEN));document.querySelectorAll('.mu-run').forEach(m=>m.classList.toggle('ks-open',MUOPEN));document.querySelectorAll('.lmrun').forEach(m=>m.classList.toggle('ks-nomus',/연결된 음악 없음/.test(m.textContent||'')&&m.textContent.trim().length<30));document.querySelectorAll('.dedbox').forEach(b=>{b.classList.toggle('ks-open',DEDOPEN);
 });
     const cur=document.querySelector('.kfstrip .kfl2 .kfi.cur');if(cur&&cur.dataset.ksv!=='1'){cur.dataset.ksv='1';try{cur.scrollIntoView({block:'nearest',inline:'center'});}catch(x){}}}
   const isRun=()=>/^#?admin-run$/.test((location.hash||'').replace(/^#/,'').split('?')[0])||/admin-run/.test(location.hash);

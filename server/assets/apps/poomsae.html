@@ -2325,7 +2325,7 @@ function aBoard(){
       <div class="row between"><span class="small muted">${div.format==='tournament'?'토너먼트':'컷오프'} · 경기 ${doneN}/${calls.length} 완료</span>${stageChips(div)}</div>
       ${isTeamType(div.type)?'':`<div class="seg" title="이 부문의 품새 수">${[1,2].map(v=>`<button class="${pCount(div)===v?'on':''}" data-act="${divHasResults(div)?'armed':'divPoomsae'}" data-do="divPoomsae" data-id="${div.id}" data-v="${v}">품새 ${v}개</button>`).join('')}</div>`}
       ${advanceBox(div)}
-      <div class="row between" style="gap:8px;flex-wrap:wrap">${isLater(div)?'<span class="chip warn">⏸ 나중에 할 조 · 다른 조를 마친 뒤 자동으로 부릅니다</span>':'<span class="small muted">선수가 늦으면 이 조를 뒤로 미룰 수 있습니다</span>'}<button class="btn sm" data-act="divLater" data-id="${div.id}">${isLater(div)?'▶ 나중에 해제':'⏸ 이 조 나중에'}</button></div></div>
+      <div class="row between" style="gap:8px;flex-wrap:wrap">${isLater(div)?'<span class="chip warn">⏸ 나중에 할 조 · 다른 조를 마친 뒤 자동으로 부릅니다</span>':'<span class="small" style="color:#FFD27A;font-weight:700" title="조 전체가 늦으면 ⏸ 단추 · 한 명만 늦으면 아래 진행 순서에서 다음 선수 「호출」">한 명만 늦으면 → 아래 목록 「호출」</span>'}<button class="btn" style="background:#3a2a08;border:2px solid #E8B04A;color:#FFD27A;font-weight:800;font-size:15px;padding:8px 14px" data-act="divLater" data-id="${div.id}">${isLater(div)?'▶ 나중에 해제':'⏸ 이 조 나중에'}</button></div></div>
     <div class="panel bp grow"><div class="row between"><h3>진행 순서</h3><span class="small muted">${calls.length}경기</span></div>
       <div class="scroll"><div class="blist">${calls.length?calls.map(c=>{const isCur=cur&&cur.callId===c.callId,done=callDone(c);
         return `<div class="bitem ${isCur?'cur':''} ${done?'done':''}"><div class="bmain"><span class="small muted">${esc(c.label)}</span>
