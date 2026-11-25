@@ -1263,25 +1263,21 @@ const SHEETS={
      품새·태권체조·호신술은 채점하지 않음. 4분을 넘으면 한 번에 5점 감점, 구성 인원 8~15명 */
 const SHEETS_HM={gym:SHEETS.gym,team100:SHEETS.team100};
 const H10F=[1,2,3,4,5,6,7,8,9,10];
+const NUMS=n=>Array.from({length:n},(_,i)=>i+1);
 const SHEETS_WT={
   gym:{...SHEETS.gym,members:'5~9명',std:'대회 규정',
     skills:[{k:'s1',s:'돌려차기'},{k:'s2',s:'옆차기'},{k:'s3',s:'뒤차기'},{k:'s4',s:'뒤 후려차기'},{k:'s5',s:'돌개차기'},{k:'s6',s:'거듭 옆차기'},
       {k:'s7',s:'뛰어 옆차기 ①'},{k:'s8',s:'뛰어 옆차기 ②'},{k:'s9',s:'대형변화 ①'},{k:'s10',s:'대형변화 ②'},{k:'s11',s:'대형변화 ③'},{k:'s12',s:'아크로바틱'}],
     pens:[{r:'경계선 이탈',v:0.3}],timePer10:0,timeFlat:5,timeOverOnly:true}, /* 대회 규정: 2분 「초과 시」에만 5점 (1분 40초 미만은 감점 없음) */
-  team100:{...SHEETS.team100,label:'팀 종합경연',short:'종합경연',members:'8~15명',std:'대회 규정',
-    A:{label:'정확성',max:50,items:[
-      {k:'jA',g:'한 번 뛰어격파',label:'한 번 뛰어격파 정확성',s:'정확성',opts:H10},
-      {k:'mA',g:'여러 표적격파',label:'여러 표적격파 정확성',s:'정확성',opts:H10},
-      {k:'rA',g:'회전격파',label:'회전격파 정확성',s:'정확성',opts:H10},
-      {k:'fA',g:'단체 자유격파',label:'단체 자유격파 정확성',s:'정확성',opts:H10},
-      {k:'wA',g:'위력격파',label:'위력격파 격파 수량 (1장 0.5)',s:'격파 수량',opts:H10}]},
-    B:{label:'연출성',max:50,items:[
-      {k:'jB',g:'한 번 뛰어격파',label:'한 번 뛰어격파 연출성',s:'연출성',opts:H10F},
-      {k:'mB',g:'여러 표적격파',label:'여러 표적격파 연출성',s:'연출성',opts:H10F},
-      {k:'rB',g:'회전격파',label:'회전격파 연출성',s:'연출성',opts:H10F},
-      {k:'fB',g:'단체 자유격파',label:'단체 자유격파 연출성',s:'연출성',opts:H10F},
-      {k:'sB',g:'공연 작품성',label:'공연 작품성 (스토리텔링)',s:'작품성',opts:H10F}]},
-    pens:[{r:'실제 무기·폭죽',v:3.0}],timePer10:0,timeFlat:5}
+  /* v1.7.88 팀 종합경연 대회 규정 새 기준 (100점): 난이도 40 · 완성도 30 · 격파 구성 30
+     감점: 송판 미파손 1장당 −3 · 넘어짐 1회당 −5 · 시간 초과 한 번에 −5 / 동점이면 난이도 높은 팀이 앞섬 */
+  team100:{...SHEETS.team100,label:'팀 종합경연',short:'종합경연',members:'8~15명',std:'대회 규정',tie:['a','b'],
+    A:{label:'난이도',max:40,items:[
+      {k:'dif',g:'난이도',label:'난이도 (40점)',s:'점수',opts:NUMS(40)}]},
+    B:{label:'완성도·격파 구성',max:60,items:[
+      {k:'com',g:'완성도',label:'완성도 (30점)',s:'점수',opts:NUMS(30)},
+      {k:'cmp',g:'격파 구성',label:'격파 구성 (30점)',s:'점수',opts:NUMS(30)}]},
+    pens:[{r:'송판 미파손',v:3,s:'1장당'},{r:'넘어짐',v:5,s:'1회당'}],timePer10:0,timeFlat:5,timeOverOnly:true}
 };
 const sheetStd=t=>{try{const ts=(typeof SET==='function'?SET():{}).typeSheet||{};return ts[t]==='wt'?'wt':'hm';}catch(e){return 'hm';}};
 ['gym','team100'].forEach(t=>Object.defineProperty(SHEETS,t,{enumerable:true,configurable:true,get:()=>sheetStd(t)==='wt'?SHEETS_WT[t]:SHEETS_HM[t]}));
@@ -2035,7 +2031,7 @@ function aSettings(){
       <input type="number" id="freeMax" min="10" max="600" step="5" value="${s.freeMax}" style="width:86px" data-on="setNumIn" data-k="freeMax" aria-label="자유 품새 최대 시간(초)"><span>초 이내</span></div></div>
     <div class="field"><span class="label">태권체조·팀 경연 채점 양식</span>
       <div class="row">${['gym','team100'].map(t=>`<span class="small"><b>${t==='gym'?'태권체조':'팀 경연'}</b></span><div class="seg"><button class="${sheetStd(t)==='hm'?'on':''}" data-act="sheetStd" data-t="${t}" data-v="hm">한마당</button><button class="${sheetStd(t)==='wt'?'on':''}" data-act="sheetStd" data-t="${t}" data-v="wt">대회 규정</button></div>`).join('')}</div>
-      <span class="small muted"><b>대회 규정</b>(세계태권도문화예술협회): 태권체조 지정 기술 체크·2분 넘으면 5점 감점·5~9명 / 팀 경연 격파 항목만 100점·4분 넘으면 5점 감점·8~15명</span></div>
+      <span class="small muted"><b>대회 규정</b>(세계태권도문화예술협회): 태권체조 지정 기술 체크·2분 넘으면 5점 감점·5~9명 / 팀 경연 100점(난이도 40·완성도 30·격파 구성 30)·송판 미파손 장당 −3·넘어짐 회당 −5·시간 초과 −5·동점이면 난이도 순·8~15명</span></div>
     <div class="field"><span class="label">태권체조 (한마당 제41조 · 1분 50초~2분)</span>
       <div class="row"><input type="number" id="gymMin" min="10" max="900" step="5" value="${s.gymMin}" style="width:86px" data-on="setNumIn" data-k="gymMin" aria-label="태권체조 최소 시간(초)"><span>초 이상</span>
       <input type="number" id="gymMax" min="10" max="900" step="5" value="${s.gymMax}" style="width:86px" data-on="setNumIn" data-k="gymMax" aria-label="태권체조 최대 시간(초)"><span>초 이내</span></div></div>
