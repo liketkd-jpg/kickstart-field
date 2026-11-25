@@ -41,4 +41,17 @@
       if(buf.length>=6&&HAN.test(el.value||'')){const s=buf.join('');el.value=(startVal||'')+s;try{el.dispatchEvent(new Event('input',{bubbles:true}));}catch(x){}}
       buf=[];return;}
     const ch=CODE(e.code||'',e.shiftKey);if(ch!=null)buf.push(ch);},true);
+  /* v1.7.92 「🆘 도움말」 떠 있는 단추 — 본부·운영석에만 (심판·전광판·관중 화면에는 안 보임) */
+  function helpBtn(){try{
+    const P=location.pathname,Hh=location.hash||'';
+    const show=(/^\/hq\/?/.test(P)||/^#admin/.test(Hh))&&!/^\/(judge|view|help|staff|emergency)/.test(P);
+    let b=document.getElementById('ksHelpBtn');
+    if(!show){if(b)b.remove();return;}
+    if(b)return;
+    b=document.createElement('a');b.id='ksHelpBtn';b.href='/help';b.target='ks_help';b.title='돌발 상황 도움말 — 무슨 일이 생겼는지 찾아보기';
+    b.textContent='🆘 도움말';
+    b.style.cssText='position:fixed;right:170px;bottom:12px;z-index:99995;background:#7A1E1E;color:#fff;border:2px solid #FFB4A8;border-radius:999px;padding:8px 14px;font:800 15px "Noto Sans KR",sans-serif;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.45)';
+    document.body.appendChild(b);}catch(e){}}
+  addEventListener('hashchange',helpBtn);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',helpBtn);else helpBtn();
 })();
