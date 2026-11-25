@@ -379,6 +379,8 @@ body.jmax .jsheet.stp{min-height:calc(100dvh - 20px)}
 .sp-it{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
 .sp-l{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:clamp(16px,2.6vh,22px)}.sp-l b{font-family:var(--f-num);font-size:clamp(22px,4.4vh,36px)}.sp-it.nv .sp-l b{color:var(--warn);font-size:18px}
 .sp-o{flex:1;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-auto-rows:minmax(56px,1fr);gap:8px;min-height:56px}
+.sp-o.sp-tens{flex:.8}.sp-o.sp-tens .opt{border-color:rgba(232,176,74,.45);flex-direction:column;line-height:1}.sp-o.sp-tens .opt small{font-size:.38em;opacity:.75;margin-top:2px}
+.sp-o.sp-tens .opt.on{background:linear-gradient(180deg,#E8B04A,#C98F2A);color:#1a1205}.sp-o.sp-ones .opt:disabled{opacity:.22}
 .sp-o .opt{min-height:56px;height:100%;font-family:var(--f-num);font-size:clamp(20px,4.4vh,38px);font-weight:800;border-radius:14px;border-width:2px;padding:0}
 .sp-o.sp-half{flex:none;grid-template-columns:130px 130px 1fr;align-items:center;min-height:52px}.sp-o.sp-half .opt{min-height:52px}.sp-hint{font-size:13px;color:var(--muted);padding-left:6px}
 .sp-o.sp-ded .opt{font-size:clamp(20px,6vh,34px)!important}.sp-o.sp-ded .opt small{display:block;font-size:13px;font-family:var(--f-body)}
@@ -2663,6 +2665,15 @@ function vJudge(){
         const ints=[];for(let n=Math.floor(mn);n<=Math.floor(mx);n++)ints.push(n);
         body=`<div class="sp-o sp-int" style="--n:${ints.length}">${ints.map(n=>btn(it,fixv(n+h),n,fl===n,false)).join('')}</div>
           <div class="sp-o sp-half">${btn(it,fl==null?mn:fixv(fl),'.0',v!=null&&h===0,fl==null)}${btn(it,fl==null?mn:fixv(fl+0.5),'.5',v!=null&&h===0.5,fl==null)}<span class="sp-hint">정수를 먼저 누르고, 0.5가 필요하면 「.5」</span></div>`;}
+      else if(O.length>12&&O.every(o=>o%1===0)){
+        /* v1.7.89 점수가 많은 항목(예: 1~40): 위 줄 십의 자리 · 아래 줄 일의 자리 — 두 번 눌러 고르기 */
+        const mn=Math.min(...O),mx=Math.max(...O),tk=e.perfId+'#'+it.k;ui.jT=ui.jT||{};
+        const T=ui.jT[tk]!=null?ui.jT[tk]:(v==null?null:Math.floor(v/10)*10);
+        const tens=[];for(let t=Math.floor(mn/10)*10;t<=mx;t+=10)tens.push(t);
+        const ok=x=>x>=mn&&x<=mx;
+        body=`<div class="sp-o sp-tens" style="--n:${tens.length}">${tens.map(t=>`<button class="opt ${T===t?'on':''}" data-act="pickT" data-p="${e.perfId}" data-k="${it.k}" data-v="${t}" data-mn="${mn}" data-mx="${mx}">${t}<small>점대</small></button>`).join('')}</div>
+          <div class="sp-o sp-ones" style="--n:10">${[0,1,2,3,4,5,6,7,8,9].map(o=>{const x=(T==null?0:T)+o;return btn(it,x,T==null?o:x,v===x,T==null||!ok(x));}).join('')}</div>
+          <span class="sp-hint">① 위 줄에서 <b>십의 자리</b>(예: 20점대) → ② 아래 줄에서 <b>끝자리</b>(예: 27)</span>`;}
       else body=`<div class="sp-o" style="--n:${O.length}">${O.map(o=>btn(it,o,optTxt(o),v===o,false)).join('')}</div>`;
       return `<div class="sp-it ${v==null?'nv':''}"><div class="sp-l"><span>${esc(it.s||it.label)}</span><b>${v==null?'선택':optTxt(v)}</b></div>${body}</div>`;};
     const tabs=`<div class="sp-tabs">${steps.map((st,c)=>`<button class="sp-t ${c===si?'on':''} ${done(st)?'ok':''}" data-act="jsStep" data-i="${c}"><b>${c+1}</b><small>${esc(st.g)}</small></button>`).join('')}<button class="sp-t ${si===nS?'on':''} ${miss?'':'ok'}" data-act="jsStep" data-i="${nS}"><b>✓</b><small>확인</small></button></div>`;
@@ -3569,6 +3580,10 @@ const ACT={
   },
   releaseSeat:async b=>{const n=b.dataset.n;await store.del('seats/j'+n);addLog('자리 비우기',`${n}심`,'운영석에서 심판 번호 잠금 해제');toast(`${n}번 심판 자리를 비웠습니다`);},
   pick:b=>{const cur=curOf();if(!cur)return;const d=draftFor(b.dataset.p,cur.type);d.items[b.dataset.k]=Number(b.dataset.v);saveDrafts();render();},
+  pickT:b=>{const cur=curOf();if(!cur)return;const t=Number(b.dataset.v),mn=Number(b.dataset.mn),mx=Number(b.dataset.mx),k=b.dataset.k,d=draftFor(b.dataset.p,cur.type);
+    ui.jT=ui.jT||{};ui.jT[b.dataset.p+'#'+k]=t;const v=d.items[k];
+    /* 이미 고른 점수가 있으면 끝자리는 그대로 두고 십의 자리만 바꿈 · 처음이면 그 점대의 첫 점수(예: 20)를 넣어 둠 */
+    let x=v==null?t:t+(v%10);if(x<mn)x=v==null?null:mn;if(x!=null&&x>mx)x=mx;if(x!=null)d.items[k]=x;saveDrafts();render();},
   skillMiss:b=>{const cur=curOf();if(!cur)return;const d=draftFor(b.dataset.p,cur.type),k=b.dataset.k;d.miss=d.miss||[];const i=d.miss.indexOf(k);
     if(i>=0){d.miss.splice(i,1);const j=d.ded.lastIndexOf(0.3);if(j>=0)d.ded.splice(j,1);}else{d.miss.push(k);d.ded.push(0.3);}saveDrafts();render();},
   accDed:b=>{const cur=curOf();if(!cur)return;draftFor(b.dataset.p,cur.type).ded.push(Number(b.dataset.v));saveDrafts();render();},
