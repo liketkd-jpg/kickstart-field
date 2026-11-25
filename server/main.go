@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.89" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.90" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -429,6 +429,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	case p == "/fitrun.js":
 		serveAsset(w, "assets/fitrun.js", "application/javascript; charset=utf-8")
 		return
+	case p == "/ksen.js":
+		serveAsset(w, "assets/ksen.js", "application/javascript; charset=utf-8")
+		return
 	case p == "/testroster.js":
 		serveAsset(w, "assets/testroster.js", "application/javascript; charset=utf-8")
 		return
@@ -566,6 +569,7 @@ func serveApp(w http.ResponseWriter, r *http.Request, key string) {
 	out.WriteString(skeleton)
 	out.WriteString(`<script>window.KS_FIELD=` + string(cj) + `;</script><script src="/field.js"></script>`)
 	out.WriteString(`<link rel="stylesheet" href="/vendor/ks-fields.css">`) // 입력·선택 칸 공통 색 (흰 바탕 → 진한 남색)
+	out.WriteString(`<script src="/ksen.js"></script>`)                     // v1.7.90 한글 입력 상태여도 코드·주소 칸은 영문으로 (바코드 스캐너 포함)
 	if key != "hq" {
 		out.WriteString(`<script src="/sim.js"></script>`)   // 운영표 「가상 경기」 (가상 심판)
 		out.WriteString(`<script src="/room.js"></script>`)  // 대기실 출석·불참·추가 대기 알림
