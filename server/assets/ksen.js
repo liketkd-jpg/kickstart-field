@@ -54,4 +54,33 @@
     document.body.appendChild(b);}catch(e){}}
   addEventListener('hashchange',helpBtn);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',helpBtn);else helpBtn();
+  /* v1.7.93 심판 채점판 — 태블릿에서는 모든 채점판을 같은 비율로 화면 가득
+     1280×800(가로)·800×1280(세로) 기준으로 짠 화면을 태블릿 크기만큼 키움. 휴대폰(짧은 쪽 600 미만)은 그대로 */
+  let jz=0;
+  /* 확대(zoom)하면 화면 높이(vh) 기준 크기도 같이 커져 넘치므로, 채점판 화면에서만 vh 값을 확대 배율로 나눠 맞춤 */
+  const VH0=new WeakMap();
+  function vhFix(z){try{
+    const walk=rules=>{for(const r of rules){
+      if(r.cssRules&&!r.style){walk(r.cssRules);continue;}
+      if(!r.style)continue;
+      let orig=VH0.get(r);
+      if(!orig){orig=null;for(let i=0;i<r.style.length;i++){const k=r.style[i],v=r.style.getPropertyValue(k);if(/[\d.]\s*[dsl]?vh\b/.test(v)){orig=orig||{};orig[k]=[v,r.style.getPropertyPriority(k)];}}VH0.set(r,orig||0);}
+      if(!orig)continue;
+      for(const k in orig){const [v,pr]=orig[k];r.style.setProperty(k,z===1?v:v.replace(/(-?[\d.]+)([dsl]?vh)\b/g,(m,n,u)=>`calc(${n}${u} / ${z})`),pr);}
+    }};
+    for(const sh of document.styleSheets){try{walk(sh.cssRules);}catch(e){}}
+  }catch(e){}}
+  function judgeZoom(){try{
+    const b=document.body;if(!b)return;
+    const on=b.classList.contains('jdg');
+    const W=innerWidth,Hh=innerHeight;/* 확대해도 innerWidth는 실제 화면 크기 그대로 */
+    let z=1;
+    if(on&&Math.min(W,Hh)>=600){const land=W>=Hh;const bw=land?1280:800,bh=land?800:1280;z=Math.min(W/bw,Hh/bh);if(z<1.04)z=1;z=Math.min(z,2.4);}
+    z=Math.round(z*100)/100;
+    if(z!==(jz||1)){jz=z;document.documentElement.style.zoom=z===1?'':String(z);vhFix(z);}
+  }catch(e){}}
+  addEventListener('resize',()=>{clearTimeout(judgeZoom.t);judgeZoom.t=setTimeout(judgeZoom,150);});
+  new MutationObserver(()=>judgeZoom()).observe(document.documentElement,{attributes:true,subtree:false,attributeFilter:['class']});
+  const jzStart=()=>{judgeZoom();try{new MutationObserver(judgeZoom).observe(document.body,{attributes:true,attributeFilter:['class']});}catch(e){}};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',jzStart);else jzStart();
 })();
