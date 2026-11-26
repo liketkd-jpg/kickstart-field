@@ -101,15 +101,19 @@
   function textFit(){if(tfBusy)return;const b=document.body;if(!b||!b.classList.contains('jdg'))return;
     const W=innerWidth,H=innerHeight;const tab=Math.min(W,H)>=600;
     if(!tab){if(b.classList.contains('ksTF')){b.classList.remove('ksTF');document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});}return;}
-    tfBusy=true;b.classList.add('ksTF');
+    tfBusy=true;if(!b.classList.contains('ksTF'))b.classList.add('ksTF');
     try{const main=document.querySelector('main')||b;
       main.querySelectorAll('.jsheet.two .jo').forEach(g=>{const on=g.children.length>6;if(g.classList.contains('ksTwo')!==on)g.classList.toggle('ksTwo',on);});
       main.querySelectorAll('button').forEach(el=>{const t=(el.innerText||'').trim();if(!t||t.length>7||!NUMRE.test(t.replace(/\s+/g,'')))return;
-        const r=el.getBoundingClientRect();if(r.height<30||r.width<30)return;
-        const n=t.replace(/\s+/g,'').length;const zz=jz||1;let fs=Math.min(r.height*0.5,(r.width-10)/(n*0.62),64*zz)/zz;fs=Math.max(fs,16);
+        /* offsetWidth/Height = 글씨 크기와 같은 단위 (확대·브라우저 버전과 상관없음) */
+        const bh=el.offsetHeight,bw=el.offsetWidth;if(bh<30||bw<30)return;
+        const n=t.replace(/\s+/g,'').length;let fs=Math.min(bh*0.52,(bw-10)/(n*0.62),110);fs=Math.max(fs,16);
         const cur=parseFloat(el.style.fontSize)||0;if(Math.abs(cur-fs)>1){el.style.fontSize=fs.toFixed(0)+'px';el.style.lineHeight='1';}el.dataset.kstf='1';});
+      main.querySelectorAll('button').forEach(el=>{if(el.dataset.kstf==='1')return;const t=(el.innerText||'').trim();if(!t||t.length<=7&&NUMRE.test(t.replace(/\s+/g,'')))return;
+        const bh=el.offsetHeight;if(bh<36)return;if(!el.dataset.kstf0)el.dataset.kstf0=parseFloat(getComputedStyle(el).fontSize)||14;const f0=+el.dataset.kstf0;
+        const want=Math.min(bh*0.34,30);if(want>f0+0.5){el.style.fontSize=want.toFixed(1)+'px';el.dataset.kstf='b';}});
       /* 글씨를 단추 크기에 맞춤: 점수 단추 높이(refH)를 기준으로 짧은 말 30% · 보통 24% · 긴 줄 18% (줄이지는 않음, 칸을 넘지 않게) */
-      const hs=[...main.querySelectorAll('button[data-kstf="1"]')].map(e=>e.getBoundingClientRect().height/(jz||1)).filter(h=>h>20).sort((a,b)=>a-b);
+      const hs=[...main.querySelectorAll('button[data-kstf="1"]')].map(e=>e.offsetHeight).filter(h=>h>20).sort((a,b)=>a-b);
       const refH=hs.length?hs[Math.floor(hs.length/2)]:Math.min(innerWidth,innerHeight)/9;
       const walk=main.querySelectorAll('b,span,small,div,label,h3,h4,p,em,strong,i');
       walk.forEach(el=>{if(el.closest('button')||(el.parentElement&&el.parentElement.closest('[data-kstf="t"]')))return;
@@ -117,13 +121,14 @@
         const t=(el.textContent||'').trim();if(t.length>60)return;
         if(!el.dataset.kstf0)el.dataset.kstf0=parseFloat(getComputedStyle(el).fontSize)||14;
         const fs0=+el.dataset.kstf0;const L=t.length;
-        let want=refH*(L<=8?0.30:L<=16?0.24:0.18);want=Math.min(want,L<=8?36:L<=16?30:24);
+        const isName=el.matches('.jsh .nm, .nm, .jname b, .jwho b, .gjtop b, .jname, .jwho .nm')&&L<=12;
+        let want=isName?Math.min(refH*0.5,44):refH*(L<=8?0.30:L<=16?0.24:0.18);if(!isName)want=Math.min(want,L<=8?36:L<=16?30:24);
         if(want<=fs0+0.5){if(el.dataset.kstf==='t'){el.style.fontSize='';}return;}
         el.dataset.kstf='t';el.style.fontSize=want.toFixed(1)+'px';el.style.lineHeight='1.15';
         if(L<=16){el.style.whiteSpace='nowrap';el.style.wordBreak='keep-all';}
         /* 칸을 넘으면 줄임 (글자가 한 글자씩 꺾이지 않게) */
         const par=el.parentElement;if(par){const ps=getComputedStyle(par);const avail=par.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight);
-          const need=L<=16?el.scrollWidth:el.getBoundingClientRect().width/(jz||1)*0+el.scrollWidth;
+          const need=el.scrollWidth;
           if(avail>0&&need>avail+1){el.style.fontSize=Math.max(fs0,want*(avail/need)*0.96).toFixed(1)+'px';}}
       });
     }catch(e){}
@@ -132,9 +137,15 @@
   (function(){try{const st=document.createElement('style');st.id='ksTFcss';st.textContent=
    'body.ksTF .jsheet.two .jo.ksTwo{grid-template-columns:repeat(var(--c),minmax(0,1fr))!important;grid-auto-rows:minmax(0,1fr)}'+
    'body.ksTF .jsheet.two .jrl span{font-weight:800;white-space:normal;word-break:keep-all}'+
-   'body.ksTF .gjr>.gjrl{flex:0 0 auto;min-width:clamp(96px,13%,180px)}';
+   'body.ksTF .gjr>.gjrl{flex:0 0 auto;min-width:clamp(96px,13%,180px)}'+
+   'body.ksTF .jsheet.two .jr{grid-template-columns:minmax(84px,17%) minmax(0,1fr)!important}';
    (document.head||document.documentElement).appendChild(st);}catch(e){}})();
-  function tfQueue(){if(tfBusy)return;textFit();}
-  const tfStart=()=>{textFit();try{new MutationObserver(()=>tfQueue()).observe(document.body,{childList:true,subtree:true,characterData:true});}catch(e){}addEventListener('resize',()=>{clearTimeout(tfT);tfT=setTimeout(()=>{document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});textFit();},200);});};
+  let tfLate=0;
+  function tfQueue(){if(tfBusy)return;textFit();clearTimeout(tfLate);tfLate=setTimeout(()=>{textFit();clearTimeout(tfQueue.t2);tfQueue.t2=setTimeout(textFit,900);},250);}
+  const tfStart=()=>{textFit();setTimeout(textFit,400);setTimeout(textFit,1500);setTimeout(textFit,4000);
+    /* 큰 화면(⤢)·회전 등으로 채점판 크기가 바뀌면 글씨를 다시 맞춤 */
+    try{let lastCls=document.body.className;new MutationObserver(()=>{const c=document.body.className;if(c!==lastCls){lastCls=c;tfQueue();}}).observe(document.body,{attributes:true,attributeFilter:['class']});}catch(e){}
+    try{if(window.ResizeObserver){let rw=0,rh=0;new ResizeObserver(es=>{const r=es[0].contentRect;if(Math.abs(r.width-rw)>4||Math.abs(r.height-rh)>4){rw=r.width;rh=r.height;tfQueue();}}).observe(document.querySelector('main')||document.body);}}catch(e){}
+    document.addEventListener('fullscreenchange',()=>setTimeout(tfQueue,200));document.addEventListener('webkitfullscreenchange',()=>setTimeout(tfQueue,200));try{new MutationObserver(()=>tfQueue()).observe(document.body,{childList:true,subtree:true,characterData:true});}catch(e){}addEventListener('resize',()=>{clearTimeout(tfT);tfT=setTimeout(()=>{document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});textFit();},200);});};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tfStart);else tfStart();
 })();
