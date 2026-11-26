@@ -104,11 +104,14 @@
     tfBusy=true;if(!b.classList.contains('ksTF'))b.classList.add('ksTF');
     try{const main=document.querySelector('main')||b;
       main.querySelectorAll('.jsheet.two .jo').forEach(g=>{const on=g.children.length>6;if(g.classList.contains('ksTwo')!==on)g.classList.toggle('ksTwo',on);});
+      /* 같은 줄(부모)의 점수 단추는 글씨 크기를 똑같이 (0.5 · 1 · 10 이 들쭉날쭉하지 않게) */
+      const fsm=new Map(),todo=[];
       main.querySelectorAll('button').forEach(el=>{const t=(el.innerText||'').trim();if(!t||t.length>7||!NUMRE.test(t.replace(/\s+/g,'')))return;
         /* offsetWidth/Height = 글씨 크기와 같은 단위 (확대·브라우저 버전과 상관없음) */
         const bh=el.offsetHeight,bw=el.offsetWidth;if(bh<30||bw<30)return;
-        const n=t.replace(/\s+/g,'').length;let fs=Math.min(bh*0.52,(bw-10)/(n*0.62),110);fs=Math.max(fs,16);
-        const cur=parseFloat(el.style.fontSize)||0;if(Math.abs(cur-fs)>1){el.style.fontSize=fs.toFixed(0)+'px';el.style.lineHeight='1';}el.dataset.kstf='1';});
+        const c=t.replace(/\s+/g,''),n=c.length-(c.split('.').length-1)*0.55;let fs=Math.min(bh*0.52,(bw-10)/(n*0.62),110);fs=Math.max(fs,16);
+        const pa=el.parentElement;fsm.set(pa,Math.min(fsm.has(pa)?fsm.get(pa):999,fs));todo.push(el);});
+      todo.forEach(el=>{const fs=fsm.get(el.parentElement);const cur=parseFloat(el.style.fontSize)||0;if(Math.abs(cur-fs)>1){el.style.fontSize=fs.toFixed(0)+'px';el.style.lineHeight='1';}el.dataset.kstf='1';});
       main.querySelectorAll('button').forEach(el=>{if(el.dataset.kstf==='1')return;const t=(el.innerText||'').trim();if(!t||t.length<=7&&NUMRE.test(t.replace(/\s+/g,'')))return;
         const bh=el.offsetHeight;if(bh<36)return;if(!el.dataset.kstf0)el.dataset.kstf0=parseFloat(getComputedStyle(el).fontSize)||14;const f0=+el.dataset.kstf0;
         const want=Math.min(bh*0.34,30);if(want>f0+0.5){el.style.fontSize=want.toFixed(1)+'px';el.dataset.kstf='b';}});

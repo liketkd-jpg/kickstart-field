@@ -848,7 +848,7 @@ textarea:focus{outline:none;border-color:var(--brass-2,var(--green));box-shadow:
 .tno{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--surface);font-weight:900;font-size:13px}
 .gjr{display:flex;flex-direction:column;gap:5px}
 .gjrl{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--muted)} .gjrl b{color:var(--ink);font-family:var(--f-num);font-size:18px} .gjrl b.nv{color:var(--warn);font-family:var(--f-body);font-size:13px}
-.gjo{display:grid;gap:5px} .gjo.t10{grid-template-columns:repeat(5,1fr)} .gjo.tens{grid-template-columns:repeat(6,1fr)} .gjo.ones{grid-template-columns:repeat(5,1fr)}
+.gjo{display:grid;gap:5px} .gjo.t10{grid-template-columns:repeat(5,1fr)} .gjo.t21{grid-template-columns:repeat(7,1fr)} .gjo.tens{grid-template-columns:repeat(6,1fr)} .gjo.ones{grid-template-columns:repeat(5,1fr)}
 .gjo .opt{border:1.5px solid var(--line);background:var(--surface);border-radius:11px;min-height:44px;font-family:var(--f-num);font-size:19px;font-weight:700;cursor:pointer}
 .gjo .opt.on{background:var(--ink);color:var(--surface);border-color:var(--ink)} .gjo .opt:disabled{opacity:.3;cursor:not-allowed}
 .gjo.tens .opt{background:var(--sunk)} .gjo.tens .opt.on{background:var(--brass-2,var(--green));border-color:var(--brass-2,var(--green));color:#fff}
@@ -1300,6 +1300,12 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
 }
 
 /* v1.7.62 한 항목씩(휴대폰·가로) 화면: 고른 항목 하나가 남은 화면을 가득 채움 · 점수 단추 큼직하게 */
+.gfit .gjo.t21{grid-template-columns:repeat(11,minmax(0,1fr))}
+@media (min-width:700px){.gfit .k-comp4:not(.jv-one) .gjbody{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);overflow:hidden}
+  .gfit .k-comp4:not(.jv-one) .jcard{min-height:0;overflow:hidden;display:flex;flex-direction:column}
+  .gfit .k-comp4 .gjr{flex:1 1 0;min-height:0} .gfit .k-comp4 .gjr:not(:first-of-type){flex-grow:1.6}
+  .gfit .k-comp4 .gjo{grid-auto-rows:minmax(0,1fr);align-content:stretch} .gfit .k-comp4 .gjo.t10{grid-template-columns:repeat(10,minmax(0,1fr))}
+  .gfit .k-comp4 .gjo .opt{max-height:none;height:100%}}
 .gfit .jv-one .gjbody{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;overflow:hidden}
 .gfit .jv-one .gjbody>.jcard{display:flex;flex-direction:column;min-height:0;overflow:auto;overscroll-behavior:contain;font-size:inherit}
 .gfit .jv-one .jct{flex:none}.gfit .jv-one .jct>b{font-size:clamp(18px,4.4vh,28px)}.gfit .jv-one .jct .jsub{font-size:clamp(22px,6vh,40px);font-weight:900}
@@ -1447,6 +1453,11 @@ function tieEnd(d){const k=EV[d.ev]?.kind;if(k==='count')return 'rm';if(k==='hei
 /* ---------- 채점표 ---------- */
 const TECH_OPTS=[0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0];
 const COMP_ITEMS=[{k:'c',label:'완성도',s:'완성도',max:40,hint:'예비동작 · 공중동작 · 착지동작 및 균형'},{k:'e',label:'표현성',s:'표현성',max:40,hint:'격파물의 높이와 간격 · 체공 상태에서의 기술 표현'},{k:'d',label:'난이도',s:'난이도',max:20,hint:'기술의 난이도 (난이도표)'}];
+/* v1.7.99 종합격파 심판 채점: 1경기~4경기 × (난이도 0.5~5 · 완성도 0~10 · 표현성 0~10, 0.5점 단위) = 경기당 25점 · 100점
+   보낼 때는 4경기를 더해 완성도(c, 40) · 표현성(e, 40) · 난이도(d, 20)로 모읍니다 (결과·전광판·순위 계산은 그대로) */
+const CG_N=4,CG_D=Array.from({length:10},(_,i)=>(i+1)/2),CG_10=Array.from({length:21},(_,i)=>i/2);
+const CG_ROWS=[{s:'d',label:'난이도',opts:CG_D,max:5},{s:'c',label:'완성도',opts:CG_10,max:10},{s:'e',label:'표현성',opts:CG_10,max:10}];
+function compAgg(items){const it=items||{};CG_ROWS.forEach(r=>{let sum=0,all=true;for(let g=1;g<=CG_N;g++){const v=it['g'+g+r.s];if(v==null)all=false;else sum+=Number(v);}it[r.s]=all?r3(sum):null;});it.x=0;return it;}
 const TEAM_ITEMS=[{k:'f',label:'단체연무',s:'연무',max:20,hint:'기본기 · 일치성 · 구성'},{k:'s',label:'호신술',s:'호신술',max:20,hint:'실전성 · 숙련성'},{k:'b',label:'격파',s:'격파',max:50,hint:'기술의 난이도 · 완성도 · 구성'},{k:'g',label:'구성',s:'구성',max:10,hint:'팀 전체 구성'}];
 /* 운영석(주심·기록원) 감점 */
 const DED={
@@ -2260,7 +2271,7 @@ let BMAX=lsGet('gp_bmax')==='1';
 let JMAX=lsGet('gp_jmax')==='1';
 const JSTEP={k:'',i:0};
 function jViewNow(){const v=SET().jView||'auto';if(v==='one'||v==='all')return v;return Math.min(innerWidth,innerHeight)<600||innerWidth<820?'one':'all';}
-function jAutoStep(cur){if(jViewNow()!=='one')return;const d=draftFor(cur),its=sheetItems(cur),n=cur.kind==='tech'?(cur.techs||[]).length:its.length;if(n<2)return;const per=Math.ceil(its.length/n),i=JSTEP.i;
+function jAutoStep(cur){if(jViewNow()!=='one')return;const d=draftFor(cur),its=sheetItems(cur),n=cur.kind==='tech'?(cur.techs||[]).length:cur.kind==='comp'?CG_N:its.length;if(n<2)return;const per=Math.ceil(its.length/n),i=JSTEP.i;
   if(i<n&&its.slice(i*per,i*per+per).every(it=>d.items[it.k]!=null)){const at=JSTEP.k;setTimeout(()=>{if(JSTEP.k===at&&JSTEP.i===i){JSTEP.i=i+1;render();}},350);}}
 function fsBtn(label){return `<button class="jfs" data-act="jFull" aria-label="${JMAX?'전체 화면 끝내기':'전체 화면'}">${JMAX?'⤡':'⤢'}${label?`<span>${JMAX?'작게 보기':'전체 화면'}</span>`:''}</button>`;}
 document.addEventListener('fullscreenchange',()=>{try{render();}catch(e){}});
@@ -2437,7 +2448,8 @@ let DRAFTS=lsJSON('gp_drafts',{});
 const saveDrafts=()=>{const mine='|'+myJudge,all=lsJSON('gp_drafts',{});for(const k of Object.keys(all))if(k.endsWith(mine))delete all[k];for(const [k,v] of Object.entries(DRAFTS))if(k.endsWith(mine))all[k]=v;lsSet('gp_drafts',JSON.stringify(all));};
 function sheetItems(cur){
   if(cur.kind==='tech')return cur.techs.flatMap((_,i)=>[{k:'t'+i+'c',opts:TECH_OPTS},{k:'t'+i+'e',opts:TECH_OPTS}]);
-  return (cur.kind==='comp'?COMP_ITEMS:TEAM_ITEMS).map(it=>({k:it.k,max:it.max}));
+  if(cur.kind==='comp')return Array.from({length:CG_N},(_,g)=>CG_ROWS.map(r=>({k:'g'+(g+1)+r.s,opts:r.opts}))).flat();
+  return TEAM_ITEMS.map(it=>({k:it.k,max:it.max}));
 }
 function draftFor(cur){
   const key=cur.perfId+'|'+myJudge,ep=ST().epoch||0,d0=DRAFTS[key];
@@ -2520,14 +2532,18 @@ function vJudge(){
       <div class="sum"><span>${esc(cur.name)} <span class="chip ${cls}">${lbl}</span></span><span class="n">${sent?`${pv.map(p=>p[1]).join(' + ')} = ${cur.kind==='tech'?fmt1(tt):fmtN(tt)}`:'—'}</span></div>
       ${revealed?'<span class="muted small">운영석에서 다음 선수를 호출하면 새 채점표가 열립니다.</span>':'<button class="btn" data-act="editScore">점수 고치기</button>'}</div></div>`;
   }
-  const d=draftFor(cur),miss=missingOf(cur,d),tot=judgeTotal(cur.kind,Object.fromEntries(Object.entries(d.items).map(([k,v])=>[k,v||0])),(cur.techs||[]).length);
+  const d=draftFor(cur),miss=missingOf(cur,d),tot=cur.kind==='comp'?r3(sheetItems(cur).reduce((t,it)=>t+(Number(d.items[it.k])||0),0)):judgeTotal(cur.kind,Object.fromEntries(Object.entries(d.items).map(([k,v])=>[k,v||0])),(cur.techs||[]).length);
   let sheet='';
   if(cur.kind==='tech'){
     sheet=cur.techs.map((tn,i)=>{const c=d.items['t'+i+'c'],e=d.items['t'+i+'e'];
       const row=(k,lbl,v)=>`<div class="gjr"><div class="gjrl"><span>${lbl}</span><b class="${v==null?'nv':''}">${v==null?'선택':fmt1(v)}</b></div><div class="gjo t10">${TECH_OPTS.map(o=>`<button class="opt ${v===o?'on':''}" data-act="pickItem" data-k="${k}" data-v="${o}">${fmt1(o)}</button>`).join('')}</div></div>`;
       return `<div class="jcard"><div class="jct"><span class="tno">${i+1}</span><b>${esc(tn)}</b><span class="jsub">${c!=null&&e!=null?fmt1(c+e):''}</span></div>${row('t'+i+'c','완성도',c)}${row('t'+i+'e','표현성',e)}</div>`;}).join('');
+  }else if(cur.kind==='comp'){
+    sheet=Array.from({length:CG_N},(_,g0)=>{const g=g0+1,vs=CG_ROWS.map(r=>d.items['g'+g+r.s]),done=vs.every(v=>v!=null);
+      const row=r=>{const k='g'+g+r.s,v=d.items[k];return `<div class="gjr"><div class="gjrl"><span>${r.label}</span><b class="${v==null?'nv':''}">${v==null?'선택':fmtN(v)}</b></div><div class="gjo ${r.opts.length>10?'t21':'t10'}">${r.opts.map(o=>`<button class="opt ${v===o?'on':''}" data-act="pickItem" data-k="${k}" data-v="${o}">${fmtN(o)}</button>`).join('')}</div></div>`;};
+      return `<div class="jcard"><div class="jct"><span class="tno">${g}</span><b>${g}경기</b><span class="small muted">난이도 5 · 완성도 10 · 표현성 10</span><span class="jsub">${done?fmtN(r3(vs.reduce((a,b)=>a+b,0)))+' / 25':''}</span></div>${CG_ROWS.map(row).join('')}</div>`;}).join('');
   }else{
-    const items=cur.kind==='comp'?COMP_ITEMS:TEAM_ITEMS;
+    const items=TEAM_ITEMS;
     sheet=items.map(it=>{const v=d.items[it.k],tens=Math.floor((v||0)/10),ones=(v||0)%10,maxT=Math.floor(it.max/10);
       if(cur.kind==='comp'&&it.k==='d')return `<div class="jcard"><div class="jct"><b>${it.label}</b><span class="small muted">체공 도약 · 수직축 · 수평축 · 딛고 격파 각 5점 · 20점</span><span class="jsub ${v==null?'nv':''}">${v==null?'선택':v}</span></div>${diffBox(cur,d)}</div>`;
       return `<div class="jcard"><div class="jct"><b>${it.label}</b><span class="small muted">${it.hint} · ${it.max}점</span><span class="jsub ${v==null?'nv':''}">${v==null?'선택':v}</span></div>
@@ -2542,12 +2558,12 @@ function vJudge(){
      한 종목씩: 한 기술(항목)만 크게 → 다 고르면 저절로 다음 → 마지막에 모아 보고 「점수 보내기». 스크롤하지 않아도 됩니다 */
   const cards=sheet.split('<div class="jcard">').slice(1).map(x=>'<div class="jcard">'+x),nC=cards.length,jv=jViewNow();
   if(jv==='one'&&nC>1){if(JSTEP.k!==cur.perfId+'#'+myJudge){JSTEP.k=cur.perfId+'#'+myJudge;JSTEP.i=0;}const i=Math.min(JSTEP.i,nC),its=sheetItems(cur),per=Math.ceil(its.length/nC);
-    const doneOf=c=>its.slice(c*per,c*per+per).every(it=>d.items[it.k]!=null),lab=c=>cur.kind==='tech'?(cur.techs[c]||''):((cur.kind==='comp'?COMP_ITEMS:TEAM_ITEMS)[c]||{}).label||'';
+    const doneOf=c=>its.slice(c*per,c*per+per).every(it=>d.items[it.k]!=null),lab=c=>cur.kind==='tech'?(cur.techs[c]||''):cur.kind==='comp'?(c+1)+'경기':(TEAM_ITEMS[c]||{}).label||'';
     const tabs=`<div class="jstep">${cards.map((_,c)=>`<button class="js-t ${c===i?'on':''} ${doneOf(c)?'ok':''}" data-act="jStep" data-i="${c}"><b>${c+1}</b><small>${esc(lab(c))}</small></button>`).join('')}<button class="js-t ${i===nC?'on':''} ${miss?'':'ok'}" data-act="jStep" data-i="${nC}"><b>✓</b><small>확인</small></button></div>`;
     const body=i<nC?cards[i]:`<div class="jsum">${cards.map((_,c)=>{const v=its.slice(c*per,c*per+per).map(it=>d.items[it.k]);return `<button class="js-r ${doneOf(c)?'':'miss'}" data-act="jStep" data-i="${c}"><span class="tno">${c+1}</span><b>${esc(lab(c))}</b><em>${v.map(x=>x==null?'—':fmtN(x)).join(' · ')}</em><span class="js-e">고치기</span></button>`;}).join('')}</div>`;
-    return `<div class="gjsheet k-${cur.kind} jv-one"><div class="gjtop">${banner}${top2}</div>${tabs}<div class="gjbody" style="--nc:1">${body}</div>
+    return `<div class="gjsheet k-${cur.kind==='comp'?'comp4':cur.kind} jv-one"><div class="gjtop">${banner}${top2}</div>${tabs}<div class="gjbody" style="--nc:1">${body}</div>
     <div class="gjfoot">${i<nC?`<button class="btn big" data-act="jStep" data-i="${Math.max(0,i-1)}" ${i?'':'disabled'}>← 앞</button><button class="btn primary big" data-act="jStep" data-i="${i+1}">${i===nC-1?'모아 보기 ✓':'다음 →'}</button>`:`<button class="btn primary big" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개`:'점수 보내기'}</button>`}</div></div>`;}
-  return `<div class="gjsheet k-${cur.kind} ${jv==='all'?'jv-all':''}"><div class="gjtop">${banner}${top2}</div><div class="gjbody" style="--nc:${cur.kind==='tech'?cur.techs.length:1}">${sheet}</div>
+  return `<div class="gjsheet k-${cur.kind==='comp'?'comp4':cur.kind} ${jv==='all'?'jv-all':''}"><div class="gjtop">${banner}${top2}</div><div class="gjbody" style="--nc:${cur.kind==='tech'?cur.techs.length:1}">${sheet}</div>
     <div class="gjfoot"><button class="btn primary big" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개`:'점수 보내기'}</button></div></div>`;
 }
 /* 심판 화면 위 카드·보낸 점수에 보여 줄 항목별 합 (품새 「정확도 4.0 · 표현력 6.0」과 같은 방식) */
@@ -2555,7 +2571,8 @@ function partsOf(cur,items){
   const it=items||{},f=v=>v==null?'—':fmt1(v);
   if(cur.kind==='tech'){const n=(cur.techs||[]).length;let c=0,e=0,cn=0,en=0;for(let i=0;i<n;i++){const a=it['t'+i+'c'],b=it['t'+i+'e'];if(a!=null){c+=Number(a);cn++;}if(b!=null){e+=Number(b);en++;}}
     return [['완성도',cn?fmt1(c):'—'],['표현성',en?fmt1(e):'—']];}
-  const L=cur.kind==='comp'?COMP_ITEMS:TEAM_ITEMS;
+  if(cur.kind==='comp'){const a=compAgg({...it});return [['난이도',a.d==null?'—':fmtN(a.d)],['완성도',a.c==null?'—':fmtN(a.c)],['표현성',a.e==null?'—':fmtN(a.e)]];}
+  const L=TEAM_ITEMS;
   return L.map(x=>[x.s||x.label,it[x.k]==null?'—':fmtN(it[x.k])]);
 }
 /* 종합격파 난도: 체공 도약 · 수직축 회전 · 수평축 회전 · 딛고 격파 4항목 × 5점 = 20점
@@ -3106,7 +3123,7 @@ const ACT={
   dgTh:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),g=b.dataset.g;d.dg={...(d.dg||{}),[g]:{...((d.dg||{})[g]||{}),th:Number(b.dataset.v)}};diffApply(cur,d);},
   setMusicAuto:b=>setS({musicAuto:b.dataset.v==='true'}),
   wOk:async b=>{const id=b.dataset.id,a=athlete(id);if(!a)return;const on=!a.weighed;await saveRoster(S.roster.map(x=>x.id===id?{...x,weighed:on,weighedAt:on?Date.now():null}:x));if(on)addLog('계체 확인',a.name,`${a.weight}kg · ${weightClass(a.gender,a.weight)}`);},
-  pickItem:b=>{const cur=curOf();if(!cur)return;draftFor(cur).items[b.dataset.k]=Number(b.dataset.v);saveDrafts();render();jAutoStep(cur);},
+  pickItem:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur);d.items[b.dataset.k]=Number(b.dataset.v);if(cur.kind==='comp')compAgg(d.items);saveDrafts();render();jAutoStep(cur);},
   jStep:b=>{JSTEP.i=Math.max(0,Number(b.dataset.i)||0);render();},
   pickTens:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),k=b.dataset.k,max=Number(b.dataset.max),ones=(d.items[k]||0)%10;d.items[k]=Math.min(max,Number(b.dataset.v)*10+ones);saveDrafts();render();},
   pickOnes:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),k=b.dataset.k,max=Number(b.dataset.max),tens=Math.floor((d.items[k]||0)/10);d.items[k]=Math.min(max,tens*10+Number(b.dataset.v));saveDrafts();render();jAutoStep(cur);},
@@ -3114,7 +3131,7 @@ const ACT={
     if(m&&m.items){const d=draftFor(cur);d.items={...d.items,...m.items};if(m.dg)d.dg=m.dg;}saveDrafts();ui.editing=true;render();},
   submitScore:async()=>{
     const st=ST(),cur=curOf();if(!cur)return;if(st.status==='revealed'){toast('이미 점수가 공개되었습니다');return;}
-    const d=draftFor(cur);if(missingOf(cur,d))return;
+    const d=draftFor(cur);if(missingOf(cur,d))return;if(cur.kind==='comp')compAgg(d.items);
     OUTBOX[`${cur.perfId}__j${myJudge}`]={perfId:cur.perfId,callId:cur.callId,epoch:st.epoch||0,judge:myJudge,kind:cur.kind,items:{...d.items},dg:d.dg||null,total:judgeTotal(cur.kind,d.items,(cur.techs||[]).length),at:Date.now()};
     saveOutbox();ui.editing=false;render();await flushOutbox();
     if(Object.keys(OUTBOX).length)toast('점수를 이 기기에 보관했습니다. 연결되면 자동으로 보냅니다');
