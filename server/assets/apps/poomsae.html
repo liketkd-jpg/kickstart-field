@@ -1819,7 +1819,12 @@ function computeResult(cur,entry,dedList){
     name:entry.name,team:entry.team,members:entry.members||'',divName:cur.divName,label:cur.label,stage:cur.stage||null,k:cur.k||1,judgeCount:N,pname:pnameOfCall(cur)||''},js,dedList);
 }
 function entryReady(cur,entry){const js=new Set(curScores().filter(s=>s.perfId===entry.perfId&&s.judge<=cur.judgeCount).map(s=>s.judge));return js.size>=cur.judgeCount;}
-const dedOf=perfId=>{const v=(ST().deduction||{})[perfId];return Array.isArray(v)?v:(v?[{r:'감점',v}]:[]);};
+const dedAdmin=perfId=>{const v=(ST().deduction||{})[perfId];return Array.isArray(v)?v:(v?[{r:'감점',v}]:[]);};
+/* v1.8.0 태권체조·팀 경연 감점은 1심 패드에서 넣음 (점수와 함께 옴) · 운영석 감점은 예비 */
+const dedJ1=perfId=>{try{const s=curScores().find(x=>x.perfId===perfId&&x.judge===1);return s&&Array.isArray(s.deds)?s.deds.map(x=>({r:x.r,v:Number(x.v)||0,j1:1})):[];}catch(e){return [];}};
+const dedOf=perfId=>[...dedAdmin(perfId),...dedJ1(perfId)];
+function outV(){try{return Number(SET().outPts)||5;}catch(e){return 5;}}
+const j1Pens=type=>isTeamType(type)?[...(SH(type).pens||[]),...(type==='team100'&&!(SH(type).pens||[]).some(p=>p.r==='장외')?[{r:'장외',v:outV(),s:'1회당'}]:[])]:[];
 
 
 /* 운영석 최종 점수 감점 버튼: 시간 위반 + 종목별 벌칙 */
@@ -2653,10 +2658,12 @@ function vJudge(){
     if(sh.long){allItems(cur.type).forEach(it=>{let x=steps.find(q=>q.g===it.g);if(!x)steps.push(x={g:it.g,items:[]});x.items.push(it);});}
     else{if(sh.aMode==='ded')steps.push({g:sh.A.label,ded:true,items:[]});else if(sh.A.items)sh.A.items.forEach(it=>steps.push({g:it.s||it.label,items:[it]}));
       sh.B.items.forEach(it=>steps.push({g:it.s||it.label,items:[it]}));}
+    const PN=myJudge===1?j1Pens(cur.type):[],pnc={};(d.pen||[]).forEach(r=>pnc[r]=(pnc[r]||0)+1);const pnT=r1(PN.reduce((t,x)=>t+(pnc[x.r]||0)*x.v,0));
+    if(PN.length)steps.push({g:'감점 (1심)',pen:true,items:[]});
     const key=e.perfId+'#'+myJudge;if(ui.jsK!==key){ui.jsK=key;ui.jsI=0;}
     const nS=steps.length,si=Math.min(ui.jsI||0,nS);
-    const done=st=>st.ded||st.items.every(it=>d.items[it.k]!=null);
-    const stVal=st=>st.ded?fmt1(sc.a):st.items.some(it=>d.items[it.k]!=null)?optTxt(r1(sum(st.items.map(it=>d.items[it.k]||0)))):'—';
+    const done=st=>st.ded||st.pen||st.items.every(it=>d.items[it.k]!=null);
+    const stVal=st=>st.pen?(pnT?'−'+fmt1(pnT):'0'):st.ded?fmt1(sc.a):st.items.some(it=>d.items[it.k]!=null)?optTxt(r1(sum(st.items.map(it=>d.items[it.k]||0)))):'—';
     const btn=(it,v,lab,on,dis)=>`<button class="opt ${on?'on':''}" data-act="pick" data-p="${e.perfId}" data-k="${it.k}" data-v="${v}" ${dis?'disabled':''}>${lab}</button>`;
     const picker=it=>{const v=d.items[it.k],O=it.opts,half=O.some(o=>o%1!==0)&&O.length>12;
       let body;
@@ -2679,14 +2686,16 @@ function vJudge(){
     const tabs=`<div class="sp-tabs">${steps.map((st,c)=>`<button class="sp-t ${c===si?'on':''} ${done(st)?'ok':''}" data-act="jsStep" data-i="${c}"><b>${c+1}</b><small>${esc(st.g)}</small></button>`).join('')}<button class="sp-t ${si===nS?'on':''} ${miss?'':'ok'}" data-act="jsStep" data-i="${nS}"><b>✓</b><small>확인</small></button></div>`;
     let body;
     if(si<nS){const st=steps[si];
-      body=st.ded?`<div class="sp-card"><div class="sp-h"><b>${esc(sh.A.label)}</b><span>${fmt1(sh.A.max)}에서 감점</span><em>${fmt1(sc.a)}</em></div>
+      body=st.pen?`<div class="sp-card"><div class="sp-h"><b>감점 (1심)</b><span>시간 초과는 자동으로 들어갑니다</span><em>${pnT?'−'+fmt1(pnT):'0'}</em></div>
+          <div class="sp-o sp-ded" style="--n:${PN.length+1}">${PN.map(x=>`<button class="opt ded" data-act="penAdd" data-p="${e.perfId}" data-r="${esc(x.r)}">${esc(x.r)} −${optTxt(x.v)}<small>${x.s||''} · ${pnc[x.r]||0}회</small></button>`).join('')}<button class="opt ded undo" data-act="penUndo" data-p="${e.perfId}" ${(d.pen||[]).length?'':'disabled'}>되돌리기</button></div></div>`
+        :st.ded?`<div class="sp-card"><div class="sp-h"><b>${esc(sh.A.label)}</b><span>${fmt1(sh.A.max)}에서 감점</span><em>${fmt1(sc.a)}</em></div>
           <div class="sp-o sp-ded" style="--n:${(sh.dedOpts||[]).length+1}">${(sh.dedOpts||[]).map(o=>`<button class="opt ded" data-act="accDed" data-p="${e.perfId}" data-v="${o.v}">−${fmt1(o.v)}<small>${o.s} ${o.v===0.3&&sh.skills?'합계 ':''}${d.ded.filter(x=>x===o.v).length}</small></button>`).join('')}<button class="opt ded undo" data-act="accUndo" data-p="${e.perfId}" ${d.ded.length?'':'disabled'}>되돌리기</button></div>${sh.skills?skillBox(sh,d,e):''}</div>`
         :`<div class="sp-card"><div class="sp-h"><span class="sp-n">${String(si+1).padStart(2,'0')}</span><b>${esc(st.g)}</b><em>${stVal(st)}<small> / ${optTxt(sum(st.items.map(it=>Math.max(...it.opts))))}</small></em></div>${st.items.map(picker).join('')}</div>`;}
-    else body=`<div class="sp-sum">${steps.map((st,c)=>`<button class="sp-r ${done(st)?'':'miss'}" data-act="jsStep" data-i="${c}"><span class="sp-n">${c+1}</span><b>${esc(st.g)}</b><em>${st.ded?fmt1(sc.a):st.items.map(it=>d.items[it.k]==null?'—':optTxt(d.items[it.k])).join(' · ')}</em><span class="sp-e">고치기</span></button>`).join('')}</div>`;
+    else body=`<div class="sp-sum">${steps.map((st,c)=>`<button class="sp-r ${done(st)?'':'miss'}" data-act="jsStep" data-i="${c}"><span class="sp-n">${c+1}</span><b>${esc(st.g)}</b><em>${st.pen?(pnT?'−'+fmt1(pnT):'0'):st.ded?fmt1(sc.a):st.items.map(it=>d.items[it.k]==null?'—':optTxt(d.items[it.k])).join(' · ')}</em><span class="sp-e">고치기</span></button>`).join('')}</div>`;
     const foot=si<nS?`<button class="btn big" data-act="jsStep" data-i="${Math.max(0,si-1)}" ${si?'':'disabled'}>← 앞</button><button class="btn primary big" data-act="jsStep" data-i="${si+1}">${si===nS-1?'모아 보기 ✓':'다음 →'}</button>`
       :`<button class="btn primary big" data-act="submitScore" ${totalMiss?'disabled':''}>${totalMiss?`선택하지 않은 항목 ${totalMiss}개`:'점수 보내기'}</button>`;
     const jtopS=`<div class="jwho"><div class="jname"><b>${esc(e.name)}</b> <span class="small muted">${esc(e.team||'')}</span></div>
-      <div class="jtot">${fsBtn()}<span class="jx chip live">${myJudge}심</span><span class="jx timer" data-timer>${cdText(ST().timer)}</span><span>${sh.A.label} <b>${fmt1(sc.a)}</b></span><span>${sh.B.label} <b>${fmt1(sc.b)}</b></span><span class="big">합계 <b>${fmt1(sc.a+sc.b)}</b></span></div></div>`;
+      <div class="jtot">${fsBtn()}<span class="jx chip live">${myJudge}심</span><span class="jx timer" data-timer>${cdText(ST().timer)}</span><span>${sh.A.label} <b>${fmt1(sc.a)}</b></span><span>${sh.B.label} <b>${fmt1(sc.b)}</b></span>${pnT?`<span>감점 <b>−${fmt1(pnT)}</b></span>`:''}<span class="big">합계 <b>${fmt1(sc.a+sc.b)}</b></span></div></div>`;
     return `<div class="jsheet stp">${banner}${jtopS}${tabs}<div class="sp-body">${body}</div><div class="sp-foot">${foot}</div></div>`;
   }
   const row=it=>{const v=d.items[it.k];return `<div class="ji"><div class="jl"><span>${it.label}</span><b class="${v==null?'nv':''}">${v==null?'선택':fmt1(v)}</b></div>
@@ -2716,6 +2725,9 @@ function vJudge(){
       <div class="ji jacc"><div class="jl"><span>개인 감점 (기술력에서 뺌)</span><b>${d.jd.length?'−'+fmt1(sum(d.jd)):'0'}</b></div>
       <div class="jo" style="--n:3"><button class="opt ded" data-act="jd" data-p="${e.perfId}">−0.3<small>서기 미시연(각)</small></button><button class="opt ded" data-act="jd" data-p="${e.perfId}">−0.3<small>바닥 닿음</small></button><button class="opt ded undo" data-act="jdUndo" data-p="${e.perfId}" ${d.jd.length?'':'disabled'}>되돌리기</button></div></div></div>`;
   }
+  {const PN=myJudge===1?j1Pens(cur.type):[];if(PN.length){const pnc={};(d.pen||[]).forEach(r=>pnc[r]=(pnc[r]||0)+1);const pnT=r1(PN.reduce((t,x)=>t+(pnc[x.r]||0)*x.v,0));
+    const blk=`<div class="ji jacc"><div class="jl"><span>감점 (1심) · 시간 초과는 자동</span><b>${pnT?'−'+fmt1(pnT):'0'}</b></div><div class="jo" style="--n:${PN.length+1}">${PN.map(x=>`<button class="opt ded" data-act="penAdd" data-p="${e.perfId}" data-r="${esc(x.r)}">${esc(x.r)} −${optTxt(x.v)}<small>${pnc[x.r]||0}회</small></button>`).join('')}<button class="opt ded undo" data-act="penUndo" data-p="${e.perfId}" ${(d.pen||[]).length?'':'disabled'}>되돌리기</button></div></div>`;
+    if(colB)colB=colB.replace(/<\/div>$/,blk+'</div>');else colB=`<div class="jcol">${blk}</div>`;}}
   const jtop=`<div class="jtop"><span class="chip live">${myJudge}심</span>${pjChip(cur)}<span class="jmeta">${esc(cur.divName)} · ${esc(cur.label)}</span><span class="timer" data-timer>${cdText(ST().timer)}</span>${SOLO_ON?'<button class="btn sm solohb" data-act="soloHideBtn">운영석 보기</button>':''}</div>
     <div class="jwho ${e.side||''}"><div class="jname">${e.side?`<span class="chip ${e.side}">${sideName(e.side)}</span> `:''}<b>${esc(e.name)}</b> <span class="small muted">${esc(e.team||'')}</span></div>
       <div class="jtot">${fsBtn()}<span class="jx chip live">${myJudge}심</span><span class="jx timer" data-timer>${cdText(ST().timer)}</span><span>${sh.A.label} <b>${fmt1(sc.a)}</b></span><span>${sh.B.label} <b>${fmt1(sc.b)}</b></span><span class="big">합계 <b>${fmt1(sc.a+sc.b)}</b></span></div></div>`;
@@ -2901,8 +2913,8 @@ async function doReveal(auto){
   try{
     /* 시간 위반은 측정된 시간으로 자동 감점(제한 시간 초과·미달, 아직 안 넣은 경우만) */
     let ded={...(st.deduction||{})};const t=st.timer,fl=timeFlag(t&&t.running?{...t,running:false,elapsed:elapsed(t)}:t);
-    if(auto&&fl)for(const e of cur.entries){const dl=dedOf(e.perfId);if(!dl.some(x=>x.r==='시간 위반'))ded[e.perfId]=[...dl,{r:'시간 위반',v:timeDedV(cur.type,t&&t.running?{...t,running:false,elapsed:elapsed(t)}:t)}];}
-    const st2={...st,deduction:ded};const dOf=id=>{const v=ded[id];return Array.isArray(v)?v:(v?[{r:'감점',v}]:[]);};
+    if(auto&&fl)for(const e of cur.entries){const dl=dedOf(e.perfId);if(!dl.some(x=>x.r==='시간 위반'))ded[e.perfId]=[...dedAdmin(e.perfId),{r:'시간 위반',v:timeDedV(cur.type,t&&t.running?{...t,running:false,elapsed:elapsed(t)}:t)}];}
+    const st2={...st,deduction:ded};const dOf=id=>{const v=ded[id];return [...(Array.isArray(v)?v:(v?[{r:'감점',v}]:[])),...dedJ1(id)];};
     for(const e of cur.entries){const r=computeResult(cur,e,dOf(e.perfId));await store.put('results/'+e.perfId,r);
       addLog(auto?'점수 자동 공개':'점수 공개',`${e.name} · ${cur.label}`,`최종 ${fmt3(r.final)} (${SHEETS[cur.type].A.label} ${fmt3(r.a)}, ${SHEETS[cur.type].B.label} ${fmt3(r.b)}${r.deduction?`, 감점 ${fmt1(r.deduction)}`:''})`);}
     /* 승패가 정해졌으면 "청 승" / "홍 승" 음성 (자동일 때) */
@@ -3455,8 +3467,8 @@ const ACT={
     if(n)await saveDivs(list);toast(`부문 ${n}개를 품새 ${v}개로 바꿨습니다${skip?` · 점수가 있는 부문 ${skip}개는 그대로`:''}`);},
   timerReset:()=>{clearTimeout(READY_T);const st=ST();saveState({...st,readyAt:null,timer:{...st.timer,running:false,elapsed:0,startedAt:0,stoppedAt:null}});},
   timerMax:b=>{const st=ST();saveState({...st,timer:{...st.timer,max:Number(b.dataset.t)}});},
-  ded:b=>{const st=ST(),p=b.dataset.p,d={...(st.deduction||{})};d[p]=[...dedOf(p),{r:b.dataset.r,v:Number(b.dataset.v)||0.3}];saveState({...st,deduction:d});},
-  dedUndo:b=>{const st=ST(),p=b.dataset.p,d={...(st.deduction||{})};d[p]=dedOf(p).slice(0,-1);saveState({...st,deduction:d});},
+  ded:b=>{const st=ST(),p=b.dataset.p,d={...(st.deduction||{})};d[p]=[...dedAdmin(p),{r:b.dataset.r,v:Number(b.dataset.v)||0.3}];saveState({...st,deduction:d});},
+  dedUndo:b=>{const st=ST(),p=b.dataset.p,d={...(st.deduction||{})};d[p]=dedAdmin(p).slice(0,-1);saveState({...st,deduction:d});},
   reveal:async b=>{if(b)b.disabled=true;try{await doReveal();}catch(e){if(b)b.disabled=false;}},
   toggleAutoNext:()=>saveSettings({...SET(),autoNext:SET().autoNext==='manual'?'auto':'manual'}),
   toggleAutoDiv:()=>{saveSettings({...SET(),autoDiv:SET().autoDiv==='manual'?'auto':'manual'});FLOW_STOP='';},
@@ -3579,6 +3591,8 @@ const ACT={
     render();updatePresence();toast(`${n}번 심판 잠금을 풀었습니다`);
   },
   releaseSeat:async b=>{const n=b.dataset.n;await store.del('seats/j'+n);addLog('자리 비우기',`${n}심`,'운영석에서 심판 번호 잠금 해제');toast(`${n}번 심판 자리를 비웠습니다`);},
+  penAdd:b=>{const cur=curOf();if(!cur)return;const d=draftFor(b.dataset.p,cur.type);d.pen=[...(d.pen||[]),b.dataset.r];saveDrafts();render();},
+  penUndo:b=>{const cur=curOf();if(!cur)return;const d=draftFor(b.dataset.p,cur.type);d.pen=(d.pen||[]).slice(0,-1);saveDrafts();render();},
   pick:b=>{const cur=curOf();if(!cur)return;const d=draftFor(b.dataset.p,cur.type);d.items[b.dataset.k]=Number(b.dataset.v);saveDrafts();render();},
   pickT:b=>{const cur=curOf();if(!cur)return;const t=Number(b.dataset.v),mn=Number(b.dataset.mn),mx=Number(b.dataset.mx),k=b.dataset.k,d=draftFor(b.dataset.p,cur.type);
     ui.jT=ui.jT||{};ui.jT[b.dataset.p+'#'+k]=t;const v=d.items[k];
@@ -3603,7 +3617,7 @@ const ACT={
   submitScore:async()=>{
     const st=ST(),cur=curOf();if(!cur)return;if(st.status==='revealed'){toast('이미 점수가 공개되었습니다');return;}
     for(const e of cur.entries){const d=draftFor(e.perfId,cur.type),sc=draftScore(cur.type,d);
-      OUTBOX[`${e.perfId}__j${myJudge}`]={perfId:e.perfId,callId:cur.callId,epoch:st.epoch||0,judge:myJudge,type:cur.type,a:sc.a,b:sc.b,items:{...d.items},ded:[...d.ded],jd:[...d.jd],at:Date.now()};}
+      OUTBOX[`${e.perfId}__j${myJudge}`]={perfId:e.perfId,callId:cur.callId,epoch:st.epoch||0,judge:myJudge,type:cur.type,a:sc.a,b:sc.b,items:{...d.items},ded:[...d.ded],jd:[...d.jd],...(myJudge===1&&j1Pens(cur.type).length?{deds:(d.pen||[]).map(r=>{const q=j1Pens(cur.type).find(x=>x.r===r);return q?{r,v:q.v}:null;}).filter(Boolean)}:{}),at:Date.now()};}
     saveOutbox();ui.editing=false;render();
     await flushOutbox();
     if(Object.keys(OUTBOX).length)toast('점수를 이 기기에 보관했습니다. 연결되면 자동으로 보냅니다');

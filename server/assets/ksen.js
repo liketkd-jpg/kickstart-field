@@ -98,42 +98,56 @@
      ① 점수 단추: 숫자가 단추 높이의 절반 가까이 되게 맞춤  ② 항목 이름·라벨 등 작은 글씨: 1.4배 (최대 26px) */
   const NUMRE=/^[−\-+]?\d+(\.\d+)?(점대)?$|^[−\-]\d|^↺$/;
   let tfBusy=false,tfT=0;
+  /* v1.8.0 떨림 방지: 한 화면에서 한 번 맞춘 글씨 크기는 기억해 두고 그대로 씀 (다시 재지 않음)
+     — 다시 그려도(점수 누름·시계) 크기가 바뀌지 않아 화면이 떨리지 않습니다. 화면 크기·전체 화면이 바뀔 때만 새로 맞춤 */
+  const TFC=new Map(),TFP=new Set();let tfSig='';
+  const clsOf=el=>String(el.className||'').split(/\s+/).filter(c=>c&&!/^(on|ok|nv|miss|sel|act|active|done|warn|live|armed|primary)$/.test(c)).sort().join('.');
+  function ordOf(el){const p=el.parentElement;if(!p)return 0;let i=0;for(const c of p.children){if(c===el)return i;if(c.tagName===el.tagName&&clsOf(c)===clsOf(el))i++;}return i;}
+  function keyOf(el,depth){let k='',e=el;for(let d=0;d<depth&&e&&e.tagName!=='MAIN';d++){k=e.tagName+'.'+clsOf(e)+':'+ordOf(e)+'>'+k;e=e.parentElement;}return k;}
   function textFit(){if(tfBusy)return;const b=document.body;if(!b||!b.classList.contains('jdg'))return;
     const W=innerWidth,H=innerHeight;const tab=Math.min(W,H)>=600;
     if(!tab){if(b.classList.contains('ksTF')){b.classList.remove('ksTF');document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});}return;}
     tfBusy=true;if(!b.classList.contains('ksTF'))b.classList.add('ksTF');
     try{const main=document.querySelector('main')||b;
+      const sheet=main.querySelector('.gjsheet,.jsheet,[class*="jv-"]');
+      const sig=W+'x'+(Math.round(H/40)*40)+'|'+(document.fullscreenElement?'F':'')+'|'+clsOf(b)+'|'+(sheet?clsOf(sheet):'');
+      if(tfSig&&sig.split('|').slice(0,2).join('|')!==tfSig.split('|').slice(0,2).join('|')){TFC.clear();TFP.clear();main.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});}tfSig=sig;
+      const fresh=[];
       main.querySelectorAll('.jsheet.two .jo').forEach(g=>{const on=g.children.length>6;if(g.classList.contains('ksTwo')!==on)g.classList.toggle('ksTwo',on);});
-      /* 같은 줄(부모)의 점수 단추는 글씨 크기를 똑같이 (0.5 · 1 · 10 이 들쭉날쭉하지 않게) */
-      const fsm=new Map(),todo=[];
-      main.querySelectorAll('button').forEach(el=>{const t=(el.innerText||'').trim();if(!t||t.length>7||!NUMRE.test(t.replace(/\s+/g,'')))return;
-        /* offsetWidth/Height = 글씨 크기와 같은 단위 (확대·브라우저 버전과 상관없음) */
-        const bh=el.offsetHeight,bw=el.offsetWidth;if(bh<30||bw<30)return;
-        const c=t.replace(/\s+/g,''),n=c.length-(c.split('.').length-1)*0.55;let fs=Math.min(bh*0.52,(bw-10)/(n*0.62),110);fs=Math.max(fs,16);
-        const pa=el.parentElement;fsm.set(pa,Math.min(fsm.has(pa)?fsm.get(pa):999,fs));todo.push(el);});
-      todo.forEach(el=>{const fs=fsm.get(el.parentElement);const cur=parseFloat(el.style.fontSize)||0;if(Math.abs(cur-fs)>1){el.style.fontSize=fs.toFixed(0)+'px';el.style.lineHeight='1';}el.dataset.kstf='1';});
-      main.querySelectorAll('button').forEach(el=>{if(el.dataset.kstf==='1')return;const t=(el.innerText||'').trim();if(!t||t.length<=7&&NUMRE.test(t.replace(/\s+/g,'')))return;
+      const setFS=(el,v,lh,mark)=>{if(!el.dataset.kstf0&&!el.style.fontSize)el.dataset.kstf0=parseFloat(getComputedStyle(el).fontSize)||14;const t=v?v.toFixed(1)+'px':'';if(el.style.fontSize!==t)el.style.fontSize=t;if(lh&&el.style.lineHeight!==lh)el.style.lineHeight=lh;el.dataset.kstf=mark;};
+      /* ① 점수 단추 — 같은 줄(부모)은 같은 크기 */
+      const groups=new Map();
+      main.querySelectorAll('button').forEach(el=>{const t=(el.innerText||el.textContent||'').trim();if(!t||t.length>7||!NUMRE.test(t.replace(/\s+/g,'')))return;const pa=el.parentElement;if(!groups.has(pa))groups.set(pa,[]);groups.get(pa).push(el);});
+      groups.forEach((els,pa)=>{const k='N|'+sig+'|'+keyOf(pa,4)+'#'+pa.children.length;
+        if(TFC.has(k)){const v=TFC.get(k);els.forEach(el=>v?setFS(el,v,'1','1'):0);return;}
+        let mn=999,ok=false;els.forEach(el=>{const bh=el.offsetHeight,bw=el.offsetWidth;if(bh<30||bw<30)return;ok=true;
+          const c=(el.innerText||el.textContent||'').trim().replace(/\s+/g,''),n=Math.max(1,c.length-(c.split('.').length-1)*0.55);mn=Math.min(mn,Math.max(16,Math.min(bh*0.52,(bw-10)/(n*0.62),110)));});
+        if(!ok)return;TFC.set(k,mn);fresh.push(k);els.forEach(el=>setFS(el,mn,'1','1'));});
+      /* ② 글자 단추 */
+      main.querySelectorAll('button').forEach(el=>{if(el.dataset.kstf==='1')return;const t=(el.innerText||el.textContent||'').trim();if(!t||t.length<=7&&NUMRE.test(t.replace(/\s+/g,'')))return;
+        const k='B|'+sig+'|'+keyOf(el,4)+'|'+t.length;
+        if(TFC.has(k)){const v=TFC.get(k);if(v)setFS(el,v,'','b');return;}
         const bh=el.offsetHeight;if(bh<36)return;if(!el.dataset.kstf0)el.dataset.kstf0=parseFloat(getComputedStyle(el).fontSize)||14;const f0=+el.dataset.kstf0;
-        const want=Math.min(bh*0.34,30);if(want>f0+0.5){el.style.fontSize=want.toFixed(1)+'px';el.dataset.kstf='b';}});
-      /* 글씨를 단추 크기에 맞춤: 점수 단추 높이(refH)를 기준으로 짧은 말 30% · 보통 24% · 긴 줄 18% (줄이지는 않음, 칸을 넘지 않게) */
-      const hs=[...main.querySelectorAll('button[data-kstf="1"]')].map(e=>e.offsetHeight).filter(h=>h>20).sort((a,b)=>a-b);
-      const refH=hs.length?hs[Math.floor(hs.length/2)]:Math.min(innerWidth,innerHeight)/9;
-      const walk=main.querySelectorAll('b,span,small,div,label,h3,h4,p,em,strong,i');
-      walk.forEach(el=>{if(el.closest('button')||(el.parentElement&&el.parentElement.closest('[data-kstf="t"]')))return;
+        const want=Math.min(bh*0.34,30);const v=want>f0+0.5?want:0;TFC.set(k,v);fresh.push(k);if(v)setFS(el,v,'','b');});
+      /* ③ 항목 이름·라벨: 점수 단추 높이(refH)를 기준으로 짧은 말 30% · 보통 24% · 긴 줄 18% */
+      const rk='R|'+sig;let refH=TFC.get(rk);
+      if(refH==null){const hs=[...main.querySelectorAll('button[data-kstf="1"]')].map(e=>e.offsetHeight).filter(h=>h>20).sort((a,b)=>a-b);
+        refH=hs.length?hs[Math.floor(hs.length/2)]:Math.min(innerWidth,innerHeight)/9;if(hs.length){TFC.set(rk,refH);fresh.push(rk);}}
+      main.querySelectorAll('b,span,small,div,label,h3,h4,p,em,strong,i').forEach(el=>{if(el.closest('button')||el.closest('[data-timer]')||(el.parentElement&&el.parentElement.closest('[data-kstf="t"]')))return;
         let own='';for(const n of el.childNodes)if(n.nodeType===3)own+=n.textContent;own=own.trim();if(!own)return;
-        const t=(el.textContent||'').trim();if(t.length>60)return;
-        if(!el.dataset.kstf0)el.dataset.kstf0=parseFloat(getComputedStyle(el).fontSize)||14;
-        const fs0=+el.dataset.kstf0;const L=t.length;
+        const t=(el.textContent||'').trim();if(t.length>60)return;const L=t.length;
+        const k='T|'+sig+'|'+keyOf(el,3)+'|'+L;
+        if(TFC.has(k)){const v=TFC.get(k);if(v){setFS(el,v,'1.15','t');if(L<=16){el.style.whiteSpace='nowrap';el.style.wordBreak='keep-all';}}return;}
+        if(!el.dataset.kstf0)el.dataset.kstf0=parseFloat(getComputedStyle(el).fontSize)||14;const fs0=+el.dataset.kstf0;
         const isName=el.matches('.jsh .nm, .nm, .jname b, .jwho b, .gjtop b, .jname, .jwho .nm')&&L<=12;
         let want=isName?Math.min(refH*0.5,44):refH*(L<=8?0.30:L<=16?0.24:0.18);if(!isName)want=Math.min(want,L<=8?36:L<=16?30:24);
-        if(want<=fs0+0.5){if(el.dataset.kstf==='t'){el.style.fontSize='';}return;}
-        el.dataset.kstf='t';el.style.fontSize=want.toFixed(1)+'px';el.style.lineHeight='1.15';
-        if(L<=16){el.style.whiteSpace='nowrap';el.style.wordBreak='keep-all';}
-        /* 칸을 넘으면 줄임 (글자가 한 글자씩 꺾이지 않게) */
+        if(want<=fs0+0.5){TFC.set(k,0);if(el.dataset.kstf==='t')el.style.fontSize='';return;}
+        el.style.fontSize=want.toFixed(1)+'px';el.style.lineHeight='1.15';if(L<=16){el.style.whiteSpace='nowrap';el.style.wordBreak='keep-all';}
         const par=el.parentElement;if(par){const ps=getComputedStyle(par);const avail=par.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight);
-          const need=el.scrollWidth;
-          if(avail>0&&need>avail+1){el.style.fontSize=Math.max(fs0,want*(avail/need)*0.96).toFixed(1)+'px';}}
-      });
+          const need=el.scrollWidth;if(avail>0&&need>avail+1)want=Math.max(fs0,want*(avail/need)*0.96);}
+        TFC.set(k,want);fresh.push(k);setFS(el,want,'1.15','t');});
+      /* 처음 맞춘 화면은 0.4초 뒤 딱 한 번만 다시 재서 확정 (그 뒤로는 고정) */
+      const prov=fresh.filter(k=>!TFP.has(k));if(prov.length){prov.forEach(k=>TFP.add(k));clearTimeout(textFit.st);textFit.st=setTimeout(()=>{prov.forEach(k=>TFC.delete(k));textFit();},400);}
     }catch(e){}
     tfBusy=false;}
   /* 태블릿 채점판 공통 모양: 청·홍 점수 단추는 두 줄(6+4), 항목 이름 크게 */
@@ -143,12 +157,12 @@
    'body.ksTF .gjr>.gjrl{flex:0 0 auto;min-width:clamp(96px,13%,180px)}'+
    'body.ksTF .jsheet.two .jr{grid-template-columns:minmax(84px,17%) minmax(0,1fr)!important}';
    (document.head||document.documentElement).appendChild(st);}catch(e){}})();
-  let tfLate=0;
-  function tfQueue(){if(tfBusy)return;textFit();clearTimeout(tfLate);tfLate=setTimeout(()=>{textFit();clearTimeout(tfQueue.t2);tfQueue.t2=setTimeout(textFit,900);},250);}
-  const tfStart=()=>{textFit();setTimeout(textFit,400);setTimeout(textFit,1500);setTimeout(textFit,4000);
-    /* 큰 화면(⤢)·회전 등으로 채점판 크기가 바뀌면 글씨를 다시 맞춤 */
+  const tfQueue=()=>{if(!tfBusy)textFit();};
+  const tfStart=()=>{textFit();setTimeout(textFit,600);
     try{let lastCls=document.body.className;new MutationObserver(()=>{const c=document.body.className;if(c!==lastCls){lastCls=c;tfQueue();}}).observe(document.body,{attributes:true,attributeFilter:['class']});}catch(e){}
-    try{if(window.ResizeObserver){let rw=0,rh=0;new ResizeObserver(es=>{const r=es[0].contentRect;if(Math.abs(r.width-rw)>4||Math.abs(r.height-rh)>4){rw=r.width;rh=r.height;tfQueue();}}).observe(document.querySelector('main')||document.body);}}catch(e){}
-    document.addEventListener('fullscreenchange',()=>setTimeout(tfQueue,200));document.addEventListener('webkitfullscreenchange',()=>setTimeout(tfQueue,200));try{new MutationObserver(()=>tfQueue()).observe(document.body,{childList:true,subtree:true,characterData:true});}catch(e){}addEventListener('resize',()=>{clearTimeout(tfT);tfT=setTimeout(()=>{document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});textFit();},200);});};
+    document.addEventListener('fullscreenchange',()=>setTimeout(tfQueue,250));document.addEventListener('webkitfullscreenchange',()=>setTimeout(tfQueue,250));
+    /* 화면을 새로 그리면 그리기 전에 바로 기억한 크기를 입힘 (깜빡임 없음). 시계 숫자 바뀜은 무시 */
+    try{new MutationObserver(ms=>{for(const m of ms){if(m.type==='childList'&&!(m.target.closest&&m.target.closest('[data-timer]'))){tfQueue();return;}}}).observe(document.body,{childList:true,subtree:true});}catch(e){}
+    let lw=innerWidth,lh=innerHeight;addEventListener('resize',()=>{clearTimeout(tfT);tfT=setTimeout(()=>{if(Math.abs(innerWidth-lw)<2&&Math.abs(innerHeight-lh)<60)return;lw=innerWidth;lh=innerHeight;textFit();},300);});};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tfStart);else tfStart();
 })();

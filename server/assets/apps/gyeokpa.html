@@ -1300,6 +1300,12 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
 }
 
 /* v1.7.62 한 항목씩(휴대폰·가로) 화면: 고른 항목 하나가 남은 화면을 가득 채움 · 점수 단추 큼직하게 */
+.gfit .k-comp4.jv-one .gjrl span{font-size:clamp(20px,3.6vh,30px)!important;font-weight:800}.gfit .k-comp4.jv-one .gjrl b{font-size:clamp(22px,4.2vh,36px)!important}.gfit .k-comp4.jv-one .js-t small{font-size:clamp(14px,2.4vh,20px)!important;opacity:1}.gfit .k-comp4.jv-one .js-t b{font-size:clamp(18px,3vh,26px)!important}
+.gjo.penrow{grid-template-columns:repeat(auto-fit,minmax(0,1fr));grid-auto-flow:column}
+.gjo .opt.pen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:var(--f-body);font-size:clamp(18px,3.4vh,30px);font-weight:800;line-height:1.1;border-color:#E5484D55}
+.gjo .opt.pen small{font-size:.62em;font-weight:700;color:#FF8A8A}.gjo .opt.pen.undo{border-color:var(--line)}.gjo .opt.pen.undo small{color:var(--muted)}
+.pcard .gjo.penrow{flex:1;min-height:0;grid-auto-rows:minmax(0,1fr)}.pcard .gjo .opt.pen{min-height:120px;height:100%}
+.gjfoot{flex-wrap:wrap}.pstrip{width:100%;align-items:stretch}.pstrip .plab{display:flex;align-items:center;justify-content:center;color:#FF8A8A;font-size:18px;white-space:nowrap;padding:0 6px}.pstrip .opt.pen{min-height:46px;font-size:16px;flex-direction:row;gap:8px}
 .gfit .gjo.t21{grid-template-columns:repeat(11,minmax(0,1fr))}
 @media (min-width:700px){.gfit .k-comp4:not(.jv-one) .gjbody{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);overflow:hidden}
   .gfit .k-comp4:not(.jv-one) .jcard{min-height:0;overflow:hidden;display:flex;flex-direction:column}
@@ -1461,11 +1467,19 @@ function compAgg(items){const it=items||{};CG_ROWS.forEach(r=>{let sum=0,all=tru
 const TEAM_ITEMS=[{k:'f',label:'단체연무',s:'연무',max:20,hint:'기본기 · 일치성 · 구성'},{k:'s',label:'호신술',s:'호신술',max:20,hint:'실전성 · 숙련성'},{k:'b',label:'격파',s:'격파',max:50,hint:'기술의 난이도 · 완성도 · 구성'},{k:'g',label:'구성',s:'구성',max:10,hint:'팀 전체 구성'}];
 /* 운영석(주심·기록원) 감점 */
 const DED={
-  tech:[{k:'unb',label:'미완파 격파물',v:3,unit:'장'},{k:'fall',label:'착지 넘어짐',v:5,unit:'회'},{k:'asst',label:'보조자 격파물 움직임',v:0,unit:'',opts:[1,2,3]},{k:'line',label:'경계선 넘음',v:3,unit:'회'},{k:'time',label:'시간 초과 (5초마다)',v:5,unit:'회'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}],
-  comp:[{k:'fall',label:'착지 넘어짐',v:5,unit:'회'},{k:'asst',label:'보조자 격파물 움직임',v:0,unit:'',opts:[1,2,3]},{k:'line',label:'경계선 넘음',v:3,unit:'회'},{k:'time',label:'시간 초과 (5초마다)',v:5,unit:'회'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}],
-  team:[{k:'time',label:'시간 초과·미달 (5초마다)',v:5,unit:'회'},{k:'pax',label:'규정 인원 미달·초과',v:3,unit:'명'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}]
+  tech:[{k:'unb',label:'미완파 격파물',v:3,unit:'장'},{k:'fall',label:'착지 넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'asst',label:'보조자 격파물 움직임',v:0,unit:'',opts:[1,2,3]},{k:'line',label:'경계선 넘음',v:3,unit:'회'},{k:'time',label:'시간 초과 (5초마다)',v:5,unit:'회'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}],
+  comp:[{k:'unb',label:'미완파 격파물',v:3,unit:'장'},{k:'fall',label:'착지 넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'asst',label:'보조자 격파물 움직임',v:0,unit:'',opts:[1,2,3]},{k:'line',label:'경계선 넘음',v:3,unit:'회'},{k:'time',label:'시간 초과 (5초마다)',v:5,unit:'회'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}],
+  team:[{k:'unb',label:'미완파 격파물',v:3,unit:'장'},{k:'fall',label:'넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'time',label:'시간 초과·미달 (5초마다)',v:5,unit:'회'},{k:'pax',label:'규정 인원 미달·초과',v:3,unit:'명'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}]
 };
 const STAGE_NAME={pre:'예선',final:'결선'};
+/* v1.8.0 1심 패드 감점: 송판 미파손(미완파) −3 · 넘어짐 −5 · 장외 −5(본부에서 바꿈). 시간 초과는 지금처럼 자동 */
+function outV(){try{return Number(SET().outPts)||5;}catch(e){return 5;}}
+const J1KEYS=['unb','fall','out'];
+const j1Items=kind=>(DED[kind]||[]).filter(x=>J1KEYS.includes(x.k));
+function j1DedOf(cur){try{const s=curScores().find(x=>x.perfId===cur.perfId&&x.judge===1);return s&&s.jded?s.jded:null;}catch(e){return null;}}
+/* 실제로 쓰는 감점 = 운영석이 고친 값이 있으면 그 값, 없으면 1심 패드 값 */
+function effDed(cur,st){const a=(st&&st.ded)||{},j=cur?j1DedOf(cur):null,o={...a};if(j)for(const k of Object.keys(j))if(a[k]==null)o[k]=j[k];return o;}
+const tally=arr=>{const o={};(arr||[]).forEach(k=>o[k]=(o[k]||0)+1);return o;};
 const DEFAULTS={name:'',judges:5,preMin:16,grpSize:10,finalN:8,adv:'auto',elemMix:false,voice:'admin',autoReveal:true,diffAgg:'avg',musicAuto:true};
 
 /* ===================== 유틸 ===================== */
@@ -2270,7 +2284,10 @@ function aRun(){
 let BMAX=lsGet('gp_bmax')==='1';
 let JMAX=lsGet('gp_jmax')==='1';
 const JSTEP={k:'',i:0};
-function jViewNow(){const v=SET().jView||'auto';if(v==='one'||v==='all')return v;return Math.min(innerWidth,innerHeight)<600||innerWidth<820?'one':'all';}
+function jViewNow(){const v=SET().jView||'auto';if(v==='one'||v==='all')return v;
+  /* v1.8.0 종합격파(1~4경기)는 태블릿에서도 한 경기씩 크게 */
+  try{const c=curOf();if(c&&c.kind==='comp')return 'one';}catch(e){}
+  return Math.min(innerWidth,innerHeight)<600||innerWidth<820?'one':'all';}
 function jAutoStep(cur){if(jViewNow()!=='one')return;const d=draftFor(cur),its=sheetItems(cur),n=cur.kind==='tech'?(cur.techs||[]).length:cur.kind==='comp'?CG_N:its.length;if(n<2)return;const per=Math.ceil(its.length/n),i=JSTEP.i;
   if(i<n&&its.slice(i*per,i*per+per).every(it=>d.items[it.k]!=null)){const at=JSTEP.k;setTimeout(()=>{if(JSTEP.k===at&&JSTEP.i===i){JSTEP.i=i+1;render();}},350);}}
 function fsBtn(label){return `<button class="jfs" data-act="jFull" aria-label="${JMAX?'전체 화면 끝내기':'전체 화면'}">${JMAX?'⤡':'⤢'}${label?`<span>${JMAX?'작게 보기':'전체 화면'}</span>`:''}</button>`;}
@@ -2357,7 +2374,7 @@ function runPanel(st,cur){
       <div class="row">${nx?`<button class="btn primary big" data-act="call" data-id="${nx.callId}">다음 선수 호출: ${esc(aName(nx.athleteId))} →</button>`:(()=>{const i2=flowInfo();return i2&&i2.c?`<button class="btn primary big" data-act="call" data-id="${i2.c.callId}">다음 경기 ${esc(i2.title)} 첫 선수 호출 →</button>`:'<span class="chip ok">이 단계의 경기를 모두 마쳤습니다</span>';})()}
       <button class="btn" data-act="armed" data-do="reopen">${JUDGED(k)?'다시 채점':'기록 고치기'}</button></div></div>`;
   }
-  const ded=st.ded||{},rec=st.rec||{},dqOn=!!st.dq;
+  const ded=effDed(cur,st),rec=st.rec||{},dqOn=!!st.dq,j1d=j1DedOf(cur);
   const dqBox=`<div class="dqb"><button class="btn ${dqOn?'armed':''}" data-act="dqToggle">${dqOn?'실격 처리됨 (취소)':'실격'}</button>${dqOn?`<select data-on="dqWhy" aria-label="실격 사유">${dqList(k).map(w=>`<option ${st.dq===w?'selected':''}>${w}</option>`).join('')}</select>`:''}</div>`;
   let body='',btn='';
   if(JUDGED(k)){
@@ -2366,7 +2383,7 @@ function runPanel(st,cur){
     const rows=(DED[k]||[]).map(x=>x.opts?`<div class="cnt"><span class="cl">${x.label}<small>최대 −3</small></span>${seg('dedSet',[[0,'없음'],[1,'미세 −1'],[2,'보통 −2'],[3,'큼 −3']],Number(ded[x.k])||0,'data-k="'+x.k+'"')}</div>`
       :cnt('dedInc',x.k,ded[x.k],x.label,`−${x.v} × ${x.unit}`)).join('');
     let prev='';if(cs.length){const pr=computeJudged(cur,cs,ded,st.dq);prev=`<div class="prev"><span>심판 평균 <b>${fmt3(pr.score*pf(pr))}</b></span><span>감점 <b>−${fP(pr.dedTotal*pf(pr))}</b></span><span class="big">${ready?'최종':'현재'} <b>${pr.dq?'실격':fmt3(p100(pr))}</b>${p100max(pr)?' <small>(100점 기준)</small>':''}</span></div>`;}
-    body=`${judgeChips(cur)}<div class="dedbox" data-ksded="${Object.values(ded).filter(v=>Number(v)>0).length+(dqOn?1:0)}"><div class="row between"><b>감점 (운영석)</b>${tsug}</div><div class="dedgrid">${rows}</div>${dqBox}</div>${prev}`;
+    body=`${judgeChips(cur)}<div class="dedbox" data-ksded="${Object.values(ded).filter(v=>Number(v)>0).length+(dqOn?1:0)}"><div class="row between"><b>감점 <small class="muted" style="font-weight:600">${j1d?'1심 패드에서 넣음 ✓':'1심 패드에서 넣습니다'} · 여기서는 고칠 때만</small></b>${tsug}</div><div class="dedgrid">${rows}</div>${dqBox}</div>${prev}`;
     btn=ready?`<button class="btn primary big" data-act="reveal">점수 공개</button>`:`<button class="btn big" data-act="armed" data-do="revealForce" ${cs.length?'':'disabled'}>미제출 ${miss}명 — 그래도 공개</button>`;
     btn+=`<button class="btn" data-act="armed" data-do="rescore">재채점 (점수 지우기)</button>`;
   }else{
@@ -2551,27 +2568,31 @@ function vJudge(){
         <div class="gjo ones">${Array.from({length:10},(_,x)=>`<button class="opt ${v!=null&&ones===x?'on':''}" data-act="pickOnes" data-k="${it.k}" data-v="${x}" data-max="${it.max}" ${v!=null&&tens===maxT&&x>0?'disabled':''}>+${x}</button>`).join('')}</div>${cur.kind==='comp'&&it.k==='e'&&d.items.x?`<span class="small">투척물 가산 <b>+${d.items.x}</b> (표현성에 더함, 최대 40)</span>`:''}</div>`;}).join('');
   }
   const pv=partsOf(cur,d.items);
+  const PI=myJudge===1?j1Items(cur.kind):[],pc=tally(d.pen),pT=PI.reduce((t,x)=>t+(pc[x.k]||0)*x.v,0);
+  const penBtns=PI.map(x=>`<button class="opt pen" data-act="penAdd" data-k="${x.k}"><span>${x.label.replace('미완파 격파물','송판 미파손').replace('착지 넘어짐','넘어짐')}</span><small>−${x.v} · ${pc[x.k]||0}${x.unit||'회'}</small></button>`).join('')+`<button class="opt pen undo" data-act="penUndo" ${(d.pen||[]).length?'':'disabled'}><span>되돌리기</span><small>↺</small></button>`;
+  const penCard=PI.length?`<div class="jcard pcard"><div class="jct"><span class="tno">−</span><b>감점 (1심)</b><span class="small muted">시간 초과는 자동</span><span class="jsub">${pT?'−'+fmtN(pT):'0'}</span></div><div class="gjo penrow">${penBtns}</div></div>`:'';
   const top2=`<div class="jhead"><span class="chip live">${myJudge}심</span><span class="jmeta">${esc(cur.divName)} · ${esc(cur.label)}</span><span class="timer gjt" data-timer>${cdText(st.timer)}</span>${SOLO_ON?'<button class="btn sm solohb" data-act="soloHideBtn">운영석 보기</button>':''}</div>
     <div class="gjwho jwho"><div class="jname"><b>${esc(cur.name)}</b> <span class="small muted">${esc(cur.team||'')}</span></div>
-      <div class="jtot">${fsBtn()}<span class="jx chip live">${myJudge}심</span><span class="jx timer" data-timer>${cdText(st.timer)}</span>${pv.map(p=>`<span>${esc(p[0])} <b>${p[1]}</b></span>`).join('')}<span class="big">합계 <b>${cur.kind==='tech'?fmt1(tot):fmtN(tot)}</b></span></div></div>`;
+      <div class="jtot">${fsBtn()}<span class="jx chip live">${myJudge}심</span><span class="jx timer" data-timer>${cdText(st.timer)}</span>${pv.map(p=>`<span>${esc(p[0])} <b>${p[1]}</b></span>`).join('')}${pT?`<span>감점 <b>−${fmtN(pT)}</b></span>`:''}<span class="big">합계 <b>${cur.kind==='tech'?fmt1(tot):fmtN(tot)}</b></span></div></div>`;
   /* v1.7.12 심판 채점판 화면 방식 (본부 「종목별 경기 규칙」에서 종목마다): 자동(휴대폰=한 종목씩 · 태블릿=한 화면에 모두) · 한 종목씩 · 한 화면에 모두
      한 종목씩: 한 기술(항목)만 크게 → 다 고르면 저절로 다음 → 마지막에 모아 보고 「점수 보내기». 스크롤하지 않아도 됩니다 */
-  const cards=sheet.split('<div class="jcard">').slice(1).map(x=>'<div class="jcard">'+x),nC=cards.length,jv=jViewNow();
-  if(jv==='one'&&nC>1){if(JSTEP.k!==cur.perfId+'#'+myJudge){JSTEP.k=cur.perfId+'#'+myJudge;JSTEP.i=0;}const i=Math.min(JSTEP.i,nC),its=sheetItems(cur),per=Math.ceil(its.length/nC);
-    const doneOf=c=>its.slice(c*per,c*per+per).every(it=>d.items[it.k]!=null),lab=c=>cur.kind==='tech'?(cur.techs[c]||''):cur.kind==='comp'?(c+1)+'경기':(TEAM_ITEMS[c]||{}).label||'';
+  const cards0=sheet.split('<div class="jcard">').slice(1).map(x=>'<div class="jcard">'+x),nI=cards0.length,jv=jViewNow();
+  const cards=penCard&&jv==='one'?[...cards0,penCard]:cards0,nC=cards.length;
+  if(jv==='one'&&nC>1){if(JSTEP.k!==cur.perfId+'#'+myJudge){JSTEP.k=cur.perfId+'#'+myJudge;JSTEP.i=0;}const i=Math.min(JSTEP.i,nC),its=sheetItems(cur),per=Math.ceil(its.length/nI);
+    const doneOf=c=>c>=nI||its.slice(c*per,c*per+per).every(it=>d.items[it.k]!=null),lab=c=>c>=nI?'감점':cur.kind==='tech'?(cur.techs[c]||''):cur.kind==='comp'?(()=>{const vs=CG_ROWS.map(r=>d.items['g'+(c+1)+r.s]);return (c+1)+'경기'+(vs.every(v=>v!=null)?' · '+fmtN(r3(vs.reduce((a,b)=>a+b,0)))+'점':'');})():(TEAM_ITEMS[c]||{}).label||'';
     const tabs=`<div class="jstep">${cards.map((_,c)=>`<button class="js-t ${c===i?'on':''} ${doneOf(c)?'ok':''}" data-act="jStep" data-i="${c}"><b>${c+1}</b><small>${esc(lab(c))}</small></button>`).join('')}<button class="js-t ${i===nC?'on':''} ${miss?'':'ok'}" data-act="jStep" data-i="${nC}"><b>✓</b><small>확인</small></button></div>`;
-    const body=i<nC?cards[i]:`<div class="jsum">${cards.map((_,c)=>{const v=its.slice(c*per,c*per+per).map(it=>d.items[it.k]);return `<button class="js-r ${doneOf(c)?'':'miss'}" data-act="jStep" data-i="${c}"><span class="tno">${c+1}</span><b>${esc(lab(c))}</b><em>${v.map(x=>x==null?'—':fmtN(x)).join(' · ')}</em><span class="js-e">고치기</span></button>`;}).join('')}</div>`;
+    const body=i<nC?cards[i]:`<div class="jsum">${cards.map((_,c)=>{const v=c>=nI?[pT?-pT:0]:its.slice(c*per,c*per+per).map(it=>d.items[it.k]);return `<button class="js-r ${doneOf(c)?'':'miss'}" data-act="jStep" data-i="${c}"><span class="tno">${c+1}</span><b>${esc(lab(c))}</b><em>${v.map(x=>x==null?'—':fmtN(x)).join(' · ')}</em><span class="js-e">고치기</span></button>`;}).join('')}</div>`;
     return `<div class="gjsheet k-${cur.kind==='comp'?'comp4':cur.kind} jv-one"><div class="gjtop">${banner}${top2}</div>${tabs}<div class="gjbody" style="--nc:1">${body}</div>
     <div class="gjfoot">${i<nC?`<button class="btn big" data-act="jStep" data-i="${Math.max(0,i-1)}" ${i?'':'disabled'}>← 앞</button><button class="btn primary big" data-act="jStep" data-i="${i+1}">${i===nC-1?'모아 보기 ✓':'다음 →'}</button>`:`<button class="btn primary big" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개`:'점수 보내기'}</button>`}</div></div>`;}
   return `<div class="gjsheet k-${cur.kind==='comp'?'comp4':cur.kind} ${jv==='all'?'jv-all':''}"><div class="gjtop">${banner}${top2}</div><div class="gjbody" style="--nc:${cur.kind==='tech'?cur.techs.length:1}">${sheet}</div>
-    <div class="gjfoot"><button class="btn primary big" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개`:'점수 보내기'}</button></div></div>`;
+    <div class="gjfoot">${PI.length?`<div class="gjo penrow pstrip"><b class="plab">감점 ${pT?'−'+fmtN(pT):'0'}</b>${penBtns}</div>`:''}<button class="btn primary big" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개`:'점수 보내기'}</button></div></div>`;
 }
 /* 심판 화면 위 카드·보낸 점수에 보여 줄 항목별 합 (품새 「정확도 4.0 · 표현력 6.0」과 같은 방식) */
 function partsOf(cur,items){
   const it=items||{},f=v=>v==null?'—':fmt1(v);
   if(cur.kind==='tech'){const n=(cur.techs||[]).length;let c=0,e=0,cn=0,en=0;for(let i=0;i<n;i++){const a=it['t'+i+'c'],b=it['t'+i+'e'];if(a!=null){c+=Number(a);cn++;}if(b!=null){e+=Number(b);en++;}}
     return [['완성도',cn?fmt1(c):'—'],['표현성',en?fmt1(e):'—']];}
-  if(cur.kind==='comp'){const a=compAgg({...it});return [['난이도',a.d==null?'—':fmtN(a.d)],['완성도',a.c==null?'—':fmtN(a.c)],['표현성',a.e==null?'—':fmtN(a.e)]];}
+  if(cur.kind==='comp'){return CG_ROWS.map(r=>{let sm=0,n=0;for(let g=1;g<=CG_N;g++){const v=it['g'+g+r.s];if(v!=null){sm+=Number(v);n++;}}if(!n&&it[r.s]!=null){sm=Number(it[r.s]);n=1;}return [r.label,n?fmtN(r3(sm)):'—'];});}
   const L=TEAM_ITEMS;
   return L.map(x=>[x.s||x.label,it[x.k]==null?'—':fmtN(it[x.k])]);
 }
@@ -2693,7 +2714,7 @@ async function doReveal(auto){
   const st=ST(),cur=curOf();if(!cur||st.status!=='open'||REVEALING||!JUDGED(cur.kind))return;
   REVEALING=true;
   try{
-    const t=stopT(st.timer),ded={...(st.ded||{})};
+    const t=stopT(st.timer),ded=effDed(cur,st);
     if(ded.time==null){const u=timeUnits(cur.kind,t,limitOf(cur));if(u)ded.time=u;}
     const cs=curScores().filter(s=>s.perfId===cur.perfId&&s.judge<=cur.judgeCount);
     if(!cs.length){toast('아직 도착한 심판 점수가 없습니다');return;}
@@ -3035,7 +3056,7 @@ const ACT={
   prepStop:()=>{const st=ST(),p=st.prep;if(!p)return;const over=(Date.now()-p.until)/1000;
     let rec=st.rec||{};if(over>0){const u=Math.ceil(over/10);rec={...rec,pen:(Number(rec.pen)||0)+u};toast(`준비 시간 ${Math.ceil(over)}초 초과 · 감점 ${u}회를 넣었습니다`);}
     patchState({prep:null,rec});},
-  dedInc:b=>{const st=ST();patchState({ded:bump(st.ded||{},b.dataset.k,Number(b.dataset.d))});},
+  dedInc:b=>{const st=ST(),cur=curOf(),e=effDed(cur,st),k=b.dataset.k;patchState({ded:{...(st.ded||{}),[k]:Math.max(0,r1((Number(e[k])||0)+Number(b.dataset.d)))}});},
   dedSet:b=>{const st=ST();patchState({ded:{...(st.ded||{}),[b.dataset.k]:Number(b.dataset.v)}});},
   recInc:b=>{const st=ST();patchState({rec:bump(st.rec||{},b.dataset.k,Number(b.dataset.d))});},
   recSet:b=>{const st=ST();patchState({rec:{...(st.rec||{}),[b.dataset.k]:Number(b.dataset.v)}});},
@@ -3123,6 +3144,8 @@ const ACT={
   dgTh:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),g=b.dataset.g;d.dg={...(d.dg||{}),[g]:{...((d.dg||{})[g]||{}),th:Number(b.dataset.v)}};diffApply(cur,d);},
   setMusicAuto:b=>setS({musicAuto:b.dataset.v==='true'}),
   wOk:async b=>{const id=b.dataset.id,a=athlete(id);if(!a)return;const on=!a.weighed;await saveRoster(S.roster.map(x=>x.id===id?{...x,weighed:on,weighedAt:on?Date.now():null}:x));if(on)addLog('계체 확인',a.name,`${a.weight}kg · ${weightClass(a.gender,a.weight)}`);},
+  penAdd:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur);d.pen=[...(d.pen||[]),b.dataset.k];saveDrafts();render();},
+  penUndo:()=>{const cur=curOf();if(!cur)return;const d=draftFor(cur);d.pen=(d.pen||[]).slice(0,-1);saveDrafts();render();},
   pickItem:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur);d.items[b.dataset.k]=Number(b.dataset.v);if(cur.kind==='comp')compAgg(d.items);saveDrafts();render();jAutoStep(cur);},
   jStep:b=>{JSTEP.i=Math.max(0,Number(b.dataset.i)||0);render();},
   pickTens:b=>{const cur=curOf();if(!cur)return;const d=draftFor(cur),k=b.dataset.k,max=Number(b.dataset.max),ones=(d.items[k]||0)%10;d.items[k]=Math.min(max,Number(b.dataset.v)*10+ones);saveDrafts();render();},
@@ -3132,7 +3155,7 @@ const ACT={
   submitScore:async()=>{
     const st=ST(),cur=curOf();if(!cur)return;if(st.status==='revealed'){toast('이미 점수가 공개되었습니다');return;}
     const d=draftFor(cur);if(missingOf(cur,d))return;if(cur.kind==='comp')compAgg(d.items);
-    OUTBOX[`${cur.perfId}__j${myJudge}`]={perfId:cur.perfId,callId:cur.callId,epoch:st.epoch||0,judge:myJudge,kind:cur.kind,items:{...d.items},dg:d.dg||null,total:judgeTotal(cur.kind,d.items,(cur.techs||[]).length),at:Date.now()};
+    OUTBOX[`${cur.perfId}__j${myJudge}`]={perfId:cur.perfId,callId:cur.callId,epoch:st.epoch||0,judge:myJudge,kind:cur.kind,items:{...d.items},dg:d.dg||null,...(myJudge===1?{jded:tally(d.pen)}:{}),total:judgeTotal(cur.kind,d.items,(cur.techs||[]).length),at:Date.now()};
     saveOutbox();ui.editing=false;render();await flushOutbox();
     if(Object.keys(OUTBOX).length)toast('점수를 이 기기에 보관했습니다. 연결되면 자동으로 보냅니다');
   },

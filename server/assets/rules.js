@@ -41,6 +41,7 @@
       /* v1.7.27 「받은 때」가 다르면 받음 (노트북 시계가 서로 달라도 본부 규칙을 그대로 따름) */
       if((set.hqRulesAt||0)!==j.at&&lastAt!==j.at){lastAt=j.at;const p={hqRulesAt:j.at};
         if(typeof C.sep==='boolean')p.sepDojang=C.sep;
+        if(Number(C.outPts)>0)p.outPts=Number(C.outPts); /* v1.8.0 장외 감점 (1심 패드) */
         if(C.std==='comm'&&Number(C.commN)>=2)p.commN=Number(C.commN); /* 생활체육 한 조 인원 */
         if(APPK==='poomsae'){const P=R.poomsae||{},T=P.types||{};
           p.typeJudges={};p.typeFormat={};p.typePoom={};p.typeCut={};p.typeAdv={};
