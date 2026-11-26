@@ -925,6 +925,15 @@ const css3=`
 .n-bp em{grid-row:1/3;grid-column:3;font:700 ${U(44)} "Barlow Condensed",sans-serif;font-style:normal}.n-bp.l{opacity:.42}
 .n-pod{position:absolute;left:${U(200)};right:${U(200)};top:${U(650)};display:flex;flex-direction:column;gap:${U(12)};z-index:1}.n-pod .n-r{height:${U(100)}}
 @keyframes nrise{from{opacity:0;transform:translateY(${U(30)})}to{opacity:1;transform:none}}
+/* v1.8.2 경기 중 화면: 선수 이름과 시간의 가운데 높이를 똑같이 — 위 작은 글(ATHLETE·TIME)과 아래 글(소속·경기 시간)은 띄워 놓고 이름·시간만 가운데 */
+.board.sk-arena.sk-live .ar-band{align-items:stretch}
+.board.sk-arena.sk-live .ar-who:not(:has(.ar-mem)),.board.sk-arena.sk-live .ar-sc{position:relative;display:flex;flex-direction:column;justify-content:center}
+.board.sk-arena.sk-live .ar-sc{align-items:flex-end}
+.board.sk-arena.sk-live .ar-who:not(:has(.ar-mem))>.ar-en,.board.sk-arena.sk-live .ar-sc>.ar-en{position:absolute;top:0;margin:0}
+.board.sk-arena.sk-live .ar-who:not(:has(.ar-mem))>.ar-tm,.board.sk-arena.sk-live .ar-sc>.ar-sub{position:absolute;bottom:0;margin:0;max-width:100%}
+.board.sk-live .n-who:not(:has(.n-mem))>.n-en,.board.sk-live .n-main:not(.sc) .n-clk>.n-en{position:absolute;top:${U(18)};margin:0}
+.board.sk-live .n-who:not(:has(.n-mem))>.n-tm,.board.sk-live .n-main:not(.sc) .n-clk>.n-sub{position:absolute;bottom:${U(18)};margin:0;max-width:100%}
+.board.sk-live .n-who:not(:has(.n-mem))>.n-nm{margin-top:0}
 @keyframes nup{from{opacity:0;transform:translateY(${U(18)})}to{opacity:1;transform:none}}
 @keyframes nrow{from{opacity:0;transform:translateX(${U(-40)})}to{opacity:1;transform:none}}
 @keyframes npop{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:none}}
