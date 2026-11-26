@@ -1477,12 +1477,12 @@ function compAgg(items){const it=items||{};CG_ROWS.forEach(r=>{let sum=0,all=tru
 const TEAM_ITEMS=[{k:'f',label:'단체연무',s:'연무',max:20,hint:'기본기 · 일치성 · 구성'},{k:'s',label:'호신술',s:'호신술',max:20,hint:'실전성 · 숙련성'},{k:'b',label:'격파',s:'격파',max:50,hint:'기술의 난이도 · 완성도 · 구성'},{k:'g',label:'구성',s:'구성',max:10,hint:'팀 전체 구성'}];
 /* 운영석(주심·기록원) 감점 */
 const DED={
-  tech:[{k:'unb',label:'미완파 격파물',v:3,unit:'장'},{k:'fall',label:'착지 넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'asst',label:'보조자 격파물 움직임',v:0,unit:'',opts:[1,2,3]},{k:'line',label:'경계선 넘음',v:3,unit:'회'},{k:'time',label:'시간 초과 (5초마다)',v:5,unit:'회'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}],
-  comp:[{k:'unb',label:'미완파 격파물',v:3,unit:'장'},{k:'fall',label:'착지 넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'asst',label:'보조자 격파물 움직임',v:0,unit:'',opts:[1,2,3]},{k:'line',label:'경계선 넘음',v:3,unit:'회'},{k:'time',label:'시간 초과 (5초마다)',v:5,unit:'회'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}],
-  team:[{k:'unb',label:'미완파 격파물',v:3,unit:'장'},{k:'fall',label:'넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'time',label:'시간 초과·미달 (5초마다)',v:5,unit:'회'},{k:'pax',label:'규정 인원 미달·초과',v:3,unit:'명'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}]
+  tech:[{k:'unb',label:'송판 미격파',v:3,unit:'장'},{k:'fall',label:'착지 넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'asst',label:'보조자 격파물 움직임',v:0,unit:'',opts:[1,2,3]},{k:'line',label:'경계선 넘음',v:3,unit:'회'},{k:'time',label:'시간 초과 (5초마다)',v:5,unit:'회'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}],
+  comp:[{k:'unb',label:'송판 미격파',v:3,unit:'장'},{k:'fall',label:'착지 넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'asst',label:'보조자 격파물 움직임',v:0,unit:'',opts:[1,2,3]},{k:'line',label:'경계선 넘음',v:3,unit:'회'},{k:'time',label:'시간 초과 (5초마다)',v:5,unit:'회'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}],
+  team:[{k:'unb',label:'송판 미격파',v:3,unit:'장'},{k:'fall',label:'넘어짐',v:5,unit:'회'},{k:'out',label:'장외',unit:'회',get v(){return outV();}},{k:'time',label:'시간 초과·미달 (5초마다)',v:5,unit:'회'},{k:'pax',label:'규정 인원 미달·초과',v:3,unit:'명'},{k:'conduct',label:'선수·보조자 행위',v:3,unit:'회'}]
 };
 const STAGE_NAME={pre:'예선',final:'결선'};
-/* v1.8.0 1심 패드 감점: 송판 미파손(미완파) −3 · 넘어짐 −5 · 장외 −5(본부에서 바꿈). 시간 초과는 지금처럼 자동 */
+/* v1.8.0 1심 패드 감점: 송판 미격파(미완파) −3 · 넘어짐 −5 · 장외 −5(본부에서 바꿈). 시간 초과는 지금처럼 자동 */
 function outV(){try{return Number(SET().outPts)||5;}catch(e){return 5;}}
 const J1KEYS=['unb','fall','out'];
 const j1Items=kind=>(DED[kind]||[]).filter(x=>J1KEYS.includes(x.k));
@@ -2579,7 +2579,7 @@ function vJudge(){
   }
   const pv=partsOf(cur,d.items);
   const PI=myJudge===1?j1Items(cur.kind):[],pc=tally(d.pen),pT=PI.reduce((t,x)=>t+(pc[x.k]||0)*x.v,0);
-  const penBtns=PI.map(x=>`<button class="opt pen" data-act="penAdd" data-k="${x.k}"><span>${x.label.replace('미완파 격파물','송판 미파손').replace('착지 넘어짐','넘어짐')}</span><small>−${x.v} · ${pc[x.k]||0}${x.unit||'회'}</small></button>`).join('')+`<button class="opt pen undo" data-act="penUndo" ${(d.pen||[]).length?'':'disabled'}><span>되돌리기</span><small>↺</small></button>`;
+  const penBtns=PI.map(x=>`<button class="opt pen" data-act="penAdd" data-k="${x.k}"><span>${x.label.replace('미완파 격파물','송판 미격파').replace('착지 넘어짐','넘어짐')}</span><small>−${x.v} · ${pc[x.k]||0}${x.unit||'회'}</small></button>`).join('')+`<button class="opt pen undo" data-act="penUndo" ${(d.pen||[]).length?'':'disabled'}><span>되돌리기</span><small>↺</small></button>`;
   const penCard=PI.length?`<div class="jcard pcard"><div class="jct"><span class="tno">−</span><b>감점 (1심)</b><span class="small muted">시간 초과는 자동</span><span class="jsub">${pT?'−'+fmtN(pT):'0'}</span></div><div class="gjo penrow">${penBtns}</div></div>`:'';
   const top2=`<div class="jhead"><span class="chip live">${myJudge}심</span><span class="jmeta">${esc(cur.divName)} · ${esc(cur.label)}</span><span class="timer gjt" data-timer>${cdText(st.timer)}</span>${SOLO_ON?'<button class="btn sm solohb" data-act="soloHideBtn">운영석 보기</button>':''}</div>
     <div class="gjwho jwho"><div class="jname"><b>${esc(cur.name)}</b> <span class="small muted">${esc(cur.team||'')}</span></div>
@@ -2596,7 +2596,7 @@ function vJudge(){
       const cell=(l,v)=>`<span class="cs-c"><small>${l}</small><b>${v==null?'—':fmtN(v)}</b></span>`;
       const sumB=`<div class="csum">${Array.from({length:nI},(_,c)=>{const v=gv(c),tt=gd(c)?r3(v.reduce((a,b)=>a+b,0)):null;
           return `<button class="cs-r ${gd(c)?'':'miss'}" data-act="jStep" data-i="${c}"><span class="cs-g">${c+1}경기</span>${cell('난이도',v[0])}${cell('완성도',v[1])}${cell('표현성',v[2])}<span class="cs-c cs-t"><small>합계</small><b>${tt==null?'—':fmtN(tt)}<i>/25</i></b></span><span class="cs-e">고치기</span></button>`;}).join('')}
-        ${PI.length?`<button class="cs-r" data-act="jStep" data-i="${nI}"><span class="cs-g">감점</span><span class="cs-c cs-w">${PI.map(x=>`<small>${x.label.replace('미완파 격파물','송판 미파손').replace('착지 넘어짐','넘어짐')} ${pc[x.k]||0}${x.unit||'회'}</small>`).join(' · ')}</span><span class="cs-c cs-t"><small>감점</small><b>${pT?'−'+fmtN(pT):'0'}</b></span><span class="cs-e">고치기</span></button>`:''}
+        ${PI.length?`<button class="cs-r" data-act="jStep" data-i="${nI}"><span class="cs-g">감점</span><span class="cs-c cs-w">${PI.map(x=>`<small>${x.label.replace('미완파 격파물','송판 미격파').replace('착지 넘어짐','넘어짐')} ${pc[x.k]||0}${x.unit||'회'}</small>`).join(' · ')}</span><span class="cs-c cs-t"><small>감점</small><b>${pT?'−'+fmtN(pT):'0'}</b></span><span class="cs-e">고치기</span></button>`:''}
         <div class="cs-tot"><span>합계 (100점 만점)</span><b>${fmtN(r3(tot-pT))}</b>${pT?`<small>심판 점수 ${fmtN(tot)} − 감점 ${fmtN(pT)}</small>`:''}</div></div>`;
       const cur1=i<nI?gd(i):true;
       const nextLab=i<nI-1?`확인 → ${i+2}경기`:i===nI-1?(nC>nI?'확인 → 감점':'확인 → 모아 보기'):'확인 → 모아 보기';

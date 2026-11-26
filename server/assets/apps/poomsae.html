@@ -1272,14 +1272,14 @@ const SHEETS_WT={
       {k:'s7',s:'뛰어 옆차기 ①'},{k:'s8',s:'뛰어 옆차기 ②'},{k:'s9',s:'대형변화 ①'},{k:'s10',s:'대형변화 ②'},{k:'s11',s:'대형변화 ③'},{k:'s12',s:'아크로바틱'}],
     pens:[{r:'경계선 이탈',v:0.3}],timePer10:0,timeFlat:5,timeOverOnly:true}, /* 대회 규정: 2분 「초과 시」에만 5점 (1분 40초 미만은 감점 없음) */
   /* v1.7.88 팀 종합경연 대회 규정 새 기준 (100점): 난이도 40 · 완성도 30 · 격파 구성 30
-     감점: 송판 미파손 1장당 −3 · 넘어짐 1회당 −5 · 시간 초과 한 번에 −5 / 동점이면 난이도 높은 팀이 앞섬 */
+     감점: 송판 미격파 1장당 −3 · 넘어짐 1회당 −5 · 시간 초과 한 번에 −5 / 동점이면 난이도 높은 팀이 앞섬 */
   team100:{...SHEETS.team100,label:'팀 종합경연',short:'종합경연',members:'8~15명',std:'대회 규정',tie:['a','b'],
     A:{label:'난이도',max:40,items:[
       {k:'dif',g:'난이도',label:'난이도 (40점)',s:'점수',opts:NUMS(40)}]},
     B:{label:'완성도·격파 구성',max:60,items:[
       {k:'com',g:'완성도',label:'완성도 (30점)',s:'점수',opts:NUMS(30)},
       {k:'cmp',g:'격파 구성',label:'격파 구성 (30점)',s:'점수',opts:NUMS(30)}]},
-    pens:[{r:'송판 미파손',v:3,s:'1장당'},{r:'넘어짐',v:5,s:'1회당'}],timePer10:0,timeFlat:5,timeOverOnly:true}
+    pens:[{r:'송판 미격파',v:3,s:'1장당'},{r:'넘어짐',v:5,s:'1회당'}],timePer10:0,timeFlat:5,timeOverOnly:true}
 };
 const sheetStd=t=>{try{const ts=(typeof SET==='function'?SET():{}).typeSheet||{};return ts[t]==='wt'?'wt':'hm';}catch(e){return 'hm';}};
 ['gym','team100'].forEach(t=>Object.defineProperty(SHEETS,t,{enumerable:true,configurable:true,get:()=>sheetStd(t)==='wt'?SHEETS_WT[t]:SHEETS_HM[t]}));
@@ -2040,7 +2040,7 @@ function aSettings(){
       <input type="number" id="freeMax" min="10" max="600" step="5" value="${s.freeMax}" style="width:86px" data-on="setNumIn" data-k="freeMax" aria-label="자유 품새 최대 시간(초)"><span>초 이내</span></div></div>
     <div class="field"><span class="label">태권체조·팀 경연 채점 양식</span>
       <div class="row">${['gym','team100'].map(t=>`<span class="small"><b>${t==='gym'?'태권체조':'팀 경연'}</b></span><div class="seg"><button class="${sheetStd(t)==='hm'?'on':''}" data-act="sheetStd" data-t="${t}" data-v="hm">한마당</button><button class="${sheetStd(t)==='wt'?'on':''}" data-act="sheetStd" data-t="${t}" data-v="wt">대회 규정</button></div>`).join('')}</div>
-      <span class="small muted"><b>대회 규정</b>(세계태권도문화예술협회): 태권체조 지정 기술 체크·2분 넘으면 5점 감점·5~9명 / 팀 경연 100점(난이도 40·완성도 30·격파 구성 30)·송판 미파손 장당 −3·넘어짐 회당 −5·시간 초과 −5·동점이면 난이도 순·8~15명</span></div>
+      <span class="small muted"><b>대회 규정</b>(세계태권도문화예술협회): 태권체조 지정 기술 체크·2분 넘으면 5점 감점·5~9명 / 팀 경연 100점(난이도 40·완성도 30·격파 구성 30)·송판 미격파 장당 −3·넘어짐 회당 −5·시간 초과 −5·동점이면 난이도 순·8~15명</span></div>
     <div class="field"><span class="label">태권체조 (한마당 제41조 · 1분 50초~2분)</span>
       <div class="row"><input type="number" id="gymMin" min="10" max="900" step="5" value="${s.gymMin}" style="width:86px" data-on="setNumIn" data-k="gymMin" aria-label="태권체조 최소 시간(초)"><span>초 이상</span>
       <input type="number" id="gymMax" min="10" max="900" step="5" value="${s.gymMax}" style="width:86px" data-on="setNumIn" data-k="gymMax" aria-label="태권체조 최대 시간(초)"><span>초 이내</span></div></div>
@@ -2681,7 +2681,7 @@ function vJudge(){
         const tens=[];for(let t=Math.floor(mn/10)*10;t<=mx;t+=10)tens.push(t);
         const ok=x=>x>=mn&&x<=mx;
         body=`<div class="sp-o sp-tens" style="--n:${tens.length}">${tens.map(t=>`<button class="opt ${T===t?'on':''}" data-act="pickT" data-p="${e.perfId}" data-k="${it.k}" data-v="${t}" data-mn="${mn}" data-mx="${mx}">${t}<small>점대</small></button>`).join('')}</div>
-          <div class="sp-o sp-ones" style="--n:10">${[0,1,2,3,4,5,6,7,8,9].map(o=>{const x=(T==null?0:T)+o;return btn(it,x,T==null?o:x,v===x,T==null||!ok(x));}).join('')}</div>
+          <div class="sp-o sp-ones" style="--n:10">${[0,1,2,3,4,5,6,7,8,9].map(o=>{const x=(T==null?0:T)+o;return btn(it,x,o,v===x,T==null||!ok(x)); /* v1.8.5 아래 줄은 끝자리 0~9만 (20 누르고 7 → 27) */}).join('')}</div>
           <span class="sp-hint">① 위 줄에서 <b>십의 자리</b>(예: 20점대) → ② 아래 줄에서 <b>끝자리</b>(예: 27)</span>`;}
       else body=`<div class="sp-o" style="--n:${O.length}">${ascO(O).map(o=>btn(it,o,optTxt(o),v===o,false)).join('')}</div>`;
       return `<div class="sp-it ${v==null?'nv':''}"><div class="sp-l"><span>${esc(it.s||it.label)}</span><b>${v==null?'선택':optTxt(v)}</b></div>${body}</div>`;};
