@@ -1295,6 +1295,8 @@ function typeOf(v){const x=String(v||'');if(/종합|팀\s*대항/.test(x))return
 function timeDedV(type,t){const sh=SHEETS[type]||{};if(sh.timeFlat)return sh.timeFlat;if(!sh.timePer10||!t)return 0.3;const e=elapsed(t);if(e<=0)return sh.timePer10;let diff=0;
   if(t.max&&e>t.max)diff=e-t.max;else if(t.min&&e<t.min)diff=t.min-e;return r1(Math.max(1,Math.ceil((diff-1e-6)/10))*sh.timePer10);}
 const optTxt=o=>o%1?fmt1(o):String(o);
+/* v1.8.4 점수 단추는 모두 작은 숫자가 왼쪽 → 큰 숫자가 오른쪽 */
+const ascO=a=>[...(a||[])].sort((x,y)=>x-y);
 /* 팀 이름·팀원처럼 긴 이름은 전광판에서 글자를 줄여 한두 줄에 맞춥니다 */
 const nmLen=n=>{const L=String(n||'').length;return L>30?'nl3':L>18?'nl2':L>11?'nl1':'';};
 /* 제6조 부별 구분. 국내 학교부는 출생연도 기준 나이(올해−출생연도)로 계산 */
@@ -2629,7 +2631,7 @@ function vJudge(){
     const side=x=>{
       const dx=draftFor(x.perfId,cur.type),sx=draftScore(cur.type,dx),mx=missing(cur.type,dx);
       const r=(lbl,val,nv,opts,isItem)=>`<div class="jr"><div class="jrl ${nv?'nv':''} ${isItem?'it':''}"><span>${lbl}</span><b class="${nv?'nv':''}">${val}</b></div><div class="jo" style="--n:${opts.length};--c:${Math.ceil(opts.length/2)}">${opts.join('')}</div></div>`;
-      const item=it=>{const v=dx.items[it.k];return r(it.s||it.label,v==null?'선택':optTxt(v),v==null,it.opts.map(o=>`<button class="opt ${v===o?'on':''}" data-act="pick" data-p="${x.perfId}" data-k="${it.k}" data-v="${o}">${optTxt(o)}</button>`),true);};
+      const item=it=>{const v=dx.items[it.k];return r(it.s||it.label,v==null?'선택':optTxt(v),v==null,ascO(it.opts).map(o=>`<button class="opt ${v===o?'on':''}" data-act="pick" data-p="${x.perfId}" data-k="${it.k}" data-v="${o}">${optTxt(o)}</button>`),true);};
       let rows='';
       if(sh.aMode==='ded'){
         rows+=r(sh.A.label,fmt1(sx.a),false,[...(sh.dedOpts||[{v:0.1},{v:0.3},{v:0.6}]).map(o=>`<button class="opt ded" data-act="accDed" data-p="${x.perfId}" data-v="${o.v}">−${fmt1(o.v)}</button>`),`<button class="opt ded undo" data-act="accUndo" data-p="${x.perfId}" ${dx.ded.length?'':'disabled'}>↺</button>`]);
@@ -2681,7 +2683,7 @@ function vJudge(){
         body=`<div class="sp-o sp-tens" style="--n:${tens.length}">${tens.map(t=>`<button class="opt ${T===t?'on':''}" data-act="pickT" data-p="${e.perfId}" data-k="${it.k}" data-v="${t}" data-mn="${mn}" data-mx="${mx}">${t}<small>점대</small></button>`).join('')}</div>
           <div class="sp-o sp-ones" style="--n:10">${[0,1,2,3,4,5,6,7,8,9].map(o=>{const x=(T==null?0:T)+o;return btn(it,x,T==null?o:x,v===x,T==null||!ok(x));}).join('')}</div>
           <span class="sp-hint">① 위 줄에서 <b>십의 자리</b>(예: 20점대) → ② 아래 줄에서 <b>끝자리</b>(예: 27)</span>`;}
-      else body=`<div class="sp-o" style="--n:${O.length}">${O.map(o=>btn(it,o,optTxt(o),v===o,false)).join('')}</div>`;
+      else body=`<div class="sp-o" style="--n:${O.length}">${ascO(O).map(o=>btn(it,o,optTxt(o),v===o,false)).join('')}</div>`;
       return `<div class="sp-it ${v==null?'nv':''}"><div class="sp-l"><span>${esc(it.s||it.label)}</span><b>${v==null?'선택':optTxt(v)}</b></div>${body}</div>`;};
     const tabs=`<div class="sp-tabs">${steps.map((st,c)=>`<button class="sp-t ${c===si?'on':''} ${done(st)?'ok':''}" data-act="jsStep" data-i="${c}"><b>${c+1}</b><small>${esc(st.g)}</small></button>`).join('')}<button class="sp-t ${si===nS?'on':''} ${miss?'':'ok'}" data-act="jsStep" data-i="${nS}"><b>✓</b><small>확인</small></button></div>`;
     let body;
@@ -2699,7 +2701,7 @@ function vJudge(){
     return `<div class="jsheet stp">${banner}${jtopS}${tabs}<div class="sp-body">${body}</div><div class="sp-foot">${foot}</div></div>`;
   }
   const row=it=>{const v=d.items[it.k];return `<div class="ji"><div class="jl"><span>${it.label}</span><b class="${v==null?'nv':''}">${v==null?'선택':fmt1(v)}</b></div>
-    <div class="jo" style="--n:${it.opts.length}">${it.opts.map(o=>`<button class="opt ${v===o?'on':''}" data-act="pick" data-p="${e.perfId}" data-k="${it.k}" data-v="${o}">${fmt1(o)}</button>`).join('')}</div></div>`;};
+    <div class="jo" style="--n:${it.opts.length}">${ascO(it.opts).map(o=>`<button class="opt ${v===o?'on':''}" data-act="pick" data-p="${e.perfId}" data-k="${it.k}" data-v="${o}">${fmt1(o)}</button>`).join('')}</div></div>`;};
   let colA,colB;
   if(sh.aMode==='ded'&&sh.dedOpts){
     colA=`<div class="jcol"><div class="jsec"><span>${sh.A.label} <small>${fmt1(sh.A.max)}에서 감점</small></span><b>${fmt1(sc.a)}</b></div>
@@ -2709,7 +2711,7 @@ function vJudge(){
   }else if(sh.long){
     const gs=[];allItems(cur.type).forEach(it=>{let x=gs.find(q=>q.g===it.g);if(!x)gs.push(x={g:it.g,items:[]});x.items.push(it);});
     const lrow=it=>{const v=d.items[it.k];return `<div class="lr"><div class="lrl"><span>${it.s}</span><b class="${v==null?'nv':''}">${v==null?'선택':optTxt(v)}</b></div>
-      <div class="lro" style="--n:${Math.min(10,it.opts.length)}">${it.opts.map(o=>`<button class="opt ${v===o?'on':''}" data-act="pick" data-p="${e.perfId}" data-k="${it.k}" data-v="${o}">${optTxt(o)}</button>`).join('')}</div></div>`;};
+      <div class="lro" style="--n:${Math.min(10,it.opts.length)}">${ascO(it.opts).map(o=>`<button class="opt ${v===o?'on':''}" data-act="pick" data-p="${e.perfId}" data-k="${it.k}" data-v="${o}">${optTxt(o)}</button>`).join('')}</div></div>`;};
     colA=`<div class="jlong">${gs.map((gr,i)=>{const got=gr.items.filter(it=>d.items[it.k]!=null),mx=sum(gr.items.map(it=>Math.max(...it.opts)));
       return `<section class="lg ${got.length===gr.items.length?'ok':''}"><div class="lgh"><span class="lgn">${String(i+1).padStart(2,'0')}</span><b>${gr.g}</b><span class="lgs">${got.length?optTxt(r1(sum(got.map(it=>d.items[it.k])))):'—'} <small>/ ${optTxt(mx)}</small></span></div>${gr.items.map(lrow).join('')}</section>`;}).join('')}</div>`;
     colB='';
