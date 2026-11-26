@@ -1306,6 +1306,16 @@ tr.mu-over td{background:rgba(201,162,77,.18)!important}
 .gjo .opt.pen small{font-size:.62em;font-weight:700;color:#FF8A8A}.gjo .opt.pen.undo{border-color:var(--line)}.gjo .opt.pen.undo small{color:var(--muted)}
 .pcard .gjo.penrow{flex:1;min-height:0;grid-auto-rows:minmax(0,1fr)}.pcard .gjo .opt.pen{min-height:120px;height:100%}
 .gjfoot{flex-wrap:wrap}.pstrip{width:100%;align-items:stretch}.pstrip .plab{display:flex;align-items:center;justify-content:center;color:#FF8A8A;font-size:18px;white-space:nowrap;padding:0 6px}.pstrip .opt.pen{min-height:46px;font-size:16px;flex-direction:row;gap:8px}
+.csum{display:flex;flex-direction:column;gap:8px;height:100%;overflow:auto}
+.cs-r{display:grid;grid-template-columns:minmax(90px,1.1fr) repeat(3,minmax(0,1fr)) minmax(0,1.2fr) auto;align-items:center;gap:10px;padding:8px 16px;border-radius:14px;border:2px solid var(--line,#444);background:var(--surface,transparent);color:inherit;font:inherit;text-align:left;cursor:pointer;flex:1 1 0;min-height:56px}
+.cs-r.miss{border-color:#E5484D}.cs-g{font-weight:900;font-size:clamp(20px,3.6vh,30px);white-space:nowrap}
+.cs-c{display:flex;align-items:baseline;gap:8px;white-space:nowrap}.cs-c small{font-size:clamp(13px,2.2vh,18px);color:var(--muted);font-weight:700}.cs-c b{font-family:var(--f-num);font-size:clamp(22px,4.4vh,38px)}
+.cs-t b{color:var(--gold,#C9A262)}.cs-t i{font-style:normal;font-size:.5em;color:var(--muted);margin-left:2px}.cs-w{grid-column:2/5;flex-wrap:wrap;gap:4px 10px}.cs-w small{color:inherit}
+.cs-e{font-size:clamp(13px,2.2vh,17px);font-weight:800;padding:6px 12px;border:1.5px solid var(--line,#555);border-radius:999px;white-space:nowrap}
+.cs-tot{display:flex;align-items:baseline;justify-content:flex-end;gap:14px;padding:4px 16px;flex-wrap:wrap}.cs-tot span{font-weight:800;font-size:clamp(16px,2.8vh,22px)}.cs-tot b{font-family:var(--f-num);font-size:clamp(30px,6vh,52px);color:var(--gold,#C9A262)}.cs-tot small{width:100%;text-align:right;color:var(--muted)}
+@media (max-width:900px){.cs-t i{display:none}.cs-r{gap:6px;padding:8px 10px}.gfit .k-comp4.jv-one .js-t small{font-size:clamp(12px,1.6vh,16px)!important}}
+.k-comp4 .gjfoot .cfm{flex:1;width:100%;min-height:clamp(52px,8.5vh,72px);font-size:clamp(20px,3.4vh,28px)}
+.gfit .k-comp4.jv-one .gjo .opt{font-size:clamp(20px,min(5.6vh,3vw),40px)!important}
 .gfit .gjo.t21{grid-template-columns:repeat(11,minmax(0,1fr))}
 @media (min-width:700px){.gfit .k-comp4:not(.jv-one) .gjbody{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);overflow:hidden}
   .gfit .k-comp4:not(.jv-one) .jcard{min-height:0;overflow:hidden;display:flex;flex-direction:column}
@@ -2288,7 +2298,7 @@ function jViewNow(){const v=SET().jView||'auto';if(v==='one'||v==='all')return v
   /* v1.8.0 종합격파(1~4경기)는 태블릿에서도 한 경기씩 크게 */
   try{const c=curOf();if(c&&c.kind==='comp')return 'one';}catch(e){}
   return Math.min(innerWidth,innerHeight)<600||innerWidth<820?'one':'all';}
-function jAutoStep(cur){if(jViewNow()!=='one')return;const d=draftFor(cur),its=sheetItems(cur),n=cur.kind==='tech'?(cur.techs||[]).length:cur.kind==='comp'?CG_N:its.length;if(n<2)return;const per=Math.ceil(its.length/n),i=JSTEP.i;
+function jAutoStep(cur){if(jViewNow()!=='one'||cur.kind==='comp')return; /* v1.8.1 종합격파는 「확인」을 눌러야 넘어감 */const d=draftFor(cur),its=sheetItems(cur),n=cur.kind==='tech'?(cur.techs||[]).length:cur.kind==='comp'?CG_N:its.length;if(n<2)return;const per=Math.ceil(its.length/n),i=JSTEP.i;
   if(i<n&&its.slice(i*per,i*per+per).every(it=>d.items[it.k]!=null)){const at=JSTEP.k;setTimeout(()=>{if(JSTEP.k===at&&JSTEP.i===i){JSTEP.i=i+1;render();}},350);}}
 function fsBtn(label){return `<button class="jfs" data-act="jFull" aria-label="${JMAX?'전체 화면 끝내기':'전체 화면'}">${JMAX?'⤡':'⤢'}${label?`<span>${JMAX?'작게 보기':'전체 화면'}</span>`:''}</button>`;}
 document.addEventListener('fullscreenchange',()=>{try{render();}catch(e){}});
@@ -2581,6 +2591,18 @@ function vJudge(){
   if(jv==='one'&&nC>1){if(JSTEP.k!==cur.perfId+'#'+myJudge){JSTEP.k=cur.perfId+'#'+myJudge;JSTEP.i=0;}const i=Math.min(JSTEP.i,nC),its=sheetItems(cur),per=Math.ceil(its.length/nI);
     const doneOf=c=>c>=nI||its.slice(c*per,c*per+per).every(it=>d.items[it.k]!=null),lab=c=>c>=nI?'감점':cur.kind==='tech'?(cur.techs[c]||''):cur.kind==='comp'?(()=>{const vs=CG_ROWS.map(r=>d.items['g'+(c+1)+r.s]);return (c+1)+'경기'+(vs.every(v=>v!=null)?' · '+fmtN(r3(vs.reduce((a,b)=>a+b,0)))+'점':'');})():(TEAM_ITEMS[c]||{}).label||'';
     const tabs=`<div class="jstep">${cards.map((_,c)=>`<button class="js-t ${c===i?'on':''} ${doneOf(c)?'ok':''}" data-act="jStep" data-i="${c}"><b>${c+1}</b><small>${esc(lab(c))}</small></button>`).join('')}<button class="js-t ${i===nC?'on':''} ${miss?'':'ok'}" data-act="jStep" data-i="${nC}"><b>✓</b><small>확인</small></button></div>`;
+    if(cur.kind==='comp'){
+      const gv=c=>CG_ROWS.map(r=>d.items['g'+(c+1)+r.s]),gd=c=>gv(c).every(v=>v!=null);
+      const cell=(l,v)=>`<span class="cs-c"><small>${l}</small><b>${v==null?'—':fmtN(v)}</b></span>`;
+      const sumB=`<div class="csum">${Array.from({length:nI},(_,c)=>{const v=gv(c),tt=gd(c)?r3(v.reduce((a,b)=>a+b,0)):null;
+          return `<button class="cs-r ${gd(c)?'':'miss'}" data-act="jStep" data-i="${c}"><span class="cs-g">${c+1}경기</span>${cell('난이도',v[0])}${cell('완성도',v[1])}${cell('표현성',v[2])}<span class="cs-c cs-t"><small>합계</small><b>${tt==null?'—':fmtN(tt)}<i>/25</i></b></span><span class="cs-e">고치기</span></button>`;}).join('')}
+        ${PI.length?`<button class="cs-r" data-act="jStep" data-i="${nI}"><span class="cs-g">감점</span><span class="cs-c cs-w">${PI.map(x=>`<small>${x.label.replace('미완파 격파물','송판 미파손').replace('착지 넘어짐','넘어짐')} ${pc[x.k]||0}${x.unit||'회'}</small>`).join(' · ')}</span><span class="cs-c cs-t"><small>감점</small><b>${pT?'−'+fmtN(pT):'0'}</b></span><span class="cs-e">고치기</span></button>`:''}
+        <div class="cs-tot"><span>합계 (100점 만점)</span><b>${fmtN(r3(tot-pT))}</b>${pT?`<small>심판 점수 ${fmtN(tot)} − 감점 ${fmtN(pT)}</small>`:''}</div></div>`;
+      const cur1=i<nI?gd(i):true;
+      const nextLab=i<nI-1?`확인 → ${i+2}경기`:i===nI-1?(nC>nI?'확인 → 감점':'확인 → 모아 보기'):'확인 → 모아 보기';
+      const foot=i<nC?`<button class="btn primary big cfm" data-act="jStep" data-i="${i+1}" ${cur1?'':'disabled'}>${cur1?nextLab:'난이도 · 완성도 · 표현성을 모두 골라 주세요'}</button>`
+        :`<button class="btn primary big cfm" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개 · 위 경기 버튼을 눌러 고르세요`:'점수 보내기'}</button>`;
+      return `<div class="gjsheet k-comp4 jv-one"><div class="gjtop">${banner}${top2}</div>${tabs}<div class="gjbody" style="--nc:1">${i<nC?cards[i]:sumB}</div><div class="gjfoot">${foot}</div></div>`;}
     const body=i<nC?cards[i]:`<div class="jsum">${cards.map((_,c)=>{const v=c>=nI?[pT?-pT:0]:its.slice(c*per,c*per+per).map(it=>d.items[it.k]);return `<button class="js-r ${doneOf(c)?'':'miss'}" data-act="jStep" data-i="${c}"><span class="tno">${c+1}</span><b>${esc(lab(c))}</b><em>${v.map(x=>x==null?'—':fmtN(x)).join(' · ')}</em><span class="js-e">고치기</span></button>`;}).join('')}</div>`;
     return `<div class="gjsheet k-${cur.kind==='comp'?'comp4':cur.kind} jv-one"><div class="gjtop">${banner}${top2}</div>${tabs}<div class="gjbody" style="--nc:1">${body}</div>
     <div class="gjfoot">${i<nC?`<button class="btn big" data-act="jStep" data-i="${Math.max(0,i-1)}" ${i?'':'disabled'}>← 앞</button><button class="btn primary big" data-act="jStep" data-i="${i+1}">${i===nC-1?'모아 보기 ✓':'다음 →'}</button>`:`<button class="btn primary big" data-act="submitScore" ${miss?'disabled':''}>${miss?`선택하지 않은 항목 ${miss}개`:'점수 보내기'}</button>`}</div></div>`;}

@@ -104,7 +104,9 @@
   const clsOf=el=>String(el.className||'').split(/\s+/).filter(c=>c&&!/^(on|ok|nv|miss|sel|act|active|done|warn|live|armed|primary)$/.test(c)).sort().join('.');
   function ordOf(el){const p=el.parentElement;if(!p)return 0;let i=0;for(const c of p.children){if(c===el)return i;if(c.tagName===el.tagName&&clsOf(c)===clsOf(el))i++;}return i;}
   function keyOf(el,depth){let k='',e=el;for(let d=0;d<depth&&e&&e.tagName!=='MAIN';d++){k=e.tagName+'.'+clsOf(e)+':'+ordOf(e)+'>'+k;e=e.parentElement;}return k;}
-  function textFit(){if(tfBusy)return;const b=document.body;if(!b||!b.classList.contains('jdg'))return;
+  /* v1.8.1 자동 맞춤 끔: 글자 크기는 각 채점판의 고정 크기(CSS)로만 — 기기마다 커졌다 작아졌다 하던 문제. 다시 켜려면 주소에 ?fit=1 */
+  const FITON=/[?&]fit=1/.test(location.search);
+  function textFit(){if(!FITON){const b0=document.body;if(b0&&b0.classList.contains('jdg')&&Math.min(innerWidth,innerHeight)>=600&&!b0.classList.contains('ksTF'))b0.classList.add('ksTF');return;}if(tfBusy)return;const b=document.body;if(!b||!b.classList.contains('jdg'))return;
     const W=innerWidth,H=innerHeight;const tab=Math.min(W,H)>=600;
     if(!tab){if(b.classList.contains('ksTF')){b.classList.remove('ksTF');document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});}return;}
     tfBusy=true;if(!b.classList.contains('ksTF'))b.classList.add('ksTF');
@@ -155,6 +157,11 @@
    'body.ksTF .jsheet.two .jo.ksTwo{grid-template-columns:repeat(var(--c),minmax(0,1fr))!important;grid-auto-rows:minmax(0,1fr)}'+
    'body.ksTF .jsheet.two .jrl span{font-weight:800;white-space:normal;word-break:keep-all}'+
    'body.ksTF .gjr>.gjrl{flex:0 0 auto;min-width:clamp(96px,13%,180px)}'+
+   /* v1.8.1 고정 글씨 크기 (자동 맞춤 대신): 화면 높이·너비 기준이라 다시 그려도 변하지 않음 */
+   'body.ksTF .gjo .opt:not(.pen){font-size:clamp(20px,min(4.4vh,2.6vw),40px);line-height:1}'+
+   'body.ksTF .gjrl span{font-size:clamp(17px,2.8vh,26px);font-weight:800}body.ksTF .gjrl b{font-size:clamp(18px,3.2vh,30px)}'+
+   'body.ksTF .jsheet .jo .opt:not(.ded){font-size:clamp(20px,min(4vh,2.3vw),36px);line-height:1}'+
+   'body.ksTF .jsheet .jl span,body.ksTF .jsheet .jrl span{font-size:clamp(15px,2.4vh,22px);font-weight:800}'+
    'body.ksTF .jsheet.two .jr{grid-template-columns:minmax(84px,17%) minmax(0,1fr)!important}';
    (document.head||document.documentElement).appendChild(st);}catch(e){}})();
   const tfQueue=()=>{if(!tfBusy)textFit();};
