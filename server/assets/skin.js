@@ -1097,6 +1097,25 @@ function run(){q=0;document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(el=>
 const sch=()=>{if(q)return;q=requestAnimationFrame(run);};
 window.KS_FILLFIT=sch;
 const go=()=>{try{new MutationObserver(()=>run()).observe(document.body,{childList:true,subtree:true});}catch(e){}   /* v1.7.86 그리기 전에 바로 맞춤 → 크기가 한 번 바뀌며 깜빡이던 것 없앰 */addEventListener('resize',()=>{document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(e=>e._kf='');sch();});setInterval(sch,1500);sch();};
+/* v1.8.3 경기 중 전광판: 이름과 시간을 「눈에 보이는 글자 모양」 기준으로 같은 높이에 — 한글은 칸 안에서 아래로, 숫자는 위로 치우쳐 보여서 칸 가운데만 맞추면 이름이 내려가 보임.
+   이 컴퓨터에 실제로 쓰인 글꼴로 글자 모양 높이를 재서 이름을 위아래로 옮깁니다 */
+const INK={c:null};
+function inkMid(el){try{const cs=getComputedStyle(el),t=(el.textContent||'').trim();if(!t)return null;
+  const c=INK.c||(INK.c=document.createElement('canvas').getContext('2d'));
+  c.font=`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;try{if('fontStretch' in c){const fs=cs.fontStretch;c.fontStretch=/%$/.test(fs)?({'75%':'condensed','80%':'condensed','87.5%':'semi-condensed','100%':'normal','112.5%':'semi-expanded','125%':'expanded'}[fs]||'normal'):fs;}}catch(e){}
+  const m=c.measureText(t),fa=m.fontBoundingBoxAscent,fd=m.fontBoundingBoxDescent;if(!(fa>0))return null;
+  const fsz=parseFloat(cs.fontSize),lh=cs.lineHeight==='normal'?(fa+fd):parseFloat(cs.lineHeight)||fsz*1.2;
+  const r=el.getBoundingClientRect(),pt=parseFloat(cs.paddingTop)||0,bt=parseFloat(cs.borderTopWidth)||0;
+  const base=r.top+bt+pt+(lh-(fa+fd))/2+fa;return base-(m.actualBoundingBoxAscent-m.actualBoundingBoxDescent)/2;}catch(e){return null;}}
+function inkAlign(){const bd=document.querySelector('.board.sk-live');if(!bd)return;
+  const nm=bd.querySelector('.ar-who:not(:has(.ar-mem)) .ar-nm, .n-who:not(:has(.n-mem)) .n-nm'),tm=bd.querySelector('.ar-sc>.ar-big.timer, .n-main:not(.sc) .n-clk>b.timer');if(!nm||!tm)return;
+  const cur=parseFloat(nm.dataset.inkdy||'0')||0,a=inkMid(nm),b=inkMid(tm);if(a==null||b==null)return;
+  const want=Math.round(cur+(b-a));if(Math.abs(want-cur)<2&&nm.style.top)return;
+  const lim=parseFloat(getComputedStyle(nm).fontSize)*0.35,v=Math.max(-lim,Math.min(lim,want));
+  nm.dataset.inkdy=String(v);nm.style.position='relative';nm.style.top=v+'px';}
+let inkT=0;const inkSch=()=>{if(inkT)return;inkT=requestAnimationFrame(()=>{inkT=0;inkAlign();});};
+try{new MutationObserver(ms=>{for(const m of ms){if(m.target&&m.target.closest&&m.target.closest('[data-timer]'))continue;inkSch();return;}}).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
+addEventListener('resize',inkSch);try{document.fonts&&document.fonts.ready.then(inkSch);document.fonts&&document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',inkSch);}catch(e){}
 if(document.body)go();else addEventListener('DOMContentLoaded',go);
 try{document.fonts&&document.fonts.ready.then(()=>{document.querySelectorAll('.ks-fillw,.ks-fillh').forEach(e=>e._kf='');sch();});}catch(e){}
 })();
