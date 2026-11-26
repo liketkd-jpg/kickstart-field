@@ -6833,6 +6833,8 @@ body.disp .board.ksb-solo .cbjs:not(:has(.shown)){transform:scale(.8);transform-
 body.ksfx-hold .board.ksb-solo .cbfinal,body.ksfx-hold .board.ksb-solo .vfinal{opacity:0}
 body.ksfx-slam .board.ksb-solo .cbfinal,body.ksfx-slam .board.ksb-solo .vfinal{animation:ksfxslam 1.15s cubic-bezier(.16,1,.3,1) both}
 @keyframes ksfxslam{0%{opacity:0;transform:scale(1.14);filter:blur(18px) brightness(2.2)}45%{opacity:1;filter:blur(0) brightness(1.45)}100%{opacity:1;transform:scale(1);filter:none}}
+/* v1.8.6 기존 디자인 순위: 4줄 이하면 줄 안 글씨·메달을 크게 */
+body.disp .board.rankv .cbrank:not(:has(>.cbr:nth-of-type(5)))>.cbr>*{zoom:1.38}body.disp .board.rankv .cbrank:not(:has(>.cbr:nth-of-type(5)))>.cbr{padding-top:.5em;padding-bottom:.5em}
 body.ksfx-shine .board .cbfinal,body.ksfx-shine .board .vfinal,body.ksfx-shine .board .ly-fin{position:relative;isolation:isolate}
 body.ksfx-shine .board .cbfinal::after,body.ksfx-shine .board .vfinal::after,body.ksfx-shine .board .ly-fin::after{content:"";position:absolute;inset:-6% -4%;pointer-events:none;z-index:5;mix-blend-mode:normal;
   background:linear-gradient(104deg,transparent 40%,rgba(255,255,255,.8) 49%,rgba(255,250,235,.5) 52%,transparent 60%) no-repeat;background-size:260% 100%;animation:ksfxshine 1.6s cubic-bezier(.45,0,.2,1) .25s both}
