@@ -108,19 +108,31 @@
         const r=el.getBoundingClientRect();if(r.height<30||r.width<30)return;
         const n=t.replace(/\s+/g,'').length;const zz=jz||1;let fs=Math.min(r.height*0.5,(r.width-10)/(n*0.62),64*zz)/zz;fs=Math.max(fs,16);
         const cur=parseFloat(el.style.fontSize)||0;if(Math.abs(cur-fs)>1){el.style.fontSize=fs.toFixed(0)+'px';el.style.lineHeight='1';}el.dataset.kstf='1';});
-      const walk=main.querySelectorAll('b,span,small,div,label,h3,h4,p,em,strong');
-      walk.forEach(el=>{if(el.dataset.kstf||el.closest('button')||(el.parentElement&&el.parentElement.closest('[data-kstf="t"]')))return;if(el.children.length>2)return;const t=(el.textContent||'').trim();if(!t||t.length>48)return;
-        const fs0=parseFloat(getComputedStyle(el).fontSize);if(!(fs0>0)||fs0>=20)return;
-        el.dataset.kstf='t';el.style.fontSize=Math.min(26,fs0*1.4).toFixed(1)+'px';});
+      /* 글씨를 단추 크기에 맞춤: 점수 단추 높이(refH)를 기준으로 짧은 말 30% · 보통 24% · 긴 줄 18% (줄이지는 않음, 칸을 넘지 않게) */
+      const hs=[...main.querySelectorAll('button[data-kstf="1"]')].map(e=>e.getBoundingClientRect().height/(jz||1)).filter(h=>h>20).sort((a,b)=>a-b);
+      const refH=hs.length?hs[Math.floor(hs.length/2)]:Math.min(innerWidth,innerHeight)/9;
+      const walk=main.querySelectorAll('b,span,small,div,label,h3,h4,p,em,strong,i');
+      walk.forEach(el=>{if(el.closest('button')||(el.parentElement&&el.parentElement.closest('[data-kstf="t"]')))return;
+        let own='';for(const n of el.childNodes)if(n.nodeType===3)own+=n.textContent;own=own.trim();if(!own)return;
+        const t=(el.textContent||'').trim();if(t.length>60)return;
+        if(!el.dataset.kstf0)el.dataset.kstf0=parseFloat(getComputedStyle(el).fontSize)||14;
+        const fs0=+el.dataset.kstf0;const L=t.length;
+        let want=refH*(L<=8?0.30:L<=16?0.24:0.18);want=Math.min(want,L<=8?36:L<=16?30:24);
+        if(want<=fs0+0.5){if(el.dataset.kstf==='t'){el.style.fontSize='';}return;}
+        el.dataset.kstf='t';el.style.fontSize=want.toFixed(1)+'px';el.style.lineHeight='1.15';
+        if(L<=16){el.style.whiteSpace='nowrap';el.style.wordBreak='keep-all';}
+        /* 칸을 넘으면 줄임 (글자가 한 글자씩 꺾이지 않게) */
+        const par=el.parentElement;if(par){const ps=getComputedStyle(par);const avail=par.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight);
+          const need=L<=16?el.scrollWidth:el.getBoundingClientRect().width/(jz||1)*0+el.scrollWidth;
+          if(avail>0&&need>avail+1){el.style.fontSize=Math.max(fs0,want*(avail/need)*0.96).toFixed(1)+'px';}}
+      });
     }catch(e){}
     tfBusy=false;}
   /* 태블릿 채점판 공통 모양: 청·홍 점수 단추는 두 줄(6+4), 항목 이름 크게 */
   (function(){try{const st=document.createElement('style');st.id='ksTFcss';st.textContent=
    'body.ksTF .jsheet.two .jo.ksTwo{grid-template-columns:repeat(var(--c),minmax(0,1fr))!important;grid-auto-rows:minmax(0,1fr)}'+
-   'body.ksTF .jsheet.two .jrl span{font-size:clamp(14px,2.3vh,19px)!important;font-weight:800;white-space:normal;word-break:keep-all;line-height:1.15}'+
-   'body.ksTF .jsheet.two .jrl b{font-size:clamp(14px,2.3vh,19px)!important}'+
-   'body.ksTF .gjrl{font-size:17px!important}body.ksTF .gjrl b{font-size:22px!important}'+
-   'body.ksTF .jct b{font-size:21px!important}';
+   'body.ksTF .jsheet.two .jrl span{font-weight:800;white-space:normal;word-break:keep-all}'+
+   'body.ksTF .gjr>.gjrl{flex:0 0 auto;min-width:clamp(96px,13%,180px)}';
    (document.head||document.documentElement).appendChild(st);}catch(e){}})();
   function tfQueue(){if(tfBusy)return;textFit();}
   const tfStart=()=>{textFit();try{new MutationObserver(()=>tfQueue()).observe(document.body,{childList:true,subtree:true,characterData:true});}catch(e){}addEventListener('resize',()=>{clearTimeout(tfT);tfT=setTimeout(()=>{document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});textFit();},200);});};
