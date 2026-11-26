@@ -4,6 +4,14 @@
    (두벌식: ㄱ=r, ㅏ=k … / 바코드·QR 스캐너처럼 키를 아주 빠르게 보내는 기계는 어느 칸이든 실제 누른 키로 다시 맞춤) */
 (function(){
   if(window.__ksen)return;window.__ksen=1;
+  /* v1.7.94 오래된 태블릿 브라우저: 화면 높이 단위 dvh·svh·lvh를 모르면 그 줄을 통째로 버려 화면이 위쪽에만 작게 나옴
+     → 그런 브라우저에서만 <style> 안의 dvh를 vh로 바꿔 다시 읽게 함 (?nodvh=1 로 시험) */
+  const NODVH=/[?&]nodvh=1/.test(location.search)||!(window.CSS&&CSS.supports&&CSS.supports('height','100dvh'));
+  function dvhFallback(root){if(!NODVH)return;try{(root||document).querySelectorAll('style').forEach(st=>{if(st.__ksdvh)return;const t=st.textContent;if(/[\d.]\s*[dsl]vh\b/.test(t)){st.textContent=t.replace(/([\d.])\s*[dsl]vh\b/g,'$1vh');}st.__ksdvh=1;});
+    document.querySelectorAll('[style*="dvh"],[style*="svh"],[style*="lvh"]').forEach(e=>{e.setAttribute('style',e.getAttribute('style').replace(/([\d.])\s*[dsl]vh\b/g,'$1vh'));});}catch(e){}}
+  window.ksDvhFallback=dvhFallback;
+  if(NODVH){dvhFallback();document.addEventListener('DOMContentLoaded',()=>{dvhFallback();try{new MutationObserver(()=>dvhFallback()).observe(document.head,{childList:true});}catch(e){}});
+    let dt=0;try{new MutationObserver(()=>{clearTimeout(dt);dt=setTimeout(()=>{try{document.querySelectorAll('[style*="dvh"]').forEach(e=>{e.setAttribute('style',e.getAttribute('style').replace(/([\d.])\s*[dsl]vh\b/g,'$1vh'));});}catch(e){}},60);}).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}}
   const J={'ㄱ':'r','ㄲ':'R','ㄴ':'s','ㄷ':'e','ㄸ':'E','ㄹ':'f','ㅁ':'a','ㅂ':'q','ㅃ':'Q','ㅅ':'t','ㅆ':'T','ㅇ':'d','ㅈ':'w','ㅉ':'W','ㅊ':'c','ㅋ':'z','ㅌ':'x','ㅍ':'v','ㅎ':'g',
     'ㅏ':'k','ㅐ':'o','ㅑ':'i','ㅒ':'O','ㅓ':'j','ㅔ':'p','ㅕ':'u','ㅖ':'P','ㅗ':'h','ㅘ':'hk','ㅙ':'ho','ㅚ':'hl','ㅛ':'y','ㅜ':'n','ㅝ':'nj','ㅞ':'np','ㅟ':'nl','ㅠ':'b','ㅡ':'m','ㅢ':'ml','ㅣ':'l',
     'ㄳ':'rt','ㄵ':'sw','ㄶ':'sg','ㄺ':'fr','ㄻ':'fa','ㄼ':'fq','ㄽ':'ft','ㄾ':'fx','ㄿ':'fv','ㅀ':'fg','ㅄ':'qt'};
