@@ -31,7 +31,7 @@ import (
 //go:embed assets
 var assets embed.FS
 
-var version = "1.7.97" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
+var version = "1.7.98" // 빌드할 때 -ldflags "-X main.version=…" 로 바꿀 수 있음
 
 type appInfo struct {
 	Key   string `json:"key"`
@@ -1042,6 +1042,14 @@ func lanIPs() []string {
 		score int
 	}
 	var cs []cand
+	// v1.7.98 실제로 공유기(기본 경로)로 나가는 주소를 맨 앞에 — 핫스폿·가상·둘째 랜 카드의 192.168 주소가 QR에 들어가던 문제
+	primary := ""
+	if c, err := net.Dial("udp", "8.8.8.8:80"); err == nil { // 패킷을 보내지 않고 경로만 확인
+		if ua, ok := c.LocalAddr().(*net.UDPAddr); ok && ua.IP.To4() != nil {
+			primary = ua.IP.To4().String()
+		}
+		c.Close()
+	}
 	ifs, _ := net.Interfaces()
 	for _, ifc := range ifs {
 		if ifc.Flags&net.FlagUp == 0 || ifc.Flags&net.FlagLoopback != 0 {
@@ -1071,6 +1079,13 @@ func lanIPs() []string {
 			}
 			if virtual {
 				sc -= 3
+			}
+			// 윈도우 모바일 핫스폿(192.168.137.1)·VirtualBox 기본(192.168.56.x)은 휴대폰이 닿지 않는 주소
+			if (ip[0] == 192 && ip[1] == 168 && (ip[2] == 137 || ip[2] == 56)) || strings.Contains(name, "bluetooth") {
+				sc -= 3
+			}
+			if ip.String() == primary {
+				sc = 10
 			}
 			cs = append(cs, cand{ip.String(), sc})
 		}
