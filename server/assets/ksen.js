@@ -113,6 +113,15 @@
   function keyOf(el,depth){let k='',e=el;for(let d=0;d<depth&&e&&e.tagName!=='MAIN';d++){k=e.tagName+'.'+clsOf(e)+':'+ordOf(e)+'>'+k;e=e.parentElement;}return k;}
   /* v1.8.1 자동 맞춤 끔: 글자 크기는 각 채점판의 고정 크기(CSS)로만 — 기기마다 커졌다 작아졌다 하던 문제. 다시 켜려면 주소에 ?fit=1 */
   const FITON=/[?&]fit=1/.test(location.search);
+  /* v1.8.16 오래된 크롬(갤럭시 탭 A 등)은 CSS clamp()·min()을 몰라서 글씨가 작게 나옴 → 글씨 크기를 여기서 px로 계산해 변수로 넣음
+     (화면 크기가 바뀔 때만 다시 계산 · 누를 때는 그대로라 떨리지 않음) */
+  (function(){let lw=-1,lh=-1;const C=(a,v,b)=>Math.max(a,Math.min(b,v));
+    const setFS=()=>{const W=innerWidth,H=innerHeight;if(Math.abs(W-lw)<2&&Math.abs(H-lh)<80)return;lw=W;lh=H;const vh=H/100,vw=W/100,r=document.documentElement.style;
+      const P=(k,v)=>r.setProperty(k,v.toFixed(1)+'px');
+      P('--ksO',C(20,Math.min(4.4*vh,2.6*vw),40));P('--ksO2',C(20,Math.min(4*vh,2.3*vw),36));
+      P('--ksL',C(17,2.8*vh,26));P('--ksLb',C(18,3.2*vh,30));P('--ksJ',C(15,2.4*vh,22));
+      P('--ksC',C(20,Math.min(5.6*vh,3*vw),40));P('--ksT',C(26,Math.min(6*vh,5*vw),56));P('--ksTp',C(28,Math.min(5.5*vh,8*vw),64));};
+    setFS();addEventListener('resize',()=>setTimeout(setFS,250));addEventListener('orientationchange',()=>setTimeout(()=>{lw=-1;setFS();},400));})();
   function textFit(){if(!FITON){const b0=document.body;if(b0&&b0.classList.contains('jdg')&&Math.min(innerWidth,innerHeight)>=600&&!b0.classList.contains('ksTF'))b0.classList.add('ksTF');return;}if(tfBusy)return;const b=document.body;if(!b||!b.classList.contains('jdg'))return;
     const W=innerWidth,H=innerHeight;const tab=Math.min(W,H)>=600;
     if(!tab){if(b.classList.contains('ksTF')){b.classList.remove('ksTF');document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});}return;}
@@ -165,10 +174,10 @@
    'body.ksTF .jsheet.two .jrl span{font-weight:800;white-space:normal;word-break:keep-all}'+
    'body.ksTF .gjr>.gjrl{flex:0 0 auto;min-width:clamp(96px,13%,180px)}'+
    /* v1.8.1 고정 글씨 크기 (자동 맞춤 대신): 화면 높이·너비 기준이라 다시 그려도 변하지 않음 */
-   'body.ksTF .gjo .opt:not(.pen){font-size:clamp(20px,min(4.4vh,2.6vw),40px);line-height:1}'+
-   'body.ksTF .gjrl span{font-size:clamp(17px,2.8vh,26px);font-weight:800}body.ksTF .gjrl b{font-size:clamp(18px,3.2vh,30px)}'+
-   'body.ksTF .jsheet .jo .opt:not(.ded){font-size:clamp(20px,min(4vh,2.3vw),36px);line-height:1}'+
-   'body.ksTF .jsheet .jl span,body.ksTF .jsheet .jrl span{font-size:clamp(15px,2.4vh,22px);font-weight:800}'+
+   'body.ksTF .gjo .opt:not(.pen){font-size:var(--ksO,30px);line-height:1}'+
+   'body.ksTF .gjrl span{font-size:var(--ksL,20px);font-weight:800}body.ksTF .gjrl b{font-size:var(--ksLb,22px)}'+
+   'body.ksTF .jsheet .jo .opt:not(.ded){font-size:var(--ksO2,28px);line-height:1}'+
+   'body.ksTF .jsheet .jl span,body.ksTF .jsheet .jrl span{font-size:var(--ksJ,17px);font-weight:800}'+
    'body.ksTF .jsheet.two .jr{grid-template-columns:minmax(84px,17%) minmax(0,1fr)!important}';
    (document.head||document.documentElement).appendChild(st);}catch(e){}})();
   const tfQueue=()=>{if(!tfBusy)textFit();};
