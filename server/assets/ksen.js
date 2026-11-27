@@ -92,9 +92,9 @@
     const on=b.classList.contains('jdg');
     const W=innerWidth,Hh=innerHeight;/* 확대해도 innerWidth는 실제 화면 크기 그대로 */
     let z=1;
-    if(on&&Math.min(W,Hh)>=600){const land=W>=Hh;const bw=land?1280:800,bh=land?800:1280;z=Math.min(W/bw,Hh/bh);if(z<1.04)z=1;z=Math.min(z,2.4);}
+    if(on&&Math.min(W,Hh)>=600){const land=W>=Hh;/* v1.8.18 터치 태블릿은 960×600(갤럭시 탭 기본 화면) 기준으로 확대 → 화면 크기 설정이 달라도 1심 패드와 똑같은 모양 */const TAB=/gyeokpa/.test(location.pathname)&&((navigator.maxTouchPoints||0)>0||'ontouchstart' in window)&&Math.max(screen.width||0,screen.height||0)<=1400;const bw=land?(TAB?960:1280):(TAB?600:800),bh=land?(TAB?600:800):(TAB?960:1280);z=Math.min(W/bw,Hh/bh);if(z<1.04)z=1;z=Math.min(z,2.4);}
     z=Math.round(z*100)/100;
-    if(z!==(jz||1)){jz=z;document.documentElement.style.zoom=z===1?'':String(z);vhFix(z);}
+    if(z!==(jz||1)){jz=z;document.documentElement.style.zoom=z===1?'':String(z);vhFix(z);try{window.__ksSetFS&&__ksSetFS(1);}catch(e){}}
   }catch(e){}}
   addEventListener('resize',()=>{clearTimeout(judgeZoom.t);judgeZoom.t=setTimeout(judgeZoom,150);});
   try{new MutationObserver(()=>{if(jz&&jz!==1)vhFix(jz);}).observe(document.documentElement,{childList:true,subtree:false});document.addEventListener('DOMContentLoaded',()=>{try{new MutationObserver(()=>{if(jz&&jz!==1)vhFix(jz);}).observe(document.head,{childList:true});}catch(x){}});}catch(e){}
@@ -116,13 +116,13 @@
   /* v1.8.16 오래된 크롬(갤럭시 탭 A 등)은 CSS clamp()·min()을 몰라서 글씨가 작게 나옴 → 글씨 크기를 여기서 px로 계산해 변수로 넣음
      (화면 크기가 바뀔 때만 다시 계산 · 누를 때는 그대로라 떨리지 않음) */
   (function(){let lw=-1,lh=-1;const C=(a,v,b)=>Math.max(a,Math.min(b,v));
-    const setFS=()=>{const W=innerWidth,H=innerHeight;if(Math.abs(W-lw)<2&&Math.abs(H-lh)<80)return;lw=W;lh=H;const vh=H/100,vw=W/100,r=document.documentElement.style;
+    const setFS=(force)=>{const zz=Number(document.documentElement.style.zoom)||1,W=innerWidth/zz,H=innerHeight/zz;if(!force&&Math.abs(W-lw)<2&&Math.abs(H-lh)<80)return;lw=W;lh=H;const vh=H/100,vw=W/100,r=document.documentElement.style;
       const P=(k,v)=>r.setProperty(k,v.toFixed(1)+'px');
       P('--ksO',C(20,Math.min(4.4*vh,2.6*vw),40));P('--ksO2',C(20,Math.min(4*vh,2.3*vw),36));
       P('--ksL',C(17,2.8*vh,26));P('--ksLb',C(18,3.2*vh,30));P('--ksJ',C(15,2.4*vh,22));
       P('--ksC',C(20,Math.min(5.6*vh,3*vw),40));P('--ksT',C(26,Math.min(6*vh,5*vw),56));P('--ksTp',C(28,Math.min(5.5*vh,8*vw),64));};
-    setFS();addEventListener('resize',()=>setTimeout(setFS,250));addEventListener('orientationchange',()=>setTimeout(()=>{lw=-1;setFS();},400));})();
-  function textFit(){if(!FITON){const b0=document.body;if(b0&&b0.classList.contains('jdg')&&Math.min(innerWidth,innerHeight)>=600&&!b0.classList.contains('ksTF'))b0.classList.add('ksTF');return;}if(tfBusy)return;const b=document.body;if(!b||!b.classList.contains('jdg'))return;
+    window.__ksSetFS=setFS;setFS();addEventListener('resize',()=>setTimeout(()=>setFS(),250));addEventListener('orientationchange',()=>setTimeout(()=>{lw=-1;setFS();},400));})();
+  function textFit(){if(!FITON){const b0=document.body;if(b0&&b0.classList.contains('jdg')&&(Math.min(innerWidth,innerHeight)>=600||Math.min(screen.width||0,screen.height||0)>=560)&&!b0.classList.contains('ksTF'))b0.classList.add('ksTF');return;}if(tfBusy)return;const b=document.body;if(!b||!b.classList.contains('jdg'))return;
     const W=innerWidth,H=innerHeight;const tab=Math.min(W,H)>=600;
     if(!tab){if(b.classList.contains('ksTF')){b.classList.remove('ksTF');document.querySelectorAll('[data-kstf]').forEach(e=>{e.style.fontSize='';e.removeAttribute('data-kstf');});}return;}
     tfBusy=true;if(!b.classList.contains('ksTF'))b.classList.add('ksTF');
