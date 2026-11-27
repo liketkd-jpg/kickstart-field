@@ -849,7 +849,7 @@ body.disp .board.one .pban:empty + .who-row{}
 
 .bcmd{display:grid;grid-template-columns:1.7fr 1fr .7fr;gap:8px}
 .bcmd .btn{padding:12px 8px;font-size:18px}
-html body .btn.wdb{background:transparent!important;border:1.5px solid #E5484D!important;color:#FF8A8A!important;font-weight:800}.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
+html body .btn.wdb{background:transparent!important;border:1.5px solid #E5484D!important;color:#FF8A8A!important;font-weight:800}.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .75fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .75fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
 body.bmax .bcmd .btn{font-size:clamp(18px,2.6vh,28px);padding:clamp(10px,1.6vh,18px) 8px}
 @media (min-width:1000px) and (max-height:820px){.bcmd .btn{padding:7px 6px;font-size:16px}.bcmd{gap:6px}}
 
@@ -2370,7 +2370,7 @@ function aBoard(){
       ${revealed?'':cur.entries.map(e=>outBanner(cur.divName,e.name,e.team,cur.entries.length===1?'<button class="btn wdb" data-act="withdraw">🚫 기권 처리</button>':'<span class="small">토너먼트는 「특수 판정 → 기권승」으로 처리해 주세요</span>')).join('')}
       <div class="btimer"><span class="timer" data-timer>${cdText(ST().timer)}</span><span class="small muted">제한 ${limitText(t)}${flag==='over'?' · <b style="color:var(--red)">초과</b>':flag==='under'?' · <b style="color:var(--red)">미달</b>':''}</span>
         ${cur.type==='recognized'?`<span class="row" style="gap:4px">${[60,90,120].map(x=>`<button class="btn sm ${t.max===x?'primary':''}" data-act="timerMax" data-t="${x}" ${t.running?'disabled':''}>${mmss(x)}</button>`).join('')}</span>`:''}
-        </div><div class="bcmd${SET().bow!==false?' b4':''}">${(()=>{const ra=ST().readyAt,pend=ra&&!t.running&&Date.now()<ra+READY_SEC*1000+1500;return cmdBtns(pend,revealed||t.running,ra);})()}<button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 · 쉬어</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>
+        </div><div class="bcmd${SET().bow!==false?' b4':''}">${(()=>{const ra=ST().readyAt,pend=ra&&!t.running&&Date.now()<ra+READY_SEC()*1000+1500;return cmdBtns(pend,revealed||t.running,ra);})()}<button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 · 쉬어</button><button class="btn big exb" data-act="cmdExit" ${t.running?'disabled':''}>🔊 퇴장</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>
       <div class="bents ${cur.entries.length===2?'two':''}">${ent}</div>${window.MUS?MUS.html('run'):''}
       <div class="tablewrap">${jt}</div>
       <div class="row bact">${revealed?`<button class="btn primary big" data-act="nextCall">${mv.two&&mv.stage===1?'2품새 호출 →':(()=>{const i2=flowInfo();return i2&&i2.n?'다음 부문 첫 경기 호출 →':'다음 경기 호출 →';})()}</button>${(()=>{const inf=autoNextInfo();return inf?`<span class="chip live" style="font-size:14px" data-cd="${inf.at}">${Math.max(0,Math.ceil((inf.at-Date.now())/1000))}초 뒤 2품새 자동 호출</span><button class="btn sm" data-act="cancelAutoNext">취소</button>`:'';})()}${mv.win==='blue'||mv.win==='red'?`<button class="btn sm" data-act="sayWinner" data-k="${mv.win}">🔊 ${mv.win==='blue'?'청':'홍'} 승</button>`:''}<button class="btn danger" data-act="armed" data-do="rescore">재채점</button>${win==='tie'?`<div class="chip warn" style="font-size:14px;white-space:normal">${revealed?'':'(예상) '}완전 동점 · ${perPoom?'두 품새 평균으로 최종 판정, 평균도 같으면 ':''}제14조에 따라 재경기 (진행 순서에 자동 추가)</div>`:why?`<div class="chip ${revealed?'ok':'warn'}" style="font-size:14px;white-space:normal">${revealed?'':'(예상) '}${esc(why)} · 제14조${mv.two?' · 두 품새 평균 기준':''}</div>`:mv.two&&mv.stage===1?'<div class="chip live" style="font-size:14px">1품새 점수 공개 · 다음은 2품새</div>':''}`
@@ -2866,15 +2866,18 @@ function vDisplay(){
 
 /* ===================== 음성 구령 =====================
    차렷·준비 / 시작 / 바로. 설정에 따라 운영석이나 전광판 컴퓨터(또는 둘 다)에서 소리를 냅니다 */
-const VOICE_TXT={enter:['출전!'],ready:['준비!'],start:['시작!'],stop:['바로!','쉬어!'],blue:['청','승!'],red:['홍','승!'],attn:['차렷!'],bow:['경례!']};
-const READY_SEC=4; /* v1.7.58 준비→시작 5초→4초 (대회 운영 요청) */ /* 준비 구령 뒤 자동 시작까지 */
-const VOICE_BIG={ready:'준비',start:'시작',stop:'바로',blue:'청 승',red:'홍 승',attn:'차렷',bow:'경례'};
+const VOICE_TXT={enter:['출전!'],exit:['퇴장!'],ready:['준비!'],start:['시작!'],stop:['바로!','쉬어!'],blue:['청','승!'],red:['홍','승!'],attn:['차렷!'],bow:['경례!']};
+/* v1.8.15 품새(공인·자유)는 준비→시작, 바로→쉬어 모두 2초 · 태권체조·팀 경연은 그대로 */
+const SHORTCMD=()=>{try{const c=curOf();return !!c&&!['gym','team100'].includes(c.type);}catch(e){return false;}};
+window.ksStopGap=()=>SHORTCMD()?2000:3000;
+const READY_SEC0=4;const READY_SEC=()=>SHORTCMD()?2:READY_SEC0; /* v1.7.58 준비→시작 5초→4초 (대회 운영 요청) */ /* 준비 구령 뒤 자동 시작까지 */
+const VOICE_BIG={exit:'퇴장',ready:'준비',start:'시작',stop:'바로',blue:'청 승',red:'홍 승',attn:'차렷',bow:'경례'};
 /* v1.7.47 차렷·경례: 첫 품새(격파는 매번)만 「차렷 → 1초 → 경례 → 준비」, 2품새는 「준비 · 시작」만. 인사는 시작할 때만 */
 const BOW_AT=2600,BOW_READY=5300; /* v1.7.58 차렷→경례 1.6초→2.6초 */
 function bowFirst(cur){return SET().bow!==false&&!!cur&&(cur.k||1)===1;}
 const BOWED={};let BOWING=0;   /* v1.7.53 차렷·경례를 이미 한 선수 · 경례 중 */
 function cmdBtns(pend,dis,ra){const cur=curOf(),bw=SET().bow!==false,first=bowFirst(cur)&&!(cur&&BOWED[cur.callId]),bz=Date.now()<BOWING;
-  return `<button class="btn big entb" data-act="cmdEnter" ${dis||pend||bz?'disabled':''}>🔊 출전</button>`+(bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC*1000}">시작까지 ${READY_SEC}초</span>`:'🔊 준비 · 시작'}</button>`;}
+  return `<button class="btn big entb" data-act="cmdEnter" ${dis||pend||bz?'disabled':''}>🔊 출전</button>`+(bw?`<button class="btn big ${first&&!pend?'primary':''}" data-act="cmdBow" ${dis||pend||bz?'disabled':''}>🔊 차렷 · 경례</button>`:'')+`<button class="btn big ${pend?'armed':first?'':'primary'}" data-act="cmdReady" ${dis||pend||bz?'disabled':''}>${pend?`🔊 준비 · <span data-readycd="${ra+READY_SEC()*1000}">시작까지 ${READY_SEC()}초</span>`:'🔊 준비 · 시작'}</button>`;}
 let VOICE_SEEN=Date.now(),READY_T=null;
 /* 진행요원 구령 목소리: 남성 한국어 목소리를 먼저 찾고, 빠르고 씩씩하게 */
 function koVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));return vs.find(v=>/InJoon|Minsu|Hyunsu|Jinho|Bongjin|Gookmin|Male|남성|남자/i.test(v.name))||vs.find(v=>/Natural|Online|Google/i.test(v.name))||vs[0]||null;}catch(e){return null;}}
@@ -2888,7 +2891,7 @@ function sayCmd(key){
   const words=VOICE_TXT[key];if(!words)return;
   const ss=window.speechSynthesis;
   if(!ss||typeof SpeechSynthesisUtterance==='undefined'){voiceWarn('이 기기(브라우저)는 음성 기능을 지원하지 않습니다. 대회 설정에서 구령 녹음 파일을 올려 주세요');return;}
-  const gap=key==='stop'?3000:key==='blue'||key==='red'?180:400;let n=0;
+  const gap=key==='stop'?window.ksStopGap():key==='blue'||key==='red'?180:400;let n=0;
   const go=i=>{if(i>=words.length)return;let done=false;const next=()=>{if(done)return;done=true;setTimeout(()=>go(i+1),gap);};
     const v=koVoice();const u=new SpeechSynthesisUtterance(words[i]);u.lang='ko-KR';if(v)u.voice=v;u.rate=1.12;u.pitch=koMale(v)?1.05:1.1;u.volume=1;
     u.onend=next;u.onerror=ev=>{if(ev&&ev.error==='not-allowed')voiceWarn('소리가 막혀 있습니다. 화면을 한 번 누른 뒤 다시 눌러 주세요');next();};
@@ -3450,6 +3453,7 @@ const ACT={
   timerStop:()=>{const st=ST(),t=st.timer;if(voiceHere('admin'))sayCmd('stop');const vm=voiceMark('stop');VOICE_SEEN=Math.max(VOICE_SEEN,routeNow()==='display'?0:vm.at);
     saveState({...st,voice:vm,timer:{...t,running:false,elapsed:elapsed(t),startedAt:0,stoppedAt:Date.now()}});},
   /* v1.7.53 구령 단추를 둘로: 「차렷 · 경례」(차렷 → 1초 → 경례) · 「준비 · 시작」(준비 → 5초 → 시작) */
+  cmdExit:()=>{const st=ST();if(st.timer&&st.timer.running)return;if(voiceHere('admin'))sayCmd('exit');const vm=voiceMark('exit');VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);saveState({...st,voice:vm});}, /* v1.8.15 퇴장 */
   cmdEnter:()=>{const st=ST();if(st.timer&&st.timer.running)return;if(voiceHere('admin'))sayCmd('enter');const vm=voiceMark('enter');VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);saveState({...st,voice:vm});},
   cmdBow:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);
     const cur=curOf(),say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
@@ -3459,7 +3463,7 @@ const ACT={
     const cur=curOf(),cid=cur&&cur.callId,say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
     const alive=ra=>{const s2=ST(),c2=curOf();return s2.readyAt===ra&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&c2&&c2.callId===cid;};
     const vm=say('ready'),ra=vm.at;saveState({...st,voice:vm,readyAt:ra});
-    READY_T=setTimeout(()=>{if(alive(ra))ACT.timerStart();},READY_SEC*1000);},
+    READY_T=setTimeout(()=>{if(alive(ra))ACT.timerStart();},READY_SEC()*1000);},
   testVoice:()=>sayCmd('ready'),
   testVoiceQuiet:()=>{try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}catch(e){}render();},
   setVoice:b=>saveSettings({...SET(),voice:b.dataset.v}),
@@ -4448,6 +4452,9 @@ function autoMap(entries){
   byName.forEach(en=>{const n=norm(en.name);if(n.length<2)return;const hits=fn.filter(f=>f.n.includes(n)&&!used.has(f.k));if(hits.length>=1){out[en.id]=hits[0].k;used.add(hits[0].k);}});
   const teamCount={};entries.forEach(en=>{const t=norm(en.team);if(t)teamCount[t]=(teamCount[t]||0)+1;});
   entries.forEach(en=>{if(out[en.id])return;const t=norm(en.team);if(!t||t.length<2||teamCount[t]!==1)return;const hits=fn.filter(f=>f.n.includes(t)&&!used.has(f.k));if(hits.length===1){out[en.id]=hits[0].k;used.add(hits[0].k);}});
+  /* v1.8.15 접수 홈페이지 음원 「[태권체조] 팀명_소속.mp3」: 팀명 부분이 명단 이름 안에 들어 있으면 연결 (명단 이름에 「A팀」 등이 덧붙은 경우) */
+  const core=nm=>{let t=String(nm||'').replace(/\.[a-z0-9]{2,4}$/i,'').replace(/^\s*\[[^\]]*\]\s*/,'');const u=t.lastIndexOf('_');if(u>0)t=t.slice(0,u);return norm(t);};
+  entries.forEach(en=>{if(out[en.id])return;const n=norm(en.name);if(n.length<2)return;const hits=FILES.filter(f=>!used.has(f.k)).filter(f=>{const c=core(f.name);return c.length>=2&&(n.includes(c)||c.includes(n));});if(hits.length===1){out[en.id]=hits[0].k;used.add(hits[0].k);}});
   return out;
 }
 let AUTO={},AUTO_KEY='';
@@ -5085,13 +5092,13 @@ async function selfTest(){if(!AS){CHECK='<b class="bad">권한 없음</b>';sched
   catch(err){CHECK=`<b class="bad">서버 저장 실패 (${e(err&&err.code||'오류')})</b>`;}
   schedule();}
 /* ---------- 구령 녹음 파일 ---------- */
-const SLOTS=[['ready','준비'],['start','시작'],['stop','바로'],['rest','쉬어'],['blue','청 승'],['red','홍 승']];
-const SEQ={ready:['ready'],start:['start'],stop:['stop','rest'],blue:['blue'],red:['red']};
+const SLOTS=[['exit','퇴장'],['ready','준비'],['start','시작'],['stop','바로'],['rest','쉬어'],['blue','청 승'],['red','홍 승']];
+const SEQ={exit:['exit'],ready:['ready'],start:['start'],stop:['stop','rest'],blue:['blue'],red:['red']};
 let VAUD=null;
 window.KS_VOICE=function(key){const seq=SEQ[key];if(!seq)return false;const ds=seq.map(k=>VDOCS[k]);if(!ds[0])return false;
   if(VAUD){try{VAUD.pause();}catch(err){}VAUD=null;}
   try{window.KS_AUDIO&&KS_AUDIO.stopAll();}catch(err){}
-  const playOne=(i)=>{const d=ds[i];if(!d)return;srcOf(d).then(src=>{const nx=()=>{if(i+1<ds.length)setTimeout(()=>playOne(i+1),key==='stop'?3000:200);};
+  const playOne=(i)=>{const d=ds[i];if(!d)return;srcOf(d).then(src=>{const nx=()=>{if(i+1<ds.length)setTimeout(()=>playOne(i+1),key==='stop'?(window.ksStopGap?ksStopGap():3000):200);};
       if(window.KS_AUDIO&&KS_AUDIO.play(src,{onended:nx}))return;
       const a=new Audio(src);VAUD=a;a.volume=1;a.onended=nx;a.play().catch(()=>{});}).catch(()=>{});};
   playOne(0);return true;};
@@ -5580,7 +5587,7 @@ function hasLocalKo(){try{return speechSynthesis.getVoices().some(v=>/^ko/i.test
 
 
 /* ---------- 2) 노트북 「구령음성」 폴더의 녹음 파일 ---------- */
-const FILES={enter:['출전'],ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승'],attn:['차렷'],bow:['경례']};
+const FILES={enter:['출전'],exit:['퇴장'],ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승'],attn:['차렷'],bow:['경례']};
 let LIST=null;   /* 폴더에 있는 파일 이름 → 주소 */
 async function loadList(){
   if(!F)return;
@@ -5600,7 +5607,7 @@ let PLAY=null;
 function playSeq(urls,key){
   if(PLAY){try{PLAY.pause();}catch(e){}PLAY=null;}
   try{window.KS_AUDIO&&KS_AUDIO.stopAll();}catch(e){}
-  const one=i=>{if(i>=urls.length)return;const nx=()=>setTimeout(()=>one(i+1),key==='stop'?3000:200);
+  const one=i=>{if(i>=urls.length)return;const nx=()=>setTimeout(()=>one(i+1),key==='stop'?(window.ksStopGap?ksStopGap():3000):200);
     if(window.KS_AUDIO&&KS_AUDIO.play(urls[i],{onended:nx}))return;
     const a=new Audio(urls[i]);PLAY=a;a.volume=1;a.onended=nx;a.play().catch(()=>{});};
   one(0);

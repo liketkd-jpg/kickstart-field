@@ -9,7 +9,7 @@
   const APPK=location.pathname.split('/').filter(Boolean)[0]||'';
   if(!/^(poomsae|gyeokpa|kyorugi)$/.test(APPK))return;
   const g=n=>{try{return (0,eval)(n);}catch(e){return undefined;}};
-  const BIG=APPK==='kyorugi'?{start1:'시작',stop:'그만'}:{enter:'출전',attn:'차렷',bow:'경례',ready:'준비',start:'시작',stop:'바로'};
+  const BIG=APPK==='kyorugi'?{start1:'시작',stop:'그만'}:{enter:'출전',exit:'퇴장',attn:'차렷',bow:'경례',ready:'준비',start:'시작',stop:'바로'};
   const SHOW_MS=1600,REST_AT=3600;   /* 「바로」 소리(약 0.6초) + 3초 쉬고 「쉬어」 */
   const isDisp=()=>{try{const r=g('routeNow');return typeof r==='function'&&r()==='display';}catch(e){return false;}};
   const enabled=()=>{try{const S=g('S');return !(S&&S.settings&&S.settings.bigCmd===false);}catch(e){return true;}};
@@ -27,7 +27,7 @@
     if(!vc||!enabled())return;
     const t=BIG[vc.k];if(!t)return;
     clearTimeout(restT);show(t,vc.k);
-    if(vc.k==='stop'&&APPK!=='kyorugi')restT=setTimeout(()=>{if(last===key&&isDisp()&&enabled())show('쉬어');},REST_AT);
+    if(vc.k==='stop'&&APPK!=='kyorugi')restT=setTimeout(()=>{if(last===key&&isDisp()&&enabled())show('쉬어');},(window.ksStopGap?ksStopGap()+600:REST_AT)); /* v1.8.15 품새는 2초 */
   }
   /* v1.7.58 다시 네모 상자: 화면 가운데 진한 상자 안에 큰 흰 글씨가 떴다가 사라짐 (배경 화면과 섞이지 않게) · 빛 번짐 없음 */
   try{if(!document.querySelector('link[href="/vendor/fonts/themes.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/vendor/fonts/themes.css';document.head.appendChild(l);}}catch(e){}
@@ -41,7 +41,7 @@
    출전 금빛(글씨도 금빛) · 차렷·경례 은빛 · 준비·시작 청록 · 바로·쉬어 자줏빛 붉은색 */
 #ksCmdBig span{--kc:201,209,220;background:linear-gradient(180deg,#16233F,#0C1528);color:#fff;border:min(.3vw,.5vh) solid rgba(var(--kc),.9);
   box-shadow:0 0 0 min(.6vw,1vh) rgba(var(--kc),.12),0 0 min(4vw,7vh) rgba(var(--kc),.18),0 min(2vw,3.5vh) min(6vw,10vh) rgba(0,0,0,.6)}
-#ksCmdBig[data-k="enter"] span{--kc:217,179,106}
+#ksCmdBig[data-k="enter"] span,#ksCmdBig[data-k="exit"] span{--kc:217,179,106}
 #ksCmdBig:is([data-k="attn"],[data-k="bow"]) span{--kc:201,209,220}
 #ksCmdBig:is([data-k="ready"],[data-k="start"],[data-k="start1"]) span{--kc:63,191,176}
 #ksCmdBig:is([data-k="stop"],[data-k="rest"]) span{--kc:200,88,122}

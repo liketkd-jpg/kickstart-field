@@ -765,7 +765,7 @@ body.disp .board.one .pban:empty + .who-row{}
 
 .bcmd{display:grid;grid-template-columns:1.7fr 1fr .7fr;gap:8px}
 .bcmd .btn{padding:12px 8px;font-size:18px}
-.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
+.bcmd.b4{grid-template-columns:.75fr 1fr 1.2fr 1fr .75fr .6fr}.bcmd:not(.b4){grid-template-columns:.75fr 1.7fr 1fr .75fr .7fr}@media (max-width:600px){.bcmd.b4,.bcmd:not(.b4){grid-template-columns:1fr 1fr}}
 body.bmax .bcmd .btn{font-size:clamp(18px,2.6vh,28px);padding:clamp(10px,1.6vh,18px) 8px}
 @media (min-width:1000px) and (max-height:820px){.bcmd .btn{padding:7px 6px;font-size:16px}.bcmd{gap:6px}}
 
@@ -1982,7 +1982,7 @@ function render(){
   }catch(err){console.error(err);html=`<div class="banner bad">화면을 그리는 중 오류가 났습니다: ${esc(err&&err.message||err)}</div>`;}
   if(r==='display'&&!SOLO_ON){
     let ov='',tap='';
-    try{const vc=ST().voice,vAge=vc&&vc.at?Date.now()-vc.at:1e9;if(vc&&vAge<1800){setTimeout(schedule,1850-vAge);const tx=({ready:'준비',start:'시작',stop:'바로',attn:'차렷',bow:'경례'})[vc.k];if(tx)ov=`<div class="cmdov"><span>${tx}</span></div>`;}
+    try{const vc=ST().voice,vAge=vc&&vc.at?Date.now()-vc.at:1e9;if(vc&&vAge<1800){setTimeout(schedule,1850-vAge);const tx=({exit:'퇴장',ready:'준비',start:'시작',stop:'바로',attn:'차렷',bow:'경례'})[vc.k];if(tx)ov=`<div class="cmdov"><span>${tx}</span></div>`;}
       if(voiceHere('display')&&navigator.userActivation&&!navigator.userActivation.hasBeenActive)tap='<button class="tapv" data-act="testVoiceQuiet">🔊 화면을 한 번 눌러 음성을 켜 주세요</button>';}catch(e){}
     html=`<div class="dctl gdctl"><button data-act="back">← 운영석</button><button data-act="fullscreen">전체 화면</button></div>`+html+ov+tap;
   }
@@ -2377,7 +2377,7 @@ function runPanel(st,cur){
   const prepB=EV[cur.ev]?.prep?`<div class="prep"><span class="small">격파물 준비 ${EV[cur.ev].prep>=120?EV[cur.ev].prep/60+'분':EV[cur.ev].prep+'초'}</span>${st.prep&&st.prep.until?`<span class="timer sm" data-prep>${prepText(st)}</span><button class="btn sm" data-act="prepStop">준비 끝</button>`:`<button class="btn sm" data-act="prepStart" ${revealed?'disabled':''}>준비 시간 시작</button>`}<span class="small muted">초과 시 10초마다 감점 1</span></div>`:'';
   const timerB=`<div class="tbox"><div class="row between"><span class="timer" data-timer>${cdText(t)}</span><span class="small muted">제한 ${limitTxt(cur)}<br>경과 ${mmss(elapsed(t))}</span></div>
     <div class="bcmd${SET().bow!==false?' b4':''}">${cmdBtns(pend,revealed||t.running,ra)}
-    <button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 · 쉬어</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>${prepB}</div>`;
+    <button class="btn big ${t.running?'stopb':''}" data-act="timerStop" ${t.running?'':'disabled'}>🔊 바로 · 쉬어</button><button class="btn big exb" data-act="cmdExit" ${t.running?'disabled':''}>🔊 퇴장</button><button class="btn big" data-act="timerReset" ${t.running?'disabled':''}>리셋</button></div>${prepB}</div>`;
   if(revealed&&r){
     const nx=d?callsOf(d).find(c=>!callDone(c)&&c.callId!==cur.callId):null;
     return `<div class="panel">${head}${miniBoard(cur,st,r,d)}${resultCard(r,cur)}
@@ -2829,7 +2829,7 @@ function maybeAutoReveal(){
   clearTimeout(AUTO_T);AUTO_T=setTimeout(()=>{const s2=ST(),c2=curOf();if(c2&&c2.callId+'#'+s2.epoch===key&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&restWait(s2)<=0&&entryReady(c2))doReveal(true).catch(()=>{});else AUTO_KEY='';},1500);
 }
 /* ===================== 음성 구령 (제11조: 준비 · 시작 / 바로) ===================== */
-const VOICE_TXT={enter:['출전!'],ready:['준비!'],start:['시작!'],stop:['바로!'],attn:['차렷!'],bow:['경례!']};
+const VOICE_TXT={enter:['출전!'],exit:['퇴장!'],ready:['준비!'],start:['시작!'],stop:['바로!'],attn:['차렷!'],bow:['경례!']};
 const READY_SEC=4; /* v1.7.58 준비→시작 5초→4초 (대회 운영 요청) */
 /* v1.7.47 차렷·경례: 선수마다 「차렷 → 1초 → 경례 → 준비 → 5초 → 시작」 (대회 설정에서 끌 수 있음: SET().bow=false) */
 const BOW_AT=2600,BOW_READY=5300; /* v1.7.58 차렷→경례 1.6초→2.6초 */
@@ -3063,6 +3063,7 @@ const ACT={
   timerStop:()=>{const st=ST(),t=st.timer;try{window.LMUS&&LMUS.stop();}catch(err){}if(!t||!t.running)return;if(voiceHere('admin'))sayCmd('stop');const vm=voiceMark('stop');VOICE_SEEN=Math.max(VOICE_SEEN,routeNow()==='display'?0:vm.at);
     patchState({voice:vm,timer:stopT(t)});},
   /* v1.7.53 구령 단추를 둘로: 「차렷 · 경례」(차렷 → 1초 → 경례) · 「준비 · 시작」(준비 → 5초 → 시작) */
+  cmdExit:()=>{const st=ST();if(st.timer&&st.timer.running)return;if(voiceHere('admin'))sayCmd('exit');const vm=voiceMark('exit');VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);saveState({...st,voice:vm});}, /* v1.8.15 퇴장 */
   cmdEnter:()=>{const st=ST();if(st.timer&&st.timer.running)return;if(voiceHere('admin'))sayCmd('enter');const vm=voiceMark('enter');VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);saveState({...st,voice:vm});},
   cmdBow:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);
     const cur=curOf(),say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
@@ -4514,8 +4515,8 @@ async function selfTest(){if(!AS){CHECK='<b class="bad">권한 없음</b>';sched
   catch(err){CHECK=`<b class="bad">서버 저장 실패 (${e(err&&err.code||'오류')})</b>`;}
   schedule();}
 /* ---------- 구령 녹음 파일 ---------- */
-const SLOTS=[['ready','준비'],['start','시작'],['stop','바로'],['rest','쉬어'],['blue','청 승'],['red','홍 승']];
-const SEQ={ready:['ready'],start:['start'],stop:['stop','rest'],blue:['blue'],red:['red']};
+const SLOTS=[['exit','퇴장'],['ready','준비'],['start','시작'],['stop','바로'],['rest','쉬어'],['blue','청 승'],['red','홍 승']];
+const SEQ={exit:['exit'],ready:['ready'],start:['start'],stop:['stop','rest'],blue:['blue'],red:['red']};
 let VAUD=null;
 window.KS_VOICE=function(key){const seq=SEQ[key];if(!seq)return false;const ds=seq.map(k=>VDOCS[k]);if(!ds[0])return false;
   if(VAUD){try{VAUD.pause();}catch(err){}VAUD=null;}
@@ -5009,7 +5010,7 @@ function hasLocalKo(){try{return speechSynthesis.getVoices().some(v=>/^ko/i.test
 
 
 /* ---------- 2) 노트북 「구령음성」 폴더의 녹음 파일 ---------- */
-const FILES={enter:['출전'],ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승'],attn:['차렷'],bow:['경례']};
+const FILES={enter:['출전'],exit:['퇴장'],ready:['준비'],start:['시작'],stop:['바로','쉬어'],blue:['청승','청 승'],red:['홍승','홍 승'],attn:['차렷'],bow:['경례']};
 let LIST=null;   /* 폴더에 있는 파일 이름 → 주소 */
 async function loadList(){
   if(!F)return;

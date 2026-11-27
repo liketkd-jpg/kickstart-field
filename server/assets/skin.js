@@ -16,6 +16,8 @@ const SKINS2=[['','기존 디자인'],['arena','🏟 경기장 (세계 대회)']
 const SKINS_T=[['','기존 디자인'],['arena','🏟 경기장 (세계 대회)'],['duel','⚔️ 청·홍 대결 (금색 띠)'],...NEWS];
 const ROWS=APP==='poomsae'?[['recognized','공인 품새'],['freestyle','자유 품새'],['gym','태권체조'],['team100','팀 경연'],['tour','토너먼트 (청·홍)']]:APP==='kyorugi'?[['kyorugi','겨루기']]:[['gyeokpa','격파']];
 const by=()=>SET().skinBy||{};
+/* v1.8.15 전광판 코트 이름: 본부 설정 「1코트 방식」이면 A→1, B→2 … (전광판 글씨만, 색은 그대로) */
+const CN=c=>{try{if(!SET().courtNum)return c;const t=String(c||'').trim(),i='ABCDEFGHIJ'.indexOf(t.toUpperCase());return t.length===1&&i>=0?String(i+1):c;}catch(e){return c;}};
 function skinFor(cur){const B=by();if(APP==='gyeokpa')return B.gyeokpa||'';if(APP==='kyorugi')return B.kyorugi==='arena'?'arena':'';
   if(!cur){const v=ROWS.filter(r=>r[0]!=='tour').map(r=>B[r[0]]).filter(Boolean);return v[0]||'';}
   if((cur.entries||[]).length===2)return B.tour==='arena'||B.tour==='duel'||isNew(B.tour)?B.tour:'';   /* 토너먼트(청·홍)는 「경기장」만 · 아니면 기존 화면 */
@@ -53,9 +55,9 @@ function modelGp(){const st=g('ST')(),cur=g('curOf')(),S=g('S'),s=SET();
 
 /* ---------- 화면 그리기 (1920×1080 기준) ---------- */
 const brand=th=>th==='fire'?'KICKSTART UP':'KICKSTART UP';
-function top(m,th){return `<div class="sk-top"><span class="sk-brand">${brand(th)}</span><span class="sk-comp" style="font-size:${U(fit(m.comp,34,26))}">${E(m.comp)}</span>${m.court?`<span class="sk-court">${E(m.court)} 코트</span>`:'<span></span>'}</div>`;}
+function top(m,th){return `<div class="sk-top"><span class="sk-brand">${brand(th)}</span><span class="sk-comp" style="font-size:${U(fit(m.comp,34,26))}">${E(m.comp)}</span>${m.court?`<span class="sk-court">${E(CN(m.court))} 코트</span>`:'<span></span>'}</div>`;}
 function divLine(m){return m.div?`<div class="sk-div"><b>${E(m.div)}</b>${m.label?` · ${E(m.label)}`:''}</div>`:'';}
-function idle(m,th){return `${top(m,th)}<div class="sk-center sk-idle"><div class="sk-kick">${th==='fire'?'GET READY':'OFFICIAL COMPETITION'}</div><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="sk-clock" data-now></span>${m.court?`<div class="sk-ic">${E(m.court)} 코트</div>`:''}</div>`;}
+function idle(m,th){return `${top(m,th)}<div class="sk-center sk-idle"><div class="sk-kick">${th==='fire'?'GET READY':'OFFICIAL COMPETITION'}</div><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="sk-clock" data-now></span>${m.court?`<div class="sk-ic">${E(CN(m.court))} 코트</div>`:''}</div>`;}
 function live(m,th){const js=(m.judges||[]).map((ok,i)=>`<i class="${ok?'on':''}">${i+1}심</i>`).join('');
   return `${top(m,th)}${divLine(m)}<div class="sk-center sk-live"><div class="sk-kick">${th==='fire'?'NOW ON THE MAT':'NOW PERFORMING'}</div>
     <div class="sk-name" style="font-size:${U(fit(m.name||m.team,230,3))}">${E(m.name||m.team)}</div>${m.name&&m.team?`<div class="sk-team">${E(m.team)}</div>`:''}${m.members?`<div class="sk-mem">${E(m.members)}</div>`:''}
@@ -111,7 +113,7 @@ function arEv(div){div=String(div||'');const k=div.replace(/\s/g,'');const f=AR_
   return {ko:f[0],rest,en:en.join(' · ')};}
 const arStEn=t=>{t=String(t||'');return /준결/.test(t)?'SEMIFINAL':/결승|결선/.test(t)?'FINAL':/8강/.test(t)?'QUARTERFINAL':/16강/.test(t)?'ROUND OF 16':/32강/.test(t)?'ROUND OF 32':/예선/.test(t)?'PRELIMINARY':/본선/.test(t)?'MAIN ROUND':/재경기/.test(t)?'REMATCH':'';};
 function arTop(m,ko,en){const v=arEv(m.div),title=(v.ko?`${E(v.ko)} <i>${E(v.rest)}</i>`:`<i>${E(m.div||m.comp||'')}</i>`);
-  return `<div class="ar-top">${m.court?`<div class="ar-court"><b>${E(m.court)}</b><span>코트</span></div>`:''}
+  return `<div class="ar-top">${m.court?`<div class="ar-court"><b>${E(CN(m.court))}</b><span>코트</span></div>`:''}
     <div class="ar-ev"><span class="ar-en">${E(v.en||'')}</span><h2 style="font-size:${U(fit(m.div||m.comp,56,28))}">${title}</h2></div>
     <div class="ar-stage"><span class="ar-en">${E(en||arStEn(ko))}</span><b>${E(ko||'')}</b></div></div>`;}
 const arNext=n=>n&&n.who?`<div class="ar-next"><span class="ar-en">Next</span><b>${E(n.who)}</b><small>${E(n.team||n.div||'')}</small></div>`:`<div class="ar-next"><span class="ar-en">Next</span><b>—</b></div>`;
@@ -133,7 +135,7 @@ function arExtra(m){try{m.top=[];m.js=null;const cur=g('curOf')(),S=g('S');if(!c
 const arStage=m=>m.label||'';
 function arJudges(js){if(!js||!js.length)return '';return `<div class="ar-js" style="--n:${js.length}">${js.map(j=>j.t!=null?`<div class="ar-j rv ${j.drop?'drop':j.per?'':'in'}"><span class="ar-jn">${j.n}</span><b>${E(j.t)}</b>${j.items?`<div class="ar-ji">${j.items.map(it=>`<span class="${it.x?'jx':'jk'}"><i>${E(it.l)}</i>${E(it.v)}</span>`).join('')}</div>`:`<small>${j.sub}</small>`}${j.drop&&j.why?`<em class="ar-why">${E(j.why)}</em>`:''}</div>`
   :`<div class="ar-j ${j.ok?'ok':'wait'}"><span class="ar-jn">${j.n}</span><b>${j.ok?'입력':'—'}</b><small>${j.ok?'Judge '+j.n:'채점 중'}</small></div>`).join('')}</div>`;}
-function aIdle(m){return `<div class="ar-idle"><span class="ar-en">Official Competition</span><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="ar-clock" data-now></span>${m.court?`<div class="ar-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
+function aIdle(m){return `<div class="ar-idle"><span class="ar-en">Official Competition</span><h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><span class="ar-clock" data-now></span>${m.court?`<div class="ar-ic"><b>${E(CN(m.court))}</b> 코트</div>`:''}</div>`;}
 /* v1.7.76 팀(단체) 이름은 파란 칸 너비에 꽉 차게, 팀원 이름은 이름 단위로 줄바꿈(이름이 중간에 끊기지 않게) + 두 줄 안에서 최대한 크게 */
 function memHtml(mem){const L=String(mem||'').split(/\s*[,·/]\s*|\s{2,}/).map(x=>x.trim()).filter(Boolean);return L.map((x,i)=>`<span class="ar-mn">${E(x)}${i<L.length-1?',':''}</span>`).join(' ');}
 function memSize(mem,w,lines,max){const c=String(mem||'').replace(/\s+/g,' ').length;return c?Math.max(26,Math.min(max,w*lines/(c*0.92+2))):max;}
@@ -196,7 +198,7 @@ const ASCR={idle:aIdle,live:aLive,score:aScore,rank:aRank,duel:aDuel,duelres:aDu
 const DZ_WIN=3200;
 const dzRound=m=>{const t=String(m.round||m.label||'');const r=/(준결승|결승|\d+\s*강)/.exec(t);return r?r[1].replace(/\s/g,''):t.split('·')[0].trim();};
 const dzRoundEn=t=>/준결/.test(t)?'SEMI-FINAL':/결승/.test(t)?'FINAL':/(\d+)강/.test(t)?'ROUND OF '+(/(\d+)강/.exec(t)[1]):'';
-function dzTop(m){const v=arEv(m.div);return `<div class="dz-top"><div class="dz-court">${m.court?`<b>${E(m.court)}</b><span>COURT</span>`:''}</div>
+function dzTop(m){const v=arEv(m.div);return `<div class="dz-top"><div class="dz-court">${m.court?`<b>${E(CN(m.court))}</b><span>COURT</span>`:''}</div>
   <div class="dz-ev"><h2 style="font-size:${U(fit(m.div||m.comp,52,26))}">${E(m.div||m.comp||'')}</h2><span>${E(v.en||'POOMSAE TOURNAMENT')}</span></div><div class="dz-comp">${E(m.comp||'')}</div></div>`;}
 function dzBand(m,res){const rd=dzRound(m),pl=m.pl||[];
   return `<div class="dz-band"><div class="dz-rd"><span>${E(dzRoundEn(rd))}</span><b style="font-size:${U(fit(rd,96,3))}">${E(rd||'대결')}</b></div>
@@ -272,7 +274,7 @@ const LAYS_T=[['1','청·홍 양쪽 심판 · 가운데 총점'],['0','디자인
 const LAY_DEF={recognized:'2',freestyle:'2',gym:'2',team100:'2',gyeokpa:'2',tour:'1'}; /* v1.7.35 컷오프 경기는 모두 ② (이름·총점 크게) */
 const layKey=cur=>APP==='gyeokpa'?'gyeokpa':cur&&(cur.entries||[]).length===2?'tour':(cur&&cur.type)||'recognized';
 function layFor(cur){if(APP==='kyorugi')return '0';const L=SET().layBy||{},k=layKey(cur);return L[k]!=null?String(L[k]):(LAY_DEF[k]||'1');}
-function lyHead(m,th){return `<div class="ly-top"><span class="ly-court">${E(String(m.court||'').replace(/\s*코트$/,''))}<small>코트</small></span><span class="ly-div">${E(m.div||'')}</span><span class="ly-lab">${E(m.label||'')}</span></div>`;}
+function lyHead(m,th){return `<div class="ly-top"><span class="ly-court">${E(CN(String(m.court||'').replace(/\s*코트$/,'')))}<small>코트</small></span><span class="ly-div">${E(m.div||'')}</span><span class="ly-lab">${E(m.label||'')}</span></div>`;}
 function lyParts(m){return (m.parts||[]).map(p=>`<span class="${p.neg?'neg':''}"><i>${E(p.l)}</i>${E(p.v)}</span>`).join('');}
 function lyLegend(js){return js&&js.length>=5?`<span class="ly-lg"><i class="k"></i>들어간 점수 <i class="o"></i>빠진 점수 (최고·최저)</span>`:'';}
 function lyNext(m){return m.next&&m.next.who?`<span class="ly-nx"><i>NEXT</i>${E(m.next.who)}${m.next.team?' · '+E(m.next.team):''}</span>`:'';}
@@ -311,7 +313,7 @@ const NEW_SK=['bc','sw','pr'];
 const isNew=th=>NEW_SK.includes(th);
 const nEn=t=>`<span class="n-en">${E(t)}</span>`;
 function nTop(m,stageKo,stageEn){const v=arEv(m.div),st=stageKo!=null?stageKo:(m.label||'');
-  return `<div class="n-top">${m.court?`<div class="n-crt"><b>${E(m.court)}</b><small>COURT</small></div>`:''}
+  return `<div class="n-top">${m.court?`<div class="n-crt"><b>${E(CN(m.court))}</b><small>COURT</small></div>`:''}
     <div class="n-ttl">${nEn(v.en||(APP==='gyeokpa'?'BREAKING':'POOMSAE'))}<b style="font-size:${U(fit(m.div||m.comp,46,26))}">${E(m.div||m.comp||'')}</b></div>
     <div class="n-stg">${nEn(stageEn||arStEn(st)||'LIVE')}<b style="font-size:${U(fit(st,40,8))}">${E(st||'—')}</b></div></div>`;}
 function nNext(m){return m.next&&m.next.who?`<div class="n-next">${nEn('Next')}<b>${E(m.next.who)}</b><small>${E(m.next.team||'')}</small></div>`:`<div class="n-next">${nEn('Next')}<b>—</b></div>`;}
@@ -323,7 +325,7 @@ function nWho(m,big){const team=!m.name||m.isTeam,nm=m.name||m.team;
 function nJs(js,live){if(!js||!js.length)return '';
   return `<div class="n-js" style="--n:${js.length}">${js.map(j=>live?`<div class="n-j ${j.ok?'ok':'wait'}"><small>J${j.n}</small><b>${j.ok?'✓':'···'}</b></div>`
     :`<div class="n-j rv ${j.drop?'drop':''}"><small>J${j.n}${j.drop?' · 제외':''}</small><b>${E(j.t)}</b>${j.items&&j.items.length?`<span class="n-ji">${j.items.map(it=>`<i class="${it.x?'x':''}">${E(it.l)} ${E(it.v)}</i>`).join('')}</span>`:''}</div>`).join('')}</div>`;}
-function nIdle(m){return `<div class="n-idle">${nEn('Official Competition')}<h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><b class="n-now" data-now></b>${m.court?`<div class="n-ic"><b>${E(m.court)}</b> 코트</div>`:''}</div>`;}
+function nIdle(m){return `<div class="n-idle">${nEn('Official Competition')}<h1 style="font-size:${U(fit(m.comp,210,8))}">${E(m.comp)}</h1><p>곧 경기가 시작됩니다</p><b class="n-now" data-now></b>${m.court?`<div class="n-ic"><b>${E(CN(m.court))}</b> 코트</div>`:''}</div>`;}
 function nLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
   const right=m.liveCount?`<div class="n-clk">${nEn(m.liveCount.l)}<b class="dzlive">${E(m.liveCount.v)}<small>${E(m.liveCount.u)}</small></b><span class="n-sub">경기 시간 <i class="timer" data-timer>${E(m.timer||'')}</i></span></div>`
     :`<div class="n-clk">${nEn('Time')}<b class="timer" data-timer>${E(m.timer||'')}</b><span class="n-sub">${m.name?'경기 시간':'연기 시간'}</span></div>`;
