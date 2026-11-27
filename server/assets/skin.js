@@ -176,7 +176,13 @@ function arBk(m){const rs=m.rounds||[],R=rs.length;if(!R)return '';
 function aBracket(m){const all=(m.rounds||[]).flat(),x=all.find(q=>q.cur),ws=x&&x.win?x[x.win]:null,last=x&&x.r===(m.R-1);
   return `${arTop(m,(m.round||m.label||'')+' 결과','RESULT')}<div class="ar-mid ar-mid2">${ws?`<div class="ar-hero ${x.win}"><div><span class="ar-en">Winner · ${x.win==='blue'?'청 Blue':'홍 Red'}</span><div class="ar-nm" style="font-size:${U(fit(ws.name,170,4))}">${E(ws.name)}</div><div class="ar-tm">${E(ws.team||'')} · ${f3(x.win==='blue'?x.bS:x.rS)}점</div></div><div class="ar-hr"><span class="ar-en">${last?'Advances to Final':'Advances'}</span><b>${last?'결승 진출':'다음 경기 진출'}</b></div></div>`:''}${arBk(m)}</div>
     ${arBot('진행','Progress',`<div class="ar-cell ar-wide"><span class="ar-rn"><b>${E(m.div||'')}</b><small>${E(m.round||'')} 경기 마침</small></span></div>`,m.next)}`;}
-function aChamp(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
+/* v1.8.10 토너먼트 최종 결과도 격파·컷오프 순위 화면과 똑같이: 금·은·동·동 네 줄 (같은 줄 크기·글씨·메달) */
+function champRows(m){const all=(m.rounds||[]).flat();const sc=p=>{if(!p)return '';let v=null;all.forEach(x=>{if(x.blue&&x.blue.name===p.name&&x.bS!=null)v=x.bS;if(x.red&&x.red.name===p.name&&x.rS!=null)v=x.rS;});return v==null?'':(+v).toFixed(2);};
+  const sc0=sc;const rows=[];if(m.champ)rows.push({rank:1,name:m.champ.name,team:m.champ.team,score:''});if(m.second&&m.second.name)rows.push({rank:2,name:m.second.name,team:m.second.team,score:''});
+  (m.thirds||[]).forEach(t=>rows.push({rank:3,name:t.name,team:t.team,score:''}));
+  return {...m,scr:'rank',rows,medal:true,pre:false,quota:0,unit:'명',label:'최종'};}
+function aChamp(m){return aRank(champRows(m));}
+function aChampOld(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
   return `${arTop(m,'최종 결과','CHAMPION')}<div class="ar-mid ar-mid2"><div class="ar-hero gold"><div><span class="ar-en">Champion · 우승</span><div class="ar-nm" style="font-size:${U(fit(m.champ.name,190,4))}">${E(m.champ.name)}</div><div class="ar-tm">${E(m.champ.team||'')}${p?` · 결승 ${f3(p.me)} : ${f3(p.op)}`:''}</div></div><div class="ar-gm">${ksMedal(1,'금')}</div><div class="ar-hr"><span class="ar-en">Gold Medal</span><b>우승</b></div></div>
     <div class="ar-pods"><div class="ar-cell"><span class="ar-rk s">${ksMedal(2,'은')}</span><span class="ar-rn"><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></span></div>${(m.thirds||[]).map(t=>`<div class="ar-cell"><span class="ar-rk b">${ksMedal(3,'동')}</span><span class="ar-rn"><b>${E(t.name)}</b><small>${E(t.team||'')}</small></span></div>`).join('')}</div></div>
     ${arBot('시상','Medals',`<div class="ar-cell ar-wide"><span class="ar-rn"><b>${E(m.div||'')}</b><small>시상대 준비</small></span></div>`,m.next)}`;}
@@ -352,7 +358,8 @@ function nBracket(m){const rs=m.rounds||[],R=rs.length,x=rs.flat().find(q=>q.cur
   const row=q=>`<div class="n-bm ${q.cur?'now':''}">${['blue','red'].map(sd=>{const p=q[sd],sc=sd==='blue'?q.bS:q.rS;return `<div class="n-bp ${sd==='blue'?'b':'r'} ${q.win===sd?'w':q.win?'l':''}"><i>${sd==='blue'?'청':'홍'}</i><b>${p?E(p.name):'—'}</b><small>${p?E(p.team||''):''}</small><em>${sc!=null?nf2(sc):''}</em></div>`;}).join('')}</div>`;
   return `${nTop(m,(m.round||rn)+' 결과','Result')}${ws?`<div class="n-hero ${x.win==='blue'?'b':'r'}">${nEn('Winner · '+(x.win==='blue'?'청':'홍'))}<b style="font-size:${U(fit(ws.name,150,4))}">${E(ws.name)}</b><small>${E(ws.team||'')}</small></div>`:''}
     <div class="n-bk ${ws?'':'full'}" style="--c:${Math.min(4,Math.max(1,ms.length))}">${nEn(rn)}<div class="n-bks">${ms.map(row).join('')}</div></div>${nNext(m).replace('n-next','n-next solo')}`;}
-function nChamp(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
+function nChamp(m){return nRank(champRows(m));}
+function nChampOld(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
   return `${nTop(m,'최종 결과','Champion')}<div class="n-hero champ">${nEn('Champion · 우승')}<b style="font-size:${U(fit(m.champ.name,200,4))}">${E(m.champ.name)}</b><small>${E(m.champ.team||'')}${p?` · 결승 ${nf2(p.me)} : ${nf2(p.op)}`:''}</small></div>
     <div class="n-pod"><div class="n-r md m2"><span class="n-rk">${ksMedal(2,'은')}</span><span class="n-rn"><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></span></div>${(m.thirds||[]).map(t=>`<div class="n-r md m3"><span class="n-rk">${ksMedal(3,'동')}</span><span class="n-rn"><b>${E(t.name)}</b><small>${E(t.team||'')}</small></span></div>`).join('')}</div>`;}
 const NSCR={idle:nIdle,live:nLive,score:nScore,rank:nRank,duel:nDuel,duelres:nDres,bracket:nBracket,champ:nChamp};
