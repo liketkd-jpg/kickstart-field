@@ -2010,6 +2010,9 @@ function aSettings(){
       <span class="small muted">경기장 스피커가 연결된 컴퓨터를 고르세요. 전광판에서 음성을 내려면 전광판 화면을 처음에 한 번 눌러 주어야 합니다(브라우저 정책). <button class="btn sm" data-act="testVoice">음성 들어보기</button></span>
       <span class="label" style="margin-top:10px">전광판 구령 큰 글씨 (차렷 · 경례 · 준비 · 시작 · 바로 · 쉬어)</span>
       <div class="seg"><button class="${s.bigCmd!==false?'on':''}" data-act="setBigCmd" data-v="1">켜기</button><button class="${s.bigCmd===false?'on':''}" data-act="setBigCmd" data-v="0">끄기</button></div>
+      <span class="label" style="margin-top:10px">구령 간격 (초) — 공인·자유 품새</span>
+      ${[['gapBow','차렷 → 경례',2.6,[1,1.5,2,2.6,3,4,5]],['gapReady','준비 → 시작',6,[2,3,4,5,6,7,8]],['gapStop','바로 → 쉬어',5,[2,3,4,5,6,7]]].map(([k,l,d,opts])=>{const cur=Number(s[k])>0?Number(s[k]):d;return `<div class="row" style="gap:8px;margin:4px 0"><b style="min-width:110px">${l}</b><div class="seg">${opts.map(v=>`<button class="${cur===v?'on':''}" data-act="setGap" data-k="${k}" data-v="${v}">${v}초</button>`).join('')}</div></div>`;}).join('')}
+      <span class="small muted">경례 → 준비는 「준비 · 시작」 버튼을 누를 때 나갑니다. 태권체조·팀 경연은 준비 → 시작 4초 · 바로 → 쉬어 3초 그대로입니다 (차렷 → 경례는 모든 종목에 같이 적용).</span>
       <span class="small muted">구령을 낼 때 전광판 맨 앞에 큰 글씨가 1.6초 동안 뜹니다. 팀 경연·태권체조를 포함한 모든 부문과 모든 전광판 디자인에 똑같이 나옵니다.</span>
     </div><div class="field">
       <span class="label" style="margin-top:6px">지정품새 추첨 방식 (제8조 2항)</span>
@@ -2869,8 +2872,10 @@ function vDisplay(){
 const VOICE_TXT={enter:['출전!'],exit:['퇴장!'],ready:['준비!'],start:['시작!'],stop:['바로!','쉬어!'],blue:['청','승!'],red:['홍','승!'],attn:['차렷!'],bow:['경례!']};
 /* v1.8.15 품새(공인·자유)는 준비→시작, 바로→쉬어 모두 2초 · 태권체조·팀 경연은 그대로 */
 const SHORTCMD=()=>{try{const c=curOf();return !!c&&!['gym','team100'].includes(c.type);}catch(e){return false;}};
-window.ksStopGap=()=>SHORTCMD()?2000:3000;
-const READY_SEC0=4;const READY_SEC=()=>SHORTCMD()?2:READY_SEC0; /* v1.7.58 준비→시작 5초→4초 (대회 운영 요청) */ /* 준비 구령 뒤 자동 시작까지 */
+/* v1.8.17 구령 간격을 대회 설정에서 초 단위로 (품새 기본: 준비→시작 6초 · 바로→쉬어 5초 · 차렷→경례 2.6초) */
+const CGAP=(k,d)=>{try{const v=Number(SET()[k]);return v>0&&v<=15?v:d;}catch(e){return d;}};
+window.ksStopGap=()=>SHORTCMD()?CGAP('gapStop',5)*1000:3000;
+const READY_SEC0=4;const READY_SEC=()=>SHORTCMD()?CGAP('gapReady',6):READY_SEC0; /* v1.7.58 준비→시작 5초→4초 (대회 운영 요청) */ /* 준비 구령 뒤 자동 시작까지 */
 const VOICE_BIG={exit:'퇴장',ready:'준비',start:'시작',stop:'바로',blue:'청 승',red:'홍 승',attn:'차렷',bow:'경례'};
 /* v1.7.47 차렷·경례: 첫 품새(격파는 매번)만 「차렷 → 1초 → 경례 → 준비」, 2품새는 「준비 · 시작」만. 인사는 시작할 때만 */
 const BOW_AT=2600,BOW_READY=5300; /* v1.7.58 차렷→경례 1.6초→2.6초 */
@@ -3457,8 +3462,8 @@ const ACT={
   cmdEnter:()=>{const st=ST();if(st.timer&&st.timer.running)return;if(voiceHere('admin'))sayCmd('enter');const vm=voiceMark('enter');VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);saveState({...st,voice:vm});},
   cmdBow:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);
     const cur=curOf(),say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
-    if(cur&&cur.callId)BOWED[cur.callId]=1;BOWING=Date.now()+BOW_AT+400;saveState({...st,voice:say('attn'),readyAt:null});
-    READY_T=setTimeout(()=>{saveState({...ST(),voice:say('bow')});setTimeout(()=>{try{render();}catch(e){}},500);},BOW_AT);},
+    if(cur&&cur.callId)BOWED[cur.callId]=1;BOWING=Date.now()+CGAP('gapBow',BOW_AT/1000)*1000+400;saveState({...st,voice:say('attn'),readyAt:null});
+    READY_T=setTimeout(()=>{saveState({...ST(),voice:say('bow')});setTimeout(()=>{try{render();}catch(e){}},500);},CGAP('gapBow',BOW_AT/1000)*1000);},
   cmdReady:()=>{const st=ST();if(st.timer&&st.timer.running)return;clearTimeout(READY_T);BOWING=0;
     const cur=curOf(),cid=cur&&cur.callId,say=k=>{if(voiceHere('admin'))sayCmd(k);const vm=voiceMark(k);VOICE_SEEN=Math.max(VOICE_SEEN,vm.at);return vm;};
     const alive=ra=>{const s2=ST(),c2=curOf();return s2.readyAt===ra&&s2.status==='open'&&!(s2.timer&&s2.timer.running)&&c2&&c2.callId===cid;};
@@ -3467,6 +3472,7 @@ const ACT={
   testVoice:()=>sayCmd('ready'),
   testVoiceQuiet:()=>{try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}catch(e){}render();},
   setVoice:b=>saveSettings({...SET(),voice:b.dataset.v}),
+  setGap:b=>saveSettings({...SET(),[b.dataset.k]:Number(b.dataset.v)}),
   setBigCmd:b=>saveSettings({...SET(),bigCmd:b.dataset.v!=='0'}),
   setPoomsaeAll:async b=>{const v=Number(b.dataset.v);await saveSettings({...SET(),poomsae:v});
     let n=0,skip=0;const list=S.divs.map(d=>{if(pCount(d)===v)return d;if(divHasResults(d)){skip++;return d;}n++;return {...d,poomsae:v};});
