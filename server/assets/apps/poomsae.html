@@ -7154,7 +7154,8 @@ function nextInfo(){try{const b=window.KS_HQ&&KS_HQ.board();const n=b&&b.next&&b
   return {who:(n.names||[]).map(p=>p.name).filter(Boolean).join(' · '),team:(n.names||[]).map(p=>p.team).filter(Boolean).join(' · '),label:n.label||'',div:n.div||''};}catch(e){return null;}}
 
 /* ---------- 지금 화면에 필요한 값 모으기 ---------- */
-function model(){
+function model(){const m0=model0();return window.__KSM?window.__KSM(m0):m0;} /* 시험용 고리 */
+function model0(){
   const st=g('ST')(),cur=g('curOf')(),S=g('S'),SH=g('SHEETS'),sched=g('schedule');
   const F=window.KS_FIELD,court=(F&&F.court)||(window.KS_HOST&&KS_HOST.court)||'';
   const m={comp:SET().name||'품새 대회',court,next:nextInfo()};
@@ -7228,10 +7229,13 @@ function bracketHtml(m,o){
   const heads=m.rounds.map((_,ri)=>`<span style="top:${U(Y0-56)};left:${U(X0+ri*colW)};width:${U(slotW)}">${E(g('roundName')(ri+1,R))}</span>`).join('')+`<span style="top:${U(Y0-56)};left:${U(cx)};width:${U(slotW)}">우승</span>`;
   return `<div class="bk"><div class="bk-h">${heads}</div><svg class="bk-svg" viewBox="0 0 1920 1080" preserveAspectRatio="none">${lines}</svg>${html}</div>`;
 }
+/* v1.8.12 토너먼트 결승 뒤 시상 화면 = 격파와 같은 순위 화면 (금·은·동·동 네 줄) — 모든 테마 */
+function champAsRank(m){const rows=[];const P=(p,r)=>p&&p.name?rows.push({rank:r,name:p.name,team:p.team||'',a:null,b:null,final:null,me:false,inq:true}):0;
+  P(m.champ,1);P(m.second,2);(m.thirds||[]).forEach(t=>P(t,3));return {...m,scr:'rank',rows,medal:true,pre:false,quota:0,unit:'명',label:'최종 순위'};}
 function rankRows(m,o){o=o||{};const rows=m.rows,n=rows.length,many=n>10,show=many?rows.slice(0,Math.max(10,Math.min(n,14))):rows;
   const meRow=rows.find(r=>r.me),hasMe=show.some(r=>r.me);
   const list=(hasMe||!meRow?show:show.slice(0,show.length-1).concat([meRow]));
-  return list.map((r,i)=>`${m.pre&&i>0&&list[i-1].rank<=m.quota&&r.rank>m.quota?`<div class="rk-cut"><span>${E(m.cutLab)}</span></div>`:''}<div class="rk-r ${r.me?'me':''} ${r.inq&&m.pre?'in':''} ${r.rank<=3?'m'+r.rank:''}" style="--i:${i}"><span class="rk-n">${o.cjk&&r.rank<=10?CJK[r.rank]:r.rank}</span><span class="rk-nm"><b>${E(r.name)}</b><small>${E(r.team)}</small></span><span class="rk-a">${f3(r.a)}</span><span class="rk-b">${f3(r.b)}</span><span class="rk-t">${f3(r.final)}</span></div>`).join('');}
+  return list.map((r,i)=>`${m.pre&&i>0&&list[i-1].rank<=m.quota&&r.rank>m.quota?`<div class="rk-cut"><span>${E(m.cutLab)}</span></div>`:''}<div class="rk-r ${r.me?'me':''} ${r.inq&&m.pre?'in':''} ${r.rank<=3?'m'+r.rank:''}" style="--i:${i}"><span class="rk-n">${m.medal&&window.KS_MEDAL&&r.rank<=3?KS_MEDAL(r.rank,["","금","은","동"][r.rank]):o.cjk&&r.rank<=10?CJK[r.rank]:r.rank}</span><span class="rk-nm"><b>${E(r.name)}</b><small>${E(r.team)}</small></span>${r.final==null&&m.medal?'<span class="rk-a"></span><span class="rk-b"></span><span class="rk-t"></span>':`<span class="rk-a">${f3(r.a)}</span><span class="rk-b">${f3(r.b)}</span><span class="rk-t">${f3(r.final)}</span>`}</div>`).join('');}
 
 /* 시계 문자판 */
 function dial(o){
@@ -7282,7 +7286,8 @@ T.ed={
     return `${T.ed.top(m)}${one(b)}${one(r)}<div class="ed-vs sm">vs.</div>${m.note?`<div class="ed-note">${E(m.note)}</div>`:''}
     <div class="ed-djs res">${b.js.map((j,k)=>{const q=r.js[k]||{t:0};const w=j.t>q.t?'blue':q.t>j.t?'red':'';return `<div><small>JUDGE ${j.n}</small><span><i class="${w} on"></i></span><em>${f1(j.t)} · ${f1(q.t)}</em></div>`;}).join('')}</div>${T.ed.foot(m,'<span>심판별 합계 — 점은 더 높게 준 쪽</span>')}`;},
   bracket:m=>`${T.ed.top(m)}<div class="ed-rkh"><b>The Draw</b><span>${E(m.div)}</span></div>${bracketHtml(m,{y:300,h:650})}${T.ed.foot(m)}`,
-  champ:m=>`${T.ed.top(m)}<div class="ed-kick c">CHAMPION · ${E(m.div)}</div><div class="ed-ch"><b class="rise" style="font-size:${fit(m.champ.name,250,4)}">${E(m.champ.name)}</b><span>${E(m.champ.team)}</span></div>
+  champ:m=>T.ed.rank(champAsRank(m)),
+  champOld:m=>`${T.ed.top(m)}<div class="ed-kick c">CHAMPION · ${E(m.div)}</div><div class="ed-ch"><b class="rise" style="font-size:${fit(m.champ.name,250,4)}">${E(m.champ.name)}</b><span>${E(m.champ.team)}</span></div>
     <div class="ed-path">${m.path.map(p=>`<div><small>${E(p.rd)}</small><b>${f3(p.me)}</b><span>vs ${E(p.opn)} ${f3(p.op)}</span></div>`).join('')}</div>
     ${T.ed.foot(m,`<span>준우승 ${E(m.second.name)}${m.thirds.length?` · 3위 ${m.thirds.map(x=>E(x.name)).join(', ')}`:''}</span>`)}`
 };
@@ -7304,7 +7309,8 @@ T.ch={
   duelres:m=>{const [b,r]=m.sides;const one=s=>`<div class="ch-side ${s.side} ${s.win?'win':''} ${s.lose?'lose':''}"><small>${s.win?'WINNER · ':''}${s.side==='blue'?'BLUE · 청':'RED · 홍'}</small><b style="font-size:${fit(s.name,118,4)}">${E(s.name)}</b><span>${E(s.team)}</span><em class="rise">${s.res?f3(s.res.final):'—'}</em><p>${s.js.map(j=>`J${j.n} ${f1(j.t)}`).join(' · ')}</p></div>`;
     return `${T.ch.top(m)}${one(b)}${one(r)}<div class="ch-dial c">${dial({r:360,hands:[{v:r.res?r.res.final:0,c:RUB,w:4,d:.5},{v:b.res?b.res.final:0,c:SAP,w:6,d:.3}],inner:`<text x="400" y="270" text-anchor="middle" class="dl">KICKSTART UP</text><text x="400" y="560" text-anchor="middle" class="dl">${E(m.note||'DECISION')}</text>`})}</div>${T.ch.foot(m)}`;},
   bracket:m=>`${T.ch.top(m)}${bracketHtml(m,{y:230,h:720})}${T.ch.foot(m)}`,
-  champ:m=>`<div class="ch-dial c spin dim">${dial({r:430,num:false})}</div><div class="ch-champ"><small>CHAMPION · 우승</small><span class="d">${E(m.div)}</span><b class="shine" style="font-size:${fit(m.champ.name,200,4)}">${E(m.champ.name)}</b><span>${E(m.champ.team)}</span>
+  champ:m=>T.ch.rank(champAsRank(m)),
+  champOld:m=>`<div class="ch-dial c spin dim">${dial({r:430,num:false})}</div><div class="ch-champ"><small>CHAMPION · 우승</small><span class="d">${E(m.div)}</span><b class="shine" style="font-size:${fit(m.champ.name,200,4)}">${E(m.champ.name)}</b><span>${E(m.champ.team)}</span>
     <p>${m.path.map(p=>`${E(p.rd)} <i>${f3(p.me)}</i>`).join(' · ')}</p></div><div class="ch-ft"><span>KICKSTART UP · CHRONOMETER</span><span>준우승 ${E(m.second.name)}${m.thirds.length?` · 3위 ${m.thirds.map(x=>E(x.name)).join(' · ')}`:''}</span></div>`
 };
 /* ---------- 3. 데이터 ---------- */
@@ -7328,7 +7334,8 @@ T.tm={
     return `${T.tm.top(m,'DECISION')}${one(b)}${one(r)}${m.note?`<div class="tm-note">${E(m.note)}</div>`:''}<div class="tm-tug"><div class="tm-th"><span>◀ BLUE_ADV</span><span>JUDGE_DELTA</span><span>RED_ADV ▶</span></div>${b.js.map((j,k)=>{const q=r.js[k]||{t:0},d=j.t-q.t,w=Math.abs(d)/mx*50;
       return `<div class="tm-tr"><span>J${j.n}</span><b class="bl">${f1(j.t)}</b><div><i class="${d>0?'bl':'rd'}" style="${d>0?'right':'left'}:50%;width:${w.toFixed(1)}%;--i:${k}"></i></div><b class="rd">${f1(q.t)}</b><em class="${d>0?'bl':d<0?'rd':''}">${d>0?'◀ B':d<0?'R ▶':'='}</em></div>`;}).join('')}</div>${T.tm.foot(m)}`;},
   bracket:m=>`${T.tm.top(m,'BRACKET')}${bracketHtml(m,{y:210,h:760})}${T.tm.foot(m)}`,
-  champ:m=>`${T.tm.top(m,'RESULT')}<div class="tm-champ"><small>WINNER_CONFIRMED // ${E(m.div)}</small><b class="rise" style="font-size:${fit(m.champ.name,220,4)}">${E(m.champ.name)}</b><span>${E(m.champ.team)}</span></div>
+  champ:m=>T.tm.rank(champAsRank(m)),
+  champOld:m=>`${T.tm.top(m,'RESULT')}<div class="tm-champ"><small>WINNER_CONFIRMED // ${E(m.div)}</small><b class="rise" style="font-size:${fit(m.champ.name,220,4)}">${E(m.champ.name)}</b><span>${E(m.champ.team)}</span></div>
     <div class="tm-path">${m.path.map(p=>`<div><small>${E(p.rd)}</small><b>${f3(p.me)}</b><span>vs ${E(p.opn)} ${f3(p.op)}</span></div>`).join('')}</div><div class="tm-ft"><span>P2=${E(m.second.name)}${m.thirds.length?` · P3=${m.thirds.map(x=>E(x.name)).join(' · ')}`:''}</span></div>`
 };
 /* ---------- 4. 한지와 먹 ---------- */
@@ -7352,7 +7359,8 @@ T.ink={
     return `${INKF}${one(b)}${one(r)}<div class="ink-dm r"><small>심 판 합 계</small>${m.note?`<span>${E(m.note)}</span>`:''}</div>
     <div class="ink-seals r">${b.js.map((j,k)=>{const q=r.js[k]||{t:0},w=j.t>q.t?'blue':q.t>j.t?'red':'';return `<i class="${w} on" style="--i:${k}">${w==='blue'?'靑':w==='red'?'紅':'同'}</i>`;}).join('')}</div>${T.ink.foot(m)}`;},
   bracket:m=>`${INKF}<div class="ink-rkh"><b>대 진</b><span>${E(m.div)}</span></div>${bracketHtml(m,{y:300,h:660})}${T.ink.foot(m)}`,
-  champ:m=>`${INKF}<div class="ink-chk">우 승</div><div class="ink-ch bleed" style="font-size:${fit(m.champ.name,300,4)}">${E(m.champ.name)}</div><div class="ink-cht">${E(m.champ.team)}</div>
+  champ:m=>T.ink.rank(champAsRank(m)),
+  champOld:m=>`${INKF}<div class="ink-chk">우 승</div><div class="ink-ch bleed" style="font-size:${fit(m.champ.name,300,4)}">${E(m.champ.name)}</div><div class="ink-cht">${E(m.champ.team)}</div>
     <svg class="ink-stroke" viewBox="0 0 1600 200"><path d="M40 120 C 400 60, 1100 150, 1560 80" fill="none" stroke="#14110E" stroke-width="40" stroke-linecap="round" filter="url(#kstbr)" opacity=".9"/></svg>
     <div class="ink-seal c"><b>元</b><span>장 원</span></div><div class="ink-rest"><span><small>준우승</small>${E(m.second.name)} · ${E(m.second.team)}</span>${m.thirds.length?`<span><small>삼위</small>${m.thirds.map(x=>E(x.name)).join(' · ')}</span>`:''}</div>${T.ink.foot(m)}`
 };
@@ -7378,7 +7386,8 @@ T.st={
     return `<div class="st-half blue"></div><div class="st-half red"></div>${T.st.top(m,m.note||'DECISION')}${one(b)}${one(r)}<div class="st-vs">VS</div>
     <div class="st-jb"><span class="l">JUDGES</span>${b.js.map((j,k)=>{const q=r.js[k]||{t:0},w=j.t>q.t?'blue':q.t>j.t?'red':'';return `<span class="v ${w}">J${j.n} ${f1(j.t)}:${f1(q.t)}</span>`;}).join('')}</div>`;},
   bracket:m=>`${T.st.top(m,'BRACKET')}${bracketHtml(m,{y:220,h:740})}${T.st.foot(m)}`,
-  champ:m=>`<div class="st-cbg"></div><div class="st-flash"></div><div class="st-ww">WINNER WINNER</div>${ticker(`&nbsp;CHAMPION ✺ ${E(m.champ.name)} ✺ ${E(m.champ.team)} ✺ WINNER ✺`.repeat(3),'t')}
+  champ:m=>T.st.rank(champAsRank(m)),
+  champOld:m=>`<div class="st-cbg"></div><div class="st-flash"></div><div class="st-ww">WINNER WINNER</div>${ticker(`&nbsp;CHAMPION ✺ ${E(m.champ.name)} ✺ ${E(m.champ.team)} ✺ WINNER ✺`.repeat(3),'t')}
     <div class="st-stk c slam"><small>CHAMPION / 우승 — ${E(m.div)}</small><b style="font-size:${fit(m.champ.name,250,4)}">${E(m.champ.name)}</b><span>${E(m.champ.team)}</span></div>
     <div class="st-cs">${m.path.length?`<b>${f3(m.path[m.path.length-1].me)}</b><span>FINAL vs ${E(m.second.name)} ${f3(m.path[m.path.length-1].op)}</span>`:''}</div>
     <div class="st-cft"><b>KICKSTART UP<i>*</i></b><span>2ND ${E(m.second.name)}${m.thirds.length?` · 3RD ${m.thirds.map(x=>E(x.name)).join(' / ')}`:''}</span></div>`
@@ -7962,6 +7971,7 @@ body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbstat{font-si
 .sp-o.sp-ones{flex:1 1 auto!important;min-height:clamp(56px,13vh,140px)!important;grid-auto-rows:minmax(clamp(52px,12vh,110px),1fr)!important}
 .sp-o.sp-ones .opt{min-height:0!important;font-size:clamp(26px,min(6vh,5vw),56px)!important}
 @media (orientation:portrait){.sp-o.sp-ones{grid-template-columns:repeat(5,minmax(0,1fr))!important}.sp-o.sp-ones .opt{font-size:clamp(28px,min(5.5vh,8vw),64px)!important}}
+
 </style>
 <script>/* v1.7.49 예비 노트북으로 코트 이어받기 — 코트 노트북이 고장 나면 새 노트북에서 같은 코트를 고르고
    「본부에서 이 코트 이어받기」를 누르면, 본부가 모아 둔 그 코트의 가장 최근 진행 기록(선수·부문·점수)을 불러옵니다. */

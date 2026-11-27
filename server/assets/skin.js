@@ -371,9 +371,11 @@ function install(){const cur=window.vDisplay;if(typeof cur!=='function')return f
       /* v1.7.65 「기존 디자인」 대기 화면도 다른 디자인과 같은 글씨 크기 (프레스티지 금빛 대기 화면) */
       if(!th){let idle=false;try{idle=APP==='kyorugi'?!g('live')():!c;}catch(e){}if(idle&&SET().board!=='classic'){const F=window.KS_FIELD,court=(F&&F.court)||(window.KS_HOST&&KS_HOST.court)||'';
         const nm=SET().name||(APP==='kyorugi'?'겨루기 대회':APP==='gyeokpa'?'태권도 격파 대회':'품새 대회');const h=draw('pr',{scr:'idle',comp:nm,court,key:'idle'});if(h){const kb=(()=>{try{return g('KIOSK')?'':'<button data-act="go" data-r="admin-run">← 운영석</button>';}catch(e){return '';}})();return h.replace('<div class="sk-bg">','<div class="dctl" style="position:fixed;top:8px;right:10px;z-index:30">'+kb+'<button data-act="fullscreen">전체 화면</button></div><div class="sk-bg">');}}}
+      /* v1.8.12 기존 디자인(금빛·클래식)도 토너먼트 시상은 순위 네 줄 (격파와 같게) */
+      if(!th&&APP==='poomsae'&&c&&(c.entries||[]).length===2){const m=arTourModel();if(m&&m.scr==='champ'){const h=draw('pr',m);if(h)return h;}}
       if(!isNew(th)){const h=layDraw(th,c);if(h)return h;}
       if(th==='arena'&&APP==='kyorugi'){const h=arKy(cur);if(h)return h;}
-      else if((th==='arena'||th==='duel'||isNew(th))&&c&&(c.entries||[]).length===2){const m=arTourModel();if(m){const h=draw(th,m);if(h)return h;}}
+      else if((th==='arena'||th==='duel'||isNew(th))&&c&&(c.entries||[]).length===2){const m=arTourModel();if(m){const h=draw(m.scr==='champ'&&th==='duel'?'arena':th,m);if(h)return h;}} /* v1.8.12 청·홍 대결 디자인도 시상은 순위 네 줄 */
       else if(th){const m=APP==='poomsae'?modelPm():modelGp();if(m){if(th==='arena'||isNew(th)||m.scr==='score')arExtra(m);const h=draw(th,m);if(h)return h;}}}catch(e){console.error('[KS_SKIN]',e);}
     return cur.apply(this,arguments);};
   w.__sk=true;w.__ksb=true;w.__kst=true;window.vDisplay=w;try{g('render')();}catch(e){}return true;}
