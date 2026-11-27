@@ -5248,7 +5248,8 @@ function run(){
 function later(){if(queued)return;queued=true;requestAnimationFrame(()=>requestAnimationFrame(run));}
 window.KS_KEYFIT=run;
 const app=document.getElementById('app');
-if(app)new MutationObserver(later).observe(app,{childList:true,subtree:true,characterData:true});
+/* v1.8.11 떨림 방지: 화면을 다시 그리면 그리기(화면 표시) 전에 바로 맞춤 — 전에는 두 프레임 뒤에 맞춰서 큰 글씨가 잠깐 보였다가 줄어듦 */
+if(app)new MutationObserver(()=>{if(!busy)run();}).observe(app,{childList:true,subtree:true,characterData:true});
 addEventListener('resize',later);addEventListener('orientationchange',()=>setTimeout(later,250));
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(later);
 later();
