@@ -7965,9 +7965,9 @@ body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .dzt{font-size:
 body.disp .board.ksb-solo:not(:has(.cbfinal)):not(:has(.vfinal)) .cbstat{font-size:min(2vw,3.5vh)!important}
 
 /* v1.8.7 십의 자리 고르기(팀 경연 등): 위 줄(0점대·10점…)은 낮고 작게, 아래 끝자리 줄(0~9)이 남은 공간을 다 씀 — 아이패드 세로에서 아래 줄이 밀려나던 문제 */
-.sp-o.sp-tens{flex:0 0 auto!important;min-height:0!important;grid-auto-rows:clamp(46px,8.5vh,78px)!important}
-.sp-o.sp-tens .opt{min-height:0!important;flex-direction:row!important;align-items:baseline!important;justify-content:center;gap:3px;font-size:clamp(22px,3.6vh,36px)!important}
-.sp-o.sp-tens .opt small{font-size:.55em!important;margin:0!important}
+.sp-o.sp-tens{flex:0 0 auto!important;min-height:0!important;grid-auto-rows:clamp(60px,13vh,118px)!important} /* v1.8.14 위 줄도 크게 */
+.sp-o.sp-tens .opt{min-height:0!important;flex-direction:row!important;align-items:center!important;justify-content:center;gap:4px;font-size:clamp(26px,min(6vh,5vw),56px)!important}
+.sp-o.sp-tens .opt small{font-size:.5em!important;margin:0!important;align-self:flex-end;padding-bottom:.25em}
 .sp-o.sp-ones{flex:1 1 auto!important;min-height:clamp(56px,13vh,140px)!important;grid-auto-rows:minmax(clamp(52px,12vh,110px),1fr)!important}
 .sp-o.sp-ones .opt{min-height:0!important;font-size:clamp(26px,min(6vh,5vw),56px)!important}
 @media (orientation:portrait){.sp-o.sp-ones{grid-template-columns:repeat(5,minmax(0,1fr))!important}.sp-o.sp-ones .opt{font-size:clamp(28px,min(5.5vh,8vw),64px)!important}}
