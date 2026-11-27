@@ -148,7 +148,7 @@ function aScore(m){const parts=(m.parts||[]).map(p=>`<span class="ar-p ${p.neg?'
   return `${arTop(m,arStage(m))}<div class="ar-mid"><div class="ar-band">${aWho(m)}<div class="ar-sc"><span class="ar-en">Score</span><div class="cbres ar-res">${parts}<span class="cbfinal ar-final">${E(m.final)}</span></div>${m.note?`<div class="ar-sub neg">${E(m.note)}</div>`:''}</div></div>${arJudges(m.js)}</div>${arBot('현재 순위','Standings',arStand(m.top),m.next)}`;}
 /* v1.7.17 순위는 위에서 아래로 한 줄씩 (금 → 은 → 동 → 동) 크게 — 좌우 두 줄로 엇갈리지 않게 */
 function aRank(m){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,8);if(me&&!show.includes(me)){const k=R.indexOf(me);show=R.slice(0,5).concat(R.slice(Math.max(5,k-1),k+2));}
-  const rowH=show.length<=4?Math.min(150,Math.floor((640-36)/4)):Math.max(64,Math.min(138,Math.floor((640-(show.length-1)*12)/Math.max(1,show.length))));
+  const rowH=show.length<=4?Math.min(205,Math.floor((640-(show.length-1)*14)/show.length)):Math.max(64,Math.min(138,Math.floor((640-(show.length-1)*12)/Math.max(1,show.length))));
   const row=(r,i)=>`<div class="ar-rr one ${r.rank===1?'g1':''} ${r.me?'me':''} ${m.pre&&!r.inq?'out':''}${skMc(r.rank,m)}" style="--i:${i};height:${U(rowH)};--rh:${rowH}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<span class="ar-rk">${skRk(r.rank,m)}</span><span class="ar-rn"><b>${E(r.name||r.team)}${r.me?'<em>지금</em>':''}</b><small>${E(r.name?r.team:'')}</small></span><span class="ar-rs">${E(r.score)}</span></div>`;
   const cut=m.pre&&m.quota&&R.length>m.quota?`<div class="ar-cut"><span>${E(m.cut||'')}</span><span class="ar-en">Qualified</span></div>`:'';
   return `${arTop(m,String(m.label||'').replace(/\s*\d+\s*번$/,'')+' 순위','STANDINGS')}<div class="ar-mid"><div class="ar-rank one">${show.map(row).join('')}</div>${cut}</div>
@@ -331,7 +331,7 @@ function nLive(m){const js=(m.judges||[]).map((ok,i)=>({n:i+1,ok}));
 function nScore(m){const parts=(m.parts||[]).map(p=>`<span class="n-p ${p.neg?'neg':''}"><small>${E(p.l)}</small><b>${E(p.v)}</b></span>`).join('');
   return `${nTop(m)}<div class="n-main sc">${nWho(m)}<div class="n-clk fin">${nEn('Score')}<div class="cbres n-res"><span class="cbfinal n-final">${E(m.final)}</span><div class="n-parts">${parts}</div></div>${m.note?`<span class="n-sub neg">${E(m.note)}</span>`:''}</div></div>${nJs(m.js,false)}${nStand(m)}`;}
 function nRank(m){const R=m.rows||[],me=R.find(r=>r.me);let show=R.slice(0,8);if(me&&!show.includes(me)){const k=R.indexOf(me);show=R.slice(0,5).concat(R.slice(Math.max(5,k-1),k+2));}
-  const few=show.length<=4,rh=few?Math.min(160,Math.floor((660-30)/4)):Math.max(64,Math.min(116,Math.floor((660-(show.length-1)*10)/Math.max(1,show.length))));let list='';
+  const few=show.length<=4,rh=few?Math.min(250,Math.floor((660-(show.length-1)*14)/show.length)):Math.max(64,Math.min(116,Math.floor((660-(show.length-1)*10)/Math.max(1,show.length))));let list='';
   show.forEach((r,i,a)=>{const prev=a[i-1];if(m.pre&&m.quota&&prev&&prev.rank<=m.quota&&r.rank>m.quota)list+=`<div class="n-cut"><span>${E(m.cut||'')}</span>${nEn('Qualified')}</div>`;
     else if(prev&&prev.rank<r.rank-1)list+=`<div class="n-gap">⋯</div>`;
     const md=skMc(r.rank,m);list+=`<div class="n-r ${few?'nbig':''} ${r.me?'me':''} ${m.pre&&r.inq?'in':''} ${m.pre&&!r.inq?'out':''} ${md}" style="--i:${i};height:${U(rh)};--k:${(rh/105).toFixed(2)}">${r.me?'<i class="cbr me sk-mk" style="--dl:0ms"></i>':''}<span class="n-rk">${skRk(r.rank,m)}</span><span class="n-rn"><b>${E(r.name||r.team)}${r.me?'<em>지금</em>':''}</b><small>${E(r.name?r.team:'')}</small></span><span class="n-rs">${E(r.score)}</span></div>`;});
@@ -900,6 +900,18 @@ const css3=`
 .n-rn em{font-style:normal;font-size:${U(22)};margin-left:${U(14)};padding:${U(2)} ${U(12)};border-radius:${U(8)};vertical-align:middle;background:#F5C451;color:#140c02}
 .n-rs{font:700 ${U(68)} "Barlow Condensed",Archivo,sans-serif;flex:none}
 .n-r.nbig>.n-rk,.n-r.nbig>.n-rn,.n-r.nbig>.n-rs{zoom:var(--k,1)}.n-r.nbig{padding:0 ${U(44)}}
+/* v1.8.13 메달 순위(4줄 이하): 화면을 꽉 채우고 금·은·동 색 띠로 한눈에 */
+.n-rank:has(.n-r.nbig){display:flex;flex-direction:column;justify-content:center;gap:${U(14)}}
+.n-r.nbig.md{position:relative;overflow:hidden;border-left:${U(14)} solid var(--mdc,#E6B94C)}
+.n-r.nbig.md.m1{--mdc:#E6B94C;background:linear-gradient(90deg,rgba(230,185,76,.30),rgba(230,185,76,.06) 55%,rgba(255,255,255,.02))}
+.n-r.nbig.md.m2{--mdc:#C9CFD8;background:linear-gradient(90deg,rgba(201,207,216,.26),rgba(201,207,216,.05) 55%,rgba(255,255,255,.02))}
+.n-r.nbig.md.m3{--mdc:#CD8A4E;background:linear-gradient(90deg,rgba(205,138,78,.28),rgba(205,138,78,.05) 55%,rgba(255,255,255,.02))}
+.n-r.nbig.md .n-rk .kmd{font-size:1.35em}
+.ar-rr.one.md{border-left:${U(14)} solid var(--mdc,#E6B94C)!important}
+.ar-rr.one.md.m1{--mdc:#E6B94C;background:linear-gradient(90deg,rgba(230,185,76,.30),rgba(230,185,76,.06) 55%,rgba(255,255,255,.03))!important}
+.ar-rr.one.md.m2{--mdc:#C9CFD8;background:linear-gradient(90deg,rgba(201,207,216,.26),rgba(201,207,216,.05) 55%,rgba(255,255,255,.03))!important}
+.ar-rr.one.md.m3{--mdc:#CD8A4E;background:linear-gradient(90deg,rgba(205,138,78,.28),rgba(205,138,78,.05) 55%,rgba(255,255,255,.03))!important}
+.n-r.nbig.md.me{box-shadow:0 0 0 ${U(3)} rgba(255,255,255,.55) inset}
 .n-r.out{opacity:.5}
 .n-cut{display:flex;justify-content:space-between;align-items:center;border-top:${U(3)} dashed;padding:${U(6)} ${U(10)} 0;font-weight:800;font-size:${U(24)};flex:none}
 .n-gap{text-align:center;opacity:.5;font-size:${U(30)};line-height:1;flex:none}
