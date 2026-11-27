@@ -6643,6 +6643,8 @@ const SPN={poomsae:'품새',kyorugi:'겨루기',gyeokpa:'격파'};
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function settings(){const S=g('S');return (S&&S.settings)||{};}
 const classic=()=>settings().board==='classic';
+/* v1.8.19 기존 디자인 전광판 위 띠도 「1코트」 방식 따르기 (A→1 …) */
+const CNb=c=>{try{if(!settings().courtNum)return c;const t=String(c||'').trim(),i='ABCDEFGHIJ'.indexOf(t.toUpperCase());return t.length===1&&i>=0?String(i+1):c;}catch(e){return c;}};
 const LOGO=`<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ksbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DFAE"/><stop offset=".55" stop-color="#C9A262"/><stop offset="1" stop-color="#8E6A30"/></linearGradient></defs><path fill="none" stroke="url(#ksbg)" stroke-width="2.4" stroke-linejoin="round" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="url(#ksbg)" d="M19 16h7.5v32H19z"/><path fill="url(#ksbg)" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="url(#ksbg)" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/><path fill="url(#ksbg)" d="M53 4.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></svg>`;
 const WM=`<svg class="ksb-wm" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="#C9A262" stroke-width="1.2" d="M32 3 57.1 17.5v29L32 61 6.9 46.5v-29z"/><path fill="#C9A262" d="M19 16h7.5v32H19z"/><path fill="#C9A262" d="M26.5 36.5 34.5 32l11 16h-8.6z"/><path fill="#C9A262" d="M26.5 32v-6.3c7.4-1.4 13.6-5.7 17.6-12l5.4 3.8C44.6 25.4 36.4 30.9 26.5 32z"/></svg>`;
 /* 단계 이름 → 영어 작은 글씨 */
@@ -6650,7 +6652,7 @@ function stageEn(t){t=String(t||'');return /결승|결선/.test(t)?'FINAL':/준�
 function topBar(div,label){const c=COURT(),en=stageEn(label);
   return `<div class="ksb-top"><div class="ksb-brand">${LOGO}<b>KICKSTART<i> UP</i></b></div>
     <div class="ksb-div"><b>${E(div||'')}</b>${label?`<small>${en?en+' · ':''}${E(label)}</small>`:''}</div>
-    <div class="ksb-court"><span class="ksb-sp">${SPN[APP()]||''}</span>${c?`<span class="ksb-c">${E(c)} COURT</span>`:''}</div></div>`;}
+    <div class="ksb-court"><span class="ksb-sp">${SPN[APP()]||''}</span>${c?`<span class="ksb-c">${E(CNb(c))} COURT</span>`:''}</div></div>`;}
 function nextBar(){let n=null;try{const b=window.KS_HQ&&KS_HQ.board();n=b&&b.next&&b.next[0];}catch(e){}
   const who=n?(n.names||[]).map(p=>`<b>${E(p.name)}</b>${p.team?' '+E(p.team):''}`).join(' <i>vs</i> '):'';
   return `<div class="ksb-bot">${n?`<span class="ksb-lb">NEXT</span><span class="ksb-nx">${who}${n.div?` · <span>${E(n.div)}</span>`:''}${n.label?` · ${E(n.label)}`:''}</span>`:''}<span class="ksb-kl">KICKSTART UP · TAEKWONDO</span></div>`;}
