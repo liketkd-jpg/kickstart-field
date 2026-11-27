@@ -177,8 +177,8 @@ function aBracket(m){const all=(m.rounds||[]).flat(),x=all.find(q=>q.cur),ws=x&&
   return `${arTop(m,(m.round||m.label||'')+' 결과','RESULT')}<div class="ar-mid ar-mid2">${ws?`<div class="ar-hero ${x.win}"><div><span class="ar-en">Winner · ${x.win==='blue'?'청 Blue':'홍 Red'}</span><div class="ar-nm" style="font-size:${U(fit(ws.name,170,4))}">${E(ws.name)}</div><div class="ar-tm">${E(ws.team||'')} · ${f3(x.win==='blue'?x.bS:x.rS)}점</div></div><div class="ar-hr"><span class="ar-en">${last?'Advances to Final':'Advances'}</span><b>${last?'결승 진출':'다음 경기 진출'}</b></div></div>`:''}${arBk(m)}</div>
     ${arBot('진행','Progress',`<div class="ar-cell ar-wide"><span class="ar-rn"><b>${E(m.div||'')}</b><small>${E(m.round||'')} 경기 마침</small></span></div>`,m.next)}`;}
 function aChamp(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
-  return `${arTop(m,'최종 결과','CHAMPION')}<div class="ar-mid ar-mid2"><div class="ar-hero gold"><div><span class="ar-en">Champion · 우승</span><div class="ar-nm" style="font-size:${U(fit(m.champ.name,190,4))}">${E(m.champ.name)}</div><div class="ar-tm">${E(m.champ.team||'')}${p?` · 결승 ${f3(p.me)} : ${f3(p.op)}`:''}</div></div><div class="ar-hr"><span class="ar-en">Gold Medal</span><b>우승</b></div></div>
-    <div class="ar-pods"><div class="ar-cell"><span class="ar-rk s">2</span><span class="ar-rn"><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></span></div>${(m.thirds||[]).map(t=>`<div class="ar-cell"><span class="ar-rk b">3</span><span class="ar-rn"><b>${E(t.name)}</b><small>${E(t.team||'')}</small></span></div>`).join('')}</div></div>
+  return `${arTop(m,'최종 결과','CHAMPION')}<div class="ar-mid ar-mid2"><div class="ar-hero gold"><div><span class="ar-en">Champion · 우승</span><div class="ar-nm" style="font-size:${U(fit(m.champ.name,190,4))}">${E(m.champ.name)}</div><div class="ar-tm">${E(m.champ.team||'')}${p?` · 결승 ${f3(p.me)} : ${f3(p.op)}`:''}</div></div><div class="ar-gm">${ksMedal(1,'금')}</div><div class="ar-hr"><span class="ar-en">Gold Medal</span><b>우승</b></div></div>
+    <div class="ar-pods"><div class="ar-cell"><span class="ar-rk s">${ksMedal(2,'은')}</span><span class="ar-rn"><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></span></div>${(m.thirds||[]).map(t=>`<div class="ar-cell"><span class="ar-rk b">${ksMedal(3,'동')}</span><span class="ar-rn"><b>${E(t.name)}</b><small>${E(t.team||'')}</small></span></div>`).join('')}</div></div>
     ${arBot('시상','Medals',`<div class="ar-cell ar-wide"><span class="ar-rn"><b>${E(m.div||'')}</b><small>시상대 준비</small></span></div>`,m.next)}`;}
 const ASCR={idle:aIdle,live:aLive,score:aScore,rank:aRank,duel:aDuel,duelres:aDuelres,bracket:aBracket,champ:aChamp};
 
@@ -224,7 +224,7 @@ function dBracket(m){const rs=m.rounds||[],R=rs.length;if(!R)return dzTop(m);con
 function dChamp(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
   return `${dzTop(m)}<div class="dz-champ"><div class="dz-spk all">${Array.from({length:40},(_,k)=>`<i style="--x:${(k*37)%100}%;--y:${(k*53)%96}%;--k:${k}"></i>`).join('')}</div>
     <span class="dz-cl">CHAMPION · 우승</span><div class="dz-cn" style="font-size:${U(fit(m.champ.name,200,4))}">${E(m.champ.name)}</div><div class="dz-ct">${E(m.champ.team||'')}${p?` · 결승 ${(+p.me).toFixed(2)} : ${(+p.op).toFixed(2)}`:''}</div>
-    <div class="dz-pods"><div><i class="s">은</i><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></div>${(m.thirds||[]).map(t=>`<div><i class="b">동</i><b>${E(t.name)}</b><small>${E(t.team||'')}</small></div>`).join('')}</div></div>${dzNext(m)}`;}
+    <div class="dz-pods"><div><i class="s md">${ksMedal(2,'은')}</i><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></div>${(m.thirds||[]).map(t=>`<div><i class="b md">${ksMedal(3,'동')}</i><b>${E(t.name)}</b><small>${E(t.team||'')}</small></div>`).join('')}</div></div>${dzNext(m)}`;}
 const DSCR={duel:dDuel,duelres:dRes,bracket:dBracket,champ:dChamp};
 /* 「승」 소리: 점수 공개 뒤 DZ_WIN ms · 우승 화면 · 같은 경기에 한 번만 */
 const DZ_PLAYED=new Set();
@@ -354,7 +354,7 @@ function nBracket(m){const rs=m.rounds||[],R=rs.length,x=rs.flat().find(q=>q.cur
     <div class="n-bk ${ws?'':'full'}" style="--c:${Math.min(4,Math.max(1,ms.length))}">${nEn(rn)}<div class="n-bks">${ms.map(row).join('')}</div></div>${nNext(m).replace('n-next','n-next solo')}`;}
 function nChamp(m){const p=m.path&&m.path.length?m.path[m.path.length-1]:null;
   return `${nTop(m,'최종 결과','Champion')}<div class="n-hero champ">${nEn('Champion · 우승')}<b style="font-size:${U(fit(m.champ.name,200,4))}">${E(m.champ.name)}</b><small>${E(m.champ.team||'')}${p?` · 결승 ${nf2(p.me)} : ${nf2(p.op)}`:''}</small></div>
-    <div class="n-pod"><div class="n-r md m2"><span class="n-rk">은</span><span class="n-rn"><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></span></div>${(m.thirds||[]).map(t=>`<div class="n-r md m3"><span class="n-rk">동</span><span class="n-rn"><b>${E(t.name)}</b><small>${E(t.team||'')}</small></span></div>`).join('')}</div>`;}
+    <div class="n-pod"><div class="n-r md m2"><span class="n-rk">${ksMedal(2,'은')}</span><span class="n-rn"><b>${E(m.second.name||'—')}</b><small>${E(m.second.team||'')}</small></span></div>${(m.thirds||[]).map(t=>`<div class="n-r md m3"><span class="n-rk">${ksMedal(3,'동')}</span><span class="n-rn"><b>${E(t.name)}</b><small>${E(t.team||'')}</small></span></div>`).join('')}</div>`;}
 const NSCR={idle:nIdle,live:nLive,score:nScore,rank:nRank,duel:nDuel,duelres:nDres,bracket:nBracket,champ:nChamp};
 
 /* ---------- 감싸기 ---------- */
@@ -1075,6 +1075,7 @@ const css3=`
 `;
 
 const cssMd=`
+.ar-pods .ar-rk .kmd,.n-pod .n-rk .kmd{font-size:1.1em}.dz-pods i.md{background:none!important;border:0!important;box-shadow:none!important;width:auto!important;height:auto!important}.dz-pods i.md .kmd{font-size:1.6em}.ar-gm{flex:none;display:flex;align-items:center}.ar-gm .kmd{font-size:${U(110)}}
 .kmd{position:relative;display:inline-block;width:1.15em;height:1.47em;vertical-align:middle;line-height:0;font-size:1.25em;flex:none}
 .kmd svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 .04em .07em rgba(0,0,0,.5))}
 .kmd b{position:absolute;left:0;right:0;top:67.2%;transform:translateY(-50%);text-align:center;font:900 .5em/1 "Noto Sans KR",sans-serif;color:#2c1c00;letter-spacing:0}

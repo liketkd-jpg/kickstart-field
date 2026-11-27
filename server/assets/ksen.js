@@ -9,8 +9,9 @@
   /* v1.8.4 아이패드·아이폰 사파리: 위 주소창·탭 줄 때문에 화면 높이(vh)가 실제 보이는 높이보다 커서 아래 「다음」 단추가 잘림
      → 화면 높이 단위를 지금 실제로 보이는 높이(--ksvh)로 바꿔 씀 (?iosvh=1 로 시험) */
   const IOS=/[?&]iosvh=1/.test(location.search)||/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
-  if(IOS){const setV=()=>{try{const h=(window.visualViewport&&visualViewport.height)||innerHeight;document.documentElement.style.setProperty('--ksvh',(h/100).toFixed(3)+'px');}catch(e){}};setV();
-    addEventListener('resize',setV);addEventListener('orientationchange',()=>setTimeout(setV,300));try{visualViewport&&visualViewport.addEventListener('resize',setV);}catch(e){}}
+  /* v1.8.9 화면 높이는 처음 한 번과 화면을 돌릴 때(가로 폭이 바뀔 때)만 잼 — 누를 때 사파리 주소창이 줄었다 늘었다 해도 글씨 크기가 바뀌지 않게 (떨림 방지) */
+  if(IOS){let lw=-1;const setV=force=>{try{const w=innerWidth;if(!force&&Math.abs(w-lw)<2)return;lw=w;const h=innerHeight;document.documentElement.style.setProperty('--ksvh',(h/100).toFixed(2)+'px');}catch(e){}};setV(true);
+    addEventListener('resize',()=>setV(false));addEventListener('orientationchange',()=>setTimeout(()=>setV(true),400));}
   const VHRE=IOS?/(-?\d*\.?\d+)\s*[dsl]?vh\b/g:/([\d.])\s*[dsl]vh\b/g,VHTO=IOS?'calc($1 * var(--ksvh,1vh))':'$1vh';
   const NODVH=IOS||/[?&]nodvh=1/.test(location.search)||!(window.CSS&&CSS.supports&&CSS.supports('height','100dvh'));
   function dvhFallback(root){if(!NODVH)return;let ch=0;try{(root||document).querySelectorAll('style').forEach(st=>{if(st.__ksdvh)return;const t=st.textContent;if(IOS?/[\d.]\s*[dsl]?vh\b/.test(t)&&!/var\(--ksvh/.test(t):/[\d.]\s*[dsl]vh\b/.test(t)){st.textContent=t.replace(VHRE,VHTO);ch=1;}st.__ksdvh=1;});
