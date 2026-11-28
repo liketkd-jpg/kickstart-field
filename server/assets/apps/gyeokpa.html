@@ -2433,9 +2433,9 @@ function runPanel(st,cur){
 function resultCard(r,cur){
   const k=r.kind;let det='';
   if(JUDGED(k)){
-    det=`<div class="gjrow">${r.judges.map((j,i)=>`<span class="gjt ${i===r.hi||i===r.lo?'drop':''}"><small>${j.judge}심</small>${p100max(r)?fP(j.total*pf(r)):fmtN(j.total)}</span>`).join('')}</div>`;
-    if(k==='tech')det+=`<div class="gparts">${r.techs.map((x,i)=>`<span>${esc(x)} <b>${fmt3(r.techScores[i]*pf(r))}</b></span>`).join('')}</div>`;
-    else det+=`<div class="gparts">${(k==='comp'?COMP_ITEMS:TEAM_ITEMS).map(it=>`<span>${it.label} <b>${fmt3(r.parts[it.k])}</b></span>`).join('')}</div>`;
+    det=`<div class="gjrow">${(r.judges||[]).map((j,i)=>`<span class="gjt ${i===r.hi||i===r.lo?'drop':''}"><small>${j.judge}심</small>${p100max(r)?fP(j.total*pf(r)):fmtN(j.total)}</span>`).join('')}</div>`;
+    if(k==='tech')det+=`<div class="gparts">${(r.techs||[]).map((x,i)=>`<span>${esc(x)} <b>${fmt3((r.techScores||[])[i]*pf(r))}</b></span>`).join('')}</div>`; /* v1.8.21 기권·실격(점수 없음) 결과도 화면이 깨지지 않게 */
+    else det+=`<div class="gparts">${(k==='comp'?COMP_ITEMS:TEAM_ITEMS).map(it=>`<span>${it.label} <b>${fmt3((r.parts||{})[it.k])}</b></span>`).join('')}</div>`;
     det+=`<div class="prev"><span>심판 평균 <b>${fmt3(r.score*pf(r))}</b></span><span>감점 <b>−${fP(r.dedTotal*pf(r))}</b></span><span class="big">최종 <b>${r.dq?(r.wd?'기권':'실격'):fmt3(p100(r))}</b>${p100max(r)?' <small>(100점 기준 · 채점판 점수 '+fmt3(r.final)+'/'+p100max(r)+')</small>':''}</span></div>`;
   }else{
     const v=r.rec||{};
