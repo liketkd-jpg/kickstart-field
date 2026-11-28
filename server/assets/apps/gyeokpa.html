@@ -1598,7 +1598,7 @@ function subscribe(){
   store.watchDoc('comp/state',d=>{S.state=d;S.stateLoaded=true;try{onVoiceState(d);}catch(e){}watchScores(d&&d.current&&d.current.perfId?d.current.callId:null);schedule();flushOutbox();});
   store.watchColl('rosterc',null,null,list=>{S.rosterChunks=list.sort((a,b)=>(a.i||0)-(b.i||0));mergeRoster();});
   store.watchColl('divc',null,null,list=>{S.divChunks=list.sort((a,b)=>(a.i||0)-(b.i||0));mergeDivs();});
-  store.watchColl('results',null,null,list=>{const m={};list.forEach(r=>m[r._id]=r);S.results=m;S.rankCache=null;schedule();});
+  store.watchColl('results',null,null,list=>{const m={};list.forEach(r=>m[r._id]=r);S.results=m;S.rankCache=null;schedule();try{fixOldDed(list);}catch(e){}});
   store.watchColl('seats',null,null,list=>{
     const first=!S.seatsLoaded;
     const m={};list.forEach(s=>{const n=Number(String(s._id).replace('j',''));if(n)m[n]=s;});S.seats=m;S.seatsLoaded=true;
@@ -1864,6 +1864,8 @@ function computeJudged(cur,scores,ded,dq){
   const raw=sum(totals),dt=dedTotal(kind,ded);
   const r={kind,judges:js.map((s,i)=>({judge:s.judge,total:totals[i],items:s.items||{}})),hi:tr.hi,lo:tr.lo,score:r3(tr.mean),raw:r3(raw),ded:{...(ded||{})},dedTotal:dt};
   r.final=r3(tr.mean-dt);
+  /* v1.8.20 기술격파는 100점으로 바꿔 보여 주므로 감점(미격파 −3 등)도 100점 기준으로: 원점수에서는 감점×(만점/100)만 뺌 (예전엔 ×5 되어 −15로 나옴) */
+  if(kind==='tech'&&nT){const m=nT*10,dr=r3(dt*m/100);r.dedTotal=dr;r.final=r3(tr.mean-dr);r.dedFix=1;}
   if(kind==='tech'){r.techs=cur.techs;r.techScores=cur.techs.map((_,i)=>r3(part(it=>(Number(it['t'+i+'c'])||0)+(Number(it['t'+i+'e'])||0))));
     r.keys=[r.final,...[...r.techScores].reverse(),r.raw];}
   else if(kind==='comp'){r.parts={};COMP_ITEMS.forEach(it=>r.parts[it.k]=r3(part(x=>it.k==='e'?Math.min(40,(Number(x.e)||0)+(Number(x.x)||0)):Number(x[it.k])||0)));r.keys=[r.final,r.parts.c,r.parts.e,r.raw];}
@@ -1890,6 +1892,13 @@ function computeRecord(cur,rec){
 function entryReady(cur){const js=new Set(curScores().filter(s=>s.perfId===cur.perfId&&s.judge<=cur.judgeCount).map(s=>s.judge));for(let j=1;j<=cur.judgeCount;j++)if(!js.has(j))return false;return true;}
 /* v1.7.10 기술격파(체공·수직축·수평축)는 기술 수 × 10점 만점 → 100점 만점으로 환산해 보여 줌 (순위는 그대로 · 종합격파·단체전은 원래 100점 만점)
    기록격파(cm·장)·위력격파(장)는 기록이라 그대로 */
+/* v1.8.20 이미 공개된 기술격파 결과의 감점을 100점 기준으로 다시 계산 (운영석에서 한 번만) */
+const DEDFIXED=new Set();
+function fixOldDed(list){if(!String(routeNow()).startsWith('admin'))return;
+  list.forEach(r=>{if(!r||r.kind!=='tech'||r.dedFix||r.dq||!(Number(r.dedTotal)>0)||!(r.techs||[]).length||DEDFIXED.has(r._id))return;DEDFIXED.add(r._id);
+    const m=r.techs.length*10,dr=r3(Number(r.dedTotal)*m/100),fin=r3(Number(r.score)-dr),c={...r};delete c._id;delete c._key;
+    c.dedTotal=dr;c.final=fin;c.dedFix=1;if(Array.isArray(c.keys)&&c.keys.length)c.keys=[fin,...c.keys.slice(1)];
+    store.put('results/'+r._id,c).catch(()=>{});try{addLog('감점 다시 계산',`${r.name||''} · ${r.label||''}`,`100점 기준 감점으로 바로잡음 (최종 ${fmt3(fin/m*100)})`);}catch(e){}});}
 function p100max(r){return r&&r.kind==='tech'&&(r.techs||[]).length?r.techs.length*10:0;}
 /* 심판 점수·감점도 같은 100점 기준으로 (채점판은 그대로) */
 function pf(r){const m=p100max(r);return m?100/m:1;}
