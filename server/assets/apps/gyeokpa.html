@@ -3111,7 +3111,7 @@ const ACT={
   rescore:async()=>{const st=ST(),cur=curOf();if(!cur)return;await saveState({...st,status:'open',epoch:(st.epoch||0)+1});addLog('재채점',`${cur.name} · ${cur.label}`,'심판 점수를 지우고 다시 채점');},
   confirmRec:()=>confirmRecord(),
   reopen:async()=>{const st=ST(),cur=curOf();if(!cur)return;const r=S.results[cur.perfId];
-    if(JUDGED(cur.kind)){await store.del('results/'+cur.perfId);await saveState({...st,status:'open',epoch:(st.epoch||0)+1});}
+    if(JUDGED(cur.kind)){await store.del('results/'+cur.perfId);await saveState({...st,status:'open',ded:{},epoch:(st.epoch||0)+1});} /* v1.8.23 다시 채점하면 감점도 비움 → 1심 패드가 새로 넣은 감점이 그대로 들어감 (예전엔 첫 공개 때 감점이 남아 1심이 고친 값이 무시됨) */
     else{await store.del('results/'+cur.perfId);await saveState({...st,status:'open',rec:r&&r.rec?{...r.rec}:st.rec});}
     addLog(JUDGED(cur.kind)?'다시 채점':'기록 고치기',`${cur.name} · ${cur.label}`,r?`이전 ${resultText(r)}`:'');},
   delResult:async b=>{const r=S.results[b.dataset.id];if(!r)return;await store.del('results/'+b.dataset.id);addLog('결과 지우기',`${r.name} · ${r.label||''}`,`이전 ${resultText(r)}`);toast('결과를 지웠습니다');},
