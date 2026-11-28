@@ -2747,7 +2747,7 @@ async function doReveal(auto){
   try{
     const t=stopT(st.timer),ded=effDed(cur,st);
     /* v1.8.22 「바로」로 시계를 멈추지 않은 채 점수를 공개하면 공개 때까지 시간이 흘러 시간 감점이 크게 붙던 문제 → 시계가 아직 돌고 있으면 시간 감점을 자동으로 넣지 않음 (필요하면 운영석에서 직접) */
-    if(ded.time==null&&!(st.timer&&st.timer.running)){const u=timeUnits(cur.kind,t,limitOf(cur));if(u)ded.time=u;}
+    /* v1.8.24 대회 현장 요청: 시간 감점은 자동으로 넣지 않음 — 운영석 「측정 시간 기준 시간 감점 ○회 넣기」를 눌렀을 때만 (넣은 감점만 그대로 들어가게) */
     const cs=curScores().filter(s=>s.perfId===cur.perfId&&s.judge<=cur.judgeCount);
     if(!cs.length){toast('아직 도착한 심판 점수가 없습니다');return;}
     const r=computeJudged(cur,cs,ded,st.dq);
