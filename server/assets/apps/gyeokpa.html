@@ -2735,7 +2735,7 @@ async function callIt(callId){
   ui.div=d.id;ui.editing=false;clearTimeout(READY_T);try{window.LMUS&&LMUS.stop();}catch(err){}
   await saveState(jclean({status:'open',epoch:(st.epoch||0)+1,calledAt:Date.now(),readyAt:null,prep:null,voice:st.voice||null,
     timer:{max:lim,tol:d.ev==='team'?10:0,running:false,startedAt:0,elapsed:0},
-    ded:prev&&prev.ded?{...prev.ded}:{},rec:prev&&prev.rec?{...prev.rec,dq:undefined,dqWhy:undefined}:{},dq:prev&&prev.dq&&!prev.wd?(prev.dqWhy||'실격'):null,
+    ded:JUDGED(kind)?{}:prev&&prev.ded?{...prev.ded}:{},rec:prev&&prev.rec?{...prev.rec,dq:undefined,dqWhy:undefined}:{},dq:prev&&prev.dq&&!prev.wd?(prev.dqWhy||'실격'):null,
     current:{callId:c.callId,perfId:c.perfId,divId:d.id,divName:d.name,label:c.label,stage:c.stage,group:c.group,rm:c.rm||0,ev:d.ev,kind,level:d.level||'',gender:d.gender||'',
       athleteId:c.athleteId,name:a.name||'',team:a.team||'',members:a.members||'',judgeCount:s.judges,techs:kind==='tech'?techsOf(d,c.stage):null}}));
 }
