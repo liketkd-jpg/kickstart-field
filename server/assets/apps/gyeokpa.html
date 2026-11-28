@@ -1463,7 +1463,7 @@ function techDefault(ev,level,gender){const f=famOf(level),t=(TECH[f]||SENIOR)[g
 function compReq(level){const f=famOf(level);
   return f==='elem'?'체공 도약 · 수직축 회전 (수평축 회전·딛고 격파 제한)':f==='mid'?'체공 도약 · 수직축 회전 · 수평축 회전 (딛고 격파 제한)':'체공 도약 · 수직축 회전 · 수평축 회전 · 딛고 격파';}
 /* 제9조 경기 시간 (초·중등부 종합격파 40초) */
-function evTime(ev,level){if(ev==='comp'){const f=famOf(level);return f==='elem'||f==='mid'?40:60;}return EV[ev]?EV[ev].time:40;}
+function evTime(ev,level){if(ev==='comp')return 60; /* v1.8.26 대회 요청: 종합격파는 모든 부 1분 (초·중등부 40초 → 60초) */return EV[ev]?EV[ev].time:40;}
 /* 동점이 끝까지 같을 때: 초등부(기술격파)·단체전은 공동 순위, 중등부 이상은 재경기 */
 function tieEnd(d){const k=EV[d.ev]?.kind;if(k==='count')return 'rm';if(k==='height')return 'rm';if(k==='team')return 'co';if(JUDGED(k))return famOf(d.level)==='elem'?'co':'rm';return 'co';}
 /* ---------- 채점표 ---------- */
